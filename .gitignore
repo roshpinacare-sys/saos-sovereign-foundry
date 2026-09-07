@@ -1,2 +1,35 @@
-skills/
 node_modules/
+.next/
+out/
+build/
+dist/
+
+# environments & secrets
+.env*
+!.env.example
+
+# prisma / db runtime
+db/
+prisma/*.db
+prisma/*.db-journal
+
+# research dumps (66MB archives) & uploads (contain tokens!)
+research/
+upload/
+tool-results/
+download/
+
+# restored / mirror folders (managed separately)
+anchor-baseline/
+saos-sovereign-platform/
+
+# skills library (sandbox infra)
+skills/
+
+# misc
+*.pid
+*.log
+dev.log
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts
