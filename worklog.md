@@ -203,3 +203,18 @@ Work Log:
 
 Stage Summary:
 - Task 5 fully on remote: auth + rate-limit + live-gate + keyless signer + verified backup/restore/cleanup + dependency hardening (audit=0) + deployment docs + UI gate tab
+
+---
+
+Task ID: 5-incident (BUG-008)
+Agent: Z.ai Code (orchestrator)
+Task: Document and recover the post-push .env incident.
+
+Work Log:
+- BUG-008: after committing the (intentional) deletion of tracked `.env`, `git pull --rebase` checked out the rebased tree — where `.env` no longer exists — and pruned the working-tree file. Root cause: a tracked-file deletion combined with a rebase checkout prunes the local file, even though the deletion was meant as "stop tracking", not "erase locally"
+- Impact window: minutes. Losses: none material — the admin key had been independently saved to `upload/saos-admin-key.txt` (gitignored) at generation time; the db file was never tracked; DATABASE_URL is a non-sensitive local path
+- Recovery: rebuilt `.env` from the local key backup; sha256 recomputed and **verified identical** to the pre-incident hash (9bcc27a2…); dev server restarted; live-gate back to readyForLive=true with 0 blockers
+- Lessons: (1) untracking a file should be followed by an immediate backup of its content; (2) `git rm --cached` + later rebase = local prune — always re-check the file exists after any history rewrite; (3) the "save generated credentials twice (env + local non-repo file)" discipline paid for itself
+
+Stage Summary:
+- BUG-008 recovered with zero data loss; all values bit-identical; gate green; nothing sensitive ever entered the repo
