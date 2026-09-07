@@ -5,7 +5,7 @@
   "description": "SAOS Sovereign Foundry v2 — cross-network anchoring, energy sovereignty and evidence-carrying economy platform. אנחנו מנצחים את הבלוקצ'יין",
   "scripts": {
     "dev": "next dev -p 3000",
-    "lint": "next lint",
+    "lint": "eslint .",
     "db:push": "prisma db push",
     "db:generate": "prisma generate"
   },

@@ -77,3 +77,32 @@ Work Log:
 Stage Summary:
 - Nothing lives only on the sandbox anymore — research verdict, platform, folders and this worklog are all on GitHub.
 - Resume point for next agents: restore signing keys (vault) → trigger real HIVE anchor; fund TRX stake → direct TRON anchoring via the energize module; then flywheel economics.
+
+---
+
+Task ID: 3 (engineering-docs)
+Agent: Z.ai Code (orchestrator)
+Task: Full engineering-grade documentation of the entire project inside the repo — every change, decision, test, bug, fix, plan and run procedure written as files (docs/README.md, architecture.md, api.md, database.md, testing.md, security.md, runbook.md, decisions.md, next-steps.md + worklog.md), then lint → commit → push.
+
+Work Log:
+- Re-read worklog (Task 1, 2, 2-push), audited every module and all 7 API routes, prisma schema, .gitignore, remotes (branch main, ahead of origin by 1 commit 5bc8a9a)
+- Live verification of ALL 7 endpoints via curl (2026-09-07): status ✅, kernel 7/7 ✅, seal height 3 / root 7e3b3fc8… / 8 leaves ✅, verify-pack rootMatches+allVerified ✅, energy tron+hive ✅, economy ✅, research ✅ (10 findings)
+- Fail-closed checks: seal {"stamps":"abc"} → ok:false "seal requires stamps in batch" (HTTP 200); energy rc=abc → ok:false "float/inf rejected" (HTTP 200) — API never 500s, confirmed live
+- DB state measured: seals=3, leaves=25, anchors=12, receipts=28, energyPlans=0, economy=0, findings=10, oplog=3 → EnergyPlan/EconomySnapshot identified as "defined but never written" gap (documented)
+- **BUG-002 found & fixed**: `bun run lint` was broken — `"lint": "next lint"` in package.json while Next 16 removed `next lint` (previous worklog claimed fixed; it wasn't). Fix: `"lint": "eslint ."`. Verified: clean pass, exit 0. tsc --noEmit: clean
+- BUG-001 (height unique collision) verified as fixed live: seal at height 3 succeeded after two prior seals; historical error still visible in old dev.log entries; race (F1) documented as known-open
+- Wrote docs/README.md (docs map + iron rules + anchoring status)
+- Wrote docs/architecture.md (purpose, modules table, seal flow diagram, deps, failure points F1–F8, verification mechanisms, security mechanisms, modes: dry-run/live/maintenance)
+- Wrote docs/api.md (all 7 endpoints: method, input table, output examples from live runs, possible errors, common errors table, status ✅ per endpoint, remaining imperfections)
+- Wrote docs/database.md (full schema per model with constraints/indexes, live counts, migrations note, backup/recovery procedures, weaknesses W1–W6)
+- Wrote docs/testing.md (how to run, what exists, live results table with evidence, BUG-001/BUG-002 full records with proof-of-fix, uncovered areas, automated vs manual)
+- Wrote docs/security.md (threat model table, enforced principles, secrets state, honest "what is NOT protected" list, incident response)
+- Wrote docs/runbook.md (zero-to-running, env vars, routine ops, maintenance mode, common failures table, release order, health metrics)
+- Wrote docs/decisions.md (D1–D10: what/why/alternatives/risk/benefit/approver)
+- Wrote docs/next-steps.md (synthesis roadmap table, immediate priorities 1–7, per-network landing requirements, ready-vs-missing for live, open risks)
+
+Stage Summary:
+- The repo now self-describes: any engineer can rebuild, run, verify, operate and continue from the docs alone — nothing lives only in chat/memory
+- All 7 endpoints verified live this session; two bugs tracked with proof-of-fix (BUG-001 prior, BUG-002 this session)
+- Known-open items honestly marked: F1 seal race, F2 chain fork, EnergyPlan/EconomySnapshot writers, no unit-test framework, no auth (pre-live blocker)
+- Next: fix F1 (atomic height), model writers, verifyChain endpoint, basic CI; then vault restore → real HIVE anchor; fund TRX → direct TRON anchor
