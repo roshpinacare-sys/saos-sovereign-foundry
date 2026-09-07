@@ -218,3 +218,32 @@ Work Log:
 
 Stage Summary:
 - BUG-008 recovered with zero data loss; all values bit-identical; gate green; nothing sensitive ever entered the repo
+
+---
+
+Task ID: 6 (external-vault-readiness-first-controlled-anchor-safe-push)
+Agent: Z.ai Code (orchestrator)
+Task: Task 6 — External Vault Readiness & First Controlled Anchor + Safe Push Protocol: secret-hygiene scan, anchor-preflight endpoint, full external signing lifecycle, public anchor-result recording with honest verification, extended network status, backup before critical steps, tests, full docs, safe push. Iron rules honored: no keys anywhere, no real transactions, no broadcasts, no destructive git.
+
+Work Log:
+- M1 (secret hygiene): full scan (filenames/metadata only — sensitive file contents never read/printed): 0 secret-pattern matches over all tracked files; historical `.env` rows contained ONLY DATABASE_URL (verified by variable-name inspection); `Roshcaregt.txt`+`saos-admin-key.txt` never entered history; **SH-3 stop-and-report**: `upload/חח.txt` (101 bytes) sits in git history (5356dab→c69e6e4) — content unknown, no history rewrite without owner approval; fixed `.env` perms 664→600 (upload/ files owned by another uid — chmod impossible in sandbox, owner action); wrote docs/secret-hygiene.md (risk register SH-1..SH-6 + closure procedures)
+- M2: verified backup BEFORE critical work: backup-2026-09-07T14-36-56 (VACUUM INTO snapshot, integrity=ok, counts-match, manifest, git bf56f12)
+- M3 (preflight): new `GET /api/saos/anchor-preflight` — read-only, rate-limited (30/min), optional `?network=` scope (unknown value ⇒ ok:false fail-closed); 10 checks (backup-fresh-verified, auth-ready, rate-limit-ready, seal-present, chain-intact, network-status-clear, network-resources, signature-request-open, security-open-items, mode-allows-broadcast); full contract output (ok/mode/liveGateReady/backupFresh/backupVerified/authReady/rateLimitReady/signerReady/externalSignerConnected/pendingSignatureQueue/chainStatus/blockers/warnings/checks/recommendedNextAction); live result honest: readyForAnchor=false with 2 blockers (HIVE RC 0.6%<8%, TRON energy=0) — exactly what is missing, nothing fudged
+- M4 (signing lifecycle): PendingSignature schema extended (status lifecycle, proofRef, anchorRef, verified, verificationSource, verifiedAt, cancelReason, cancelledAt + @@index([status])); POST now sets lifecycle (manual→awaiting-approval, else pending); PATCH extended: record public result {txid, proofRef?, anchorRef?, verify?} → signed-externally; cancel/fail actions (pre-result only); terminal states refuse mutation; recorded txid immutable; lazy expiry via effectiveStatus() (reads never write)
+- M5 (anchor result): PATCH accepts PUBLIC data only (txid/proofRef/anchorRef — no field for key material exists); verify:true → read-only public probe (STEEM/HIVE/BLURT condenser, TronGrid; 5s timeout): verified → recorded+source; anything else → stays signed-externally with verified:false + honest reason, NEVER shown as final anchor (proven live: fake txid + blocked egress ⇒ "שירות הרשת הציבורי לא נגיש מהסנדבוקס"); every sensitive op audited (signer-create/result/cancel/fail/sensitive-denied)
+- M6 (networks): NetworkStatusView extended with lastChecked, isReadyForAnchor (false — honest), isDryRunOnly (true — honest) for all 4 networks; exposed via status.networks + preflight.networks
+- M7 (tests): api-check 45→65 assertions (preflight contract ×10, lifecycle ×11 including honest-unverified + immutability + cancel/fail drills); lint+typecheck clean; concurrency 8/8 (heights contiguous, roots unique); full `bun run check` green
+- M7.5 (UI): gate tab extended — preflight card (verdict badge, queue counters, recommended next action), lifecycle status badges on signature rows, per-row verify-checkbox ("אמת txid מול רשת ציבורית — קריאה בלבד"), cancel button; browser-verified end-to-end (agent-browser): login → create → awaiting-approval badge → txid+verify → honest unverified note in UI → cancel; 0 console/page errors; no horizontal scroll on iPhone 14
+- M8 (docs): NEW docs/secret-hygiene.md, docs/anchor-preflight.md (incl. 5-step first-anchor process — owner performs step 3 entirely outside the system), docs/external-signer.md; UPDATED api.md (endpoint 14 + signer upgrade), security.md (hygiene + lifecycle), runbook.md (preflight + first-anchor + backup-before-critical + routine secret scan), testing.md (65/65 results + honest not-tested list), database.md (new columns), decisions.md (D17–D20), next-steps.md (component/blockers tables, round-7 candidates), deployment.md (600 perms, egress note, preflight in health), README.md (docs map)
+
+Bugs / findings this session:
+- (minor, fixed) stray character in page.tsx JSX from an in-flight edit — caught by typecheck before running; fixed
+- (finding, no code change) upload/saos-admin-key.txt is label-line + key-line: naive whole-file read yields a WRONG key — documented in SH-4; consumers must take line 2 only
+- (finding, owner decision required) SH-3 historical file in git history — reported, not touched
+- (env reality, documented) sandbox has no outbound network egress ⇒ txid verification always resolves honestly unverified here; the same code path verifies on a networked deployment
+
+Stage Summary:
+- The system can now walk the owner to a first REAL anchor without ever seeing a key: preflight gates it, SignRequest prepares it, the human signs outside, the system records only the public result and only presents network-verified anchors as final
+- API surface: 14 endpoints; check suite: 65 api assertions + 8/8 concurrency; backup fresh+verified
+- Chain state: 67 seals (contiguous), 416+ leaves, 211 receipts (fork[17] disclosed), full audit trail incl. cancel/fail events
+- Remaining open (honest): SH-3 owner decision; GitHub Actions CI; build unverified outside sandbox; real anchor needs HIVE RC ≥ 8% OR TRON stake + owner approval + live mode

@@ -195,3 +195,54 @@ lint ✅ · typecheck ✅ · api-check **45/45** ✅ · concurrency **8/8** (hei
 2. אין unit-tests למודולים (auth/rate-limit) בנפרד — נבדקים שחה דרך ה-API בלבד.
 3. next 16.3.4 לא נבדק ב-`next build` (חסום בסנדבוקס) — ר' deployment.md.
 4. דפדפן: טאב "שער-חיים" נבדק ידנית (desktop+iPhone 14, 0 שגיאות קונסולה) — אין בדיקת-e2e אוטומטית.
+
+---
+
+## Task 6 — תוצאות הרצה (2026-09-07)
+
+### api-check: 65/65 (היה 45 ב-Task 5; 20 טענות חדשות)
+
+**חדש — anchor-preflight (10 טענות)**:
+| טענה | תוצאה |
+|---|---|
+| GET /anchor-preflight ok | ✅ |
+| כל שדות-החוזה קיימים (14 שדות) | ✅ |
+| 10 בדיקות רצות | ✅ (checks=10, blockers=2, warnings=1 — כנה) |
+| מזהי-בדיקה מרכזיים קיימים | ✅ |
+| `externalSignerConnected=false` — לעולם לא מצהיר על יכולת שידור | ✅ |
+| recommendedNextAction לא-ריק | ✅ |
+| fail-closed: `?network=BOGUS` → ok:false | ✅ |
+| scope `?network=TRON` עובד | ✅ |
+| ספירות תור+שרשרת קיימות | ✅ |
+
+**חדש — מחזור-חיים חתימה (11 טענות)**:
+| טענה | תוצאה |
+|---|---|
+| create manual → `awaiting-approval` | ✅ |
+| רישום txid+proofRef+anchorRef → `signed-externally`, `verified=null` | ✅ |
+| ביטול אחרי תוצאה נדחה (אל-הפיך) | ✅ |
+| cancel לפני תוצאה → `cancelled` + סיבה | ✅ |
+| cancel על מצב סופי נדחה | ✅ |
+| action:fail → `failed` | ✅ |
+| **unverified כנה**: txid מזויף + verify:true → `signed-externally` + `verified:false` + סיבה ("שירות הרשת לא נגיש מהסנדבוקס") | ✅ |
+| unverified לא מסומן recorded | ✅ |
+| GET חושף סטטוסים (signed-externally, cancelled, failed, pending) | ✅ |
+| byStatus counts | ✅ |
+
+**נשמרו מ-Task 5** (auth 401/200, rate-limit 429, audit ללא חומר-מפתח, idempotency, fail-closed, never-500): ✅ כולן.
+
+### בדיקות אחרות בסבב
+
+| בדיקה | תוצאה |
+|---|---|
+| lint + typecheck | ✅ נקי |
+| concurrency (8 פעימות מקבילות) | ✅ 8/8 — heights רציפים, roots יחודיים, שרשרת שלמה |
+| דפדפן (agent-browser): login → create → awaiting-approval badge → txid+verify → unverified כנה בממשק → cancel | ✅ 0 שגיאות-קונסולה/עמוד |
+| מובייל (iPhone 14) | ✅ אין גלילה-אופקית |
+| גיבוי מאומת לפני העבודה | ✅ backup-2026-09-07T14-36-56 (integrity=ok, counts-match) |
+
+### מה עדיין לא נבדק (כנה)
+
+1. אימות-txid אמיתי מוצלח (recorded) — לא ניתן בסנדבוקס: outbound RPC חסום; הנתיב מאומת עד `verified:false` + סיבה, והענף `verified:true` סקור בקוד ומסומן כדורש סביבה עם egress.
+2. פקיעת-זמן חיה (expired) לא נבדקה ב-API — דורשת המתנה של TTL; מיושמת כחישוב עצל (`effectiveStatus`) ונבדקה בהיגיון בלבד.
+3. אין GitHub Actions (ידני בלבד); אין e2e אוטומטי לדפדפן.

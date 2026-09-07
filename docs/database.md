@@ -158,3 +158,26 @@ bun run restore backups/<dir> --yes         # שחזור אמיתי (ה-db הק�
 | W5 | Float על כסף (EconomySnapshot.totalPerDay) | עיגול-נקודה-צפה בשדה התצוגה | קבלות מקודדות micro-units (שלמים); שדה Float הוא תצוגה בלבד, לא מדוג'סט | מופחת |
 | W6 | ~~EnergyPlan/EconomySnapshot ללא כותב~~ | ~~טבלאות מתות~~ | **סגור Task 4**: כותבים + /plans לקריאה | ✅ |
 | W7 | קבלות GET צומחות בכל קריאה | נפח | **מופחת Task 5**: מדיניות רטנשן קיימת (cleanup) אך ידנית — אין ריצה אוטומטית | מופחת |
+
+---
+
+## Task 6 — PendingSignature: מחזור-חיים ותוצאה ציבורית
+
+עמודות חדשות (db push מאומת; גיבוי לפני — backup-2026-09-07T14-36-56):
+
+| עמודה | טיפוס | משמעות |
+|---|---|---|
+| `status` | String @default("pending") | pending / awaiting-approval / signed-externally / recorded / failed / expired / cancelled |
+| `proofRef` | String? | הוכחה ציבורית (URL סייר/בלוק) — נתון ציבורי בלבד |
+| `anchorRef` | String? | רפרנס עגינה ציבורי |
+| `verified` | Boolean? | null=לא נבדק · true=אומת מול רשת ציבורית · false=לא ניתן לאימות (הסיבה ב-verificationSource) |
+| `verificationSource` | String? | ה-endpoint הציבורי שאימת — או הסיבה הכנה שלא |
+| `verifiedAt` | DateTime? | מועד האימות |
+| `cancelReason` | String? | סיבה ציבורית ל-cancelled/failed |
+| `cancelledAt` | DateTime? | מועד הביטול |
+
+אינדקס חדש: `@@index([status])`. **אין שום עמודה שבה ניתן לשמור חומר-מפתח** — הערה מבנית שנשמרת.
+
+ספירות במדידת הסבב: 57 seals · 416 leaves · 228 anchors · 211 receipts · 31 plans · 11 snapshots · 10 findings · ~70 audit · pendingSignature ~13 (מחזור-חיים: 3 awaiting/pending פתוחים, 3 signed-externally, 1 cancelled, 1 failed + היסטוריית Task 5).
+
+פקיעה: חישוב עצל בקריאה (`effectiveStatus`) — pending/awaiting-approval מעבר ל-`expiresAt` נקראים `expired`; cleanup.mjs ממשיך לגזום רשומות שפגו מעל 30 יום (מדיניות Task 5 ללא שינוי).

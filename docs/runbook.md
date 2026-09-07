@@ -162,3 +162,39 @@ git push origin main
 | DB עקביות | heights רציפים יחודיים; leaves = Σ leavesCount; 0 יתומים |
 | dev.log | ללא stack traces חדשים; 200-ים בקריאות שגרה |
 | HTTP codes | 200 תמיד; כישלון מזוהה על `ok:false` |
+
+---
+
+## נהלי Task 6 (anchor preflight + עוגן ראשון מבוקר)
+
+### בדיקת טיסה לפני כל עוגן
+
+```bash
+curl -s "http://localhost:3000/api/saos/anchor-preflight" | jq '{readyForAnchor, blockers, recommendedNextAction}'
+# readyForAnchor=false ⇒ עצור — השלם את החוסמים המפורטים. אין עוקף.
+```
+
+### עוגן ראשון מבוקר (5 שלבים — הבעלים מבצע שלב 3 מחוץ למערכת)
+
+1. `GET /api/saos/anchor-preflight` — חסימה אחת = עצירה.
+2. `POST /api/saos/signer {network, signer:"manual"}` (הרשאה נדרשת) → payload+digestToSign מוכנים.
+3. **הבעלים חותם מחוץ למערכת** — המפתח לעולם לא נכנס למערכת/לסוכן/ללוגים; בידי הבעלים נשאר רק ה-txid הציבורי.
+4. `PATCH /api/saos/signer {id, txid, proofRef?, anchorRef?, verify:true}` (הרשאה נדרשת) → recorded (מאומת) או unverified כנה.
+5. תוצאה: `recorded` = עוגן מאומת; כל סטטוס אחר אינו עוגן ואינו מוצג ככזה.
+
+### גיבוי לפני כל שלב קריטי
+
+```bash
+bun run backup   # חובה לפני: עוגן אמיתי, שינוי-סכמה, cleanup, שחזור
+```
+
+preflight נכשל אוטומטית בלי גיבוי מאומת בן פחות מ-7 ימים; cleanup מסרב בלי גיבוי <24h.
+
+### היגיינת סודות — סריקה שגרתית בסוף כל סבב
+
+```bash
+git ls-files | grep -iE '\.env$|\.key$|\.pem$|wallet|seed|credential|token|secret|admin|private'
+git grep -lIE 'ghp_[A-Za-z0-9]{20,}|-----BEGIN [A-Z ]*PRIVATE' -- . || echo clean
+```
+
+(מסמך-אב: docs/secret-hygiene.md — מרשם SH-1..SH-6.)

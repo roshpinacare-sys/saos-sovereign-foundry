@@ -17,6 +17,10 @@
  *  10. keyless signer: create (authed) → awaiting-approval → record txid → immutable
  *  11. audit trail records denied + allowed events (authed read)
  *  12. rate-limit: burst beyond the limit → 429 (runs LAST — exhausts the auth window)
+ *   Task 6 (anchor preflight & external signing lifecycle):
+ *  14. anchor-preflight: 10 checks, required fields, honest unverified, fail-closed network param
+ *  15. signature lifecycle: awaiting-approval → signed-externally (+proof) → cancel/fail drills →
+ *      fake-txid verify stays unverified (never presented as a final anchor)
  */
 const BASE = process.env.SAOS_BASE_URL ?? "http://localhost:3000";
 const ADMIN_KEY = process.env.SAOS_ADMIN_KEY ?? "";
@@ -158,6 +162,64 @@ async function main() {
   const evKinds = (auditRead.body.events ?? []).map((e) => e.kind);
   report("audit (authed) shows allowed + denied events", auditRead.status === 200 && auditRead.body.ok === true && evKinds.includes("signer-create") && evKinds.includes("sensitive-denied"), `denied=${auditRead.body.counts?.denied}`);
   report("audit never logs key material", (auditRead.body.events ?? []).every((e) => !String(e.detail ?? "").includes(ADMIN_KEY || "___never___") && !/bearer:[0-9a-f]{64}/.test(e.actor)));
+
+  // ─── Task 6: anchor-preflight + signature lifecycle ──────────────────────────
+
+  // 14. anchor-preflight contract (read-only readiness — never anchors)
+  const pf = await j("/api/saos/anchor-preflight");
+  report("GET /anchor-preflight ok", pf.status === 200 && pf.body.ok === true);
+  const pfFields = ["ok", "mode", "liveGateReady", "backupFresh", "backupVerified", "authReady", "rateLimitReady", "signerReady", "externalSignerConnected", "pendingSignatureQueue", "chainStatus", "blockers", "warnings", "recommendedNextAction"];
+  report("anchor-preflight required fields present", pfFields.every((f) => f in pf.body), `mode=${pf.body.mode} ready=${pf.body.readyForAnchor}`);
+  report("anchor-preflight runs 10 checks", Array.isArray(pf.body.checks) && pf.body.checks.length === 10, `checks=${pf.body.checks?.length} blockers=${pf.body.blockers?.length} warnings=${pf.body.warnings?.length}`);
+  report("anchor-preflight check ids present", ["backup-fresh-verified", "auth-ready", "seal-present", "chain-intact", "network-resources", "signature-request-open", "security-open-items", "mode-allows-broadcast"].every((id) => pf.body.checks?.some((c) => c.id === id)));
+  report("anchor-preflight never claims broadcast capability", pf.body.externalSignerConnected === false, "no external signer in sandbox — honest");
+  report("anchor-preflight recommendedNextAction is a non-empty string", typeof pf.body.recommendedNextAction === "string" && pf.body.recommendedNextAction.length > 0);
+  const pfBad = await j("/api/saos/anchor-preflight?network=BOGUS");
+  report("fail-closed: preflight unknown network param", pfBad.status === 200 && pfBad.body.ok === false);
+  const pfTron = await j("/api/saos/anchor-preflight?network=TRON");
+  report("preflight target=TRON scoped", pfTron.status === 200 && pfTron.body.ok === true && pfTron.body.target === "TRON");
+  report("preflight queue counts present", typeof pf.body.pendingSignatureQueue?.open === "number" && typeof pf.body.chainStatus?.seals === "number");
+
+  // 15. signature lifecycle (Task 6 mission 3)
+  const t6 = `t6-${Date.now()}`;
+  const sigSteem = await j("/api/saos/signer", { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ network: "STEEM", signer: "manual" }) });
+  report("lifecycle: manual create → awaiting-approval", sigSteem.body.ok === true && sigSteem.body.signature?.status === "awaiting-approval", `id=${sigSteem.body.signature?.id?.slice(0, 18)}…`);
+  const steemId = sigSteem.body.signature?.id;
+  // record public result WITH proof + anchor ref (no verify) → signed-externally, unverified-until-checked
+  const recSteem = await j("/api/saos/signer", { method: "PATCH", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ id: steemId, txid: `${t6}-steem-tx`, proofRef: `https://steemit.com/@saos/${t6}`, anchorRef: `saos.weave.v1/${t6}` }) });
+  report("lifecycle: record public result → signed-externally", recSteem.body.ok === true && recSteem.body.signature?.status === "signed-externally" && recSteem.body.signature?.verified === null, "verified=null — not checked yet, honest");
+  report("lifecycle: proofRef + anchorRef recorded (public only)", recSteem.body.signature?.proofRef?.includes(t6) === true && recSteem.body.signature?.anchorRef?.includes(t6) === true);
+  const replaySteem = await j("/api/saos/signer", { method: "PATCH", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ id: steemId, action: "cancel" }) });
+  report("lifecycle: cancel after result refused (immutable)", replaySteem.body.ok === false);
+
+  // cancel flow
+  const sigTron = await j("/api/saos/signer", { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ network: "TRON", signer: "manual" }) });
+  const tronId = sigTron.body.signature?.id;
+  const cancelTron = await j("/api/saos/signer", { method: "PATCH", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ id: tronId, action: "cancel", reason: "api-check cancel drill" }) });
+  report("lifecycle: cancel before result → cancelled", cancelTron.body.ok === true && cancelTron.body.signature?.status === "cancelled" && typeof cancelTron.body.signature?.cancelReason === "string");
+  const cancelAgain = await j("/api/saos/signer", { method: "PATCH", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ id: tronId, action: "cancel" }) });
+  report("lifecycle: cancel on terminal state refused", cancelAgain.body.ok === false);
+
+  // fail flow
+  const sigHive = await j("/api/saos/signer", { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ network: "HIVE", signer: "manual" }) });
+  const hiveId = sigHive.body.signature?.id;
+  const failHive = await j("/api/saos/signer", { method: "PATCH", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ id: hiveId, action: "fail", reason: "api-check fail drill" }) });
+  report("lifecycle: fail before result → failed", failHive.body.ok === true && failHive.body.signature?.status === "failed");
+
+  // unverified handling — verify:true against a fake txid MUST resolve honestly unverified
+  const sigVer = await j("/api/saos/signer", { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ network: "BLURT", signer: "manual" }) });
+  const verId = sigVer.body.signature?.id;
+  const recVer = await j("/api/saos/signer", { method: "PATCH", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ id: verId, txid: `${t6}-fake-tx`, verify: true }) });
+  const verSig = recVer.body.signature ?? {};
+  const honestUnverified = recVer.body.ok === true && verSig.status === "signed-externally" && verSig.verified === false && typeof verSig.verificationSource === "string" && verSig.verificationSource.length > 0;
+  report("unverified handling: fake txid stays unverified (never final anchor)", honestUnverified, honestUnverified ? `reason: ${String(verSig.verificationSource).slice(0, 60)}…` : JSON.stringify(verSig).slice(0, 120));
+  report("unverified result NOT marked recorded", verSig.status !== "recorded" || verSig.verified === true);
+
+  // GET shows lifecycle + counts
+  const sigList = await j("/api/saos/signer");
+  const statusesSeen = (sigList.body.pending ?? []).map((p) => p.status);
+  report("GET /signer exposes lifecycle statuses", sigList.body.ok === true && statusesSeen.includes("signed-externally") && statusesSeen.includes("cancelled") && statusesSeen.includes("failed"), `statuses=[${[...new Set(statusesSeen)].join(",")}]`);
+  report("GET /signer byStatus counts", typeof sigList.body.counts?.byStatus === "object" && Object.keys(sigList.body.counts.byStatus).length >= 3);
 
   // never-500 sweep over every touched endpoint
   console.log("\nnever-500 sweep:");

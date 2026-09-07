@@ -21,7 +21,8 @@ import {
   KeyRound,
   LogIn,
   LogOut,
-  PenLine
+  PenLine,
+  Rocket
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, Badge, Button, Progress, Slider, Stat } from "@/components/ui/kit";
 
@@ -997,18 +998,34 @@ interface SigPending {
   kind: string;
   signer: string;
   signerStatus: string;
+  status: string;
   payloadHash: string;
   digestToSign: string;
   sealHeight: number | null;
   txid: string | null;
+  proofRef: string | null;
+  anchorRef: string | null;
+  verified: boolean | null;
+  verificationSource: string | null;
   resultAt: string | null;
   expiresAt: string;
 }
 interface SignerData {
   ok: boolean;
   registry: { signer: string; status: string; detail: string; emits: string; acceptsBack: string }[];
-  counts: { awaitingApproval: number; recorded: number };
+  counts: { awaitingApproval: number; recorded: number; byStatus?: Record<string, number> };
   pending: SigPending[];
+}
+interface PreflightData {
+  ok: boolean;
+  readyForAnchor: boolean;
+  mode: string;
+  externalSignerConnected: boolean;
+  pendingSignatureQueue: { open: number; signedExternally: number; recorded: number; expired: number; cancelled: number; failed: number };
+  chainStatus: { ok: boolean; seals: number; receipts: number; forks: number[] };
+  blockers: { id: string; detail: string }[];
+  warnings: { id: string; detail: string }[];
+  recommendedNextAction: string;
 }
 
 const GATE_CHECK_ICON: Record<string, typeof CheckCircle2> = {
@@ -1026,22 +1043,26 @@ function Gate() {
   const [gate, setGate] = useState<GateData | null>(null);
   const [auth, setAuth] = useState<AuthData | null>(null);
   const [signer, setSigner] = useState<SignerData | null>(null);
+  const [preflight, setPreflight] = useState<PreflightData | null>(null);
   const [key, setKey] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [net, setNet] = useState("STEEM");
   const [txidDrafts, setTxidDrafts] = useState<Record<string, string>>({});
+  const [verifyDrafts, setVerifyDrafts] = useState<Record<string, boolean>>({});
 
   const load = useCallback(async () => {
     try {
-      const [g, a, s] = await Promise.all([
+      const [g, a, s, p] = await Promise.all([
         fetch("/api/saos/live-gate").then((r) => r.json()),
         fetch("/api/saos/auth").then((r) => r.json()),
-        fetch("/api/saos/signer").then((r) => r.json())
+        fetch("/api/saos/signer").then((r) => r.json()),
+        fetch("/api/saos/anchor-preflight").then((r) => r.json())
       ]);
       if (g.ok) setGate(g as GateData);
       if (a.ok) setAuth(a as AuthData);
       if (s.ok) setSigner(s as SignerData);
+      if (p.ok) setPreflight(p as PreflightData);
     } catch {
       /* network blip */
     }
@@ -1109,10 +1130,34 @@ function Gate() {
       const r = await fetch("/api/saos/signer", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, txid: txidDrafts[id] })
+        body: JSON.stringify({ id, txid: txidDrafts[id], verify: verifyDrafts[id] === true })
       }).then((r) => r.json());
-      setMsg(r.ok ? `txid ציבורי נרשם — ${r.signature.txid}` : `שגיאה: ${r.error}`);
+      setMsg(
+        r.ok
+          ? r.signature.status === "recorded"
+            ? `txid נרשם ואומת מול הרשת הציבורית — ${r.signature.txid}`
+            : r.signature.verified === false
+              ? `txid נרשם כ-unverified — לא מוצג כעוגן סופי (${String(r.signature.verificationSource).slice(0, 60)}…)`
+              : `txid ציבורי נרשם — ${r.signature.txid}`
+          : `שגיאה: ${r.error}`
+      );
       if (r.ok) setTxidDrafts((d) => ({ ...d, [id]: "" }));
+      await load();
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function cancelRequest(id: string) {
+    setBusy(`cx-${id}`);
+    setMsg(null);
+    try {
+      const r = await fetch("/api/saos/signer", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, action: "cancel", reason: "בוטל מהממשק על-ידי המפעיל" })
+      }).then((r) => r.json());
+      setMsg(r.ok ? "הבקשה בוטלה (מצב סופי — cancelled)" : `שגיאה: ${r.error}`);
       await load();
     } finally {
       setBusy(null);
@@ -1215,6 +1260,47 @@ function Gate() {
         </CardContent>
       </Card>
 
+      {/* anchor preflight (Task 6) */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Rocket size={15} className="text-emerald-400" /> טיסה-מקדימה לעוגן (anchor preflight)
+          </CardTitle>
+          {preflight ? (
+            preflight.readyForAnchor ? (
+              <Badge tone="green"><CheckCircle2 size={12} /> מוכן לעוגן</Badge>
+            ) : (
+              <Badge tone="rose"><Lock size={12} /> לא מוכן ({preflight.blockers.length} חסימות)</Badge>
+            )
+          ) : (
+            <Badge tone="zinc">…</Badge>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-zinc-400 leading-relaxed">
+            בדיקת-קריאה בלבד: האם המערכת מוכנה לעוגן אמיתי — בלי לבצע אותו, בלי לשדר ובלי לגעת במפתח. חסימה אחת = עצירה.
+          </p>
+          {preflight && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px]">
+              <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2"><span className="text-zinc-500">תור חתימה פתוח</span><p className="text-zinc-200 font-mono">{preflight.pendingSignatureQueue.open}</p></div>
+              <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2"><span className="text-zinc-500">חתום-חוץ/לא-אומת</span><p className="text-zinc-200 font-mono">{preflight.pendingSignatureQueue.signedExternally}</p></div>
+              <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2"><span className="text-zinc-500">נרשם+מאומת</span><p className="text-zinc-200 font-mono">{preflight.pendingSignatureQueue.recorded}</p></div>
+              <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2"><span className="text-zinc-500">פג</span><p className="text-zinc-200 font-mono">{preflight.pendingSignatureQueue.expired}</p></div>
+              <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2"><span className="text-zinc-500">בוטל</span><p className="text-zinc-200 font-mono">{preflight.pendingSignatureQueue.cancelled}</p></div>
+              <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2"><span className="text-zinc-500">נכשל</span><p className="text-zinc-200 font-mono">{preflight.pendingSignatureQueue.failed}</p></div>
+            </div>
+          )}
+          {preflight && preflight.blockers.length === 0 && (
+            <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">כל הבדיקות עברו — נדרש עדיין אישור בעלים מפורש לפני כל עוגן אמיתי.</p>
+          )}
+          {preflight && (
+            <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+              <span className="font-bold">הצעד הבא המומלץ:</span> {preflight.recommendedNextAction}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* signer */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -1266,31 +1352,57 @@ function Gate() {
                   <Badge tone="gold">{p.network}</Badge>
                   <span className="font-mono text-zinc-500 text-[10px]" dir="ltr">{p.id.slice(0, 18)}…</span>
                   <span className="text-zinc-600">seal#{p.sealHeight ?? "—"}</span>
-                  <Badge tone={p.signerStatus === "ready" ? "green" : p.signerStatus === "awaiting-approval" ? "amber" : "zinc"}>
-                    {p.signerStatus}
+                  <Badge tone={p.status === "recorded" ? "green" : p.status === "signed-externally" ? "amber" : p.status === "cancelled" || p.status === "failed" || p.status === "expired" ? "rose" : "zinc"}>
+                    {p.status}
                   </Badge>
                 </div>
                 <p className="text-[10px] font-mono text-zinc-500" dir="ltr">digestToSign: {p.digestToSign.slice(0, 24)}…</p>
                 {p.txid ? (
-                  <p className="text-xs text-emerald-400 font-mono" dir="ltr">txid: {p.txid}</p>
+                  <div className="space-y-1">
+                    <p className="text-xs text-emerald-400 font-mono" dir="ltr">txid: {p.txid}</p>
+                    {p.proofRef && <p className="text-[10px] text-zinc-500 font-mono" dir="ltr">proof: {p.proofRef}</p>}
+                    <p className={`text-[10px] ${p.verified === true ? "text-emerald-400" : p.verified === false ? "text-amber-400" : "text-zinc-500"}`}>
+                      {p.verified === true ? "✓ אומת מול רשת ציבורית" : p.verified === false ? `לא אומת — לא עוגן סופי (${p.verificationSource?.slice(0, 70)}…)` : "ללא אימות רשת (לא נדרש / לא בוצע)"}
+                    </p>
+                  </div>
                 ) : (
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <input
-                      value={txidDrafts[p.id] ?? ""}
-                      onChange={(e) => setTxidDrafts((d) => ({ ...d, [p.id]: e.target.value }))}
-                      placeholder="txid ציבורי לאחר חתימה מחוץ למערכת"
-                      aria-label="txid"
-                      dir="ltr"
-                      className="flex-1 min-h-[40px] rounded-lg border border-zinc-800 bg-zinc-950 px-3 text-xs text-zinc-200 placeholder:text-zinc-600 focus:border-amber-500/60 focus:outline-none"
-                    />
-                    <Button
-                      onClick={() => void recordResult(p.id)}
-                      disabled={!txidDrafts[p.id] || busy === `tx-${p.id}` || !auth?.authenticated}
-                      className="text-xs"
-                    >
-                      {busy === `tx-${p.id}` ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                      רשום תוצאה
-                    </Button>
+                  <div className="space-y-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        value={txidDrafts[p.id] ?? ""}
+                        onChange={(e) => setTxidDrafts((d) => ({ ...d, [p.id]: e.target.value }))}
+                        placeholder="txid ציבורי לאחר חתימה מחוץ למערכת"
+                        aria-label="txid"
+                        dir="ltr"
+                        className="flex-1 min-h-[40px] rounded-lg border border-zinc-800 bg-zinc-950 px-3 text-xs text-zinc-200 placeholder:text-zinc-600 focus:border-amber-500/60 focus:outline-none"
+                      />
+                      <Button
+                        onClick={() => void recordResult(p.id)}
+                        disabled={!txidDrafts[p.id] || busy === `tx-${p.id}` || !auth?.authenticated}
+                        className="text-xs"
+                      >
+                        {busy === `tx-${p.id}` ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                        רשום תוצאה
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <label className="flex items-center gap-1.5 text-[11px] text-zinc-400 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={verifyDrafts[p.id] === true}
+                          onChange={(e) => setVerifyDrafts((d) => ({ ...d, [p.id]: e.target.checked }))}
+                          className="h-3.5 w-3.5 accent-amber-500"
+                        />
+                        אמת txid מול רשת ציבורית (קריאה בלבד)
+                      </label>
+                      <button
+                        onClick={() => void cancelRequest(p.id)}
+                        disabled={busy === `cx-${p.id}` || !auth?.authenticated}
+                        className="min-h-[32px] rounded-md border border-zinc-800 px-2.5 text-[11px] text-zinc-400 hover:border-rose-500/40 hover:text-rose-300 disabled:opacity-40"
+                      >
+                        {busy === `cx-${p.id}` ? "…" : "בטל בקשה"}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

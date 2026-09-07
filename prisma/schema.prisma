@@ -172,6 +172,17 @@ model PendingSignature {
   expiresAt    DateTime
   createdAt    DateTime     @default(now())
 
+  // ── Task 6: external-anchor lifecycle (public data only — no key column exists) ──
+  status             String    @default("pending") // pending | awaiting-approval | signed-externally | recorded | failed | expired | cancelled
+  proofRef           String?   // raw PUBLIC proof reference (explorer URL / block ref) — public data only
+  anchorRef          String?   // public anchor reference (permlink / block height / op ref)
+  verified           Boolean?  // null = not checked yet; true = txid verified vs public network; false = could not verify (reason in verificationSource)
+  verificationSource String?   // the public endpoint/method that verified — or the honest reason it could not
+  verifiedAt         DateTime?
+  cancelReason       String?   // public reason for cancelled / failed
+  cancelledAt        DateTime?
+
   @@index([signerStatus])
+  @@index([status])
   @@index([network, createdAt])
 }

@@ -369,3 +369,33 @@
 סוגי-אירועים: `auth-login` / `auth-login-failed` / `auth-logout` / `sensitive-denied` / `signer-create` / `signer-result` / `live-gate-attempt`.
 
 **סטטוס**: ✅ עובד — נבדק חי: 401 לאנונימיים, ספירות נכונות, אפס חומר-מפתח (נבדק אוטומטית ב-api-check).
+
+---
+
+## 14. `GET /api/saos/anchor-preflight` (Task 6)
+
+בדיקת-טיסה לפני עוגן אמיתי — **קריאה בלבד**: לא מבצעת עוגן, לא משדרת, לא נוגעת במפתח, לא משנה מצב.
+
+**פרמטרים**: `?network=STEEM|BLURT|HIVE|TRON` (אופציונלי; ערך לא-מוכר ⇒ `ok:false` fail-closed).
+
+**פלט**: `{ok, readyForAnchor, mode, liveGateReady, backupFresh, backupVerified, authReady, rateLimitReady, signerReady, externalSignerConnected, pendingSignatureQueue:{open,signedExternally,recorded,expired,cancelled,failed}, chainStatus:{ok,seals,receipts,forks}, networks[], target, blockers[], warnings[], checks[×10], recommendedNextAction, generatedAt, note}`.
+
+**10 הבדיקות**: backup-fresh-verified · auth-ready · rate-limit-ready · seal-present · chain-intact · network-status-clear · network-resources · signature-request-open · security-open-items · mode-allows-broadcast.
+
+**תוצאה חיה (מדידה בסבב זה)**: `readyForAnchor=false` עם 2 חוסמים כנים (HIVE RC 0.6%<8% · TRON energy=0) + 1 אזהרה; `externalSignerConnected=false` — כנה.
+
+**סטטוס**: ✅ עובד — נבדק חי (חוזה מלא + fail-closed לפרמטר בוגוס + scope TRON); 65/65 ב-api-check.
+
+## 15. `/api/saos/signer` — מחזור-חיים מלא (Task 6, שדרוג של נקודה 13)
+
+**שינויי Task 6**:
+- `POST` מציב `status`: manual → `awaiting-approval`, אחרים → `pending`.
+- `PATCH` מרחיב לשלוש פעולות (כולן הרשאה+קצב+audit):
+  - **רישום תוצאה ציבורית** `{id, txid, proofRef?, anchorRef?, verify?}` → `signed-externally`; עם `verify:true` המערכת בודקת את ה-txid מול רשת ציבורית (קריאה בלבד, פסק-זמן 5s): אומת → `recorded` + `verificationSource`; לא אומת → נשאר `signed-externally` + `verified:false` + סיבה כנה — **לעולם לא מוצג כעוגן סופי**.
+  - `{id, action:"cancel", reason?}` → `cancelled` (רק לפני תוצאה).
+  - `{id, action:"fail", reason}` → `failed` (רק לפני תוצאה).
+- `GET` חושף `status` (מחזור-חיים), `proofRef`, `anchorRef`, `verified`, `verificationSource`, `cancelReason` + ספירות byStatus.
+- פקיעה עצלה: pending/awaiting-approval שעבר `expiresAt` נקרא `expired` (מחושב; לא נכתב בקריאות).
+- אל-תקינות מקובעת: txid רשום אינו ניתן לשינוי/ביטול; מצבי סופי מסרבים מוטציה.
+
+**סטטוס**: ✅ עובד — מסלול מלא נבדק חי גם ב-api (65/65) וגם בדפדפן (login → create → badge → txid+verify → unverified כנה → cancel).

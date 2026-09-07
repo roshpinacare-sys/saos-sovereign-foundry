@@ -82,3 +82,11 @@ bun run restore backups/<dir> --yes                     # שחזור אמיתי 
 ```
 
 live-gate דורש גיבוי מאומת בן פחות מ-7 ימים; cleanup דורש גיבוי מאומת בן פחות מ-24 שעות.
+
+---
+
+## Task 6 — הוספות
+
+- **סודות**: `.env` חייב הרשאות 600; קבצי `upload/` מחוץ לעץ-הפרויקט בפריסה אמיתית (ר' docs/secret-hygiene.md). אין להעתיק `.env` בין סביבות — רק `SAOS_ADMIN_KEY_HASH` (ה-hash).
+- **egress לאימות-ציבורי**: אימות txid (opt-in) דורש גישה יוצאת ל-`api.steemit.com` / `api.hive.blog` / `rpc.blurt.world` / `api.trongrid.io` — בסביבה חסומה התוצאה תהיה כנה-unverified (התנהגות מתועדת, לא תקלה).
+- **preflight בבריאות-מערכת**: `GET /api/saos/anchor-preflight` — כלול בסיור השגרתי; `readyForAnchor=false` אינו תקל אלא חסימה מתועדת עם פעולה-המשך.
