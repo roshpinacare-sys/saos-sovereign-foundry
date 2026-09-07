@@ -21,6 +21,10 @@
  *  14. anchor-preflight: 10 checks, required fields, honest unverified, fail-closed network param
  *  15. signature lifecycle: awaiting-approval → signed-externally (+proof) → cancel/fail drills →
  *      fake-txid verify stays unverified (never presented as a final anchor)
+ *   Task 10 (UI rebuild data layer):
+ *  16. research endpoint restored (documented contract, 10 findings + synthesis)
+ *  17. repo-status: git state, backups, secrets posture (booleans/perms only — no values)
+ *  18. owner decisions: registry cites sources; authed status recording; fail-closed writes
  */
 const BASE = process.env.SAOS_BASE_URL ?? "http://localhost:3000";
 const ADMIN_KEY = process.env.SAOS_ADMIN_KEY ?? "";
@@ -220,6 +224,38 @@ async function main() {
   const statusesSeen = (sigList.body.pending ?? []).map((p) => p.status);
   report("GET /signer exposes lifecycle statuses", sigList.body.ok === true && statusesSeen.includes("signed-externally") && statusesSeen.includes("cancelled") && statusesSeen.includes("failed"), `statuses=[${[...new Set(statusesSeen)].join(",")}]`);
   report("GET /signer byStatus counts", typeof sigList.body.counts?.byStatus === "object" && Object.keys(sigList.body.counts.byStatus).length >= 3);
+
+  // ─── Task 10: research restore, repo-status, owner decisions ────────────────
+
+  // 16. research endpoint (restored — documented contract docs/api.md §7)
+  const rs10 = await j("/api/saos/research");
+  report("GET /research ok (restored Task 10)", rs10.status === 200 && rs10.body.ok === true && Array.isArray(rs10.body.findings) && rs10.body.findings.length === 10, `findings=${rs10.body.findings?.length} persisted=${rs10.body.persisted}`);
+  report("research synthesis contract", typeof rs10.body.synthesis?.chosen === "string" && Array.isArray(rs10.body.synthesis?.why) && Array.isArray(rs10.body.synthesis?.roadmap));
+
+  // 17. repo-status contract (read-only repo/backup/secrets state)
+  const rstat = await j("/api/saos/repo-status");
+  report("GET /repo-status ok", rstat.status === 200 && rstat.body.ok === true);
+  const rgit = rstat.body.git ?? {};
+  report("repo-status git contract", typeof rgit.available === "boolean" && typeof rgit.remoteConfigured === "boolean" && (rgit.uncommittedFiles === null || typeof rgit.uncommittedFiles === "number") && (rgit.unpushedCommits === null || typeof rgit.unpushedCommits === "number"), `branch=${rgit.branch} dirty=${rgit.uncommittedFiles} unpushed=${rgit.unpushedCommits}`);
+  report("repo-status backups contract", typeof rstat.body.backups?.count === "number" && Array.isArray(rstat.body.backups?.recent));
+  report("repo-status secrets: booleans + perms only, no values", rstat.body.secrets?.authConfigured === true && typeof rstat.body.secrets?.envFilePerms === "string" && /^[0-7]{3}$/.test(rstat.body.secrets.envFilePerms.replace(/^0/, "")) && rstat.body.secrets?.envValuesExposed === false, `perms=${rstat.body.secrets?.envFilePerms}`);
+  report("repo-status: no token/key material in payload", !/ghp_[A-Za-z0-9]{20,}|ghousr_/.test(JSON.stringify(rstat.body)) && !("envContent" in (rstat.body.secrets ?? {})));
+  report("repo-status secret scan runs live", typeof rstat.body.secrets?.scanCoveredFiles === "number" && rstat.body.secrets.scanCoveredFiles > 0 && Array.isArray(rstat.body.secrets.scanMatches), `files=${rstat.body.secrets?.scanCoveredFiles} matches=${rstat.body.secrets?.scanMatches?.length}`);
+
+  // 18. owner decisions (registry + recorded statuses, authed write)
+  const dec0 = await j("/api/saos/decisions");
+  report("GET /decisions ok + registry", dec0.status === 200 && dec0.body.ok === true && dec0.body.counts?.total >= 1 && dec0.body.decisions?.length === dec0.body.counts?.total, `total=${dec0.body.counts?.total} openCritical=${dec0.body.counts?.openCritical}`);
+  report("decisions registry cites sources + phases", (dec0.body.decisions ?? []).every((d) => typeof d.sourceRef === "string" && ["now", "before-anchor", "before-live"].includes(d.phase) && typeof d.safeDefault === "string"));
+  const decNoAuth = await j("/api/saos/decisions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key: "github-actions-ci", status: "open" }) });
+  report("POST /decisions without auth → 401", decNoAuth.status === 401 && decNoAuth.body.ok === false);
+  const decBadKey = await j("/api/saos/decisions", { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ key: "bogus-key", status: "open" }) });
+  report("fail-closed: decisions unknown key", decBadKey.status === 200 && decBadKey.body.ok === false);
+  const decBadStatus = await j("/api/saos/decisions", { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ key: "github-actions-ci", status: "bogus" }) });
+  report("fail-closed: decisions invalid status", decBadStatus.status === 200 && decBadStatus.body.ok === false);
+  const decPost = await j("/api/saos/decisions", { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ key: "github-actions-ci", status: "open" }) });
+  report("POST /decisions (authed) records status", decPost.status === 200 && decPost.body.ok === true && decPost.body.decision?.recordedStatus === "open");
+  const decAfter = await j("/api/saos/decisions");
+  report("decisions GET reflects recorded status", decAfter.body.decisions?.find((d) => d.key === "github-actions-ci")?.recordedStatus === "open");
 
   // never-500 sweep over every touched endpoint
   console.log("\nnever-500 sweep:");

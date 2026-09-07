@@ -2,7 +2,7 @@
 
 > מפתח-התיעוד. כל קובץ כאן נכתב לפי עקרון אחד: **מה שחשוב — כתוב בריפו**, לא בצ'אט ולא בזיכרון.
 
-- **גרסה**: 2.2.0 (Task 5 — Live Gate, Keyless Anchor Readiness & Production Hardening)
+- **גרסה**: 2.3.0 (Task 10 — Product-Grade UI Rebuild: מרכז-שליטה מבצעי ב-7 מסכים)
 - **שכבת אבטחה**: auth (hash+cookie חתום) · rate-limit · AuditEvent · live-gate · תור-חתימה keyless · backup/restore/cleanup מאומתים · bun audit = 0
 - **מוטו**: אנחנו מנצחים את הבלוקצ'יין
 - **מצבי פעולה**: dry-run (ברירת-מחדל) / safe / live (דורש אישור-כפול) / maintenance — ר' runbook
@@ -18,7 +18,8 @@
 | קובץ | תוכן |
 |---|---|
 | [architecture.md](./architecture.md) | מטרת המערכת, רכיבים, זרימה, תלויות, נקודות כשל, אימות ואבטחה, מצבי עבודה |
-| [api.md](./api.md) | כל 13 ה-endpoints: method, קלט, פלט, שגיאות, דוגמאות, סטטוס, 401/403/429 |
+| [ui.md](./ui.md) (חדש Task 10) | מרכז השליטה: 7 מסכים, רכיבים, מצבי שגיאה/ריק/חסום, מקורות נתונים, נגישות, RTL |
+| [api.md](./api.md) | כל 16 ה-endpoints: method, קלט, פלט, שגיאות, דוגמאות, סטטוס, 401/403/429 |
 | [database.md](./database.md) | סכמה, טבלאות, אינדקסים, אילוצים, גיבוי ושחזור, נקודות תורפה |
 | [testing.md](./testing.md) | איך מריצים בדיקות, תוצאות אחרונות, מה לא מכוסה |
 | [security.md](./security.md) | מודל איומים, סודות, גבולות אמת, מה מוגן ומה לא |
@@ -32,7 +33,7 @@
 
 ```bash
 bun run dev        # שרת פיתוח (פורט 3000)
-bun run check      # lint + typecheck + test (45 בדיקות API) + verify (8 פעימות מקבילות)
+bun run check      # lint + typecheck + test (80 בדיקות API) + verify (8 פעימות מקבילות)
 bun run backup     # גיבוי מאומת (integrity+counts+manifest)
 bun run restore    # שחזור מאומת — dry-run ברירת-מחדל, --yes לביצוע
 bun run cleanup    # רטנשן — dry-run ברירת-מחדל, --yes דורש גיבוי <24h

@@ -173,3 +173,15 @@ AuditEvent (כל ניסיון: allowed/denied, בלי חומר-מפתח)
 
 הערה: 401/403/429 מותרים **רק** לשכבת האבטחה — שאר ה-API ממשיך בכלל "שגיאה כנתון HTTP 200".
 
+
+---
+
+## שכבת ה-UI — מרכז שליטה מבצעי (Task 10)
+
+**מקום בארכיטקטורה**: `src/app/page.tsx` (server shell) ← `src/components/saos/*` (client). ה-UI הוא **צרכן-קריאה בלבד** של ה-API: אין לו גישה ישירה ל-DB, אין server actions, וכל mutation עובר דרך הנתיבים המאובטחים הקיימים (auth → audit → rate-limit).
+
+**תלות ב-API** (מיפוי מלא ב-docs/ui.md §2): status · anchor-preflight · verify-chain · signer · plans · audit · live-gate · kernel · seal (POST) · auth · research · repo-status · decisions. ה-UI מטופל בחוזה "שגיאה-היא-נתון" (HTTP 200 ok:false) + שלושת קודי האבטחה (401/403/429) — מסווגים למצבי מסך.
+
+**ניהול מצב**: ללא ספריות מצב. חנות חיצונית מינימלית (`useSyncExternalStore`, ~60 שורות): cache per-key לכל הסשן, טעינה עצלה לכל טאב, רענון ידני בלבד (אפס polling), invalidation ממוקד אחרי mutations. ה-shell הוא Server Component; כל הנתונים נטענים client-side — אפס סיכון hydration.
+
+**כללי-ברזל של השכבה**: אפס נתונים מומצאים · מקור+זמן-בדיקה לכל פאנל · מצבי loading/error/empty/חסום/לא-מאומת בכל נתיב · הפרדה ויזואלית בין dry-run/סימולציה/אימות/עוגן-אמיתי · RTL מלא · אפס גלילה אופקית (נמדד). פירוט מלא: **docs/ui.md**.

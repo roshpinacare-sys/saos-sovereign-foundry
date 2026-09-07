@@ -151,6 +151,20 @@ model AuditEvent {
   @@index([createdAt])
 }
 
+// ─── Owner decisions (רישום החלטות-בעלים — Task 10) ──────────────────────────
+// The registry itself is compiled from the docs (owner-decisions.ts); this
+// model records ONLY the owner's chosen status + an optional public note.
+// No secret material can be stored here — note is length-capped and audited.
+
+model DecisionRecord {
+  key       String   @id // matches OWNER_DECISIONS[].key
+  status    String // open | decided-default | decided-custom | deferred
+  note      String?
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
 // ─── Keyless signing queue (תור חתימה ללא-מפתחות — Task 5) ───────────────────
 // The system prepares a transaction FOR signing; it NEVER holds, stores or
 // transmits private keys. Only the PUBLIC result (txid) is recorded back.

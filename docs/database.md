@@ -181,3 +181,13 @@ bun run restore backups/<dir> --yes         # שחזור אמיתי (ה-db הק�
 ספירות במדידת הסבב: 57 seals · 416 leaves · 228 anchors · 211 receipts · 31 plans · 11 snapshots · 10 findings · ~70 audit · pendingSignature ~13 (מחזור-חיים: 3 awaiting/pending פתוחים, 3 signed-externally, 1 cancelled, 1 failed + היסטוריית Task 5).
 
 פקיעה: חישוב עצל בקריאה (`effectiveStatus`) — pending/awaiting-approval מעבר ל-`expiresAt` נקראים `expired`; cleanup.mjs ממשיך לגזום רשומות שפגו מעל 30 יום (מדיניות Task 5 ללא שינוי).
+
+---
+
+## עדכון Task 10 — מודל חדש
+
+| מודל | תוכן | כתיבה | קריאה |
+|---|---|---|---|
+| `DecisionRecord` (חדש) | `key @id` (=מפתח ברישום owner-decisions.ts) · `status` (open/decided-default/decided-custom/deferred) · `note?` (≤300, ציבורי) · `updatedAt` | `POST /api/saos/decisions` (auth+audit) | `GET /api/saos/decisions` (ציבורי) |
+
+תוספת אדיטיבית בלבד (טבלה חדשה, ללא שינוי במודלים קיימים); `db push` נקי. הרישום עצמו (תוכן ההחלטות) נשאר בקוד המתועד — ה-DB מחזיק רק את הסטטוס שהוקלט.

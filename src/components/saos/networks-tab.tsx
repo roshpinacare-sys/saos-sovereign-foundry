@@ -1,0 +1,150 @@
+"use client";
+
+import { Globe, Wallet } from "lucide-react";
+
+import {
+  Badge,
+  EmptyState,
+  ErrorState,
+  LoadingPanel,
+  MetaRows,
+  Mono,
+  Panel,
+  fmtDateTime,
+  fmtNum
+} from "@/components/ui/kit";
+import { EP, errText, useSaos } from "./api";
+import { NETWORK_STATUS } from "./labels";
+import type { PlansResponse, StatusResponse } from "./types";
+
+export function NetworksTab() {
+  const statusQ = useSaos<StatusResponse>("status", () => fetch(EP.status).then((r) => r.json() as Promise<StatusResponse>));
+  const plansQ = useSaos<PlansResponse>("plans", () => fetch(EP.plans).then((r) => r.json() as Promise<PlansResponse>));
+
+  if (statusQ.state === "error" || plansQ.state === "error") {
+    const e = statusQ.state === "error" ? statusQ : plansQ.state === "error" ? plansQ : null;
+    return (
+      e && e.state === "error" ? (
+        <ErrorState kind={e.err.kind} detail={errText(e.err)} onRetry={() => { statusQ.refresh(); plansQ.refresh(); }} retrying={statusQ.refreshing || plansQ.refreshing} />
+      ) : null
+    );
+  }
+  if (statusQ.state === "loading" || plansQ.state === "loading") {
+    return <LoadingPanel rows={6} label="רשתות ומשאבים" />;
+  }
+
+  const status = statusQ.data;
+  const plans = plansQ.data;
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-base font-bold text-zinc-100">רשתות ומשאבים — Networks &amp; Resources</h2>
+        <p className="text-xs text-zinc-500">
+          מצב כל רשת לפי חישוב מקומי כנה (אפס קריאות רשת חיות): סטטוס, חסימה, משאב נדרש, תוכנית שחרור והמלצה.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {status.networks.map((n) => {
+          const info = NETWORK_STATUS[n.status] ?? { label: n.status, tone: "neutral" as const };
+          return (
+            <Panel
+              key={n.network}
+              title={n.network}
+              icon={<Globe className="size-4 text-sky-400" aria-hidden />}
+              source="/api/saos/status · networks"
+              lastChecked={n.lastChecked}
+            >
+              <div className="flex flex-wrap gap-1.5">
+                <Badge tone={info.tone}>{info.label}</Badge>
+                <Badge tone="neutral">מצב: {n.mode === "advisory" ? "advisory (חישוב בלבד)" : "direct"}</Badge>
+                <Badge tone={n.isDryRunOnly ? "warn" : "ok"}>{n.isDryRunOnly ? "dry-run בלבד" : "מסלול שידור קיים"}</Badge>
+                <Badge tone={n.isReadyForAnchor ? "ok" : "danger"}>{n.isReadyForAnchor ? "מוכנה לעוגן" : "לא מוכנה לעוגן"}</Badge>
+              </div>
+
+              <div className="mt-3 space-y-2">
+                <div className="rounded-lg border border-zinc-800 bg-zinc-900/70 p-2.5">
+                  <div className="text-[10px] font-bold uppercase tracking-wide text-rose-400">חסימה</div>
+                  <p className="mt-0.5 text-xs leading-relaxed text-zinc-300">{n.blocker ?? "אין חסימה מדווחת"}</p>
+                </div>
+                <div className="rounded-lg border border-zinc-800 bg-zinc-900/70 p-2.5">
+                  <div className="text-[10px] font-bold uppercase tracking-wide text-amber-400">משאב נדרש</div>
+                  <p className="mt-0.5 text-xs leading-relaxed text-zinc-300">{n.requiredResource ?? "לא רלוונטי"}</p>
+                </div>
+                <div className="rounded-lg border border-zinc-800 bg-zinc-900/70 p-2.5">
+                  <div className="text-[10px] font-bold uppercase tracking-wide text-sky-400">המלצה — פעולה הבאה</div>
+                  <p className="mt-0.5 text-xs leading-relaxed text-zinc-300">{n.nextAction}</p>
+                </div>
+                {n.unblockPlan.length > 0 && (
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/70 p-2.5">
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-emerald-400">תוכנית פעולה לשחרור החסימה</div>
+                    <ol className="mt-1 list-inside list-decimal space-y-0.5">
+                      {n.unblockPlan.map((step) => (
+                        <li key={step} className="text-[11px] leading-relaxed text-zinc-400">
+                          {step}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+                <MetaRows
+                  rows={[
+                    {
+                      label: "עוגן מאומת אחרון",
+                      value: n.lastVerifiedAnchor ? <Mono className="break-all">{n.lastVerifiedAnchor}</Mono> : "חסר — אין עוגן מאומת לרשת זו",
+                      mono: true
+                    },
+                    { label: "נבדק", value: fmtDateTime(n.lastChecked) }
+                  ]}
+                />
+              </div>
+            </Panel>
+          );
+        })}
+      </div>
+
+      <Panel
+        title="תוכניות משאבים (EnergyPlan) — 10 אחרונות"
+        icon={<Wallet className="size-4 text-amber-400" aria-hidden />}
+        source="/api/saos/plans"
+        lastChecked={plansQ.lastChecked}
+        onRefresh={plansQ.refresh}
+        refreshing={plansQ.refreshing}
+      >
+        {plans.energyPlans.length === 0 ? (
+          <EmptyState
+            title="אין תוכניות משאבים שמורות"
+            explanation="תוכניות (TRON energize / HIVE rc-recovery) נשמרות כשמופקות דרך /api/saos/energy. כאן מוצג רק מה שנשמר בפועל."
+            nextAction="הפק תוכנית דרך GET /api/saos/energy?net=tron&trx=… (חישוב בלבד) — או השתמש במספרים מכרטיסי הרשתות לעיל."
+          />
+        ) : (
+          <ul className="scroll-slim max-h-72 space-y-2 overflow-y-auto pl-1">
+            {plans.energyPlans.map((p) => (
+              <li key={p.id} className="rounded-lg border border-zinc-800 bg-zinc-900/70 p-2.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge tone="info" className="font-mono">
+                    {p.network}
+                  </Badge>
+                  <Badge tone="neutral">{p.mode}</Badge>
+                  <span className="text-[10px] text-zinc-500">{fmtDateTime(p.createdAt)}</span>
+                </div>
+                <div className="mt-1.5 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-zinc-400 sm:grid-cols-4">
+                  {p.trxStaked !== null && <span dir="ltr">stake: {fmtNum(p.trxStaked)} TRX</span>}
+                  {p.energyOut !== null && <span dir="ltr">energy/day: {fmtNum(p.energyOut)}</span>}
+                  {p.settlements !== null && <span dir="ltr">settlements: {fmtNum(p.settlements)}</span>}
+                  {p.burnCost !== null && <span dir="ltr">burn: {fmtNum(p.burnCost)} TRX/day</span>}
+                  {p.rcFloorPct !== null && <span dir="ltr">rc floor: {p.rcFloorPct}%</span>}
+                </div>
+                {p.notes && <p className="mt-1 text-[11px] leading-relaxed text-zinc-500">{p.notes}</p>}
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="mt-3 text-[11px] leading-relaxed text-zinc-500">
+          מקור רמות המשאבים: משתני סביבה (HIVE_RC_PCT · TRON_ENERGY) — חישוב בלבד ללא קריאות רשת חיות; בפריסה חיה הערכים יוחלפו במדידה אמיתית.
+        </p>
+      </Panel>
+    </div>
+  );
+}

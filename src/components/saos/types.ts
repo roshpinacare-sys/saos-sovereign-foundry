@@ -1,0 +1,282 @@
+/**
+ * Typed contracts for every /api/saos/* surface consumed by the UI.
+ * Mirrors the server routes 1:1 — the UI never invents fields.
+ */
+
+// ─── /status ─────────────────────────────────────────────────────────────────
+
+export interface StatusResponse {
+  ok: boolean;
+  error?: string;
+  motto: string;
+  mode: string;
+  modeDetail: string;
+  writesEnabled: boolean;
+  broadcastCapable: boolean;
+  security: {
+    authConfigured: boolean;
+    rateLimit: { active: boolean; status: number; seal: number; auth: number };
+    signer: { signer: string; status: string }[];
+  };
+  matrix: { network: string; status: string; gate: string | null }[];
+  networks: NetworkStatus[];
+  historic: { network: string; txRef: string | null; note: string }[];
+  seals: SealRow[];
+  receipts: { kind: string; digest: string; prevDigest: string | null; at: string }[];
+  opsLogged: number;
+}
+
+export interface SealRow {
+  id: string;
+  height: number;
+  root: string;
+  stateRoot: string;
+  leaves: number;
+  gasUsed: number;
+  createdAt: string;
+  anchors: { network: string; status: string; txid: string | null; gate: string | null }[];
+}
+
+// ─── /anchor-preflight ───────────────────────────────────────────────────────
+
+export interface PreflightResponse {
+  ok: boolean;
+  error?: string;
+  readyForAnchor: boolean;
+  mode: string;
+  liveGateReady: boolean;
+  backupFresh: boolean;
+  backupVerified: boolean;
+  authReady: boolean;
+  rateLimitReady: boolean;
+  signerReady: boolean;
+  externalSignerConnected: boolean;
+  pendingSignatureQueue: { open: number; signedExternally: number; recorded: number; expired: number; cancelled: number; failed: number };
+  chainStatus: { ok: boolean; seals: number; receipts: number; forks: number[] };
+  networks: { network: string; status: string; isReadyForAnchor: boolean; isDryRunOnly: boolean; lastChecked: string }[];
+  target: string;
+  blockers: { id: string; detail: string }[];
+  warnings: { id: string; detail: string }[];
+  checks: { id: string; status: "pass" | "warn" | "fail"; detail: string }[];
+  recommendedNextAction: string;
+  generatedAt: string;
+  note: string;
+}
+
+// ─── /verify-chain ───────────────────────────────────────────────────────────
+
+export interface VerifyChainResponse {
+  ok: boolean;
+  error?: string;
+  scope: string;
+  mode?: string;
+  receiptChain?: { ok: boolean; checked: number; digestErrors: number[]; linkErrors: number[]; forks: number[] };
+  seals?: { height: number; root: string; leafCount: number; rootMatches: boolean; verifiedLeaves: number; invalidLeaves: number; proofResult: string }[];
+  totals?: { sealsChecked: number; leafCount: number; verifiedLeaves: number; invalidLeaves: number };
+  proofResult: string;
+  root: string | null;
+  height: number | null;
+  leafCount: number | null;
+  verifiedLeaves: number | null;
+  invalidLeaves: number | null;
+  errors: string[];
+  receipt?: string;
+  persisted?: boolean;
+}
+
+// ─── /signer ─────────────────────────────────────────────────────────────────
+
+export type SignatureStatus =
+  | "pending"
+  | "awaiting-approval"
+  | "signed-externally"
+  | "recorded"
+  | "failed"
+  | "expired"
+  | "cancelled";
+
+export interface SignerResponse {
+  ok: boolean;
+  error?: string;
+  registry: { signer: string; status: string; detail: string; emits: string; acceptsBack: string }[];
+  counts: { awaitingApproval: number; recorded: number; byStatus: Record<string, number> };
+  pending: SignatureRow[];
+}
+
+export interface SignatureRow {
+  id: string;
+  network: string;
+  kind: string;
+  signer: string;
+  signerStatus: string;
+  status: SignatureStatus;
+  payloadHash: string;
+  digestToSign: string;
+  payload: Record<string, unknown>;
+  sealHeight: number | null;
+  sealRoot: string | null;
+  txid: string | null;
+  proofRef: string | null;
+  anchorRef: string | null;
+  verified: boolean | null;
+  verificationSource: string | null;
+  cancelReason: string | null;
+  resultAt: string | null;
+  expiresAt: string;
+  createdAt: string;
+}
+
+// ─── /networks (from /status.networks) ───────────────────────────────────────
+
+export interface NetworkStatus {
+  network: "STEEM" | "BLURT" | "HIVE" | "TRON";
+  status: "anchored" | "pending" | "gated" | "transit";
+  mode: "advisory" | "direct";
+  lastChecked: string;
+  lastVerifiedAnchor: string | null;
+  nextAction: string;
+  blocker: string | null;
+  requiredResource: string | null;
+  unblockPlan: string[];
+  isReadyForAnchor: boolean;
+  isDryRunOnly: boolean;
+}
+
+// ─── /plans ──────────────────────────────────────────────────────────────────
+
+export interface PlansResponse {
+  ok: boolean;
+  error?: string;
+  energyPlans: {
+    id: string;
+    network: string;
+    mode: string;
+    trxStaked: number | null;
+    energyOut: number | null;
+    settlements: number | null;
+    burnCost: number | null;
+    rcFloorPct: number | null;
+    notes: string | null;
+    payload: Record<string, unknown>;
+    createdAt: string;
+  }[];
+  economySnapshots: { id: string; label: string; inputs: Record<string, unknown>; streams: Record<string, unknown>; totalPerDay: number; flywheelPct: number; createdAt: string }[];
+  counts: { energyPlans: number; economySnapshots: number };
+}
+
+// ─── /audit ──────────────────────────────────────────────────────────────────
+
+export interface AuditResponse {
+  ok: boolean;
+  error?: string;
+  counts: { total: number; denied: number; byKind: { kind: string; count: number }[] };
+  events: { id: string; kind: string; actor: string; action: string; allowed: boolean; ipHash: string | null; detail: string | null; createdAt: string }[];
+}
+
+// ─── /live-gate ──────────────────────────────────────────────────────────────
+
+export interface LiveGateResponse {
+  ok: boolean;
+  error?: string;
+  readyForLive: boolean;
+  blockers: { id: string; detail: string }[];
+  warnings: { id: string; detail: string }[];
+  checks: { id: string; status: "pass" | "warn" | "fail"; detail: string }[];
+  mode?: string;
+  [k: string]: unknown;
+}
+
+// ─── /kernel ─────────────────────────────────────────────────────────────────
+
+export interface KernelResponse {
+  ok: boolean;
+  error?: string;
+  result: { ok: boolean; stateRoot: string; gasUsed: number; checks: { name: string; pass: boolean; detail?: string }[] };
+  receipt: string;
+  persisted?: boolean;
+}
+
+// ─── /seal (POST) ────────────────────────────────────────────────────────────
+
+export interface SealPostResponse {
+  ok: boolean;
+  error?: string;
+  idempotent?: boolean;
+  seal?: { id: string; height: number; root: string; leavesCount: number; stateRoot: string; gasUsed: number; createdAt: string; anchors?: { network: string; status: string; gate: string | null }[] };
+  receipt?: { digest: string } | null;
+}
+
+// ─── /repo-status ────────────────────────────────────────────────────────────
+
+export interface RepoStatusResponse {
+  ok: boolean;
+  error?: string;
+  git: {
+    available: boolean;
+    branch: string | null;
+    lastCommit: { sha: string; subject: string | null; at: string | null } | null;
+    uncommittedFiles: number | null;
+    uncommittedSample: string[];
+    unpushedCommits: number | null;
+    remoteConfigured: boolean;
+    remoteHost: string | null;
+  };
+  backups: {
+    directory: boolean;
+    count: number;
+    recent: { name: string; createdAt: string | null; files: number; bytes: number; verified: boolean | null }[];
+    lastVerifiedAt: string | null;
+    lastVerifiedOk: boolean;
+  };
+  secrets: {
+    authConfigured: boolean;
+    envFilePresent: boolean;
+    envFilePerms: string | null;
+    envValuesExposed: false;
+    scanPerformedAt: string;
+    scanCoveredFiles: number;
+    scanMatches: { file: string; pattern: string }[];
+    scanNote: string;
+  };
+  knownOpenItems: string[];
+  mode: string;
+  generatedAt: string;
+  note: string;
+}
+
+// ─── /decisions ──────────────────────────────────────────────────────────────
+
+export interface DecisionsResponse {
+  ok: boolean;
+  error?: string;
+  counts: { total: number; open: number; openCritical: number; decided: number };
+  decisions: {
+    key: string;
+    name: string;
+    description: string;
+    options: string[];
+    safeDefault: string;
+    risk: string;
+    cost: string;
+    time: string;
+    requiredAction: string;
+    phase: "now" | "before-anchor" | "before-live";
+    ownerRole: string;
+    critical: boolean;
+    sourceRef: string;
+    recordedStatus: string;
+    note: string | null;
+    decidedAt: string | null;
+  }[];
+  sourceNote: string;
+}
+
+// ─── /auth ───────────────────────────────────────────────────────────────────
+
+export interface AuthStateResponse {
+  ok: boolean;
+  authConfigured: boolean;
+  authenticated: boolean;
+  actor: string;
+  error?: string;
+}

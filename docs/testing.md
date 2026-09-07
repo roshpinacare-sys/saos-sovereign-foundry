@@ -246,3 +246,38 @@ lint ✅ · typecheck ✅ · api-check **45/45** ✅ · concurrency **8/8** (hei
 1. אימות-txid אמיתי מוצלח (recorded) — לא ניתן בסנדבוקס: outbound RPC חסום; הנתיב מאומת עד `verified:false` + סיבה, והענף `verified:true` סקור בקוד ומסומן כדורש סביבה עם egress.
 2. פקיעת-זמן חיה (expired) לא נבדקה ב-API — דורשת המתנה של TTL; מיושמת כחישוב עצל (`effectiveStatus`) ונבדקה בהיגיון בלבד.
 3. אין GitHub Actions (ידני בלבד); אין e2e אוטומטי לדפדפן.
+
+---
+
+## Task 10 — בדיקות בניית ה-UI (2026-09-07)
+
+### סוויטה מלאה (`bun run check`) — ירוק
+
+| שלב | תוצאה |
+|---|---|
+| `bun run lint` | ✅ נקי (0 שגיאות/אזהרות) |
+| `bun run typecheck` | ✅ נקי (tsc --noEmit) |
+| `bun run test` (api-check) | ✅ **80/80** (היה 65; +2 research משוחזר, +6 repo-status, +7 decisions) |
+| `bun run verify` (concurrency) | ✅ **8/8** — heights 4..11 רציפות ויחודיות, roots יחודיים, chain intact, 11 seals / 79 leaves all-verified, אפס 500 |
+
+### api-check — 15 הטענות החדשות (Task 10)
+
+- research משוחזר: חוזה מלא (findings=10 + synthesis) — 2
+- repo-status: חוזה git/backups, בוליאנים-והרשאות-בלבד, איסור דליפת טוקן ב-payload, סריקה חיה (63 קבצים, 0 התאמות) — 6
+- decisions: registry+מקורות+phases, POST ללא-auth→401, fail-closed key/status בוגוס, רישום מאומת, שיקוף ב-GET — 7
+
+### בדיקות דפדפן (agent-browser) — עבר
+
+- **Desktop 1440**: כל 7 הטאבים נסרקו (a11y tree מלא); זרימות זהב: פעולה-מומלצת→ניווט→שרשרת; פעימה מדיאלוג אישור (toast "חותמה נוצרה: height 1", חסימות 3→2, מדדים חיים); הרץ אימות (8/8 עלים, "אימות עבר"); login (cookie) → צור בקשת → רישום txid מזויף+verify → **unverified כנה מוצג** (סיבת אי-egress) → בקשה שנייה → ביטול עם סיבה; עדכן החלטה (recorded + audit); יומן ביקורת חי (אירועי 401/decision-update/auth-login נראים).
+- **נייד 360/390/414/768**: אפס גלילה אופקית בכל 7 הטאבים (נמדד `scrollWidth−clientWidth=0`); ניווט עליון מתגלגל; כרטיסים מלאים.
+- **תיקון באג בזמן אימות (BUG-009)**: גרידים עם `grid` ללא `grid-cols-1` יצרו עמודה implicit בגודל max-content → פאנלים ב-644px על 360px. תוקן בכל 8 המופעים; נמדד שוב = 0. גילוי: מדידת DOM אוטומטית (לא עין).
+- **מקלדת**: טאבים עם חיצים (RTL נכון — ArrowLeft מתקדם), focus-visible, Esc סוגר דיאלוגים, skip-link.
+- **קונסולה**: אפס שגיאות/אזהרות (רק לוגי HMR); dev.log נקי לאורך כל הסבב (למעט 429-ים מכוונים של burst הבדיקות).
+- **footer**: מוצמד מבנית (`mt-auto` + safe-area); נמדד נדחף-טבעי בעמוד ארוך (footerBottom===docH).
+
+### מה עדיין לא נבדק (כנה)
+
+- `bun run build` — חסום-סביבה (מדיניות dev-server בלבד).
+- אימות txid אמיתי מול רשת — דורש egress (בסנדבוקס תמיד unverified כנה).
+- בדיקת 429 מקצה-הדפדפן — מכוסה ב-API בלבד (burst); ב-UI מוצג ErrorState מותאם (לא נוצר תרחיש חי).
+- screen-reader מלא (NVDA/VoiceOver) — בוצע רק סריקת a11y-tree + תוויות.

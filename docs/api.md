@@ -399,3 +399,37 @@
 - אל-תקינות מקובעת: txid רשום אינו ניתן לשינוי/ביטול; מצבי סופי מסרבים מוטציה.
 
 **סטטוס**: ✅ עובד — מסלול מלא נבדק חי גם ב-api (65/65) וגם בדפדפן (login → create → badge → txid+verify → unverified כנה → cancel).
+
+---
+
+## Task 10 — שחזור נקודה 7 + שני נתיבים חדשים לממשק
+
+### שחזור `GET /api/saos/research` (סעיף 7 לעיל)
+
+הנתיב היה מתועד ונבדק (docs/api.md §7 + api-check) אך קובץ ה-route מעולם לא נכלל בהיסטוריית git (חי רק בעצי-עבודה מקומיים) — על שיבוט טרי `bun run test` נכשל. שוחזר **בדיוק לפי החוזה המתועד** (findings[10] + synthesis + idempotent upsert עם `persisted` מדווח). סטטוס: ✅ 2/2 טענות api-check.
+
+### 16. `GET /api/saos/repo-status` (חדש Task 10)
+
+**מה**: מצב ריפו, גיבויים והיגיינת-סודות למסך אבטחה ומאגר — קריאה-בלבד, אפס ערכי-סוד.
+
+**מקורות**: git (subprocess read-only best-effort) · `backups/` + OpLog(op=backup) — הדגל הסמכותי verified · `fs.stat(.env)` — הרשאות בלבד · `authConfigured()` — בוליאני · סריקת דפוסי-סודות חיה על קבצים מעוקבים (שמות+תוכן טקסטואלי ≤200KB; תוצאות שמות-קבצים בלבד; מטמון 5 דק').
+
+**פלט**: `{ok, git:{available, branch, lastCommit{sha,subject,at}, uncommittedFiles, uncommittedSample[], unpushedCommits, remoteConfigured, remoteHost}, backups:{directory, count, recent[{name,createdAt,files,bytes,verified}], lastVerifiedAt, lastVerifiedOk}, secrets:{authConfigured, envFilePresent, envFilePerms, envValuesExposed:false, scanPerformedAt, scanCoveredFiles, scanMatches[], scanNote}, knownOpenItems[], mode, generatedAt, note}`.
+
+**הגבלת קצב**: 30/דק' (`SAOS_RL_REPO_STATUS_PER_MIN`).
+
+**סטטוס**: ✅ עובד — 6/6 טענות api-check (חוזה, בוליאנים-בלבד, איסור דליפת טוקן, סריקה חיה).
+
+### 17. `/api/saos/decisions` — GET + POST (חדש Task 10)
+
+**GET (ציבורי)**: רישום החלטות-בעלים שנערך מהתיעוד (`src/lib/saos/owner-decisions.ts`; כל רשומה עם `sourceRef`) + הסטטוסים שהוקלטו ב-DB (DecisionRecord). פלט: `{ok, counts:{total,open,openCritical,decided}, decisions[{key,name,description,options[],safeDefault,risk,cost,time,requiredAction,phase,ownerRole,critical,sourceRef,recordedStatus,note,decidedAt}], sourceNote}`. phases: `now | before-anchor | before-live`.
+
+**POST {key, status, note?} — הרשאה חובה + audit(kind=decision-update)**: רישום סטטוס בלבד (`open | decided-default | decided-custom | deferred`; note ≤300 תווים, ציבורי). לא משנה מצב ריצה, לא מבצע פעולה חיצונית. fail-closed: key לא-מוכר או status לא-חוקי ⇒ `ok:false` (HTTP 200).
+
+**סכימה**: מודל `DecisionRecord {key @id, status, note?, updatedAt}` — תוספת אדיטיבית בלבד.
+
+**הגבלת קצב**: 30/דק' (`SAOS_RL_DECISIONS_PER_MIN`).
+
+**סטטוס**: ✅ עובד — 7/7 טענות api-check (registry+מקורות, 401, fail-closed ×2, רישום מאומת, שיקוף ב-GET).
+
+**סה״כ נתיבים**: 16 (13 ב-Task 6 + research ששוחזר + 2 חדשים). **api-check: 80 טענות.**

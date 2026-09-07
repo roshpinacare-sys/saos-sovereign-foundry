@@ -51,7 +51,9 @@ export const RATE_RULES = {
   "live-gate": { name: "live-gate", perMinute: envLimit("live-gate", 30) },
   signer: { name: "signer", perMinute: envLimit("signer", 30) },
   audit: { name: "audit", perMinute: envLimit("audit", 30) },
-  "anchor-preflight": { name: "anchor-preflight", perMinute: envLimit("anchor-preflight", 30) }
+  "anchor-preflight": { name: "anchor-preflight", perMinute: envLimit("anchor-preflight", 30) },
+  "repo-status": { name: "repo-status", perMinute: envLimit("repo-status", 30) },
+  decisions: { name: "decisions", perMinute: envLimit("decisions", 30) }
 } as const satisfies Record<string, RateLimitRule>;
 
 export type RateRuleName = keyof typeof RATE_RULES;

@@ -1,18 +1,22 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SAOS Sovereign Foundry v2 — אנחנו מנצחים את הבלוקצ'יין",
+  title: "SAOS — מרכז שליטה מבצעי | Sovereign Foundry v2",
   description:
-    "פלטפורמת עגינה חוצת-רשתות: שורשי-איטום ל-STEEM/BLURT/HIVE/TRON, ריבונות אנרגיה (TRX energize), כלכלת גלגל-חור והוכחות ציבוריות נושאות-ראיות."
+    "מרכז שליטה לרשתות בלוקצ'יין: אימות שרשרת, עוגנים חיצוניים, חתימות keyless, מצב רשתות, גיבויים, אבטחה והחלטות בעלים — נתונים חיים בלבד."
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#09090b"
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="he" dir="rtl">
-      <body className="min-h-screen flex flex-col bg-zinc-950 text-zinc-100 antialiased">
-        {children}
-      </body>
+      <body className="min-h-screen bg-zinc-950 text-zinc-100 antialiased">{children}</body>
     </html>
   );
 }

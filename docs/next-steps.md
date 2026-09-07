@@ -162,3 +162,25 @@
 1. **העוגן הראשון בפועל** (בעלים): preflight → SignRequest → חתימה מחוץ למערכת → רישום txid + verify → `recorded` → עדכון AnchorTx ל-anchored מאומת.
 2. GitHub Actions CI (bun run check ב-push).
 3. חיבור חותם חיצוני אוטומטי (external/hardware) — עדיין ללא מפתח במערכת.
+
+---
+
+## עדכון Task 10 — Product-Grade UI Rebuild
+
+### טבלת סטטוס רכיבים (סוף Task 10)
+
+| רכיב | סטטוס | הערה |
+|---|---|---|
+| UI — 7 מסכים (RTL, mobile-first) | עובד | docs/ui.md; נבדק דפדפן desktop+mobile, אפס שגיאות קונסולה |
+| `GET /repo-status` | עובד (חדש) | git+גיבויים+סודות — קריאה-בלבד, אפס ערכי סוד |
+| `/decisions` GET/POST + DecisionRecord | עובד (חדש) | registry מה-docs; רישום סטטוס בעלים (auth+audit) |
+| `GET /research` | שוחזר | היה מתועד ולא-נכלל ב-git — api-check נכשל על שיבוט טרי; תוקן |
+| api-check | 80/80 | היה 65 |
+| מקור-אמת להחלטות | 🔶 חלקי | registry סטטי מה-docs; עדכון תוכן דורש commit (מכוון — תיעוד הוא המקור) |
+
+### מועמד לסבב 8
+
+1. **העוגן הראשון בפועל** (בעלים) — ללא שינוי: preflight → SignRequest → חתימה חוץ-מערכתית → רישום+verify → recorded.
+2. GitHub Actions CI (עדיין פתוח; ההחלטה מוקלטת ב-/decisions).
+3. אוטומציית refresh עדינה ב-UI (אופציונלי; כרגע רענון ידני מכוון).
+4. קישורי docs נלחצים (route להצגת markdown) — כרגע רק רשימת נתיבים.

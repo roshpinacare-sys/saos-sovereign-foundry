@@ -261,3 +261,33 @@ Work Log:
 
 Stage Summary:
 - Task 6 fully on remote: anchor-preflight (10 checks), complete signing lifecycle (7 states, immutable results, honest unverified), public anchor-result recording with read-only network verification, extended network status (isReadyForAnchor/isDryRunOnly), UI preflight card, 65/65 check suite, secret-hygiene register with SH-3 stop-and-report for owner decision
+
+---
+
+Task ID: 10 (product-grade-ui-rebuild)
+Agent: Z.ai Code (orchestrator)
+Task: Task 10 — Product-Grade UI Rebuild: replace the UI with a relevant, context-aware, mobile-first operational command center over live /api/saos/* data only; full checks, browser verification, docs, safe push. Owner granted repo write for this session.
+
+Work Log:
+- Cloned saos-sovereign-foundry (HEAD bb12c62) with the uploaded token (env-only, never printed, remote URL scrubbed); integrated the tree into the sandbox workspace (/home/z/my-project) replacing the scaffold, preserving sandbox infra (Caddyfile/.zscripts/skills/upload) and adding them to .gitignore
+- Fresh sandbox = fresh DB: generated new SAOS_ADMIN_KEY (24B random) + hash into gitignored .env (0600), key also saved to upload/saos-admin-key.txt (line 3; SH-4 note in file); ran verified backup before critical work
+- DISCOVERY (gap): `GET /api/saos/research` was documented (docs/api.md §7) and asserted by api-check but its route file NEVER entered git history — a fresh clone failed `bun run test`. Restored exactly per the documented contract (findings[10] + synthesis + idempotent DB mirror). api-check green again (+2 assertions)
+- ADDITIVE APIs for the UI: `GET /api/saos/repo-status` (git branch/lastCommit/uncommitted/unpushed via read-only subprocess, backups+OpLog verified flag, .env perms (0600), authConfigured boolean, LIVE secret-pattern scan over tracked files (63 files, cache 5m, names-only), known open items incl. SH-3 — zero secret values) and `/api/saos/decisions` (GET public registry compiled from docs/decisions.md + docs/next-steps.md + secret-hygiene, every entry with sourceRef/phase/safe-default/risk/cost/time; POST authed+audited status recording into new additive `DecisionRecord` model; fail-closed validation). Rate rules added for both (30/min)
+- UI REBUILD: server shell + client command center (Radix Tabs dir=rtl). 7 screens per spec: Command Center (single recommended action wired to blocker→screen mapping mirroring server priority), Chain Integrity (live verify-chain run + seal flow with confirm dialog + seal history + historic forks disclosure), Signatures & Anchors (7-state lifecycle queue with filters, create/record/cancel dialogs, honest unverified, 401→login toast), Networks & Resources (4 networks × blocker/resource/plan/ready/dry-run + EnergyPlans), Owner Decisions (registry grouped now/before-anchor/before-live + recorded statuses + authed update dialog), Security & Repo (login/logout, git+push policy, backups, live-gate, live secret scan, SH items), Audit & Tests (live audit trail with explained 401, live selftest, documented suite + BUG-001..008 registry + docs map)
+- Data layer: typed saosFetch with error classification (network/auth/auth-unconfigured/rate/api/parse), per-key session store via useSyncExternalStore (fetch-once, manual refresh, no polling, lazy per-tab), typed contracts mirroring routes; kit.tsx rewritten (Panel with source+last-checked+refresh, CheckRow, EmptyState, ErrorState, Stat, Mono, toasts)
+- Lint/typecheck iteration caught react-hooks/refs violations → moved ref-write into effects; runtime caught a render-scope ReferenceError pre-fix (found in dev.log, fixed before verification)
+- Browser verification (agent-browser): desktop 1440 — all 7 tabs; golden paths: recommended-action navigation, seal via dialog (toast height 1, blockers 3→2, live stats), verify-chain (8/8 leaves, "אימות עבר"), 401 drill → login → create → record fake txid+verify → HONEST unverified with sandbox-egress reason → cancel with reason → decision update (audited) → live audit events visible; mobile 360/390/414/768 across all tabs; keyboard RTL arrows; console clean
+- BUG-009 (found by DOM measurement during mobile verification): `grid` without explicit `grid-cols-1` sized an implicit max-content column → 644px panels on 360px viewport (296px overflow). Fixed all 8 occurrences; re-measured 0 overflow everywhere
+- Full suite: lint ✅ typecheck ✅ api-check **80/80** ✅ concurrency **8/8** (heights 4..11 contiguous, 11 seals/79 leaves all-verified) ✅; dev.log clean (only intentional 429 burst lines)
+- Docs: NEW docs/ui.md (screens/components/states/sources/a11y); api.md (+research restore +endpoints 16/17, 16 endpoints total); architecture.md (+UI layer: read-only consumer, no server actions, store design); testing.md (+Task 10 results incl. BUG-009 and honest not-tested list); next-steps.md (+component table + round-8 candidates); README docs map updated
+
+Bugs found this session:
+- GAP: research route missing from git (broke check on fresh clone) — restored per documented contract
+- BUG-009: implicit grid column overflow at ≤414px — fixed (8 sites), proven by measurement
+- (minor, fixed in-flight) react-hooks/refs lint errors in the store hook (ref-write during render → moved to effect); stale-precedence in blocker→screen mapping (reordered to mirror server priority)
+
+Stage Summary:
+- The UI is now an operational tool: every panel shows its live source + freshness, blockers carry actions, empty states explain, unverified never looks final, and the single recommended action navigates to the fix
+- API surface: 16 endpoints; check suite: 80 api assertions + 8/8 concurrency; backup verified (backup-2026-09-07T17-14-54)
+- Chain state this sandbox (fresh DB): 11 seals (contiguous), 79 leaves verified, honest fork-free receipt chain; SH-3 remains an open owner decision (recorded in-app)
+- Remaining open (honest): CI, build outside sandbox, real anchor resources (vault/TRX/HIVE-RC) — all tracked as owner decisions in-app

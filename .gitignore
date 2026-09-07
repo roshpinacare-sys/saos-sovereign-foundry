@@ -36,3 +36,7 @@ next-env.d.ts
 
 # db backups (runtime data)
 backups/
+
+# sandbox platform infra (not part of the repo)
+.zscripts/
+Caddyfile
