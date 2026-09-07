@@ -279,7 +279,14 @@ async function main() {
   const rgit = rstat.body.git ?? {};
   report("repo-status git contract", typeof rgit.available === "boolean" && typeof rgit.remoteConfigured === "boolean" && (rgit.uncommittedFiles === null || typeof rgit.uncommittedFiles === "number") && (rgit.unpushedCommits === null || typeof rgit.unpushedCommits === "number"), `branch=${rgit.branch} dirty=${rgit.uncommittedFiles} unpushed=${rgit.unpushedCommits}`);
   report("repo-status backups contract", typeof rstat.body.backups?.count === "number" && Array.isArray(rstat.body.backups?.recent));
-  report("repo-status secrets: booleans + perms only, no values", rstat.body.secrets?.authConfigured === true && typeof rstat.body.secrets?.envFilePerms === "string" && /^[0-7]{3}$/.test(rstat.body.secrets.envFilePerms.replace(/^0/, "")) && rstat.body.secrets?.envValuesExposed === false, `perms=${rstat.body.secrets?.envFilePerms}`);
+  const sec12 = rstat.body.secrets ?? {};
+  // environment-aware posture: sandbox/owner machine HAS a .env (perms must
+  // exist and must not be world-readable); clean CI has NO .env (honest null).
+  // Both must keep envValuesExposed=false — that part is never acceptable to break.
+  const permsOk =
+    (sec12.envFilePresent === true && typeof sec12.envFilePerms === "string" && /^[0-7]{3,4}$/.test(sec12.envFilePerms) && sec12.envFilePerms.slice(-1) === "0") ||
+    (sec12.envFilePresent === false && sec12.envFilePerms === null);
+  report("repo-status secrets: booleans + perms only, no values", sec12.authConfigured === true && permsOk && sec12.envValuesExposed === false, `present=${sec12.envFilePresent} perms=${sec12.envFilePerms}`);
   report("repo-status: no token/key material in payload", !/ghp_[A-Za-z0-9]{20,}|ghousr_/.test(JSON.stringify(rstat.body)) && !("envContent" in (rstat.body.secrets ?? {})));
   report("repo-status secret scan runs live", typeof rstat.body.secrets?.scanCoveredFiles === "number" && rstat.body.secrets.scanCoveredFiles > 0 && Array.isArray(rstat.body.secrets.scanMatches), `files=${rstat.body.secrets?.scanCoveredFiles} matches=${rstat.body.secrets?.scanMatches?.length}`);
 
