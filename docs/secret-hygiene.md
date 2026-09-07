@@ -1,4 +1,4 @@
-# Secret Hygiene (היגיינת סודות) — Task 6, updated Task 11
+# Secret Hygiene (היגיינת סודות) — Task 6, updated Task 11 (incl. autonomous closure round)
 
 > Iron rule: private keys, seed phrases, signing keys, tokens, passwords and live
 > permission files NEVER enter the repo, the logs, the DB or the agent context.
@@ -75,7 +75,27 @@ For SH-3 (historical file), options in order of safety:
 4. Logs (`dev.log`) and DB never receive key material (verified by api-check's
    no-key-leak assertions).
 
-## 6. Admin-key rotation procedure (Task 11 — owner-executed, never printed)
+## 6. Autonomous closure round (2026-09-07, Task 11 closure — executed, audited)
+
+The owner granted an explicit urgent-push approval ("שידחוף דחוף") and ordered
+maximum autonomous closure. Executed this round (file contents were never
+read, printed or copied — moves and permission changes only):
+
+| Item | Action executed | Result |
+|---|---|---|
+| SH-7 (admin-key file in tree) | `upload/saos-admin-key.txt` → **`~/.secrets/saos-admin-key`**, `chmod 600`, dir `700`; verified untracked + gitignored before and after | **CLOSED** — `/api/saos/repo-status` now reports `adminKeyFileInTree: false`; decision `admin-key-location` recorded `decided-default` (audited). Rotation remains an OPTIONAL owner action |
+| SH-1 (token file in tree) | `upload/Roshcaregt.txt` → **`~/.secrets/github-token`**, `chmod 600`; used for this round's pushes via env-only credential helper (value never printed; remote URL scrubbed) | **Location closed** — periodic token rotation remains an owner action |
+| SH-4 (recovery copy) | Same relocation as SH-7; line-2 structure note unchanged | Copy lives at `~/.secrets/saos-admin-key` (600) — disaster-recovery discipline preserved |
+| SH-5 (perms) | Both files now `600`, `~/.secrets` is `700` (the files turned out to be owned by the sandbox user — chmod was possible) | `.env` stays `600`; no world-readable secret left in the tree |
+| SH-3 (historical file) | Recorded `decided-default` (audited): safe default ACTIVE — no history rewrite, content treated as secret by default, repo is private | **Safe-default active**; final content classification remains an OPTIONAL owner action |
+| `upload/` directory | Now empty of secret files | Future uploads must land outside the tree (or be moved out immediately) |
+
+Push executed per the safe-push protocol: secret-scan on the diff (0 matches) →
+`git fetch` (no divergence) → regular push → remote verification. Commit
+`f012014` (Task 11) is on `origin/main`; the closure round itself was pushed as
+a follow-up commit.
+
+## 7. Admin-key rotation procedure (Task 11 — owner-executed, never printed)
 
 Trigger: suspected exposure of the admin key (SH-2 or SH-7 scenarios), or
 routine rotation (recommended every 90 days).

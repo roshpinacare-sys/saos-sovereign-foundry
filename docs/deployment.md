@@ -90,3 +90,12 @@ live-gate דורש גיבוי מאומת בן פחות מ-7 ימים; cleanup ד
 - **סודות**: `.env` חייב הרשאות 600; קבצי `upload/` מחוץ לעץ-הפרויקט בפריסה אמיתית (ר' docs/secret-hygiene.md). אין להעתיק `.env` בין סביבות — רק `SAOS_ADMIN_KEY_HASH` (ה-hash).
 - **egress לאימות-ציבורי**: אימות txid (opt-in) דורש גישה יוצאת ל-`api.steemit.com` / `api.hive.blog` / `rpc.blurt.world` / `api.trongrid.io` — בסביבה חסומה התוצאה תהיה כנה-unverified (התנהגות מתועדת, לא תקלה).
 - **preflight בבריאות-מערכת**: `GET /api/saos/anchor-preflight` — כלול בסיור השגרתי; `readyForAnchor=false` אינו תקל אלא חסימה מתועדת עם פעולה-המשך.
+
+---
+
+## CI (נוסף בסבב הסגירה, 2026-09-07)
+
+- `.github/workflows/ci.yml` — רץ על כל push/pull-request: `bun install --frozen-lockfile` → prisma generate+push (SQLite זמני) → lint → typecheck → **`next build`** (האימות שנאסר בסנדבוקס) → dev server ברקע → api-check (104) → concurrency (8).
+- אין סודות ב-CI: `DATABASE_URL` הוא נתיב קובץ מקומי; מפתח-אדמין חד-פעמי מיוצר בזמן-ריצה ונעלם עם ה-runner.
+- אין פעולות חיות, אין שידורים, אין גישה לרשתות-בלוקצ'יין.
+- הריצה המרוחקת הראשונה תאומת את ה-workflow עצמו (לא ניתן לאמת מהסנדבוקס — מתועד כנה).

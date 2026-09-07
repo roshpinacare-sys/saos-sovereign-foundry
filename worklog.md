@@ -323,3 +323,31 @@ Stage Summary:
 - Chain state this sandbox: 32 seals contiguous, verified backup pre-work, audit trail includes auth-revoke-all + decision-update + signer lifecycle events with ids
 - Remaining open (honest): SH-7 owner relocation/rotation; SH-3 history classification; HIVE RC/TRON energy/vault resources; CI; build outside sandbox; live-mode approval — all tracked as owner decisions in-app
 - PUSH: BLOCKED — no explicit owner approval in this round; changes committed locally only, per the safe-push protocol
+
+---
+
+Task ID: 11-closure (urgent-push + autonomous closure round)
+Agent: Z.ai Code (orchestrator)
+Task: Owner-approved urgent push ("שידחוף דחוף" — "טפל בהכל", "אני לא עושה כלום") + maximum autonomous closure: push f012014 per the safe-push protocol, admin-key hygiene execution, audited decision closure, session revocation, CI, full tests, docs.
+
+Work Log:
+- PUSH (owner-approved, urgent): secret-scan on the f012014 diff (0 matches, no sensitive files) → fetch (remote unchanged, 1/0 divergence) → regular push `00f512e..f012014 main -> main` → remote verified (ls-remote = f012014, task-11 files present in remote tree) → health check (page 200, status API ok). Token used via env-only credential helper from the uploaded file — never printed, remote URL scrubbed, no force/deletion/history rewrite
+- SH-7 CLOSED: `upload/saos-admin-key.txt` moved to `~/.secrets/saos-admin-key` (chmod 600, dir 700) — mv-only, content NEVER read/printed; verified untracked+ignored before/after; `/api/saos/repo-status` now reports `adminKeyFileInTree: false` (system-confirmed closure)
+- SH-1 (location) CLOSED: `upload/Roshcaregt.txt` moved to `~/.secrets/github-token` (600) — used for this round's pushes; rotation remains an optional owner action. `upload/` is now empty
+- DECISIONS (8/9 recorded via audited POST /api/saos/decisions, honest — no fake closure): admin-key-location=decided-default (executed), sh3-historical-file=decided-default (safe default active — no history rewrite, content treated as secret, repo private), push-approval=decided-default (owner chat approval recorded), github-actions-ci=decided-default (workflow created), vault-restore/hive-rc-floor/tron-stake=needs-resource (external funding/vault — not autonomously closable), build-verification=deferred (sandbox dev-server-only policy; CI will verify build); live-mode-approval intentionally left OPEN (genuine owner decision) — verified counts: open=1, needsResource=3
+- SESSIONS: final audited revoke-all executed (auth-revoke-all event) — caller session dead (401 verified), re-login works; all stale sessions gone
+- CI CREATED: `.github/workflows/ci.yml` — checkout → setup-bun → frozen install → prisma generate+push (throwaway SQLite) → lint → typecheck → **next build** (the verification forbidden in the sandbox) → dev server background → api-check → concurrency 8. No secrets (throwaway per-run auth bootstrapped at runtime); no live actions. Remote run will be verified on this very push (documented honestly as not-yet-verified)
+- build locally: NOT run — sandbox policy forbids `next build` (dev-server-only); documented as environment-blocked, delegated to CI
+- FULL SUITE (after code edits): lint ✅ typecheck ✅ api-check **104/104** ✅ concurrency **8/8** (heights 34..41 contiguous, 25 seals/177 leaves all-verified) ✅
+- Code polish: repo-status `adminKeyRule` now dynamic (open↔closed states), knownOpenItems updated (SH-3 safe-default-active wording, CI exists), security-tab SH-7 card shows an emerald "closed" note with rotation pointer (§7)
+- DOCS: secret-hygiene.md (§6 closure round table, rotation renumbered §7), owner-decisions.md (§5 full recorded-status table + SH-7 marked executed), security.md (limitations updated: revocation exists, CI exists, closure-round section), api.md (decisions/repo-status v2 usage notes), runbook.md (SH-7 closed procedure, new secret paths), first-anchor-runbook.md (§7 readiness snapshot), next-steps.md (closure table + honest blockers), testing.md (closure round results + honest not-tested), deployment.md (CI section)
+
+Bugs / findings this session:
+- (env note) the earlier "chmod impossible in sandbox (other uid)" assumption was wrong for both secret files — both were z-owned; chmod 600 succeeded once measured directly
+- (docs tooling) a MultiEdit left a duplicated header in secret-hygiene.md mid-edit — caught and fixed before commit
+- (honest limits) CI remote run cannot be verified from the sandbox; `next build` remains unverified locally by policy
+
+Stage Summary:
+- Everything the owner approved was executed: f012014 (Task 11) is on origin/main; SH-7 closed and system-confirmed; 8/9 decisions closed/recorded with audit trail; all sessions revoked (audited); CI workflow added; full check suite green; docs and worklog updated with zero secret exposure and zero live/financial/broadcast actions
+- Remaining genuine blockers (cannot be closed by any agent): HIVE RC ≥ 8% OR TRON funding (owner resources), signing-vault restore + external signature (owner), live-mode-approval (owner decision), CI remote-run verification (happens on GitHub)
+- Owner-only remaining actions (all optional unless wanting a real anchor): fund networks or connect vault, decide live mode, optional rotations (admin key / GitHub token per §7 procedures)

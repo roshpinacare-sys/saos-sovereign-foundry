@@ -449,6 +449,8 @@
 
 לכל החלטה נוספו: `id` · `title` · `category` (security/resources/governance/release) · `severity` (critical/high/medium) · `status` (כינוי ל-recordedStatus) · `defaultSafeAction` · `requiredOwnerAction` · `timeEstimate` · `updatedAt` · **`auditTrail`** (אירועי decision-update: at/actor/detail — בלי סודות). הסטטוסים הורחבו: `needs-resource` · `resolved-external` · `rejected` (בנוסף ל-open/decided-default/decided-custom/deferred). counts כולל `needsResource`.
 
+> **שימוש בפועל (סבב הסגירה, 2026-09-07):** 8 מתוך 9 ההחלטות הוקלטו דרך POST זה במהלך סגירה אוטונומית מבוקרת — רק לפי מצב המערכת בפועל (ההחלטה `push-approval` משקפת את אישור הבעלים בצ'אט). החוזה לא השתנה.
+
 ### חוזה `/api/saos/signer` v2
 
 - **GET**: כל שורה כוללת `purpose` (תווית עברית ל-kind), `resultPublic` ({txid, proofRef, anchorRef} | null), `verificationStatus` (`verified` / `unverified` / `not-checked` / null), ו-**`auditTrail`** לכל בקשה (אירועי signer-create/result/cancel/fail שמכילים `id=<sig-…>` ב-detail — מ-Task 11 ואילך).
@@ -460,4 +462,4 @@
 
 ### חוזה `GET /api/saos/repo-status` v2
 
-`secrets.adminKeyFileInTree` (boolean — בדיקת קיום של `upload/saos-admin-key.txt` בלבד; התוכן לעולם לא נקרא) + `secrets.adminKeyRule` (כלל hash-בלבד). `knownOpenItems` כולל אוטומטית SH-7 כשהקובץ בעץ.
+`secrets.adminKeyFileInTree` (boolean — בדיקת קיום של `upload/saos-admin-key.txt` בלבד; התוכן לעולם לא נקרא) + `secrets.adminKeyRule` (דינמי: פתוח כשהקובץ בעץ / סגור עם נתיב `~/.secrets` כשאינו). `knownOpenItems` כולל אוטומטית SH-7 כשהקובץ בעץ — כרגע סגור (`adminKeyFileInTree=false` אומת בסבב הסגירה).

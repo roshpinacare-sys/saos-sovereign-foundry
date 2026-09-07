@@ -313,3 +313,22 @@ lint ✅ · typecheck ✅ · api-check **45/45** ✅ · concurrency **8/8** (hei
 - `bun run build` — חסום-סביבה.
 - `verified=true` באימות txid — דורש egress אמיתי; בסנדבוקס רק המסלול הכנה unverified (נבדק).
 - רוטציית מפתח-אדמין מלאה — פעולת בעלים (נוהל מתועד, לא מבוצע על-ידי סוכן).
+
+---
+
+## סבב הסגירה האוטונומי (2026-09-07) — תוצאות בדיקות
+
+- `bun run lint` ✅ · `bun run typecheck` ✅ (אחרי שינויי repo-status/security-tab)
+- **`bun run test` (api-check): 104/104** — כולל הדרילים החיים של revoke-all (6), פקיעת-ttl (4), decisions v2 (10)
+- **`bun run verify` (concurrency): 8/8** — heights 34..41 רצופים, 25 seals/177 עלים all-verified
+- **ביטול-סשנים בוצע בפועל פעמיים מבוקר** (דריל api-check + סגירה סופית) — caller-session מת (401 אומת), התחברות-מחדש עובדת
+- **8/9 החלטות הוקלטו דרך POST מאומת** — כל אחת עם אירוע decision-update; אימות GET לאחר מכן (counts: open=1, needsResource=3, decided=8 כולל deferred)
+- `adminKeyFileInTree=false` אומת ב-API לאחר ההעברה — המערכת עצמה מאשרת סגירת SH-7
+- מצב preflight לאחר הסגירה: `firstAnchorReadiness=not-ready`, חוסמים: network-resources + mode-allows-broadcast — כנה, ללא שינוי מלאכותי
+
+### מה עדיין לא נבדק (כנה — עדכון)
+
+- `bun run build` — נאסר בסנדבוקס (מדיניות dev-server); **ה-CI החדש מריץ אותו על כל push** — הריצה המרוחקת הראשונה היא האימות
+- ריצת ה-CI עצמה ב-GitHub — תתאפשר רק לאחר ה-push; לא ניתן לאמת מקומית
+- `verified=true` באימות txid — דורש egress אמיתי (ללא שינוי)
+- רוטציית מפתח-אדמין מלאה — פעולת בעלים (נוהל מתועד §7, לא מבוצע)

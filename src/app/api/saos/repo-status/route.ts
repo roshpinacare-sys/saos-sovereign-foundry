@@ -178,7 +178,9 @@ export async function GET(req: Request) {
         envFilePerms: envPerms,
         envValuesExposed: false,
         adminKeyFileInTree,
-        adminKeyRule: "המערכת מאחסנת hash בלבד (SAOS_ADMIN_KEY_HASH) — לעולם לא את המפתח הגלוי; קובץ מפתח בתוך עץ הפרויקט הוא פריט SH-7 פתוח (החלטת בעלים)",
+        adminKeyRule: adminKeyFileInTree
+          ? "המערכת מאחסנת hash בלבד (SAOS_ADMIN_KEY_HASH) — לעולם לא את המפתח הגלוי; קובץ מפתח בתוך עץ הפרויקט הוא פריט SH-7 פתוח (החלטת בעלים)"
+          : "המערכת מאחסנת hash בלבד (SAOS_ADMIN_KEY_HASH) — לעולם לא את המפתח הגלוי; אין קובץ מפתח בעץ הפרויקט — SH-7 סגור (המפתח חי מחוץ לעץ, למשל ~/.secrets/saos-admin-key, הרשאות 600)",
         scanPerformedAt: scan.at,
         scanCoveredFiles: scan.scannedFiles,
         scanMatches: scan.matches,
@@ -186,8 +188,8 @@ export async function GET(req: Request) {
       },
       knownOpenItems: [
         ...(adminKeyFileInTree ? ["SH-7: קובץ מפתח-אדמין מקומי בתוך עץ הפרויקט (upload/saos-admin-key.txt) — נדרשת העברה מחוץ לעץ (החלטת בעלים; קיום בלבד נבדק, התוכן לא נקרא)"] : []),
-        "SH-3: קובץ היסטורי לא-מסווג בהיסטוריית git — דורש החלטת בעלים (docs/secret-hygiene.md)",
-        "GitHub Actions CI לא קיים — הרצת בדיקות ידנית (bun run check)",
+        "SH-3: ברירת-המחדל הבטוחה פעילה (אין שכתוב היסטוריה; התוכן מתייחס כסוד) — סיווג סופי נותר פעולת בעלים אופציונלית (docs/secret-hygiene.md)",
+        "CI: .github/workflows/ci.yml קיים (lint+typecheck+build+api+concurrency) — תקינות הריצה המרוחקת מתאמת ב-push הבא",
         "SQLite single-writer — לא לפריסה אופקית"
       ],
       mode: mode.mode,

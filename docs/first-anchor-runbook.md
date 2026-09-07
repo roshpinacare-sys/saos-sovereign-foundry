@@ -61,3 +61,13 @@
 - `GET /api/saos/anchor-preflight` → `firstAnchorReadiness.status`: `not-ready` / `partial` / `conditional` (ערך "מוכן" רגיל לא קיים בכוונה — גם הכול ירוק נשאר "מוכן בתנאי" עד אישור-בעלים + חתימה חיצונית בפועל).
 - UI: מסך הסקירה → כרטיס "עוגן ראשון — מוכנות" (רשת מומלצת, חסימות, משאב נדרש, פעולת בעלים, קישור לנוהל זה).
 - רישום סגירת-תנאים: מסך החלטות הבעלים (סגירה מאומתת עם היסטוריית ביקורת).
+
+---
+
+## 7. תמונת מצב אחרי סבב הסגירה (2026-09-07)
+
+- ההחלטות הקריטיות שניתן היה לסגור — נסגרו ומוקלטו (audited): `admin-key-location` (בוצע — המפתח מחוץ לעץ), `sh3-historical-file` (ברירת-מחדל בטוחה פעילה), `push-approval` (אושר ובוצע), `github-actions-ci` (workflow נוצר).
+- ההחלטות שדורשות משאב חיצוני — מוקלטות `needs-resource`: `vault-restore`, `hive-rc-floor`, `tron-stake`. `build-verification` מוקלט `deferred` (חסום-סביבה; ה-CI מאמת build).
+- `live-mode-approval` נשארה **פתוחה** — החלטת בעלים אמיתית.
+- **מוכנות בפועל (preflight): `not-ready`** — חוסמים: `network-resources` (HIVE RC 0.6% < 8% · TRON energy=0) + `mode-allows-broadcast` (dry-run). רשת מומלצת ביחסית: STEEM (החסם היחיד: כספת/חתימה חיצונית).
+- שינוי מצב יתרחש רק כשהבעלים יממן משאב/יחבר כספת/יאשר live — המערכת לא מעריכה מחדש בשום דרך אחרת.

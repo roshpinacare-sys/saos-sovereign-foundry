@@ -196,6 +196,11 @@ function SecretHygieneCard({ data }: { data: RepoStatusResponse }) {
           פעולת בעלים מומלצת: להעביר את הקובץ מחוץ לעץ הפרויקט (למשל <Mono>~/.secrets/saos-admin-key</Mono> עם הרשאות 600), בלי להדפיס/להעתיק את המפתח בשום ערוץ. אם יש חשש שנחשף — רוטציה מלאה (מפתח חדש + hash חדש ב-.env) ותיעוד כפעולת בעלים. הנוהל: <Mono>docs/secret-hygiene.md</Mono>.
         </p>
       )}
+      {!inTree && (
+        <p className="mt-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-2.5 text-[11px] leading-relaxed text-emerald-200">
+          SH-7 סגור: הקובץ הועבר מחוץ לעץ הפרויקט (<Mono>~/.secrets/saos-admin-key</Mono>, הרשאות 600) — בוצע אוטונומית בסבב סגירת-ההחלטות, תוכן הקובץ מעולם לא נקרא. רוטציה נותרת פעולת בעלים אופציונלית אם יש חשש חשיפה: <Mono>docs/secret-hygiene.md §7</Mono>.
+        </p>
+      )}
       {s.scanMatches.length > 0 && (
         <ul dir="ltr" className="mt-2 space-y-0.5 font-mono text-[10px] text-zinc-500">
           {s.scanMatches.map((m, i) => (

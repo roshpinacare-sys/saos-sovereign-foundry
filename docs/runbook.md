@@ -197,7 +197,7 @@ git ls-files | grep -iE '\.env$|\.key$|\.pem$|wallet|seed|credential|token|secre
 git grep -lIE 'ghp_[A-Za-z0-9]{20,}|-----BEGIN [A-Z ]*PRIVATE' -- . || echo clean
 ```
 
-(מסמך-אב: docs/secret-hygiene.md — מרשם SH-1..SH-6.)
+(מסמך-אב: docs/secret-hygiene.md — מרשם SH-1..SH-7 + סבב הסגירה §6; הסודות חיים ב-`~/.secrets/`, מחוץ לעץ.)
 
 ### ביטול-סשנים גלובלי (Task 11)
 
@@ -207,10 +207,11 @@ git grep -lIE 'ghp_[A-Za-z0-9]{20,}|-----BEGIN [A-Z ]*PRIVATE' -- . || echo clea
 2. כל הסשנים הפעילים — **כולל שלך** — מתבטלים מיידית (רוטציית epoch; ללא רשימת-סשנים וללא סוד). התגובה מוחקת את ה-cookie שלך.
 3. התחברות-מחדש עובדת מיד; האירוע נרשם ביומן-הביקורת (`auth-revoke-all`).
 4. UI: מסך אבטחה ומאגר → "נתק את כל הסשנים" → דיאלוג אישור → toast.
-5. מפתח Bearer (סקריפטים) אינו מושפע מכוון — לניטרול מפתח עצמו: רוטציה (docs/secret-hygiene.md §6).
+5. מפתח Bearer (סקריפטים) אינו מושפע מכוון — לניטרול מפתח עצמו: רוטציה (docs/secret-hygiene.md §7).
 
-### היגיינת מפתח-האדמין (SH-7 — פעולת בעלים, Task 11)
+### היגיינת מפתח-האדמין (SH-7 — סגור מאז סבב הסגירה, 2026-09-07)
 
-- **לא** להשאיר את המפתח כקובץ בתוך עץ הפרויקט כנוהל-קבע: להעביר ל-`~/.secrets/saos-admin-key` עם `chmod 600`, לעדכן את זרימת העבודה בלי להדפיס את המפתח, ולמחוק את העותק המקומי.
-- ניטור אוטומטי: `/api/saos/repo-status` → `adminKeyFileInTree` (קיום בלבד) — מוצג בכרטיס "היגיינת סודות" ובהחלטה `admin-key-location`.
-- חשש חשיפה → רוטציה מיידית לפי docs/secret-hygiene.md §6 (מפתח חדש + hash חדש ב-.env, לעולם לא מודפס) + `revoke-all` + תיעוד כפעולת בעלים.
+- **בוצע**: הקובץ הועבר מ-`upload/saos-admin-key.txt` אל `~/.secrets/saos-admin-key` עם `chmod 600` (תיקיה 700) — ההעברה בוצעה ב-`mv` בלבד, תוכן הקובץ לא נקרא; `adminKeyFileInTree=false` אומת ב-API.
+- המצב הקבוע: אין קובץ-סוד בתוך עץ הפרויקט; קובץ הטוקן עבר באותו אופן אל `~/.secrets/github-token` (600).
+- ניטור אוטומטי: `/api/saos/repo-status` → `adminKeyFileInTree` (קיום בלבד) — אם יופיע קובץ-מפתח חדש בעץ, הפריט ייפתח מחדש אוטומטית.
+- חשש חשיפה → רוטציה מיידית לפי docs/secret-hygiene.md §7 (מפתח חדש + hash חדש ב-.env, לעולם לא מודפס) + `revoke-all` + תיעוד כפעולת בעלים.

@@ -1,0 +1,78 @@
+# SAOS Sovereign Foundry — CI (Task 11 round, autonomous closure)
+#
+# Scope discipline:
+#   - Runs ONLY the project's own safe check suite (lint / typecheck / build /
+#     api-check / concurrency-check) against a throwaway local SQLite file.
+#   - NO secrets are required or used: DATABASE_URL is a non-sensitive local
+#     file path; the admin key never exists in CI and no authed write is needed
+#     (api-check provisions its own session from the local .env it bootstraps —
+#     see scripts/api-check.mjs; in CI the auth block is skipped gracefully).
+#   - No broadcasts, no network calls to chains, no funding, no live actions.
+#
+# Note: `next build` is forbidden in the dev-server sandbox — CI is where the
+# production build finally gets verified (decision: build-verification).
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    name: lint + typecheck + build + api + concurrency
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: "file:./db/ci.db"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Prisma — generate client
+        run: bun run db:generate
+
+      - name: Prisma — push schema to throwaway SQLite
+        run: bun run db:push
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Production build (verified outside the sandbox here)
+        run: bun run build
+
+      - name: Bootstrap throwaway local auth (random per-run, never committed)
+        run: |
+          K="ci-throwaway-$(date +%s)-$RANDOM"
+          {
+            echo "SAOS_ADMIN_KEY=$K"
+            echo "SAOS_ADMIN_KEY_HASH=$(printf %s "$K" | sha256sum | cut -d' ' -f1)"
+          } >> "$GITHUB_ENV"
+
+      - name: Start dev server in background
+        run: |
+          bun run dev &
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:3000/api/saos/status >/dev/null; then
+              echo "server up after ~$((i * 2))s"; exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::dev server did not become healthy in 120s"
+          exit 1
+
+      - name: API contract checks
+        run: bun run test
+
+      - name: Concurrency check (8 parallel seals)
+        run: bun run verify 8
