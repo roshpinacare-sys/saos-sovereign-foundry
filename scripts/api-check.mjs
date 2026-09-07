@@ -55,7 +55,18 @@ function report(name, cond, detail = "") {
 
 async function j(path, init) {
   const res = await fetch(BASE + path, init);
-  return { status: res.status, body: await res.json(), headers: res.headers };
+  let body;
+  try {
+    body = await res.json();
+  } catch {
+    // BUG-009 hardening: a non-JSON body (e.g. Next 404/error HTML page for a
+    // route missing from the checkout) must FAIL WITH DIAGNOSTICS, not crash
+    // the whole suite with an unhelpful parse error.
+    const ct = res.headers.get("content-type") ?? "unknown";
+    const txt = (await res.text().catch(() => "")).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 160);
+    throw new Error(`non-JSON response from ${path}: HTTP ${res.status} ${ct}${txt ? ` — "${txt}"` : ""}`);
+  }
+  return { status: res.status, body, headers: res.headers };
 }
 
 async function main() {

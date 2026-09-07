@@ -14,7 +14,9 @@ prisma/*.db
 prisma/*.db-journal
 
 # research dumps (66MB archives) & uploads (contain tokens!)
-research/
+# NOTE: anchored to repo root only — a bare `research/` would also ignore
+# src/app/api/saos/research/ (the API route) and silently break CI (BUG-009)
+/research/
 upload/
 tool-results/
 download/
