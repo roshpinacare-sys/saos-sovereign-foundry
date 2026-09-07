@@ -349,3 +349,20 @@ lint ✅ · typecheck ✅ · api-check **45/45** ✅ · concurrency **8/8** (hei
 ### מה עדיין לא נבדק (כנה)
 - probe מול RPC חי אמיתי — דורש `ETH_RPC_URL`/`SOL_RPC_URL` מוגדרים (לא קיימים בסנדבוקס; הנתיב נבדק לעומק ה-not-configured)
 - `bun run build` — נאסר בסנדבוקס; נאמת ב-CI
+
+## BUG-009 — תיעוד וסגירה (Task 12)
+
+**תופעה:** שתי ריצות CI ראשונות נכשלו ב-`api-check crashed: JSON Parse error: Unrecognized token '<'` — תמיד מיד אחרי `GET /plans`, בקריאה ל-`GET /research`.
+
+**חקירה:** ב-CI (checkout נקי) קובץ ה-route `src/app/api/saos/research/route.ts` לא היה קיים → Next dev החזיר דף-404 HTML → `res.json()` קרס. בסנדבוקס הקובץ היה קיים ולכן הכול עבד.
+
+**שורש:** `.gitignore` הכיל `research/` (לא-עוגן) — התבנית שנועדה לתיקיית ארכיוני-המחקר בשורש תאמה גם את `src/app/api/saos/research/`, וה-route שוחזר-Task-10 מעולם לא נכנס ל-git (status נקי — שקט מסוכן).
+
+**תיקון:**
+1. התבנית עוגנה ל-`/research/`; ה-route נוסף ל-repo (`ec28086`).
+2. `j()` ב-api-check מקשיח: תשובה לא-JSON נכשלת עם אבחון (status + content-type + snippet מפושט) במקום קריסה אלמונית.
+3. הצהרת repo-status secrets נעשתה מודעת-סביבה: `.env` קיים → חייב הרשאות לא-world-readable; לא קיים (CI) → `null` כנה; `envValuesExposed=false` נאכף בשני העולמות (`4e853a9`).
+
+**תוצאה:** ריצת CI על `4e853a9` — **SUCCESS** מלא (install → prisma → lint → typecheck → **next build** → dev → api-check → concurrency). זהו גם האימות הראשון של `next build` (פעולה שנאסרה בסנדבוקס) — פריט build-verification נסגר.
+
+**לקח:** קובץ קיים-מקומית-ולא-מנוטר הוא סיכון שקט; audit של `find` vs `git ls-files` על src/scripts/docs הוא בדיקת-תקינות שיש להריץ אחרי כל "שחזור" קובץ.

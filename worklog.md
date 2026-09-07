@@ -379,3 +379,24 @@ Stage Summary:
 - Cross-agent mapping executed read-only per protocol: nothing copied; two security findings flagged for the owner; integration built NATIVE instead of imported (zero license/code risk)
 - Suite green end-to-end: lint + typecheck + api-check 135/135 + concurrency 8/8 + browser (0 overflow, 0 console errors)
 - Remaining genuine blockers: ETH/SOL not-configured (owner RPC/funding decision), HIVE RC/TRON energy (owner resources), vault restore + external signature (owner), live-mode-approval (owner), CI remote verification (GitHub), build outside sandbox (policy)
+
+---
+Task ID: 12-fix (CI verification round — BUG-009)
+Agent: Z.ai Code (orchestrator)
+Task: Verify the remote CI run triggered by the Task 12 push; fix whatever fails; land a green CI.
+
+Work Log:
+- CI run #1 (ff5f395, from Task 11) and run #2 (3a822dc, Task 12) both FAILED at "API contract checks" with `api-check crashed: JSON Parse error: Unrecognized token '<'` — always right after GET /plans, at the GET /research call
+- ROOT CAUSE (BUG-009): .gitignore's bare `research/` pattern (intended for root research dumps) ALSO matched `src/app/api/saos/research/` — the Task-10-restored route file was silently NEVER committed (git status clean, ls-files empty). Clean CI checkout → no route → Next dev 404 HTML → res.json() crash. Sandbox worked because the file existed locally
+- FIX 1 (commit ec28086): pattern anchored to `/research/`; route committed to git; api-check `j()` hardened — non-JSON responses now fail WITH diagnostics (status/content-type/stripped snippet) instead of an anonymous crash
+- During diagnosis, a rendering artifact made `branches: [main]` APPEAR as `branches: ain]` (the `[m` swallowed as an ANSI-like sequence) — verified via per-character codepoint dump that the workflow file was ALWAYS correct; no change needed (worth recording so future agents don't chase the same ghost)
+- CI run #3 (ec28086) got PAST the research crash (134/135) — one environment-dependent failure left: repo-status secrets assertion required a local .env with 0600 perms; CI legitimately has NO .env (perms=null)
+- FIX 2 (commit 4e853a9): assertion made environment-aware — .env present → must exist with non-world-readable perms; .env absent → honest null; `envValuesExposed=false` enforced in BOTH worlds. Locally verified 135/135 (present=true perms=0600)
+- (ops note) one push attempt failed with "Invalid username or token" — my own command had not exported GH_TOKEN into that shell (empty password to the credential helper); token itself valid (API 200). Re-run with env exported → push OK. Nothing printed, nothing exposed
+- CI run #4 (4e853a9): **SUCCESS** — full pipeline green: install → prisma generate+push → lint → typecheck → next build (first-ever build verification, previously forbidden in-sandbox) → dev server → api-check → concurrency. build-verification item CLOSED
+- docs/testing.md: BUG-009 record (phenomenon, investigation, root cause, fixes, lesson: audit find-vs-ls-files after any file restoration)
+
+Stage Summary:
+- Task 12 is fully landed: origin/main @ 4e853a9 with a GREEN remote CI (including first production-build verification)
+- Three pushes this round: 3a822dc (feature), ec28086 (research route + gitignore + diagnostics), 4e853a9 (env-aware assertion) — all regular pushes, no force, no history rewrite, no secrets in any diff
+- Honest post-mortem culture held: the failure was reproducible, root-caused to a silent-ignore bug, fixed at the root, documented with a transferable lesson
