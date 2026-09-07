@@ -190,3 +190,16 @@ Stage Summary:
 - API surface: 13 endpoints, status discipline 200-errors-as-data + 401/403/429 security-only exception (D16)
 - Chain state after round: 55 seals (1..55 contiguous), 401 leaves, 191 receipts (fork[17] disclosed), fresh verified backup backup-2026-09-07T14-12-51
 - Remaining open (honest): GitHub Actions CI absent; build unverified outside sandbox (blocked); real-network anchoring requires vault/TRX + owner approval; session revocation is coarse (secret rotation)
+
+Task ID: 5-push
+Agent: Z.ai Code (orchestrator)
+Task: Push the Task 5 commit.
+
+Work Log:
+- First push rejected: remote had owner commit c69e6e4 ("Delete upload directory" — security cleanup of previously-tracked files)
+- Also caught pre-push: local `.env` was TRACKED at HEAD (contained only non-sensitive DATABASE_URL; no historical secret leak). Untracked it (`git rm --cached`), now gitignored — the new SAOS_ADMIN_KEY/HASH can never enter the repo
+- Rebased onto origin/main → commit 7587fa2 pushed: c69e6e4..7587fa2 main -> main (transient credential helper, remote URL scrubbed, token never printed)
+- Branch synced: main...origin/main, 0 ahead / 0 behind; upload/ tracked files: 0
+
+Stage Summary:
+- Task 5 fully on remote: auth + rate-limit + live-gate + keyless signer + verified backup/restore/cleanup + dependency hardening (audit=0) + deployment docs + UI gate tab
