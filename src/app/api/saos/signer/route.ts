@@ -133,7 +133,7 @@ export async function POST(req: Request) {
 
     const network = parseNetwork(body.network);
     if (!network) {
-      return NextResponse.json({ ok: false, error: "network required: STEEM|BLURT|HIVE|TRON" }, { status: 200 });
+      return NextResponse.json({ ok: false, error: "network required: STEEM|BLURT|HIVE|TRON|ETHEREUM|SOLANA" }, { status: 200 });
     }
     const signer = parseSignerKind(body.signer) ?? "manual";
     const kind = body.kind === "checkpoint" ? "checkpoint" : "weave";

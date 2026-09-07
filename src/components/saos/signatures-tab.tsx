@@ -361,7 +361,7 @@ function CreateDialog({ open, onOpenChange, onDone }: { open: boolean; onOpenCha
                 onChange={(e) => setNetwork(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus-visible:outline-2 focus-visible:outline-amber-400"
               >
-                {["STEEM", "BLURT", "HIVE", "TRON"].map((n) => (
+                {["STEEM", "BLURT", "HIVE", "TRON", "ETHEREUM", "SOLANA"].map((n) => (
                   <option key={n} value={n}>
                     {n}
                   </option>

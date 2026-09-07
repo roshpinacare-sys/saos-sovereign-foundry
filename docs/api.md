@@ -33,9 +33,9 @@
 
 ## 1. `GET /api/saos/status`
 
-**מה**: מצב העגינה המלא — מטריצת 4 הרשתות, רפרנסים היסטוריים, 8 החותמים האחרונים עם העוגנים שלהם, 10 הקבלות האחרונות, מונה OpLog.
+**מה**: מצב העגינה המלא — מטריצת 6 הרשתות (מ-Task 12: ETHEREUM + SOLANA ב-dry-run), רפרנסים היסטוריים, 8 החותמים האחרונים עם העוגנים שלהם, 10 הקבלות האחרונות, מונה OpLog.
 
-**קלט**: ללא. משתני-סביבה `HIVE_RC_PCT` (ברירת-מחדל 0.6), `TRON_ENERGY` (ברירת-מחדל 0) מזינים את המטריצה.
+**קלט**: ללא. משתני-סביבה `HIVE_RC_PCT` (ברירת-מחדל 0.6), `TRON_ENERGY` (ברירת-מחדל 0) מזינים את המטריצה. **אופציונלי `?probe=1` (Task 12):** מצרף `probes` — קריאה-בלבד ל-RPC ציבורי keyless (eth_chainId/eth_blockNumber · getSlot), פסק-זמן 2.5s, `sourceHost` בלבד (ה-URL לעולם לא חוזר); בלי הפרמטר — אפס קריאות רשת חיות.
 
 **פלט** (קטעים רלוונטיים):
 ```json
@@ -463,3 +463,12 @@
 ### חוזה `GET /api/saos/repo-status` v2
 
 `secrets.adminKeyFileInTree` (boolean — בדיקת קיום של `upload/saos-admin-key.txt` בלבד; התוכן לעולם לא נקרא) + `secrets.adminKeyRule` (דינמי: פתוח כשהקובץ בעץ / סגור עם נתיב `~/.secrets` כשאינו). `knownOpenItems` כולל אוטומטית SH-7 כשהקובץ בעץ — כרגע סגור (`adminKeyFileInTree=false` אומת בסבב הסגירה).
+
+## Task 12 — אתריום וסולנה (dry-run, keyless)
+
+פירוט מלא: `docs/ethereum-solana-integration.md`. שינויי-חוזה:
+
+- **`GET /status`** — `networks` ×6 + שדות `chainType`/`chainId`/`anchorTypes`/`rpcStatus`/`liveProbePossible` לכל רשת; `matrix` ×6; `?probe=1` (opt-in, קריאה-בלבד, keyless בלבד, hostname-only).
+- **`GET /anchor-preflight?network=ETHEREUM|SOLANA`** — מקובל; `not-configured` מדווח **warn** (לעולם לא fail — היערכות-יבשה תקינה); `networks[]` כולל chainType/chainId/rpcStatus/blocker/ownerAction; רשת לא-מוכרת נשארת fail-closed (הודעת-השגיאה מעודכנת ל-6).
+- **`/signer`** — `SignRequest.network` מורחב ל-ETHEREUM/SOLANA (הוראות חתימה חיצונית ייעודיות: EVM calldata · Solana memo/blockhash); אימות-txid ציבורי עובד גם לשתי הרשתות (`eth_getTransactionByHash` · `getTransaction(finalized)` — כישלון = `unverified` כנה).
+- **אכיפת סודות**: RPC URL עם credentials/מפתח-בשאילתה נדחה בקוד; ה-URL לעולם לא נשמר/מוצג/חוזר ב-API (רק hostname ב-probe). משתני-סביבה: `ETH_RPC_URL`, `ETH_CHAIN_ID`, `SOL_RPC_URL`, `SOL_CLUSTER` (שמות בלבד ב-`.env.example`).

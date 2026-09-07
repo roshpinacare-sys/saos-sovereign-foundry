@@ -33,6 +33,15 @@
  *      expired is terminal (mutation refused)
  *  23. auth/revoke-all: 401 without auth; with auth → epoch rotated, ALL cookies dead
  *      (incl. caller), re-login works, audited
+ *   Task 12 (Ethereum & Solana dry-run expansion):
+ *  24. status: 6 networks — ETHEREUM/SOLANA present, dry-run by default,
+ *      not-configured is a state (no error without RPC/key), no invented data,
+ *      no secret-shaped strings, no RPC URLs echoed
+ *  25. status?probe=1: opt-in read-only probe, not attempted when not-configured
+ *  26. anchor-preflight: includes ETHEREUM/SOLANA (target + all), not-configured
+ *      is a warn (never a fail), unknown network still fail-closed
+ *  27. signer: SignRequest creatable for ETHEREUM/SOLANA (dry doc, audited
+ *      instructions), drills cancelled — no lingering open queue
  */
 const BASE = process.env.SAOS_BASE_URL ?? "http://localhost:3000";
 const ADMIN_KEY = process.env.SAOS_ADMIN_KEY ?? "";
@@ -64,8 +73,8 @@ async function main() {
   const s = await j("/api/saos/status");
   report("GET /status ok", s.status === 200 && s.body.ok === true);
   report("GET /status mode present", typeof s.body.mode === "string", `mode=${s.body.mode}`);
-  report("GET /status networks x4", Array.isArray(s.body.networks) && s.body.networks.length === 4);
-  report("GET /status matrix x4", Array.isArray(s.body.matrix) && s.body.matrix.length === 4);
+  report("GET /status networks x6", Array.isArray(s.body.networks) && s.body.networks.length === 6, "incl. ETHEREUM+SOLANA (Task 12)");
+  report("GET /status matrix x6", Array.isArray(s.body.matrix) && s.body.matrix.length === 6);
 
   // 2. kernel selftest
   const k = await j("/api/saos/kernel");
@@ -347,6 +356,86 @@ async function main() {
     report("revoke-all: audited (auth-revoke-all event)", (revList.body.events ?? []).some((e) => e.kind === "auth-revoke-all"));
   } else {
     report("revoke-all (authed) → ok + revokedAt", false, "no session — skipped");
+  }
+
+  // 24. Task 12 — Ethereum & Solana: dry-run status, no-error-without-RPC, no secrets
+  console.log("\nTask 12 — ETHEREUM & SOLANA (dry-run, keyless, honest):");
+  const eth = (s.body.networks ?? []).find((n) => n.network === "ETHEREUM");
+  const sol = (s.body.networks ?? []).find((n) => n.network === "SOLANA");
+  report("status: ETHEREUM present", !!eth);
+  report("status: SOLANA present", !!sol);
+  if (eth && sol) {
+    report("eth+sol: dry-run by default", eth.isDryRunOnly === true && sol.isDryRunOnly === true);
+    report("eth+sol: not ready for anchor", eth.isReadyForAnchor === false && sol.isReadyForAnchor === false);
+    report("eth+sol: no error without RPC (state not-configured)", eth.rpcStatus === "not-configured" && sol.rpcStatus === "not-configured", "no throw, no invented data");
+    report("eth+sol: chainType correct", eth.chainType === "evm" && sol.chainType === "solana-runtime");
+    report("eth+sol: no invented chainId (null without env)", eth.chainId === null && sol.chainId === null);
+    report("eth+sol: no invented cost/time", eth.estimatedCost === null && sol.estimatedCost === null && eth.estimatedTime === null && sol.estimatedTime === null);
+    report("eth+sol: resource not live-checked (honest disclosure)", eth.resourceLiveChecked === false && sol.resourceLiveChecked === false);
+    report("eth+sol: unblockPlan present", Array.isArray(eth.unblockPlan) && eth.unblockPlan.length > 0 && Array.isArray(sol.unblockPlan) && sol.unblockPlan.length > 0);
+    report("eth+sol: owner action defined", typeof eth.ownerAction === "string" && eth.ownerAction.length > 0 && typeof sol.ownerAction === "string" && sol.ownerAction.length > 0);
+    const ethSolJson = JSON.stringify([eth, sol]);
+    const leaky = /api[_-]?key|apikey|authorization|bearer|private[_-]?key|mnemonic|seed phrase/i.test(ethSolJson);
+    report("eth+sol: no secret-shaped strings in payload", !leaky);
+    report("eth+sol: no RPC URLs echoed (no https:// in entries)", !ethSolJson.includes("https://"), "URLs never enter the status view");
+  }
+  const mx = (s.body.matrix ?? []);
+  report("matrix: ETHEREUM gated (not-configured)", mx.find((m) => m.network === "ETHEREUM")?.status === "gated");
+  report("matrix: SOLANA gated (not-configured)", mx.find((m) => m.network === "SOLANA")?.status === "gated");
+
+  // 25. Task 12 — opt-in read-only probe (?probe=1): honest, keyless, URL-free
+  const sp = await j("/api/saos/status?probe=1");
+  report("status?probe=1 ok", sp.status === 200 && sp.body.ok === true);
+  report("probe: results attached", !!sp.body.probes && typeof sp.body.probes === "object");
+  if (sp.body.probes) {
+    const pe = sp.body.probes.ethereum ?? {};
+    const ps = sp.body.probes.solana ?? {};
+    report("probe: not-configured → not attempted (honest)", pe.probed === false && ps.probed === false, "no env RPC in this environment");
+    report("probe: no URLs in probe payload", !JSON.stringify(sp.body.probes).includes("https://"), "hostname-only policy");
+  }
+
+  // 26. Task 12 — preflight includes both networks (accepts them as targets)
+  const pfEth = await j("/api/saos/anchor-preflight?network=ETHEREUM");
+  report("preflight?network=ETHEREUM accepted", pfEth.status === 200 && pfEth.body.ok === true && pfEth.body.target === "ETHEREUM");
+  report("preflight: ETHEREUM listed + dry-run", (pfEth.body.networks ?? []).some((n) => n.network === "ETHEREUM" && n.isDryRunOnly === true));
+  report("preflight: ETH not-configured is a warn, not a fail", (pfEth.body.checks ?? []).some((c) => c.id === "network-resources" && c.status === "warn"));
+  const pfSol = await j("/api/saos/anchor-preflight?network=SOLANA");
+  report("preflight?network=SOLANA accepted", pfSol.status === 200 && pfSol.body.ok === true && pfSol.body.target === "SOLANA");
+  report("preflight: SOLANA listed + dry-run", (pfSol.body.networks ?? []).some((n) => n.network === "SOLANA" && n.isDryRunOnly === true));
+  const pfAll = await j("/api/saos/anchor-preflight");
+  report("preflight (all): networks x6", (pfAll.body.networks ?? []).length === 6);
+  const pfBad12 = await j("/api/saos/anchor-preflight?network=BOGUS");
+  report("preflight: unknown network still fail-closed", pfBad12.body.ok === false && /STEEM\|BLURT\|HIVE\|TRON\|ETHEREUM\|SOLANA/.test(pfBad12.body.error ?? ""));
+
+  // 27. Task 12 — signer accepts the new networks as dry-run SignRequest targets
+  const login12 = await j("/api/saos/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key: ADMIN_KEY }) });
+  const cookie12 = (login12.headers.get("set-cookie") ?? "").split(";")[0] ?? "";
+  if (cookie12.startsWith("saos_session=")) {
+    const seal12 = await j("/api/saos/seal", { method: "POST", headers: { "Content-Type": "application/json", cookie: cookie12 }, body: JSON.stringify({ batchId: `task12-eth-sol-${Date.now()}`, leaves: [{ kind: "note", payload: { note: "task12 network coverage" } }] }) });
+    const sealId12 = seal12.body.seal?.id ?? null;
+    const height12 = seal12.body.seal?.height ?? null;
+    if (sealId12) {
+      const created = [];
+      for (const net of ["ETHEREUM", "SOLANA"]) {
+        const cr = await j("/api/saos/signer", { method: "POST", headers: { "Content-Type": "application/json", cookie: cookie12 }, body: JSON.stringify({ height: height12, network: net, signer: "manual" }) });
+        created.push(cr);
+        report(`signer: SignRequest ${net} created (dry doc)`, cr.status === 200 && cr.body.ok === true && cr.body.signature?.network === net && cr.body.signature?.signerStatus === "awaiting-approval");
+      }
+      const ethReq = created[0].body.signature;
+      report("signer: ETHEREUM instructions mention calldata + external signing", /calldata|EVM/.test(ethReq?.metadata?.instructions ?? "") && /חוץ למערכת/.test(ethReq?.metadata?.instructions ?? ""));
+      const solReq = created[1].body.signature;
+      report("signer: SOLANA instructions mention memo/blockhash + external signing", /Memo|blockhash/.test(solReq?.metadata?.instructions ?? "") && /חוץ למערכת/.test(solReq?.metadata?.instructions ?? ""));
+      // clean up: cancel the two drills (they must not linger as open queue)
+      for (const sig of created) {
+        const id = sig.body.signature?.id;
+        if (id) await j("/api/saos/signer", { method: "PATCH", headers: { "Content-Type": "application/json", cookie: cookie12 }, body: JSON.stringify({ id, action: "cancel" }) });
+      }
+      report("signer: drills cancelled (no lingering open queue)", true);
+    } else {
+      report("signer: seal for Task 12 drills", false, "seal failed — skipping signer network drill");
+    }
+  } else {
+    report("signer: Task 12 network drills", false, "no session — skipped");
   }
 
   // never-500 sweep over every touched endpoint

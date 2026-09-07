@@ -143,7 +143,7 @@ export interface SignatureRow {
 // ─── /networks (from /status.networks) ───────────────────────────────────────
 
 export interface NetworkStatus {
-  network: "STEEM" | "BLURT" | "HIVE" | "TRON";
+  network: "STEEM" | "BLURT" | "HIVE" | "TRON" | "ETHEREUM" | "SOLANA";
   status: "anchored" | "pending" | "gated" | "transit";
   mode: "advisory" | "direct";
   lastChecked: string;
@@ -160,6 +160,12 @@ export interface NetworkStatus {
   estimatedTime: string | null;
   estimatedCost: string | null;
   resourceLiveChecked: boolean;
+  // Task 12: chain identity & RPC presence
+  chainType?: "graphene" | "tvm" | "evm" | "solana-runtime";
+  chainId?: string | null;
+  anchorTypes?: string[];
+  rpcStatus?: "not-configured" | "public" | "configured";
+  liveProbePossible?: boolean;
 }
 
 // ─── /plans ──────────────────────────────────────────────────────────────────

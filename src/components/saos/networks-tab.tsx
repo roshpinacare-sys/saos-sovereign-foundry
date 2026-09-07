@@ -14,7 +14,7 @@ import {
   fmtNum
 } from "@/components/ui/kit";
 import { EP, errText, useSaos } from "./api";
-import { NETWORK_STATUS } from "./labels";
+import { CHAIN_TYPE_LABEL, NETWORK_STATUS, RPC_STATUS_LABEL } from "./labels";
 import type { PlansResponse, StatusResponse } from "./types";
 
 export function NetworksTab() {
@@ -61,7 +61,32 @@ export function NetworksTab() {
                 <Badge tone="neutral">מצב: {n.mode === "advisory" ? "advisory (חישוב בלבד)" : "direct"}</Badge>
                 <Badge tone={n.isDryRunOnly ? "warn" : "ok"}>{n.isDryRunOnly ? "dry-run בלבד" : "מסלול שידור קיים"}</Badge>
                 <Badge tone={n.isReadyForAnchor ? "ok" : "danger"}>{n.isReadyForAnchor ? "מוכנה לעוגן" : "לא מוכנה לעוגן"}</Badge>
+                {n.chainType && <Badge tone="info">{CHAIN_TYPE_LABEL[n.chainType] ?? n.chainType}</Badge>}
+                {n.rpcStatus && <Badge tone={RPC_STATUS_LABEL[n.rpcStatus]?.tone ?? "neutral"}>{RPC_STATUS_LABEL[n.rpcStatus]?.label ?? n.rpcStatus}</Badge>}
               </div>
+
+              {(n.chainId || (n.anchorTypes && n.anchorTypes.length > 0)) && (
+                <div className="mt-2 rounded-lg border border-zinc-800 bg-zinc-900/70 p-2.5">
+                  <div className="text-[10px] font-bold uppercase tracking-wide text-sky-400">זהות שרשרת (Task 12)</div>
+                  <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-zinc-400">
+                    {n.chainId && (
+                      <span>
+                        {"מזהה/קלאסטר: "}
+                        <Mono className="break-all">{n.chainId}</Mono>
+                      </span>
+                    )}
+                    {n.anchorTypes && n.anchorTypes.length > 0 && (
+                      <span>
+                        {"סוגי עיגון אפשריים: "}
+                        <span dir="ltr">{n.anchorTypes.join(" · ")}</span>
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-[10px] leading-relaxed text-zinc-500">
+                    מקור: קבועים מתועדים בלבד (אין קריאת רשת חיה בחישוב ברירת-המחדל; probe אופציונלי קריאה-בלבד בלבד).
+                  </p>
+                </div>
+              )}
 
               <div className="mt-3 space-y-2">
                 <div className="rounded-lg border border-zinc-800 bg-zinc-900/70 p-2.5">

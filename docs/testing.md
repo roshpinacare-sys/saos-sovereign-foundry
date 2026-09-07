@@ -332,3 +332,20 @@ lint ✅ · typecheck ✅ · api-check **45/45** ✅ · concurrency **8/8** (hei
 - ריצת ה-CI עצמה ב-GitHub — תתאפשר רק לאחר ה-push; לא ניתן לאמת מקומית
 - `verified=true` באימות txid — דורש egress אמיתי (ללא שינוי)
 - רוטציית מפתח-אדמין מלאה — פעולת בעלים (נוהל מתועד §7, לא מבוצע)
+
+## Task 12 — תוצאות הסוויטה (אתריום/סולנה)
+
+| בדיקה | תוצאה |
+|---|---|
+| `bun run lint` | ✅ נקי |
+| `bun run typecheck` | ✅ נקי |
+| `bun run test` (api-check) | ✅ **135/135** (104 → 135; סעיפים 24–27 חדשים ל-Task 12) |
+| `bun run verify` (concurrency) | ✅ 8/8 — גבהים רצופים, שרשרת תקינה |
+
+**הצהרות חדשות (בחירה):** ETHEREUM/SOLANA ב-status ×6 וב-matrix; dry-run כברירת-מחדל; `not-configured` ללא RPC ללא שגיאה; chainType נכון; אין המצאת chainId/עלות/זמן; אין מחרוזות בצורת-סוד ואין URLs בתשובות; probe opt-in כנה (לא מנסה כש-not-configured); preflight מקבל ETH/SOL ומדווח warn (לא fail); SignRequest יבש לשתי הרשתות + ביטול-ניקוי.
+
+**דפדפן (agent-browser):** מסך רשתות — 6 כרטיסים כולל זהות-שרשרת; dropdown חתימות ×6; אפס גלילה אופקית ב-360/390/1440px; אפס שגיאות קונסולה.
+
+### מה עדיין לא נבדק (כנה)
+- probe מול RPC חי אמיתי — דורש `ETH_RPC_URL`/`SOL_RPC_URL` מוגדרים (לא קיימים בסנדבוקס; הנתיב נבדק לעומק ה-not-configured)
+- `bun run build` — נאסר בסנדבוקס; נאמת ב-CI

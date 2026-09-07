@@ -215,3 +215,11 @@ git grep -lIE 'ghp_[A-Za-z0-9]{20,}|-----BEGIN [A-Z ]*PRIVATE' -- . || echo clea
 - המצב הקבוע: אין קובץ-סוד בתוך עץ הפרויקט; קובץ הטוקן עבר באותו אופן אל `~/.secrets/github-token` (600).
 - ניטור אוטומטי: `/api/saos/repo-status` → `adminKeyFileInTree` (קיום בלבד) — אם יופיע קובץ-מפתח חדש בעץ, הפריט ייפתח מחדש אוטומטית.
 - חשש חשיפה → רוטציה מיידית לפי docs/secret-hygiene.md §7 (מפתח חדש + hash חדש ב-.env, לעולם לא מודפס) + `revoke-all` + תיעוד כפעולת בעלים.
+
+## Task 12 — נהלי אתריום/סולנה (dry-run)
+
+- **בדיקת מצב**: `GET /api/saos/status` → כרטיסי ETHEREUM/SOLANA (`rpcStatus`, `blocker`, `ownerAction`); `GET /api/saos/anchor-preflight?network=ETHEREUM` (וגם SOLANA).
+- **אימות-קריאה אופציונלי**: `GET /api/saos/status?probe=1` — רק כש-`ETH_RPC_URL`/`SOL_RPC_URL` מוגדרים ציבוריים-ללא-מפתח; אחרת `probed:false` (כנה).
+- **הגדרת RPC (פעולת בעלים)**: ערכים ב-`.env` מקומי בלבד — **אסור** ש-RPC עם מפתח ייכנס לריפו; המערכת דוחה URL עם credentials/מפתח-בשאילתה מעצמה.
+- **הכנת בקשת-חתימה יבשה לרשתות החדשות**: מסך חתימות → צור בקשה → רשת ETHEREUM/SOLANA → הוראות חתימה חיצונית (EVM calldata / Solana memo-blockhash) → רישום תוצאה ציבורית בלבד (tx hash / signature) → אימות opt-in.
+- **איסורים קבועים**: אין עסקה, אין שידור, אין חתימה, אין ארנק מחובר, אין מימון gas/SOL — עד `SAOS_MODE=live` + `SAOS_LIVE_CONFIRM=YES` + אישור בעלים מפורש (docs/first-anchor-runbook.md).

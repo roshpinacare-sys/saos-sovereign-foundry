@@ -20,6 +20,8 @@
 
 import { canonicalDigest, canonicalize } from "./canonical-json";
 import type { SealRecord } from "@prisma/client";
+import { ethereumReadRpcCandidate } from "./networks/ethereum";
+import { solanaReadRpcCandidate } from "./networks/solana";
 
 export type SignerKind = "none" | "external" | "manual" | "hardware";
 export type SignerStatus = "disconnected" | "ready" | "awaiting-approval" | "error";
@@ -33,7 +35,7 @@ export function purposeLabel(kind: string): string {
 
 export interface SignRequest {
   id: string;
-  network: "STEEM" | "BLURT" | "HIVE" | "TRON";
+  network: "STEEM" | "BLURT" | "HIVE" | "TRON" | "ETHEREUM" | "SOLANA";
   kind: "weave" | "checkpoint";
   /** public, canonical transaction content — exactly what will be posted/broadcast */
   payload: string;
@@ -114,6 +116,10 @@ function instructionsFor(network: SignRequest["network"], kind: SignRequest["kin
       return `custom_json operation — id=saos.weave.v1 (סף-קל RC). ${common}`;
     case "TRON":
       return `TriggerSmartContract — data field = stateRoot מה-payload, או שידור דרך tronbridge. ${common}`;
+    case "ETHEREUM":
+      return `עסקת EVM — stateRoot/seal-root בנתוני הקריאה (calldata) או commitment ב-event log/memo; דורש gas (ETH). ${common}`;
+    case "SOLANA":
+      return `עסקת Solana — Instruction לתוכנית Memo עם ה-root, או commitment מול blockhash; דורש SOL לעמלות/rent. ${common}`;
   }
 }
 
@@ -162,7 +168,7 @@ export function parseSignerKind(raw: unknown): SignerKind | null {
 
 export function parseNetwork(raw: unknown): SignRequest["network"] | null {
   const v = String(raw ?? "").trim().toUpperCase();
-  return v === "STEEM" || v === "BLURT" || v === "HIVE" || v === "TRON" ? v : null;
+  return v === "STEEM" || v === "BLURT" || v === "HIVE" || v === "TRON" || v === "ETHEREUM" || v === "SOLANA" ? v : null;
 }
 
 /** loose public-result validation — a txid is public data; reject emptiness/controls, nothing exotic */
@@ -289,6 +295,55 @@ async function verifyTron(txid: string): Promise<TxidVerification> {
   }
 }
 
+/** ETHEREUM: read-only eth_getTransactionByHash on a keyless public RPC (Task 12) */
+async function verifyEthereum(txid: string): Promise<TxidVerification> {
+  const url = ethereumReadRpcCandidate();
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_getTransactionByHash", params: [txid] }),
+      signal: AbortSignal.timeout(5_000),
+      cache: "no-store"
+    });
+    if (!res.ok) {
+      return { verified: false, source: null, reason: `אימות ETHEREUM נכשל: RPC ציבורי לא נגיש (HTTP ${res.status}) — unverified` };
+    }
+    const json = (await res.json()) as { result?: unknown };
+    const tx = json?.result;
+    if (tx && typeof tx === "object" && "blockNumber" in (tx as Record<string, unknown>) && (tx as Record<string, unknown>).blockNumber !== null) {
+      return { verified: true, source: url, reason: "tx hash אומת מול RPC ציבורי (eth_getTransactionByHash)" };
+    }
+    return { verified: false, source: null, reason: "ה-RPC הציבורי לא מכיר את ה-hash (או שהעסקה עדיין ב-mempool) — unverified" };
+  } catch {
+    return { verified: false, source: null, reason: "אימות ETHEREUM נכשל: RPC ציבורי לא נגיש מהסנדבוקס (פסק-זמן) — unverified" };
+  }
+}
+
+/** SOLANA: read-only getTransaction on a keyless public RPC (Task 12) */
+async function verifySolana(txid: string): Promise<TxidVerification> {
+  const url = solanaReadRpcCandidate();
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTransaction", params: [txid, { commitment: "finalized" }] }),
+      signal: AbortSignal.timeout(5_000),
+      cache: "no-store"
+    });
+    if (!res.ok) {
+      return { verified: false, source: null, reason: `אימות SOLANA נכשל: RPC ציבורי לא נגיש (HTTP ${res.status}) — unverified` };
+    }
+    const json = (await res.json()) as { result?: unknown };
+    if (json?.result !== null && json?.result !== undefined) {
+      return { verified: true, source: url, reason: "signature אומת מול RPC ציבורי (getTransaction, finalized)" };
+    }
+    return { verified: false, source: null, reason: "ה-RPC הציבורי לא מכיר את ה-signature (או שהוא עדיין לא finalized) — unverified" };
+  } catch {
+    return { verified: false, source: null, reason: "אימות SOLANA נכשל: RPC ציבורי לא נגיש מהסנדבוקס (פסק-זמן) — unverified" };
+  }
+}
+
 export async function verifyTxidPublic(network: SignRequest["network"], txid: string): Promise<TxidVerification> {
   switch (network) {
     case "STEEM":
@@ -299,5 +354,9 @@ export async function verifyTxidPublic(network: SignRequest["network"], txid: st
       return verifyCondenser("https://rpc.blurt.world", "BLURT", txid);
     case "TRON":
       return verifyTron(txid);
+    case "ETHEREUM":
+      return verifyEthereum(txid);
+    case "SOLANA":
+      return verifySolana(txid);
   }
 }

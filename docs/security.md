@@ -133,3 +133,12 @@
 - רישום תוצאת עוגן מקבל **נתונים ציבוריים בלבד** (txid / proofRef / anchorRef) — מבנית אין שדה שאליו ניתן להזריק חומר-מפתח.
 - אימות txid מול רשת ציבורית הוא **קריאה בלבד** ל-endpoints ציבוריים (STEEM/HIVE/BLURT condenser, TronGrid), opt-in, פסק-זמן 5s — אינו שידור, אינו עסקה, אינו פעולה פיננסית.
 - תוצאה שלא ניתן לאמת מוצגת תמיד כ-unverified עם הסיבה — לעולם לא כעוגן סופי (הוכח ב-api-check ובדפדפן).
+
+## Task 12 — מודולי אתריום/סולנה: בטיחות RPC וסודות
+
+- **keyless by design**: שני המודולים (`src/lib/saos/networks/ethereum.ts`, `solana.ts`) מחזירים מצב ללא סודות; `not-configured` הוא מצב כנה ולא שגיאה.
+- **safeRpcUrl דוחה**: URL עם credentials מוטמעים (`user:pass@`) או פרמטר-שאילתה שנראה כמפתח (`key|token|secret|auth`); URL לא-תקני → not-configured. לעולם לא נזרקת חריגה.
+- **אין אחסון/הצגה של RPC URL**: ה-URL חי רק בזיכרון-תהליך מ-env; בתשובות API חוזר `rpcStatus` (מצב) וב-probe `sourceHost` (hostname בלבד).
+- **probe opt-in וקריאה-בלבד**: `GET /status?probe=1` בלבד; פסק-זמן 2.5s; אין עסקה/שידור/חתימה; כישלון = `unverified`/לא-מאומת-חי — לעולם לא עוגן סופי.
+- **אימות-txid לרשתות החדשות**: `eth_getTransactionByHash` / `getTransaction(finalized)` על RPC קריאה keyless (env תקין או endpoint ציבורי ידוע); כל כישלון = unverified כנה.
+- **`.env.example`**: שמות משתנים בלבד (`ETH_RPC_URL`, `ETH_CHAIN_ID`, `SOL_RPC_URL`, `SOL_CLUSTER`) — אין ערכים אמיתיים; RPC עם מפתח אסור בריפו על-פי כלל הברזל.

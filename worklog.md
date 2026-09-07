@@ -351,3 +351,31 @@ Stage Summary:
 - Everything the owner approved was executed: f012014 (Task 11) is on origin/main; SH-7 closed and system-confirmed; 8/9 decisions closed/recorded with audit trail; all sessions revoked (audited); CI workflow added; full check suite green; docs and worklog updated with zero secret exposure and zero live/financial/broadcast actions
 - Remaining genuine blockers (cannot be closed by any agent): HIVE RC ≥ 8% OR TRON funding (owner resources), signing-vault restore + external signature (owner), live-mode-approval (owner decision), CI remote-run verification (happens on GitHub)
 - Owner-only remaining actions (all optional unless wanting a real anchor): fund networks or connect vault, decide live mode, optional rotations (admin key / GitHub token per §7 procedures)
+
+---
+Task ID: 12 (multi-network expansion + cross-agent mapping)
+Agent: Z.ai Code (orchestrator)
+Task: Owner authorization for maximum autonomy: map sibling agent folders/repos (read-only, metadata-only), integrate ETHEREUM + SOLANA as dry-run keyless networks, update preflight/signer/UI/env, full tests, docs, safe push.
+
+Work Log:
+- PUSH-PRECHECK (part ב): tree clean, main == origin/main @ ff5f395 — no unpushed commits existed; nothing to pre-push (verified via status/branch/remote/log)
+- CROSS-AGENT MAPPING (part ג): local workspace — /home/z/my-project (active), /home/z/saos-repo (STALE clone of THIS repo @ Task 6 + EMBEDDED TOKEN in its .git/config remote — flagged for owner rotation, token never displayed), ~/.secrets (blocked), root-owned /home/z/TODO (old completed task list, no instructions); GitHub roshpinacare-sys — 8 private repos listed via API (same owner → read-only source): steem (191MB platform, deep-read needs approval), Saosmartwallet (WALLET → blocked), saos-sovereign-platform (canonical copy, read-only), saos-dex (out of scope), anchor-baseline (CONTAINS .env → blocked, rotation recommended), roshpina (kernel, license review needed), Project-files (known archives). Reading rules enforced: no .env/key/wallet/seed/credential/token/secret files read anywhere
+- ETHEREUM+SOLANA MODULES (parts ד/ו): new src/lib/saos/networks/{types,ethereum,solana}.ts — full status fields (status/mode/chainType/chainId/anchorTypes/rpcStatus/liveProbePossible/lastChecked/lastVerifiedAnchor/nextAction/blocker/requiredResource/unblockPlan/isReadyForAnchor/isDryRunOnly/ownerOptions/ownerAction/estimatedTime/estimatedCost/resourceLiveChecked); `not-configured` = STATE not error; safeRpcUrl REFUSES credentials/key-like query params; probe = read-only, opt-in, 2.5s timeout, hostname-only, never throws; anchor vocab: tx-hash/calldata-hash/memo-log-commitment (EVM) · signature/blockhash-commitment/memo-program (Solana)
+- WIRING: network-status.ts (NetworkName ×6 + extended view), anchor-gates.ts (matrix ×6, ETH/SOL gated/not-configured), signer.ts (SignRequest union + parseNetwork + per-network external-signing instructions + verifyEthereum/verifySolana read-only txid verification via keyless candidates), seal route (anchor rows now matrix-driven — behavior-preserving for original 4, correct for 6), anchor-preflight (accepts ETH/SOL targets; not-configured = warn NEVER fail; networks[] enriched; error message ×6), status route (?probe=1 opt-in read-only probes), signer route (error message ×6)
+- UI: types.ts NetworkStatus ×6 + chain fields; labels.tsx CHAIN_TYPE_LABEL + RPC_STATUS_LABEL; networks-tab.tsx chain-identity badges block; signatures-tab.tsx network dropdown ×6 — RTL, mobile-first, zero overflow
+- ENV: .env.example + ETH_RPC_URL/ETH_CHAIN_ID/SOL_RPC_URL/SOL_CLUSTER (names only, safety comments)
+- TESTS: api-check 104→**135/135** (new §24: 6 networks + dry-run + not-configured-no-error + chainType + no-invented-data + no-secret-shaped-strings + no-URLs-echoed; §25 probe honesty; §26 preflight ETH/SOL/warn-not-fail/fail-closed-unknown; §27 dry SignRequest for ETH/SOL + instructions + cancel-cleanup); lint ✅ typecheck ✅ concurrency 8/8 ✅ (heights 57..64 contiguous, 25 seals/180 leaves)
+- BROWSER: overview ok; networks tab — 6 cards incl. "זהות שרשרת (TASK 12)" + EVM/Solana-runtime badges + not-configured honest blocker; signatures dialog dropdown = STEEM,BLURT,HIVE,TRON,ETHEREUM,SOLANA; horizontal overflow = 0 @ 360/390/1440; 0 console errors
+- DOCS: NEW docs/multi-agent-map.md + docs/cross-agent-findings.md + docs/ethereum-solana-integration.md; UPDATED api.md (status ×6 + probe + Task 12 contract section), architecture.md (networks/ row), security.md (RPC-safety section), runbook.md (ETH/SOL procedures), next-steps.md (state changes + blocker #5 + re-ranked candidates), ui.md (§2.4), testing.md (135/135 + browser evidence + honest gaps), docs/README.md (new-docs map)
+
+Bugs / findings this session:
+- (caught, fixed) variable collision `pfBad` in api-check (new vs existing §14) — renamed pfBad12 before first green run
+- (finding, no code change) the admin key file contains multiple lines; the operative key is the LAST non-empty line — the runbook's test invocation pattern must extract it (sed -n '3p'); CI already bootstraps its own throwaway key. Documented pattern only — key content never printed
+- (security findings, no code change) saos-repo .git/config has an embedded access token (rotation recommended); GitHub repo anchor-baseline has a top-level .env (never read; removal/rotation recommended) — both recorded in multi-agent-map §4
+- (env note) sandbox auth rate-limit window (60s) can poison immediately-repeated api-check runs — wait out the window between runs
+
+Stage Summary:
+- ETHEREUM + SOLANA now first-class dry-run networks across status/matrix/preflight/signer/UI — keyless, honest, not-configured as a state, zero live calls by default, zero secrets, zero transactions, zero broadcasts
+- Cross-agent mapping executed read-only per protocol: nothing copied; two security findings flagged for the owner; integration built NATIVE instead of imported (zero license/code risk)
+- Suite green end-to-end: lint + typecheck + api-check 135/135 + concurrency 8/8 + browser (0 overflow, 0 console errors)
+- Remaining genuine blockers: ETH/SOL not-configured (owner RPC/funding decision), HIVE RC/TRON energy (owner resources), vault restore + external signature (owner), live-mode-approval (owner), CI remote verification (GitHub), build outside sandbox (policy)

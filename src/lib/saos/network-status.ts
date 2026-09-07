@@ -8,8 +8,11 @@
 import { HIVE_RC_FLOOR_HEAVY, HIVE_RC_FLOOR_LIGHT, hiveRcHoursToTarget, BLURT_COOLDOWN_MIN, BLURT_FEE_FORMULA } from "./anchor-gates";
 import { minStakeForSettlements } from "./tron-energize";
 import { HISTORIC_ANCHORS } from "./historic";
+import { ethereumStatus } from "./networks/ethereum";
+import { solanaStatus } from "./networks/solana";
+import type { ChainType, RpcStatus } from "./networks/types";
 
-export type NetworkName = "STEEM" | "BLURT" | "HIVE" | "TRON";
+export type NetworkName = "STEEM" | "BLURT" | "HIVE" | "TRON" | "ETHEREUM" | "SOLANA";
 
 export interface NetworkStatusView {
   network: NetworkName;
@@ -39,6 +42,17 @@ export interface NetworkStatusView {
   estimatedCost: string | null;
   /** false = the resource figure is env/historic, NOT a live probe (honest disclosure) */
   resourceLiveChecked: boolean;
+  // ── Task 12: chain identity & RPC presence (Ethereum/Solana + full matrix) ──
+  /** chain family — graphene (STEEM/BLURT/HIVE), tvm (TRON), evm, solana-runtime */
+  chainType?: ChainType;
+  /** chain id / cluster name — public constant only; null when unknown/not set */
+  chainId?: string | null;
+  /** possible anchor commitment kinds on this chain (plan vocabulary, no execution) */
+  anchorTypes?: string[];
+  /** RPC presence state — NEVER the URL itself */
+  rpcStatus?: RpcStatus;
+  /** true when a read-only live probe is possible right now (opt-in, keyless RPC) */
+  liveProbePossible?: boolean;
 }
 
 export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatusView[] {
@@ -54,6 +68,10 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
     network: "STEEM",
     status: "anchored",
     mode: "advisory",
+    chainType: "graphene",
+    chainId: null,
+    anchorTypes: ["custom_json op (saos.weave.v1)"],
+    rpcStatus: "not-configured",
     lastChecked: nowIso,
     lastVerifiedAnchor: historicOf("STEEM")?.txRef ?? null,
     nextAction: "בפעימת live הבאה: שידור custom_json saos.weave.v1 + שמירת txid מלא ב-AnchorTx",
@@ -81,6 +99,10 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
     network: "BLURT",
     status: "anchored",
     mode: "advisory",
+    chainType: "graphene",
+    chainId: null,
+    anchorTypes: ["custom_json op (canonical low-s)"],
+    rpcStatus: "not-configured",
     lastChecked: nowIso,
     lastVerifiedAnchor: historicOf("BLURT")?.txRef ?? null,
     nextAction: `בפעימת live הבאה: חתימה קנונית (low-s loop), עמלה ${BLURT_FEE_FORMULA}, שמירת cooldown ${BLURT_COOLDOWN_MIN} דק'`,
@@ -110,6 +132,10 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
     network: "HIVE",
     status: rcPct >= HIVE_RC_FLOOR_LIGHT ? "pending" : "gated",
     mode: "advisory",
+    chainType: "graphene",
+    chainId: null,
+    anchorTypes: ["custom_json op (saos.weave.v1)"],
+    rpcStatus: "not-configured",
     lastChecked: nowIso,
     lastVerifiedAnchor: null,
     nextAction:
@@ -143,6 +169,10 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
     network: "TRON",
     status: tronEnergy > 0 ? "pending" : "transit",
     mode: "advisory",
+    chainType: "tvm",
+    chainId: null,
+    anchorTypes: ["TriggerSmartContract (stateRoot in calldata)", "tronbridge daily train"],
+    rpcStatus: "not-configured",
     lastChecked: nowIso,
     lastVerifiedAnchor: null,
     nextAction:
@@ -171,5 +201,10 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
     resourceLiveChecked: false
   };
 
-  return [steem, blurt, hive, tron];
+  // Task 12: Ethereum & Solana join the matrix — dry-run only, keyless,
+  // `not-configured` is a state (never an error); zero live calls by default.
+  const ethereum = ethereumStatus(nowIso);
+  const solana = solanaStatus(nowIso);
+
+  return [steem, blurt, hive, tron, ethereum, solana];
 }

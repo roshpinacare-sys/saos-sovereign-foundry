@@ -8,8 +8,11 @@
  * Hive RC regenerates ≈20%/day; floors are 8% (light) / 12% (heavy) + 2× headroom.
  */
 
+import { ethereumRpcStatus } from "./networks/ethereum";
+import { solanaRpcStatus } from "./networks/solana";
+
 export interface ChainGate {
-  network: "STEEM" | "BLURT" | "HIVE" | "TRON";
+  network: "STEEM" | "BLURT" | "HIVE" | "TRON" | "ETHEREUM" | "SOLANA";
   status: "anchored" | "pending" | "gated" | "transit";
   gate: string | null;
   detail: string;
@@ -110,5 +113,27 @@ export function anchoringMatrix(rcPct: number, tronEnergy: number): ChainGate[] 
         ? null
         : "energize: freezeBalanceV2 + delegateResource — המודול מוכן בפלטפורמה זו"
   };
-  return [steem, blurt, hive, tron];
+  // Task 12: Ethereum & Solana join the gate matrix — dry-run only, keyless.
+  // `not-configured` is a state (never an error); nothing is invented.
+  const ethRpc = ethereumRpcStatus() !== "not-configured";
+  const solRpc = solanaRpcStatus() !== "not-configured";
+  const ethereum: ChainGate = {
+    network: "ETHEREUM",
+    status: "gated",
+    gate: ethRpc ? null : "not-configured (אין ETH_RPC_URL) — dry-run בלבד",
+    detail: ethRpc
+      ? "EVM — עיגון אפשרי: tx hash / calldata hash / memo-log commitment; קריאה-בלבד אפשרית, אין שידור"
+      : "EVM — עיגון אפשרי: tx hash / calldata hash / memo-log commitment; אין RPC — אין בדיקת קריאה",
+    recovery: "הגדרת ETH_RPC_URL ציבורי (ללא מפתח) לקריאה-בלבד + gas (ETH) ממומן על-ידי הבעלים + חתימה חיצונית"
+  };
+  const solana: ChainGate = {
+    network: "SOLANA",
+    status: "gated",
+    gate: solRpc ? null : "not-configured (אין SOL_RPC_URL) — dry-run בלבד",
+    detail: solRpc
+      ? "Solana runtime — עיגון אפשרי: signature / blockhash commitment / memo program; קריאה-בלבד אפשרית, אין שידור"
+      : "Solana runtime — עיגון אפשרי: signature / blockhash commitment / memo program; אין RPC — אין בדיקת קריאה",
+    recovery: "הגדרת SOL_RPC_URL ציבורי (ללא מפתח) לקריאה-בלבד + SOL (עמלות/rent) ממומן על-ידי הבעלים + חתימה חיצונית"
+  };
+  return [steem, blurt, hive, tron, ethereum, solana];
 }

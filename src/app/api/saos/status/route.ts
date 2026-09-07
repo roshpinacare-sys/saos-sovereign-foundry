@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { anchoringMatrix } from "@/lib/saos/anchor-gates";
 import { HISTORIC_ANCHORS } from "@/lib/saos/historic";
 import { networkStatuses } from "@/lib/saos/network-status";
+import { probeEthereumReadonly } from "@/lib/saos/networks/ethereum";
+import { probeSolanaReadonly } from "@/lib/saos/networks/solana";
 import { saosMode } from "@/lib/saos/modes";
 import { authConfigured } from "@/lib/saos/auth";
 import { enforceRateLimit, ruleFor } from "@/lib/saos/rate-limit";
@@ -22,6 +24,20 @@ export async function GET(req: Request) {
     const rcPct = Number(process.env.HIVE_RC_PCT ?? 0.6);
     const tronEnergy = Number(process.env.TRON_ENERGY ?? 0);
     const mode = saosMode();
+
+    // Task 12: opt-in read-only probe (?probe=1) — keyless public RPCs only,
+    // short timeout, never throws; the DEFAULT call stays zero-live-calls.
+    const wantsProbe = new URL(req.url).searchParams.get("probe") === "1";
+    let probes: Record<string, unknown> | undefined;
+    if (wantsProbe) {
+      const [eth, sol] = await Promise.all([probeEthereumReadonly(), probeSolanaReadonly()]);
+      // hostname only — the URL itself is never echoed
+      probes = {
+        ethereum: { probed: eth.probed, ok: eth.ok, chainId: eth.chainId, blockNumber: eth.blockNumber, sourceHost: eth.sourceHost, reason: eth.reason },
+        solana: { probed: sol.probed, ok: sol.ok, slot: sol.slot, sourceHost: sol.sourceHost, reason: sol.reason },
+        note: "קריאה-בלבד (אופציונלי) — אין עסקה, אין שידור, אין מפתח; כישלון קריאה = לא מאומת חי, לעולם לא עוגן סופי"
+      };
+    }
 
     const [seals, receipts, opCount] = await Promise.all([
       db.sealRecord.findMany({
@@ -47,6 +63,7 @@ export async function GET(req: Request) {
       },
       matrix: anchoringMatrix(rcPct, tronEnergy),
       networks: networkStatuses(rcPct, tronEnergy),
+      ...(probes ? { probes } : {}),
       historic: HISTORIC_ANCHORS,
       seals: seals.map((s) => ({
         id: s.id,

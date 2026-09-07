@@ -20,6 +20,20 @@ export const NETWORK_STATUS: Record<string, { label: string; tone: "ok" | "warn"
   transit: { label: "במעבר", tone: "warn" }
 };
 
+// Task 12: chain identity + RPC presence labels (never color-only — text always shown)
+export const CHAIN_TYPE_LABEL: Record<string, string> = {
+  graphene: "Graphene (משפחת STEEM/HIVE)",
+  tvm: "TVM (TRON)",
+  evm: "EVM (אתריום)",
+  "solana-runtime": "Solana runtime"
+};
+
+export const RPC_STATUS_LABEL: Record<string, { label: string; tone: "ok" | "warn" | "info" | "neutral" }> = {
+  "not-configured": { label: "RPC לא מוגדר — dry-run", tone: "neutral" },
+  public: { label: "RPC ציבורי (ללא מפתח) — קריאה בלבד", tone: "info" },
+  configured: { label: "RPC מוגדר", tone: "ok" }
+};
+
 export const ANCHOR_STATUS: Record<string, { label: string; tone: "ok" | "warn" | "danger" | "info" | "neutral" }> = {
   anchored: { label: "נעוגן", tone: "ok" },
   pending: { label: "ממתין", tone: "info" },

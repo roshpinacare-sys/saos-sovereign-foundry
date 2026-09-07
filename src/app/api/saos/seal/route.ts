@@ -93,18 +93,10 @@ export async function POST(req: Request) {
         network: m.network,
         kind: "weave",
         txid: null,
-        status:
-          m.network === "STEEM" || m.network === "BLURT"
-            ? "pending"
-            : m.network === "HIVE"
-              ? "gated"
-              : "transit",
-        gate:
-          m.network === "HIVE" && m.gate
-            ? `${m.gate} · ${advisory}`
-            : m.network === "TRON" && tronEnergy === 0
-              ? `energy-0 · ${advisory}`
-              : advisory,
+        // matrix-driven: the gate matrix already computes the honest per-network
+        // status (incl. ETHEREUM/SOLANA not-configured → gated, Task 12)
+        status: m.status,
+        gate: m.gate ? `${m.gate} · ${advisory}` : advisory,
         meta: JSON.stringify({ advisory, rcPct, tronEnergy })
       }));
 

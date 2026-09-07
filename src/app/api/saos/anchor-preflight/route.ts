@@ -109,7 +109,7 @@ export async function GET(req: Request) {
       target = parseNetwork(targetRaw);
       if (!target) {
         // fail-closed: an explicit but unknown target must not silently mean "all"
-        return NextResponse.json({ ok: false, error: "network must be one of STEEM|BLURT|HIVE|TRON" }, { status: 200 });
+        return NextResponse.json({ ok: false, error: "network must be one of STEEM|BLURT|HIVE|TRON|ETHEREUM|SOLANA" }, { status: 200 });
       }
     }
 
@@ -175,6 +175,22 @@ export async function GET(req: Request) {
       if (n.network === "TRON" && tronEnergy <= 0) resourceFails.push("TRON energy=0 (נדרש הימור או שריפה)");
       if (n.network === "STEEM" || n.network === "BLURT") {
         resourceWarns.push(`${n.network}: state/permissions לא נבדקו מול הרשת בשלב זה (advisory — נדרש אימות חיה לפני עוגן)`);
+      }
+      // Task 12: Ethereum/Solana — not-configured is a WARN-state, never a fail:
+      // missing RPC is the expected dry-run posture, not a broken gate.
+      if (n.network === "ETHEREUM") {
+        resourceWarns.push(
+          n.rpcStatus === "not-configured"
+            ? "ETHEREUM: not-configured — אין ETH_RPC_URL; dry-run בלבד, אין בדיקת קריאה (לא חסימה קשה)"
+            : "ETHEREUM: RPC ציבורי מוגדר — קריאה-בלבד אפשרית; עדיין dry-run עד חותם חיצוני ואישור בעלים"
+        );
+      }
+      if (n.network === "SOLANA") {
+        resourceWarns.push(
+          n.rpcStatus === "not-configured"
+            ? "SOLANA: not-configured — אין SOL_RPC_URL; dry-run בלבד, אין בדיקת קריאה (לא חסימה קשה)"
+            : "SOLANA: RPC ציבורי מוגדר — קריאה-בלבד אפשרית; עדיין dry-run עד חותם חיצוני ואישור בעלים"
+        );
       }
     }
     add(
@@ -284,6 +300,11 @@ export async function GET(req: Request) {
       networks: networks.map((n) => ({
         network: n.network,
         status: n.status,
+        chainType: n.chainType ?? null,
+        chainId: n.chainId ?? null,
+        rpcStatus: n.rpcStatus ?? null,
+        blocker: n.blocker,
+        ownerAction: n.ownerAction,
         isReadyForAnchor: n.isReadyForAnchor,
         isDryRunOnly: n.isDryRunOnly,
         lastChecked: n.lastChecked
