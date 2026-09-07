@@ -17,7 +17,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, error: "rate-limited", retryAfterSec: rl.retryAfterSec }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } });
   }
   try {
-    const auth = requireAuth(req);
+    const auth = await requireAuth(req);
     if (!auth.ok) {
       await audit({ kind: "sensitive-denied", actor: auth.actorRef, action: "GET /audit", allowed: false, req, detail: auth.error });
       return NextResponse.json({ ok: false, error: auth.error ?? "auth-required" }, { status: auth.status });

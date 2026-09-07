@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     // auth gate: in live mode a seal becomes broadcast-adjacent — it requires
     // an authenticated operator. In dry-run/safe it stays an open simulation.
     if (modeState.liveArmed) {
-      const auth = requireAuth(req);
+      const auth = await requireAuth(req);
       if (!auth.ok) {
         await audit({ kind: "sensitive-denied", actor: auth.actorRef, action: "POST /seal (live)", allowed: false, req, detail: auth.error });
         return NextResponse.json({ ok: false, error: auth.error ?? "auth-required" }, { status: auth.status });

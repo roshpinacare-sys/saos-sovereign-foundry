@@ -71,11 +71,39 @@ export function NetworksTab() {
                 <div className="rounded-lg border border-zinc-800 bg-zinc-900/70 p-2.5">
                   <div className="text-[10px] font-bold uppercase tracking-wide text-amber-400">משאב נדרש</div>
                   <p className="mt-0.5 text-xs leading-relaxed text-zinc-300">{n.requiredResource ?? "לא רלוונטי"}</p>
+                  {!n.resourceLiveChecked && (
+                    <p className="mt-1 text-[10px] leading-relaxed text-zinc-500">לא נבדק חי — הערך מוצג מ-env/היסטוריה; המערכת אינה ממציאה ערך חי ואינה מבצעת קריאה שמחייבת משאב.</p>
+                  )}
                 </div>
                 <div className="rounded-lg border border-zinc-800 bg-zinc-900/70 p-2.5">
                   <div className="text-[10px] font-bold uppercase tracking-wide text-sky-400">המלצה — פעולה הבאה</div>
                   <p className="mt-0.5 text-xs leading-relaxed text-zinc-300">{n.nextAction}</p>
                 </div>
+                {n.ownerOptions.length > 0 && (
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/70 p-2.5">
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-amber-400">אפשרויות בעלים</div>
+                    <ul className="mt-1 list-inside list-disc space-y-0.5">
+                      {n.ownerOptions.map((o) => (
+                        <li key={o} className="text-[11px] leading-relaxed text-zinc-400">
+                          {o}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <MetaRows
+                  rows={[
+                    ...(n.estimatedTime ? [{ label: "זמן משוער לפתרון", value: n.estimatedTime }] : []),
+                    ...(n.estimatedCost ? [{ label: "עלות משוערת", value: n.estimatedCost }] : []),
+                    { label: "פעולת בעלים", value: n.ownerAction },
+                    {
+                      label: "עוגן מאומת אחרון",
+                      value: n.lastVerifiedAnchor ? <Mono className="break-all">{n.lastVerifiedAnchor}</Mono> : "חסר — אין עוגן מאומת לרשת זו",
+                      mono: true
+                    },
+                    { label: "נבדק", value: fmtDateTime(n.lastChecked) }
+                  ]}
+                />
                 {n.unblockPlan.length > 0 && (
                   <div className="rounded-lg border border-zinc-800 bg-zinc-900/70 p-2.5">
                     <div className="text-[10px] font-bold uppercase tracking-wide text-emerald-400">תוכנית פעולה לשחרור החסימה</div>
@@ -88,16 +116,6 @@ export function NetworksTab() {
                     </ol>
                   </div>
                 )}
-                <MetaRows
-                  rows={[
-                    {
-                      label: "עוגן מאומת אחרון",
-                      value: n.lastVerifiedAnchor ? <Mono className="break-all">{n.lastVerifiedAnchor}</Mono> : "חסר — אין עוגן מאומת לרשת זו",
-                      mono: true
-                    },
-                    { label: "נבדק", value: fmtDateTime(n.lastChecked) }
-                  ]}
-                />
               </div>
             </Panel>
           );

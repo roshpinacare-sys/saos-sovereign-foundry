@@ -46,5 +46,21 @@ export const DECISION_RECORDED: Record<string, { label: string; tone: "ok" | "wa
   open: { label: "פתוחה — דורשת החלטה", tone: "warn" },
   "decided-default": { label: "הוחלט — ברירת המחדל הבטוחה", tone: "ok" },
   "decided-custom": { label: "הוחלט — אפשרות חלופית", tone: "info" },
-  deferred: { label: "נדחה על-ידי הבעלים", tone: "neutral" }
+  "needs-resource": { label: "דורשת משאב — ממתינה למימון/פעולת בעלים", tone: "danger" },
+  "resolved-external": { label: "טופלה מחוץ למערכת", tone: "ok" },
+  deferred: { label: "נדחה לסבב עתידי", tone: "neutral" },
+  rejected: { label: "נדחה על-ידי הבעלים", tone: "neutral" }
+};
+
+export const VERIFICATION_STATUS: Record<string, { label: string; tone: "ok" | "warn" | "neutral" }> = {
+  verified: { label: "מאומת מול הרשת", tone: "ok" },
+  unverified: { label: "לא מאומת — לא עוגן סופי", tone: "warn" },
+  "not-checked": { label: "טרם נבדק מול רשת", tone: "neutral" }
+};
+
+export const DECISION_CATEGORY: Record<string, string> = {
+  security: "אבטחה",
+  resources: "משאבים",
+  governance: "ניהול",
+  release: "שחרור"
 };

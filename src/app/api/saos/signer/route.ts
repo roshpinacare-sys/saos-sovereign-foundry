@@ -10,6 +10,7 @@ import {
   parseNetwork,
   parseSignerKind,
   plausibleTxid,
+  purposeLabel,
   signerRegistry,
   verifyTxidPublic,
   type SignatureLifecycle
@@ -58,16 +59,22 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, error: "rate-limited", retryAfterSec: rl.retryAfterSec }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } });
   }
   try {
-    const [rows, awaiting, recorded] = await Promise.all([
+    const [rows, awaiting, recorded, trailEvents] = await Promise.all([
       db.pendingSignature.findMany({ orderBy: { createdAt: "desc" }, take: 20, include: { seal: { select: { height: true, root: true } } } }),
       db.pendingSignature.count({ where: { signerStatus: "awaiting-approval" } }),
-      db.pendingSignature.count({ where: { signerStatus: "ready" } })
+      db.pendingSignature.count({ where: { signerStatus: "ready" } }),
+      // per-request audit trail (Task 11): events carry id=<sig-…> in detail
+      db.auditEvent.findMany({ where: { kind: { in: ["signer-create", "signer-result", "signer-cancel", "signer-fail"] } }, orderBy: { createdAt: "desc" }, take: 300 })
     ]);
     const perStatus: Record<string, number> = {};
     for (const r of rows) {
       const st = statusFrom(r);
       perStatus[st] = (perStatus[st] ?? 0) + 1;
     }
+    const trailOf = (id: string) =>
+      trailEvents
+        .filter((ev) => (ev.detail ?? "").includes(`id=${id} `) || (ev.detail ?? "").endsWith(`id=${id}`))
+        .map((ev) => ({ at: ev.createdAt.toISOString(), kind: ev.kind, actor: ev.actor, detail: ev.detail ?? "" }));
     return NextResponse.json({
       ok: true,
       registry: signerRegistry(),
@@ -76,6 +83,7 @@ export async function GET(req: Request) {
         id: p.id,
         network: p.network,
         kind: p.kind,
+        purpose: purposeLabel(p.kind),
         signer: p.signer,
         signerStatus: p.signerStatus,
         status: statusFrom(p),
@@ -84,6 +92,9 @@ export async function GET(req: Request) {
         payload: JSON.parse(p.payload) as Record<string, unknown>,
         sealHeight: p.seal?.height ?? null,
         sealRoot: p.seal?.root ?? null,
+        resultPublic: p.txid ? { txid: p.txid, proofRef: p.proofRef, anchorRef: p.anchorRef } : null,
+        verificationStatus:
+          p.txid === null ? null : p.verified === null ? "not-checked" : p.verified ? "verified" : "unverified",
         txid: p.txid,
         proofRef: p.proofRef,
         anchorRef: p.anchorRef,
@@ -92,7 +103,8 @@ export async function GET(req: Request) {
         cancelReason: p.cancelReason,
         resultAt: p.resultAt,
         expiresAt: p.expiresAt,
-        createdAt: p.createdAt
+        createdAt: p.createdAt,
+        auditTrail: trailOf(p.id)
       }))
     });
   } catch (e) {
@@ -106,13 +118,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "rate-limited", retryAfterSec: rl.retryAfterSec }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } });
   }
   try {
-    const auth = requireAuth(req);
+    const auth = await requireAuth(req);
     if (!auth.ok) {
       await audit({ kind: "sensitive-denied", actor: auth.actorRef, action: "POST /signer", allowed: false, req, detail: auth.error });
       return NextResponse.json({ ok: false, error: auth.error ?? "auth-required" }, { status: auth.status });
     }
 
-    let body: { height?: unknown; sealId?: unknown; network?: unknown; signer?: unknown; kind?: unknown } = {};
+    let body: { height?: unknown; sealId?: unknown; network?: unknown; signer?: unknown; kind?: unknown; ttlSeconds?: unknown } = {};
     try {
       body = (await req.json()) as typeof body;
     } catch {
@@ -125,6 +137,20 @@ export async function POST(req: Request) {
     }
     const signer = parseSignerKind(body.signer) ?? "manual";
     const kind = body.kind === "checkpoint" ? "checkpoint" : "weave";
+
+    // TTL (Task 11): optional, bounded — the request is a DRY document (no
+    // broadcast happens at creation or expiry), so a short TTL is safe and
+    // enables honest expiry testing. Default stays the env-configured window.
+    let ttlMs = SIGN_TTL_MS;
+    let ttlNote = "";
+    if (body.ttlSeconds !== undefined) {
+      const ttlSec = Number(body.ttlSeconds);
+      if (!Number.isSafeInteger(ttlSec) || ttlSec < 60 || ttlSec > 86_400) {
+        return NextResponse.json({ ok: false, error: "ttlSeconds must be an integer within 60..86400" }, { status: 200 });
+      }
+      ttlMs = ttlSec * 1_000;
+      ttlNote = ` ttl=${ttlSec}s`;
+    }
 
     // resolve the seal to anchor
     let seal = null;
@@ -155,7 +181,7 @@ export async function POST(req: Request) {
     }
 
     const id = `sig-${randomUUID()}`;
-    const request = await buildSignRequest(seal, network, kind, id, SIGN_TTL_MS);
+    const request = await buildSignRequest(seal, network, kind, id, ttlMs);
     const lifecycle: SignatureLifecycle = signer === "manual" ? "awaiting-approval" : "pending";
     const row = await db.pendingSignature.create({
       data: {
@@ -169,19 +195,21 @@ export async function POST(req: Request) {
         signer,
         signerStatus: signer === "manual" ? "awaiting-approval" : "disconnected",
         status: lifecycle,
-        expiresAt: new Date(Date.now() + SIGN_TTL_MS)
+        expiresAt: new Date(Date.now() + ttlMs)
       }
     });
 
-    await audit({ kind: "signer-create", actor: auth.actorRef, action: "POST /signer", allowed: true, req, detail: `${network} seal#${seal.height} signer=${signer} status=${lifecycle}` });
+    await audit({ kind: "signer-create", actor: auth.actorRef, action: "POST /signer", allowed: true, req, detail: `id=${id} ${network} seal#${seal.height} signer=${signer} status=${lifecycle}${ttlNote}` });
 
     return NextResponse.json({
       ok: true,
       idempotent: false,
+      dryRun: true,
       signature: {
         id: row.id,
         network: row.network,
         kind: row.kind,
+        purpose: purposeLabel(row.kind),
         signer: row.signer,
         signerStatus: row.signerStatus,
         status: lifecycle,
@@ -190,7 +218,7 @@ export async function POST(req: Request) {
         digestToSign: request.digestToSign,
         metadata: request.metadata
       },
-      note: "אין מפתח פרטי בתגובה, בבסיס-הנתונים או בשרת — חותמים מחוץ למערכת ומחזירים רק את התוצאה הציבורית (txid + הוכחה)"
+      note: "מצב יבש בלבד: יצירת הבקשה אינה משדרת ואיננה מבצעת עסקה. אין מפתח פרטי בתגובה, בבסיס-הנתונים או בשרת — חותמים מחוץ למערכת ומחזירים רק את התוצאה הציבורית (txid + הוכחה)"
     });
   } catch (e) {
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "signer create failed" }, { status: 200 });
@@ -203,7 +231,7 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ ok: false, error: "rate-limited", retryAfterSec: rl.retryAfterSec }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } });
   }
   try {
-    const auth = requireAuth(req);
+    const auth = await requireAuth(req);
     if (!auth.ok) {
       await audit({ kind: "sensitive-denied", actor: auth.actorRef, action: "PATCH /signer", allowed: false, req, detail: auth.error });
       return NextResponse.json({ ok: false, error: auth.error ?? "auth-required" }, { status: auth.status });
@@ -238,7 +266,7 @@ export async function PATCH(req: Request) {
         where: { id },
         data: { status: action === "cancel" ? "cancelled" : "failed", cancelReason: reason, cancelledAt: new Date() }
       });
-      await audit({ kind: action === "cancel" ? "signer-cancel" : "signer-fail", actor: auth.actorRef, action: "PATCH /signer", allowed: true, req, detail: `${updated.network} status=${updated.status} reason=${reason.slice(0, 60)}` });
+      await audit({ kind: action === "cancel" ? "signer-cancel" : "signer-fail", actor: auth.actorRef, action: "PATCH /signer", allowed: true, req, detail: `id=${id} ${updated.network} status=${updated.status} reason=${reason.slice(0, 60)}` });
       return NextResponse.json({ ok: true, signature: { id: updated.id, network: updated.network, status: updated.status, cancelReason: updated.cancelReason } });
     }
 
@@ -285,7 +313,7 @@ export async function PATCH(req: Request) {
     }
 
     const updated = await db.pendingSignature.update({ where: { id }, data });
-    await audit({ kind: "signer-result", actor: auth.actorRef, action: "PATCH /signer", allowed: true, req, detail: `${updated.network} txid=${txid.slice(0, 12)}… status=${updated.status} verified=${updated.verified === null ? "not-checked" : updated.verified}` });
+    await audit({ kind: "signer-result", actor: auth.actorRef, action: "PATCH /signer", allowed: true, req, detail: `id=${id} ${updated.network} txid=${txid.slice(0, 12)}… status=${updated.status} verified=${updated.verified === null ? "not-checked" : updated.verified}` });
 
     return NextResponse.json({
       ok: true,

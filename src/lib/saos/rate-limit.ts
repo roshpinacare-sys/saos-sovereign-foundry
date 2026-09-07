@@ -48,6 +48,7 @@ export const RATE_RULES = {
   plans: { name: "plans", perMinute: envLimit("plans", 60) },
   research: { name: "research", perMinute: envLimit("research", 30) },
   auth: { name: "auth", perMinute: envLimit("auth", 8) },
+  "auth-revoke": { name: "auth-revoke", perMinute: envLimit("auth-revoke", 4) },
   "live-gate": { name: "live-gate", perMinute: envLimit("live-gate", 30) },
   signer: { name: "signer", perMinute: envLimit("signer", 30) },
   audit: { name: "audit", perMinute: envLimit("audit", 30) },

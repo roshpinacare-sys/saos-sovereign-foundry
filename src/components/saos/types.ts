@@ -55,6 +55,16 @@ export interface PreflightResponse {
   chainStatus: { ok: boolean; seals: number; receipts: number; forks: number[] };
   networks: { network: string; status: string; isReadyForAnchor: boolean; isDryRunOnly: boolean; lastChecked: string }[];
   target: string;
+  firstAnchorReadiness: {
+    status: "not-ready" | "partial" | "conditional";
+    recommendedNetwork: string | null;
+    recommendedReason: string;
+    blockers: { id: string; detail: string }[];
+    requiredResource: string;
+    ownerAction: string;
+    openCriticalDecisions: number;
+    runbook: string;
+  };
   blockers: { id: string; detail: string }[];
   warnings: { id: string; detail: string }[];
   checks: { id: string; status: "pass" | "warn" | "fail"; detail: string }[];
@@ -107,6 +117,7 @@ export interface SignatureRow {
   id: string;
   network: string;
   kind: string;
+  purpose: string;
   signer: string;
   signerStatus: string;
   status: SignatureStatus;
@@ -115,6 +126,8 @@ export interface SignatureRow {
   payload: Record<string, unknown>;
   sealHeight: number | null;
   sealRoot: string | null;
+  resultPublic: { txid: string; proofRef: string | null; anchorRef: string | null } | null;
+  verificationStatus: "verified" | "unverified" | "not-checked" | null;
   txid: string | null;
   proofRef: string | null;
   anchorRef: string | null;
@@ -124,6 +137,7 @@ export interface SignatureRow {
   resultAt: string | null;
   expiresAt: string;
   createdAt: string;
+  auditTrail: { at: string; kind: string; actor: string; detail: string }[];
 }
 
 // ─── /networks (from /status.networks) ───────────────────────────────────────
@@ -140,6 +154,12 @@ export interface NetworkStatus {
   unblockPlan: string[];
   isReadyForAnchor: boolean;
   isDryRunOnly: boolean;
+  // Task 11: decision-grade blocker disclosure
+  ownerOptions: string[];
+  ownerAction: string;
+  estimatedTime: string | null;
+  estimatedCost: string | null;
+  resourceLiveChecked: boolean;
 }
 
 // ─── /plans ──────────────────────────────────────────────────────────────────
@@ -233,6 +253,8 @@ export interface RepoStatusResponse {
     envFilePresent: boolean;
     envFilePerms: string | null;
     envValuesExposed: false;
+    adminKeyFileInTree: boolean;
+    adminKeyRule: string;
     scanPerformedAt: string;
     scanCoveredFiles: number;
     scanMatches: { file: string; pattern: string }[];
@@ -246,28 +268,51 @@ export interface RepoStatusResponse {
 
 // ─── /decisions ──────────────────────────────────────────────────────────────
 
+export type DecisionRecordedStatus =
+  | "open"
+  | "decided-default"
+  | "decided-custom"
+  | "needs-resource"
+  | "resolved-external"
+  | "deferred"
+  | "rejected";
+
+export interface DecisionRow {
+  key: string;
+  name: string;
+  description: string;
+  category: "security" | "resources" | "governance" | "release";
+  severity: "critical" | "high" | "medium";
+  options: string[];
+  safeDefault: string;
+  risk: string;
+  cost: string;
+  time: string;
+  requiredAction: string;
+  phase: "now" | "before-anchor" | "before-live";
+  ownerRole: string;
+  critical: boolean;
+  sourceRef: string;
+  // spec-named aliases (Task 11)
+  id: string;
+  title: string;
+  defaultSafeAction: string;
+  requiredOwnerAction: string;
+  timeEstimate: string;
+  // recorded state
+  recordedStatus: DecisionRecordedStatus;
+  status: DecisionRecordedStatus;
+  note: string | null;
+  decidedAt: string | null;
+  updatedAt: string | null;
+  auditTrail: { at: string; actor: string; detail: string }[];
+}
+
 export interface DecisionsResponse {
   ok: boolean;
   error?: string;
-  counts: { total: number; open: number; openCritical: number; decided: number };
-  decisions: {
-    key: string;
-    name: string;
-    description: string;
-    options: string[];
-    safeDefault: string;
-    risk: string;
-    cost: string;
-    time: string;
-    requiredAction: string;
-    phase: "now" | "before-anchor" | "before-live";
-    ownerRole: string;
-    critical: boolean;
-    sourceRef: string;
-    recordedStatus: string;
-    note: string | null;
-    decidedAt: string | null;
-  }[];
+  counts: { total: number; open: number; openCritical: number; decided: number; needsResource: number };
+  decisions: DecisionRow[];
   sourceNote: string;
 }
 
@@ -279,4 +324,13 @@ export interface AuthStateResponse {
   authenticated: boolean;
   actor: string;
   error?: string;
+}
+
+// ─── /auth/revoke-all (POST) ─────────────────────────────────────────────────
+
+export interface RevokeAllResponse {
+  ok: boolean;
+  error?: string;
+  revokedAt?: string;
+  note?: string;
 }

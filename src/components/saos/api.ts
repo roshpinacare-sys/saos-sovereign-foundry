@@ -214,6 +214,7 @@ export const EP = {
   repoStatus: "/api/saos/repo-status",
   decisions: "/api/saos/decisions",
   auth: "/api/saos/auth",
+  revokeAll: "/api/saos/auth/revoke-all",
   seal: "/api/saos/seal",
   research: "/api/saos/research"
 } as const;

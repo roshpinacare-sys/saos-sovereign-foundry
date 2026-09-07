@@ -21,6 +21,8 @@ export const dynamic = "force-dynamic";
  *
  * Status discipline: 401 (bad/missing key), 403 (auth unconfigured) —
  * body always JSON {ok:false, error}. Rate-limited 8/min (brute-force guard).
+ * Global revocation: POST /api/saos/auth/revoke-all (Task 11) rotates the
+ * session epoch — every cookie issued before it becomes invalid instantly.
  */
 
 export async function POST(req: Request) {
@@ -59,7 +61,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "auth-denied: מפתח שגוי" }, { status: 401 });
   }
 
-  const session = issueSession();
+  const session = await issueSession();
   await audit({ kind: "auth-login", actor: "cookie", action: "POST /auth", allowed: true, req });
   const res = NextResponse.json({ ok: true, authenticated: true, sessionTtlSec: session.maxAgeSec });
   res.cookies.set(SESSION_COOKIE, session.value, {
@@ -77,7 +79,7 @@ export async function GET(req: Request) {
   if (!rl.allowed) {
     return NextResponse.json({ ok: false, error: "rate-limited", retryAfterSec: rl.retryAfterSec }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } });
   }
-  const auth = requireAuth(req);
+  const auth = await requireAuth(req);
   return NextResponse.json({
     ok: true,
     authConfigured: auth.authConfigured,
@@ -92,7 +94,7 @@ export async function DELETE(req: Request) {
   if (!rl.allowed) {
     return NextResponse.json({ ok: false, error: "rate-limited", retryAfterSec: rl.retryAfterSec }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } });
   }
-  const auth = requireAuth(req);
+  const auth = await requireAuth(req);
   await audit({ kind: "auth-logout", actor: auth.actorRef, action: "DELETE /auth", allowed: true, req });
   const res = NextResponse.json({ ok: true, authenticated: false });
   res.cookies.set(SESSION_COOKIE, "", { httpOnly: true, sameSite: "strict", path: "/", maxAge: 0 });

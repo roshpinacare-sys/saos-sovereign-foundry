@@ -25,6 +25,14 @@
  *  16. research endpoint restored (documented contract, 10 findings + synthesis)
  *  17. repo-status: git state, backups, secrets posture (booleans/perms only — no values)
  *  18. owner decisions: registry cites sources; authed status recording; fail-closed writes
+ *   Task 11 (key hygiene, session revocation, decision closure, first-anchor readiness):
+ *  19. decisions contract v2: category/severity/auditTrail + spec aliases + new statuses
+ *  20. repo-status adminKeyFileInTree (existence-only monitor, no content)
+ *  21. preflight firstAnchorReadiness (honest 3-value status, never claims ready)
+ *  22. signer contract v2: purpose/verificationStatus/auditTrail + ttlSeconds expiry →
+ *      expired is terminal (mutation refused)
+ *  23. auth/revoke-all: 401 without auth; with auth → epoch rotated, ALL cookies dead
+ *      (incl. caller), re-login works, audited
  */
 const BASE = process.env.SAOS_BASE_URL ?? "http://localhost:3000";
 const ADMIN_KEY = process.env.SAOS_ADMIN_KEY ?? "";
@@ -147,6 +155,19 @@ async function main() {
     report("login correct key → 200 + session cookie", false, "SAOS_ADMIN_KEY missing from env — add it to .env (value only, gitignored)");
   }
 
+  // ── Task 11: create a SHORT-TTL SignRequest now (60s) — it is polled for
+  // expiry near the end of the run, so the minute elapses while other tests run.
+  // signer=external → status pending → avoids the awaiting-approval duplicate
+  // protection used by the §15 lifecycle drills on the same network.
+  let expSigId = null;
+  if (cookie) {
+    const sigExp = await j("/api/saos/signer", { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ network: "TRON", signer: "external", ttlSeconds: 60 }) });
+    expSigId = sigExp.body.signature?.id ?? null;
+    report("signer ttlSeconds=60 accepted (dry-run create)", sigExp.body.ok === true && sigExp.body.dryRun === true && typeof expSigId === "string");
+    const sigBadTtl = await j("/api/saos/signer", { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ network: "TRON", signer: "external", ttlSeconds: 10 }) });
+    report("fail-closed: signer ttlSeconds below 60", sigBadTtl.body.ok === false);
+  }
+
   // 11. keyless signer flow (authed)
   const sigCreate = await j("/api/saos/signer", { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ network: "BLURT", signer: "manual" }) });
   const sigId = sigCreate.body.signature?.id;
@@ -256,6 +277,77 @@ async function main() {
   report("POST /decisions (authed) records status", decPost.status === 200 && decPost.body.ok === true && decPost.body.decision?.recordedStatus === "open");
   const decAfter = await j("/api/saos/decisions");
   report("decisions GET reflects recorded status", decAfter.body.decisions?.find((d) => d.key === "github-actions-ci")?.recordedStatus === "open");
+
+  // ─── Task 11: hygiene, revocation, decision closure, first-anchor readiness ─
+
+  // 19. decisions contract v2 (Task 11 part ד)
+  const dec11 = await j("/api/saos/decisions");
+  report("decisions v2: spec fields on every row", (dec11.body.decisions ?? []).every((d) => "id" in d && "title" in d && typeof d.category === "string" && typeof d.severity === "string" && "status" in d && "defaultSafeAction" in d && "requiredOwnerAction" in d && "timeEstimate" in d && Array.isArray(d.auditTrail)), `total=${dec11.body.decisions?.length}`);
+  report("decisions v2: SH-7 admin-key-location registered", dec11.body.decisions?.some((d) => d.key === "admin-key-location" && d.category === "security" && d.critical === true), "phase=now source=secret-hygiene.md SH-7");
+  report("decisions v2: counts include needsResource", typeof dec11.body.counts?.needsResource === "number");
+  const decRes = await j("/api/saos/decisions", { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ key: "github-actions-ci", status: "needs-resource", note: "api-check needs-resource drill" }) });
+  report("decisions v2: POST needs-resource (authed)", decRes.body.ok === true && decRes.body.decision?.recordedStatus === "needs-resource");
+  const decRes2 = await j("/api/saos/decisions", { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ key: "github-actions-ci", status: "resolved-external" }) });
+  report("decisions v2: POST resolved-external (authed)", decRes2.body.ok === true && decRes2.body.decision?.recordedStatus === "resolved-external");
+  const decRes3 = await j("/api/saos/decisions", { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ key: "github-actions-ci", status: "open" }) });
+  report("decisions v2: reset to open + audit trail grows", decRes3.body.ok === true && (dec11.body.decisions.find((d) => d.key === "github-actions-ci")?.auditTrail?.length ?? 0) <= (await j("/api/saos/decisions")).body.decisions.find((d) => d.key === "github-actions-ci")?.auditTrail?.length);
+  const dec11After = await j("/api/saos/decisions");
+  report("decisions v2: audit trail has decision-update events", (dec11After.body.decisions.find((d) => d.key === "github-actions-ci")?.auditTrail?.length ?? 0) >= 1, `events=${dec11After.body.decisions.find((d) => d.key === "github-actions-ci")?.auditTrail?.length}`);
+
+  // 20. repo-status adminKeyFileInTree (existence-only — SH-7 monitor)
+  const rstat11 = await j("/api/saos/repo-status");
+  report("repo-status: adminKeyFileInTree boolean exposed", typeof rstat11.body.secrets?.adminKeyFileInTree === "boolean", `inTree=${rstat11.body.secrets?.adminKeyFileInTree}`);
+  report("repo-status: hash-only rule stated, no key material", typeof rstat11.body.secrets?.adminKeyRule === "string" && !/ghp_[A-Za-z0-9]{20,}/.test(JSON.stringify(rstat11.body)));
+
+  // 21. preflight firstAnchorReadiness (honest 3-value status)
+  const pf11 = await j("/api/saos/anchor-preflight");
+  const far = pf11.body.firstAnchorReadiness ?? {};
+  report("preflight: firstAnchorReadiness contract", ["not-ready", "partial", "conditional"].includes(far.status) && ("recommendedNetwork" in far) && typeof far.requiredResource === "string" && typeof far.ownerAction === "string" && far.runbook === "docs/first-anchor-runbook.md", `status=${far.status} network=${far.recommendedNetwork}`);
+  report("preflight: readiness never claims unconditional ready", far.status !== "ready", "3-value honesty by design");
+
+  // 22b. signer GET contract v2 (purpose / verificationStatus / auditTrail)
+  const sigList11 = await j("/api/saos/signer");
+  report("signer v2: rows carry purpose + verificationStatus + auditTrail", (sigList11.body.pending ?? []).every((p) => typeof p.purpose === "string" && (p.verificationStatus === null || ["verified", "unverified", "not-checked"].includes(p.verificationStatus)) && Array.isArray(p.auditTrail)), `rows=${sigList11.body.pending?.length}`);
+  report("signer v2: some row has an audit trail (new events carry id)", (sigList11.body.pending ?? []).some((p) => p.auditTrail.length >= 1));
+
+  // 22c. expiry poll — the ttl=60s request from the top of the run must now be
+  // EXPIRED (lazy effectiveStatus on read), and expiry is terminal.
+  if (expSigId && cookie) {
+    let expiredSeen = false;
+    const deadline = Date.now() + 75_000;
+    while (Date.now() < deadline) {
+      const list = await j("/api/saos/signer");
+      const row = (list.body.pending ?? []).find((p) => p.id === expSigId);
+      if (row && row.status === "expired") { expiredSeen = true; break; }
+      await new Promise((r) => setTimeout(r, 5_000));
+    }
+    report("signer: ttlSeconds=60 request expires lazily (≤75s)", expiredSeen, `id=${expSigId.slice(0, 18)}…`);
+    const expireMutate = await j("/api/saos/signer", { method: "PATCH", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ id: expSigId, action: "cancel", reason: "post-expiry mutation drill" }) });
+    report("signer: expired is terminal — mutation refused", expireMutate.body.ok === false);
+    const expireRecord = await j("/api/saos/signer", { method: "PATCH", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ id: expSigId, txid: `late-tx-${Date.now()}` }) });
+    report("signer: expired refuses result recording", expireRecord.body.ok === false);
+  } else if (!cookie) {
+    report("signer: ttlSeconds=60 request expires lazily (≤75s)", false, "no session — skipped");
+  }
+
+  // 23. auth/revoke-all — global session revocation (Task 11 part ג)
+  const revNoAuth = await j("/api/saos/auth/revoke-all", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+  report("revoke-all without auth → 401", revNoAuth.status === 401 && revNoAuth.body.ok === false);
+  if (cookie) {
+    const rev = await j("/api/saos/auth/revoke-all", { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: "{}" });
+    report("revoke-all (authed) → ok + revokedAt", rev.body.ok === true && typeof rev.body.revokedAt === "string", `at=${rev.body.revokedAt}`);
+    const afterRev = await j("/api/saos/auth", { headers: { cookie } });
+    report("revoke-all: the revoking session itself is dead", afterRev.body.authenticated === false, "epoch rotation invalidates every prior cookie");
+    const rel = await j("/api/saos/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key: ADMIN_KEY }) });
+    const newCookie = (rel.headers.get("set-cookie") ?? "").split(";")[0] ?? "";
+    report("revoke-all: re-login after revocation works", rel.status === 200 && rel.body.ok === true && newCookie.startsWith("saos_session="));
+    const meNew = await j("/api/saos/auth", { headers: { cookie: newCookie } });
+    report("revoke-all: new session authenticates", meNew.body.authenticated === true);
+    const revList = await j("/api/saos/audit?take=30", { headers: { cookie: newCookie } });
+    report("revoke-all: audited (auth-revoke-all event)", (revList.body.events ?? []).some((e) => e.kind === "auth-revoke-all"));
+  } else {
+    report("revoke-all (authed) → ok + revokedAt", false, "no session — skipped");
+  }
 
   // never-500 sweep over every touched endpoint
   console.log("\nnever-500 sweep:");

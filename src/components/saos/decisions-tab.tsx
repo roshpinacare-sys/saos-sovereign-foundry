@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, ChevronDown, KeyRound, ShieldAlert } from "lucide-react";
+import { BookOpen, ChevronDown, History, KeyRound, ShieldAlert } from "lucide-react";
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Collapsible from "@radix-ui/react-collapsible";
@@ -13,17 +13,18 @@ import {
   ErrorState,
   LoadingPanel,
   MetaRows,
+  Mono,
   Panel,
   cn,
   fmtDateTime
 } from "@/components/ui/kit";
 import { EP, errText, refreshKey, useSaos } from "./api";
 import { DECISION_PHASE_LABEL, DECISION_PHASE_ORDER, DECISION_RECORDED } from "./labels";
-import type { DecisionsResponse } from "./types";
+import type { DecisionRecordedStatus, DecisionRow, DecisionsResponse } from "./types";
 
 export function DecisionsTab() {
   const decQ = useSaos<DecisionsResponse>("decisions", () => fetch(EP.decisions).then((r) => r.json() as Promise<DecisionsResponse>));
-  const [updateKey, setUpdateKey] = useState<string | null>(null);
+  const [update, setUpdate] = useState<{ key: string; preset: DecisionRecordedStatus } | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
 
   if (decQ.state === "error") {
@@ -34,7 +35,7 @@ export function DecisionsTab() {
   }
 
   const data = decQ.data;
-  const updateRow = data.decisions.find((d) => d.key === updateKey) ?? null;
+  const updateRow = data.decisions.find((d) => d.key === update?.key) ?? null;
 
   return (
     <div className="space-y-4">
@@ -54,6 +55,7 @@ export function DecisionsTab() {
         <div className="flex flex-wrap gap-2">
           <Badge tone="warn">{data.counts.open} פתוחות</Badge>
           <Badge tone="danger">{data.counts.openCritical} פתוחות קריטיות</Badge>
+          <Badge tone="info">{data.counts.needsResource} דורשות משאב</Badge>
           <Badge tone="ok">{data.counts.decided} הוכרעו</Badge>
           <Badge tone="neutral">{data.counts.total} ברישום</Badge>
         </div>
@@ -100,9 +102,15 @@ export function DecisionsTab() {
                           {d.decidedAt && <span>עודכן: {fmtDateTime(d.decidedAt)}</span>}
                         </div>
                       </div>
-                      <div className="flex shrink-0 items-center gap-1.5">
-                        <Btn size="sm" variant="outline" onClick={() => setUpdateKey(d.key)} ariaLabel={`עדכן החלטה: ${d.name}`}>
-                          עדכן החלטה
+                      <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+                        <Btn size="sm" variant="outline" onClick={() => setUpdate({ key: d.key, preset: "decided-default" })} ariaLabel={`סגור החלטה: ${d.name}`}>
+                          סגור החלטה
+                        </Btn>
+                        <Btn size="sm" variant="info" onClick={() => setUpdate({ key: d.key, preset: "needs-resource" })} ariaLabel={`סמן כדורשת משאב: ${d.name}`}>
+                          דרוש משאב
+                        </Btn>
+                        <Btn size="sm" variant="ghost" onClick={() => setUpdate({ key: d.key, preset: "rejected" })} ariaLabel={`דחה: ${d.name}`}>
+                          דחה
                         </Btn>
                         <Collapsible.Root open={isOpen} onOpenChange={(o) => setExpanded(o ? d.key : null)}>
                           <Collapsible.Trigger
@@ -141,6 +149,25 @@ export function DecisionsTab() {
                               הערת בעלים: {d.note}
                             </p>
                           )}
+                          {d.auditTrail.length > 0 && (
+                            <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-2.5">
+                              <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-sky-400">
+                                <History className="size-3" aria-hidden />
+                                היסטוריית החלטה ({d.auditTrail.length} אירועים מיומן הביקורת)
+                              </div>
+                              <ul className="mt-1.5 space-y-1" aria-label={`היסטוריית ההחלטה ${d.name}`}>
+                                {d.auditTrail.map((ev, i) => (
+                                  <li key={`${ev.at}-${i}`} className="flex flex-wrap items-center gap-2 text-[10px] text-zinc-500">
+                                    <span className="tabular-nums">{fmtDateTime(ev.at)}</span>
+                                    <Mono className="text-zinc-400">{ev.actor}</Mono>
+                                    <span dir="ltr" className="min-w-0 flex-1 truncate font-mono text-zinc-500" title={ev.detail}>
+                                      {ev.detail}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         </div>
                       </Collapsible.Content>
                     </Collapsible.Root>
@@ -152,10 +179,11 @@ export function DecisionsTab() {
         })
       )}
 
-      {updateRow && (
+      {updateRow && update && (
         <UpdateDialog
           row={updateRow}
-          onClose={() => setUpdateKey(null)}
+          preset={update.preset}
+          onClose={() => setUpdate(null)}
           onDone={() => void refreshKey("decisions", () => fetch(EP.decisions).then((r) => r.json()))}
         />
       )}
@@ -163,8 +191,18 @@ export function DecisionsTab() {
   );
 }
 
-function UpdateDialog({ row, onClose, onDone }: { row: DecisionsResponse["decisions"][number]; onClose: () => void; onDone: () => void }) {
-  const [status, setStatus] = useState(row.recordedStatus);
+function UpdateDialog({
+  row,
+  preset,
+  onClose,
+  onDone
+}: {
+  row: DecisionRow;
+  preset: DecisionRecordedStatus;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [status, setStatus] = useState<DecisionRecordedStatus>(preset);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -202,14 +240,14 @@ function UpdateDialog({ row, onClose, onDone }: { row: DecisionsResponse["decisi
         <Dialog.Content className="fixed start-1/2 top-1/2 z-50 w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 rtl:translate-x-1/2 -translate-y-1/2 rounded-xl border border-zinc-700 bg-zinc-900 p-5 shadow-2xl focus-visible:outline-2 focus-visible:outline-amber-400">
           <Dialog.Title className="text-sm font-bold text-zinc-100">עדכן החלטה — {row.name}</Dialog.Title>
           <Dialog.Description className="mt-2 text-xs leading-relaxed text-zinc-400">
-            הרישום קובע את הסטטוס בלבד ונרשם ביומן הביקורת. הוא לא משנה מצב ריצה, לא מבצע פעולה חיצונית ולא מזיז משאבים.
+            הרישום קובע את הסטטוס בלבד ונרשם ביומן הביקורת. הוא לא משנה מצב ריצה, לא מבצע פעולה חיצונית, לא מזיז משאבים ולא מבצע עוגן.
           </Dialog.Description>
           <div className="mt-4 space-y-3">
             <label className="block">
               <span className="text-xs font-semibold text-zinc-300">סטטוס</span>
               <select
                 value={status}
-                onChange={(e) => setStatus(e.target.value)}
+                onChange={(e) => setStatus(e.target.value as DecisionRecordedStatus)}
                 className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus-visible:outline-2 focus-visible:outline-amber-400"
               >
                 {Object.entries(DECISION_RECORDED).map(([id, info]) => (
@@ -227,7 +265,7 @@ function UpdateDialog({ row, onClose, onDone }: { row: DecisionsResponse["decisi
                 maxLength={300}
                 rows={3}
                 className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus-visible:outline-2 focus-visible:outline-amber-400"
-                placeholder="הקשר או אסמכתא להחלטה"
+                placeholder="הקשר או אסמכתא להחלטה (אין להזין סודות)"
               />
             </label>
           </div>

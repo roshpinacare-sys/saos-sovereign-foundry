@@ -281,3 +281,35 @@ lint ✅ · typecheck ✅ · api-check **45/45** ✅ · concurrency **8/8** (hei
 - אימות txid אמיתי מול רשת — דורש egress (בסנדבוקס תמיד unverified כנה).
 - בדיקת 429 מקצה-הדפדפן — מכוסה ב-API בלבד (burst); ב-UI מוצג ErrorState מותאם (לא נוצר תרחיש חי).
 - screen-reader מלא (NVDA/VoiceOver) — בוצע רק סריקת a11y-tree + תוויות.
+
+---
+
+## Task 11 (2026-09-07) — היגיינת מפתח, ביטול-סשנים, סגירת החלטות, מוכנות עוגן ראשון
+
+### סוויטה מלאה — עבר
+
+- `bun run lint` ✅ · `bun run typecheck` ✅
+- **`bun run test` (api-check): 104/104** (עלה מ-80) — תוספות Task 11:
+  - decisions v2: שדות-חוזה מלאים (id/title/category/severity/status/defaultSafeAction/requiredOwnerAction/timeEstimate/auditTrail) — 4
+  - decisions v2: SH-7 `admin-key-location` ברישום + counts.needsResource — 2
+  - decisions v2: POST needs-resource / resolved-external (authed) + reset + audit trail גדל ומאוכסן — 4
+  - repo-status: `adminKeyFileInTree` (בוליאני, קיום-בלבד) + כלל hash-בלבד ללא חומר-מפתח — 2
+  - preflight: `firstAnchorReadiness` חוזה מלא + כנות 3-ערכית (אין "ready") — 2
+  - signer v2: purpose/verificationStatus/auditTrail בכל שורה + trail מאוכסן — 2
+  - signer ttlSeconds: יצירה dry-run עם 60s (וגם fail-closed מתחת למינימום) → **פקיעה עצלה נצפית (≤75s)** → מוטציה ורישום אחרי פקיעה נדחים — 4
+  - **revoke-all**: ללא-auth → 401; עם-auth → ok+revokedAt; **הסשן הקורא עצמו מת**; התחברות-מחדש עובדת; סשן חדש מאומת; אירוע `auth-revoke-all` ביומן — 6
+- **`bun run verify` (concurrency): 8/8** — heights 24..31 רצופים, roots ייחודיים, verify-chain תקין (25 seals/177 עלים all-verified).
+- גיבוי מאומת לפני העבודה הקריטית: backup-2026-09-07T19-42-23.
+
+### בדיקות דפדפן (agent-browser) — עבר
+
+- **Desktop 1440**: סקירה — כרטיס "עוגן ראשון — מוכנות" (לא מוכן; STEEM מומלצת; קישורי בחירת-רשת/סגירת-החלטות) + פאנל "החלטות קריטיות פתוחות — חוסמות התקדמות" (6 שורות); אבטחה — כרטיס היגיינת סודות (SH-7 פתוח; כלל hash-בלבד) + כרטיס ביטול-סשנים; **זרימת זהב מלאה**: התחברות → "נתק את כל הסשנים" → דיאלוג אישור → toast הצלחה → **מצב מחובר התאפס (כולל הקורא)** → כפתור נדרש-התחברות שוב; החלטות — "סגור החלטה" עם preset decided-default → שמירה → toast + badge; 7 סטטוסים בדיאלוג; היסטוריית החלטה (9 אירועים, actor+זמן); רשתות — אפשרויות בעלים ל-HIVE/TRON, זמן/עלות, "לא נבדק חי" ×4; חתימות — purpose, מצב אימות, היסטוריית ביקורת לכל בקשה; יומן — אירועי `auth-revoke-all`/`decision-update` חיים נראים.
+- **נייד 360/390/414**: אפס גלילה אופקית בטאבים המרכזיים (סקירה/חתימות/החלטות/אבטחה) — נמדד `scrollWidth`.
+- **מקלדת RTL**: חיצים מתקדמים בין טאבים; focus נראה.
+- **קונסולה**: 0 שגיאות; dev.log נקי (רק 429-ים מכוונים מ-burst הבדיקות).
+
+### מה עדיין לא נבדק (כנה)
+
+- `bun run build` — חסום-סביבה.
+- `verified=true` באימות txid — דורש egress אמיתי; בסנדבוקס רק המסלול הכנה unverified (נבדק).
+- רוטציית מפתח-אדמין מלאה — פעולת בעלים (נוהל מתועד, לא מבוצע על-ידי סוכן).

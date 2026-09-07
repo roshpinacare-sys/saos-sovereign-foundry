@@ -1,22 +1,32 @@
 /**
- * Access control (שכבת-הרשאות) — Task 5, mission 1.
+ * Access control (שכבת-הרשאות) — Task 5, mission 1; revocation — Task 11.
  *
  * Design (honest, minimal, fail-closed):
  *  - The operator sets SAOS_ADMIN_KEY_HASH = sha256(adminKey) (hex). The
  *    plaintext key NEVER lives in code, DB, logs or the repo (.env is
- *    gitignored). The app only ever sees the hash.
+ *    gitignored). The app only ever sees the hash — THE HASH-ONLY RULE.
  *  - Login: POST /api/saos/auth {key} → sha256(key) compared to the stored
  *    hash (timing-safe). On success an HttpOnly SameSite=Strict session
  *    cookie is issued:  "<expMs>.<hmac>"  where hmac = HMAC-SHA256(
  *    sessionSecret, String(expMs)). The cookie is stateless and expiring.
  *  - Session secret: SAOS_SESSION_SECRET if set, else derived as
- *    sha256("saos-session:" + adminKeyHash) — no extra secret to manage,
- *    and the derived value is never persisted or printed.
+ *    sha256("saos-session:" + adminKeyHash + ":" + sessionEpoch) — no extra
+ *    secret to manage, and the derived value is never persisted or printed.
+ *  - GLOBAL SESSION REVOCATION (Task 11): the session epoch lives in the
+ *    SessionControl table (random hex, no secret material). Rotating it —
+ *    POST /api/saos/auth/revoke-all — changes the derived secret, which
+ *    instantly invalidates EVERY cookie issued before the rotation, with no
+ *    session list to maintain. Epoch reads are cached 3s per process and
+ *    busted on rotation; a transient DB read error falls back to the last
+ *    cached epoch (or "bootstrap") so availability never depends on the
+ *    revocation read.
  *  - FAIL-CLOSED: if SAOS_ADMIN_KEY_HASH is not configured, EVERY sensitive
  *    operation is refused (403 auth-unconfigured) — an unconfigured system
  *    can never silently behave as an open one.
  *  - Alternative transport: `Authorization: Bearer <key>` is accepted and
- *    verified by the same hash comparison (for scripts/curl).
+ *    verified by the same hash comparison (for scripts/curl) — bearer is
+ *    key-derived and is NOT affected by session revocation (by design:
+ *    revocation kills sessions, not the admin key).
  *
  * HTTP status discipline (Task 5 amendment to the "errors are data" rule):
  *   500 is still never returned; 401/403/429 are now allowed — reserved
@@ -24,7 +34,7 @@
  *   JSON {ok:false, error}.
  */
 
-import { createHash, createHmac, timingSafeEqual } from "crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
 import { db } from "@/lib/db";
 
 export const SESSION_COOKIE = "saos_session";
@@ -54,10 +64,53 @@ export function authConfigured(): boolean {
   return adminKeyHash() !== null;
 }
 
-function sessionSecret(): string {
+// ─── session epoch (Task 11): global revocation without a session list ──────
+
+const EPOCH_CACHE_MS = 3_000;
+let epochCache: { value: string; loadedAt: number } | null = null;
+
+/**
+ * The current session epoch (random hex persisted in SessionControl).
+ * "bootstrap" = no rotation ever happened → secret identical to the
+ * pre-Task-11 derivation, so existing cookies survive deployment.
+ * Cached 3s; DB read failure → last cached value (fail-open for availability,
+ * never for authorization strength — the epoch is not secret-sensitive).
+ */
+export async function currentSessionEpoch(): Promise<string> {
+  const now = Date.now();
+  if (epochCache && now - epochCache.loadedAt < EPOCH_CACHE_MS) return epochCache.value;
+  try {
+    const row = await db.sessionControl.findUnique({ where: { id: "singleton" } });
+    const value = row?.sessionEpoch ?? "bootstrap";
+    epochCache = { value, loadedAt: now };
+    return value;
+  } catch {
+    return epochCache?.value ?? "bootstrap";
+  }
+}
+
+function bustEpochCache(): void {
+  epochCache = null;
+}
+
+function sessionSecret(epoch: string): string {
   const explicit = (process.env.SAOS_SESSION_SECRET ?? "").trim();
   if (explicit.length >= 16) return explicit;
-  return createHash("sha256").update(`saos-session:${adminKeyHash() ?? "none"}`).digest("hex");
+  return createHash("sha256").update(`saos-session:${adminKeyHash() ?? "none"}:${epoch}`).digest("hex");
+}
+
+/**
+ * Rotate the session epoch — every cookie signed before this call becomes
+ * invalid instantly. Stores NO secret material: only a random epoch hex.
+ */
+export async function revokeAllSessions(rotatedBy: string, note?: string): Promise<void> {
+  const sessionEpoch = randomBytes(24).toString("hex");
+  await db.sessionControl.upsert({
+    where: { id: "singleton" },
+    create: { id: "singleton", sessionEpoch, rotatedAt: new Date(), rotatedBy, note: note ?? null },
+    update: { sessionEpoch, rotatedAt: new Date(), rotatedBy, note: note ?? null }
+  });
+  bustEpochCache();
 }
 
 /** constant-time hex comparison — both sides must be equal length */
@@ -86,16 +139,16 @@ export function clientIpOf(req: Request): string | null {
   return req.headers.get("x-real-ip")?.trim() ?? null;
 }
 
-function signExpiry(expMs: number): string {
-  return createHmac("sha256", sessionSecret()).update(String(expMs)).digest("hex");
+function signExpiry(expMs: number, epoch: string): string {
+  return createHmac("sha256", sessionSecret(epoch)).update(String(expMs)).digest("hex");
 }
 
 function cookieActorRef(cookie: string): string {
   return `cookie:${sha256Hex(cookie).slice(0, 8)}`;
 }
 
-/** verify the session cookie value "<expMs>.<hmac>" */
-function validCookie(cookie: string | undefined): boolean {
+/** verify the session cookie value "<expMs>.<hmac>" against the current epoch */
+function validCookie(cookie: string | undefined, epoch: string): boolean {
   if (!cookie) return false;
   const dot = cookie.indexOf(".");
   if (dot <= 0) return false;
@@ -104,7 +157,7 @@ function validCookie(cookie: string | undefined): boolean {
   if (!/^\d{10,16}$/.test(expStr) || !/^[0-9a-f]{64}$/.test(mac)) return false;
   const exp = Number(expStr);
   if (!Number.isSafeInteger(exp) || exp < Date.now()) return false;
-  return safeHexEqual(mac, signExpiry(exp));
+  return safeHexEqual(mac, signExpiry(exp, epoch));
 }
 
 function readCookie(req: Request, name: string): string | undefined {
@@ -119,9 +172,10 @@ function readCookie(req: Request, name: string): string | undefined {
 
 /**
  * The single gate for every sensitive operation.
- * Verifies, in order: configuration → session cookie → bearer key.
+ * Verifies, in order: configuration → session cookie (against the current
+ * session epoch) → bearer key. Async since Task 11 (epoch read for cookies).
  */
-export function requireAuth(req: Request): AuthResult {
+export async function requireAuth(req: Request): Promise<AuthResult> {
   const hash = adminKeyHash();
   if (!hash) {
     return {
@@ -136,7 +190,7 @@ export function requireAuth(req: Request): AuthResult {
   }
 
   const cookie = readCookie(req, SESSION_COOKIE);
-  if (validCookie(cookie)) {
+  if (validCookie(cookie, await currentSessionEpoch())) {
     return {
       ok: true,
       authConfigured: true,
@@ -196,9 +250,9 @@ export function requireAuth(req: Request): AuthResult {
 }
 
 /** issue a session cookie value + expiry for a verified login */
-export function issueSession(): { value: string; maxAgeSec: number } {
+export async function issueSession(): Promise<{ value: string; maxAgeSec: number }> {
   const exp = Date.now() + SESSION_TTL_MS;
-  return { value: `${exp}.${signExpiry(exp)}`, maxAgeSec: Math.floor(SESSION_TTL_MS / 1000) };
+  return { value: `${exp}.${signExpiry(exp, await currentSessionEpoch())}`, maxAgeSec: Math.floor(SESSION_TTL_MS / 1000) };
 }
 
 /** verify a presented plaintext login key against the configured hash */

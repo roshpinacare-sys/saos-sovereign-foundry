@@ -184,3 +184,26 @@
 2. GitHub Actions CI (עדיין פתוח; ההחלטה מוקלטת ב-/decisions).
 3. אוטומציית refresh עדינה ב-UI (אופציונלי; כרגע רענון ידני מכוון).
 4. קישורי docs נלחצים (route להצגת markdown) — כרגע רק רשימת נתיבים.
+
+---
+
+## עדכון Task 11 (2026-09-07) — Key Hygiene, Session Revocation, Decision Closure & First Anchor Readiness
+
+### נסגר בסבב זה
+| פער | פתרון |
+|---|---|
+| אין ביטול-סשנים גלובלי | `POST /api/saos/auth/revoke-all` — רוטציית session epoch (`SessionControl`); מיידי, מאומת, ללא סוד; UI + דיאלוג אישור |
+| מפתח-אדמין כקובץ בתוך עץ הפרויקט ללא מעקב | SH-7 רשום; ניטור חי `adminKeyFileInTree` (קיום בלבד); החלטת בעלים `admin-key-location`; נוהל רוטציה (secret-hygiene §6) |
+| מסך החלטות = תצוגה בלבד | כלי-סגירה: POST עם 7 סטטוסים, כפתורי פעולה מהירים, auditTrail לכל החלטה, החלטה-קריטית-פתוחה = חסימה ב-Command Center |
+| אין נוהל עוגן ראשון | `docs/first-anchor-runbook.md` (תנאי-פתיחה, בחירת רשת, 10 שלבים, אסורים) + כרטיס "עוגן ראשון — מוכנות" מ-preflight |
+
+### נשאר פתוח (כנה)
+- SH-7 עצמו — ההעברה מחוץ לעץ היא פעולת בעלים (הסוכן אינו קורא/מזיז את המפתח)
+- SH-3 — קובץ היסטורי ב-git history (סיווג בעלים)
+- משאבי עוגן אמיתי: HIVE RC < 8% · TRON energy=0 · כספת חתימה מנותקת (external/hardware=disconnected)
+- CI, build מחוץ לסנדבוקס, live-mode-approval — החלטות בעלים
+
+### מועמדים לסבב הבא
+1. חיבור external signer אמיתי (ממשק HTTPS מוגדר — נדרש endpoint מהבעלים) — החסם היחיד של STEEM
+2. CI workflow (github-actions-ci) — סוגר דריפת-איכות
+3. מדידת RC/energy חיה בפריסה מרושתת (כרגע: env + "לא נבדק חי" כנה)

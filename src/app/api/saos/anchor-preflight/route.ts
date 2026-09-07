@@ -6,6 +6,7 @@ import { saosMode } from "@/lib/saos/modes";
 import { verifyChainDag } from "@/lib/saos/evidence";
 import { networkStatuses, type NetworkStatusView } from "@/lib/saos/network-status";
 import { signerRegistry, effectiveStatus, parseNetwork, type SignRequest } from "@/lib/saos/signer";
+import { OWNER_DECISIONS } from "@/lib/saos/owner-decisions";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,55 @@ interface PreflightBlocker {
 }
 
 const BACKUP_MAX_AGE_MS = 7 * 24 * 3_600_000;
+
+/**
+ * First-anchor readiness (מוכנות לעוגן ראשון — Task 11 part ה).
+ * Honest, three-value status — never "ready" here: even a fully green gate
+ * stays "conditional" until the owner approves live AND signs outside the
+ * system. Computed from the same checks as the preflight itself — no new
+ * claims, no new calls, no broadcast.
+ */
+function firstAnchorReadiness(
+  hardBlockers: PreflightBlocker[],
+  networks: NetworkStatusView[],
+  externalSignerConnected: boolean,
+  openCriticalDecisions: number
+): {
+  status: "not-ready" | "partial" | "conditional";
+  recommendedNetwork: string | null;
+  recommendedReason: string;
+  blockers: { id: string; detail: string }[];
+  requiredResource: string;
+  ownerAction: string;
+  openCriticalDecisions: number;
+  runbook: string;
+} {
+  // recommended network: among networks with NO resource blocker of their own
+  // (status anchored), prefer the one with a verified historic anchor.
+  const resourceReady = networks.filter((n) => n.status === "anchored");
+  const historicReady = resourceReady.filter((n) => n.lastVerifiedAnchor !== null);
+  const recommended = historicReady[0] ?? resourceReady[0] ?? null;
+  const recommendedReason = recommended
+    ? `${recommended.network}: אין חוסם-משאב ייחודי (סטטוס anchored)${recommended.lastVerifiedAnchor ? " וקיים עוגן היסטורי מאומת" : ""} — החסם היחיד הוא חיבור כספת חתימה חיצונית`
+    : "אין רשת ללא חוסם-משאב — יש להשלים משאבים (HIVE RC / TRON energy) לפני בחירה";
+
+  const status: "not-ready" | "partial" | "conditional" =
+    hardBlockers.length > 0 ? "not-ready" : !externalSignerConnected || openCriticalDecisions > 0 ? "partial" : "conditional";
+
+  return {
+    status,
+    recommendedNetwork: recommended?.network ?? null,
+    recommendedReason,
+    blockers: hardBlockers,
+    requiredResource: recommended
+      ? "כספת חתימה חיצונית (מפתח רשת משוחזר מחוץ למערכת) — המערכת מקבלת רק את התוצאה הציבורית"
+      : "משאבי רשת (HIVE RC ≥ 8% או TRON stake) + כספת חתימה חיצונית",
+    ownerAction:
+      "לאשר את רשת-היעד, לשחזר את הכספת מחוץ למערכת (docs/external-signer.md), לסגור החלטות קריטיות פתוחות, ולאשר live רק אחרי שהשער ירוק — הליך מלא: docs/first-anchor-runbook.md",
+    openCriticalDecisions,
+    runbook: "docs/first-anchor-runbook.md"
+  };
+}
 
 export async function GET(req: Request) {
   const rl = enforceRateLimit("anchor-preflight", req);
@@ -159,7 +209,7 @@ export async function GET(req: Request) {
       "GitHub Actions CI לא קיים (הרצה ידנית של bun run check)",
       "SQLite single-writer — לא לפריסה אופקית",
       "secure-cookie דורש HTTPS בפריסה אמיתית",
-      "אין session revocation גלובלי (שינוי SAOS_SESSION_SECRET מבטל הכול)"
+      "קובץ מפתח-אדמין מקומי בתוך עץ הפרויקט — נדרשת העברה מחוץ לעץ (SH-7, החלטת בעלים)"
     ];
     add("security-open-items", "warn", `פריטי אבטחה פתוחים (${openSecurity.length}): ${openSecurity.join(" · ")}`);
 
@@ -183,6 +233,12 @@ export async function GET(req: Request) {
     const readyForAnchor = checks.every((c) => c.status !== "fail");
     const blockers: PreflightBlocker[] = checks.filter((c) => c.status === "fail").map((c) => ({ id: c.id, detail: c.detail }));
     const warnings: PreflightBlocker[] = checks.filter((c) => c.status === "warn").map((c) => ({ id: c.id, detail: c.detail }));
+
+    // open CRITICAL owner decisions (registry is doc-compiled; recorded status lives in DB)
+    const recordedDecisions = await db.decisionRecord.findMany();
+    const openCriticalDecisions = OWNER_DECISIONS.filter(
+      (d) => d.critical && (recordedDecisions.find((r) => r.key === d.key)?.status ?? "open") === "open"
+    ).length;
 
     const recommendedNextAction = blockers.some((b) => b.id === "backup-fresh-verified")
       ? "הרץ bun run backup ואמת את הגיבוי (manifest + integrity)"
@@ -233,6 +289,7 @@ export async function GET(req: Request) {
         lastChecked: n.lastChecked
       })),
       target: target ?? "all",
+      firstAnchorReadiness: firstAnchorReadiness(blockers, networks, externalSignerConnected, openCriticalDecisions),
       blockers,
       warnings,
       checks,

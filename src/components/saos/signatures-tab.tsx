@@ -19,7 +19,7 @@ import {
   fmtDateTime
 } from "@/components/ui/kit";
 import { EP, errText, refreshKey, useSaos } from "./api";
-import { SIGNATURE_STATUS } from "./labels";
+import { SIGNATURE_STATUS, VERIFICATION_STATUS } from "./labels";
 import type { SignatureRow, SignerResponse } from "./types";
 
 const OPEN_STATUSES: SignatureRow["status"][] = ["pending", "awaiting-approval"];
@@ -166,10 +166,9 @@ export function SignaturesTab() {
                         seal <Mono>{r.sealHeight}</Mono>
                       </Badge>
                     )}
-                    {r.verified === true && <Badge tone="ok">אומת מול רשת</Badge>}
-                    {r.verified === false && (
-                      <Badge tone="warn" title={r.verificationSource ?? undefined}>
-                        לא אומת
+                    {r.verificationStatus && r.verificationStatus !== "not-checked" && (
+                      <Badge tone={VERIFICATION_STATUS[r.verificationStatus]?.tone ?? "neutral"} title={r.verificationSource ?? undefined}>
+                        {VERIFICATION_STATUS[r.verificationStatus]?.label ?? r.verificationStatus}
                       </Badge>
                     )}
                     <Mono className="min-w-0 flex-1 truncate text-[11px] text-zinc-500" title={r.id}>
@@ -207,15 +206,13 @@ export function SignaturesTab() {
                       {r.txid && (
                         <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-zinc-400">
                           txid: <Mono title={r.txid}>{r.txid}</Mono>
-                          {r.verified === false && r.verificationSource && (
-                            <span className="text-amber-400/90">· {r.verificationSource}</span>
-                          )}
-                          {r.verified === null && r.status === "signed-externally" && (
+                          {r.verificationStatus === "not-checked" && (
                             <span className="text-zinc-500">· טרם נבדק מול רשת ציבורית — לא סופי</span>
                           )}
                         </div>
                       )}
                       {r.cancelReason && <div className="text-[11px] text-zinc-500">סיבה: {r.cancelReason}</div>}
+                      {r.purpose && <div className="text-[11px] text-zinc-500">מטרה: {r.purpose}</div>}
                     </div>
                   )}
 
@@ -223,16 +220,45 @@ export function SignaturesTab() {
                     <Collapsible.Content className="px-2.5 pb-2.5">
                       <MetaRows
                         rows={[
+                          { label: "מטרה (purpose)", value: r.purpose },
                           { label: "payloadHash", value: <Mono className="break-all">{r.payloadHash}</Mono>, mono: true },
                           { label: "digestToSign (חותמים את זה)", value: <Mono className="break-all">{r.digestToSign}</Mono>, mono: true },
                           { label: "sealRoot", value: r.sealRoot ? <Mono className="break-all">{r.sealRoot}</Mono> : "—", mono: true },
                           { label: "proofRef", value: r.proofRef ? <Mono className="break-all">{r.proofRef}</Mono> : "—", mono: true },
                           { label: "anchorRef", value: r.anchorRef ? <Mono className="break-all">{r.anchorRef}</Mono> : "—", mono: true },
+                          {
+                            label: "מצב אימות",
+                            value:
+                              r.verificationStatus === "verified"
+                                ? r.verificationSource ?? "אומת"
+                                : r.verificationStatus === "unverified"
+                                  ? `לא אומת — ${r.verificationSource ?? "סיבה לא ידועה"}`
+                                  : r.verificationStatus === "not-checked"
+                                    ? "טרם נבדק מול רשת — לא סופי"
+                                    : "—"
+                          },
                           { label: "נוצר", value: fmtDateTime(r.createdAt) },
                           { label: "פג תוקף", value: fmtDateTime(r.expiresAt) },
                           { label: "חותם", value: `${r.signer} (${r.signerStatus})`, mono: true }
                         ]}
                       />
+                      {r.auditTrail.length > 0 && (
+                        <details className="mt-2 rounded-lg border border-zinc-800 bg-zinc-950/60 p-2">
+                          <summary className="cursor-pointer text-[11px] font-semibold text-zinc-400">היסטוריית ביקורת ({r.auditTrail.length})</summary>
+                          <ul className="mt-1.5 space-y-1" aria-label={`היסטוריית ביקורת לבקשה ${r.id}`}>
+                            {r.auditTrail.map((ev, i) => (
+                              <li key={`${ev.at}-${i}`} className="flex flex-wrap items-center gap-2 text-[10px] text-zinc-500">
+                                <span className="tabular-nums">{fmtDateTime(ev.at)}</span>
+                                <Badge tone="neutral">{ev.kind}</Badge>
+                                <Mono className="text-zinc-400">{ev.actor}</Mono>
+                                <span dir="ltr" className="min-w-0 flex-1 truncate font-mono text-zinc-500" title={ev.detail}>
+                                  {ev.detail}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
+                      )}
                       <details className="mt-2 rounded-lg border border-zinc-800 bg-zinc-950/60 p-2">
                         <summary className="cursor-pointer text-[11px] font-semibold text-zinc-400">payload קנוני (ציבורי)</summary>
                         <pre dir="ltr" className="scroll-slim mt-1.5 max-h-40 overflow-auto whitespace-pre-wrap break-all font-mono text-[10px] leading-relaxed text-zinc-400">

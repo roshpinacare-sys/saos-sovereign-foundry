@@ -28,6 +28,17 @@ export interface NetworkStatusView {
   isReadyForAnchor: boolean;
   /** true while every anchor on this network is compute/plan-only (no broadcast path) — honest stage flag */
   isDryRunOnly: boolean;
+  // ── Task 11: decision-grade blocker disclosure ──
+  /** the discrete owner options for this network (wait / fund / delegate / switch...) */
+  ownerOptions: string[];
+  /** what the owner personally must do — the system never executes it */
+  ownerAction: string;
+  /** estimated time to clear the blocker, when known — null = unknown, never invented */
+  estimatedTime: string | null;
+  /** estimated cost to clear the blocker, when known — null = unknown, never invented */
+  estimatedCost: string | null;
+  /** false = the resource figure is env/historic, NOT a live probe (honest disclosure) */
+  resourceLiveChecked: boolean;
 }
 
 export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatusView[] {
@@ -55,7 +66,15 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
       "4. עדכון AnchorTx: status=anchored, txid מלא"
     ],
     isReadyForAnchor: false,
-    isDryRunOnly: dryRunOnly
+    isDryRunOnly: dryRunOnly,
+    ownerOptions: [
+      "שחזור כספת (מחוץ למערכת) והפעלת מחזור העוגן הראשון על STEEM",
+      "השארת STEEM כרשת-גיבוי ובחירת רשת אחרת כיעד ראשון"
+    ],
+    ownerAction: "לשחזר את המפתח מהכספת ההיסטורית מחוץ למערכת (docs/external-signer.md) — המערכת מקבלת רק txid",
+    estimatedTime: null,
+    estimatedCost: null,
+    resourceLiveChecked: false
   };
 
   const blurt: NetworkStatusView = {
@@ -74,7 +93,15 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
       "4. עדכון AnchorTx"
     ],
     isReadyForAnchor: false,
-    isDryRunOnly: dryRunOnly
+    isDryRunOnly: dryRunOnly,
+    ownerOptions: [
+      "שחזור כספת (מחוץ למערכת) + בדיקת יתרה לכיסוי העמלה",
+      "השארת BLURT כרשת-גיבוי"
+    ],
+    ownerAction: "לשחזר את המפתח מהכספת מחוץ למערכת ולוודא יתרה לכיסוי העמלה — המערכת מקבלת רק txid",
+    estimatedTime: null,
+    estimatedCost: null,
+    resourceLiveChecked: false
   };
 
   const lightH = hiveRcHoursToTarget(rcPct, HIVE_RC_FLOOR_LIGHT);
@@ -98,7 +125,17 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
     ],
     // HIVE resource level is measurable (env rc%) — but without a connected signer it still cannot anchor
     isReadyForAnchor: false,
-    isDryRunOnly: dryRunOnly
+    isDryRunOnly: dryRunOnly,
+    ownerOptions: [
+      `המתנה להתאוששות טבעית (רגן ~20%/יום — כ-${lightH.toFixed(1)} שעות לסף-הקל)`,
+      "power-up (SWAP.HIVE→HIVE→vesting) להאצה מיידית",
+      "delegate VESTS מחייל בריא לחשבון",
+      "מעבר לחשבון HIVE אחר עם RC פנוי"
+    ],
+    ownerAction: `לבחור: המתנה (כ-${lightH.toFixed(1)} שעות) או מימון power-up/delegate — פעולה כלכלית מחוץ למערכת, באישור בעלים בלבד`,
+    estimatedTime: `כ-${lightH.toFixed(1)} שעות רגן לסף-הקל (8%) · ${heavyH.toFixed(1)} לסף-הכבד (12%)`,
+    estimatedCost: null,
+    resourceLiveChecked: false
   };
 
   const minStake = minStakeForSettlements(4); // 4 settlements/day — the working target
@@ -121,7 +158,17 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
       "4. עדכון AnchorTx ל-anchored עם txid"
     ],
     isReadyForAnchor: false,
-    isDryRunOnly: dryRunOnly
+    isDryRunOnly: dryRunOnly,
+    ownerOptions: [
+      "הישארות ברכבת tronbridge היומית (אפס עלות ישירה — ה-root נסחר בתוך stateRoot)",
+      "הימור freezeBalanceV2 + delegateResource — אנרגיה קבועה",
+      "האצלת אנרגיה (delegate מחשבון אחר)",
+      "מימון חיצוני / שריפת TRX לכל עסקה"
+    ],
+    ownerAction: "לממן TRX ולבחור מסלול (הימור/שריפה/האצלה) או לאשר המשך transit — פעולה כלכלית מחוץ למערכת, באישור בעלים בלבד",
+    estimatedTime: "מיידי אחרי מימון האנרגיה",
+    estimatedCost: `הימור ≥ ${minStake.toLocaleString()} TRX ל-4 יישובי USDT/יום · שריפה ~27.26 TRX/tx`,
+    resourceLiveChecked: false
   };
 
   return [steem, blurt, hive, tron];

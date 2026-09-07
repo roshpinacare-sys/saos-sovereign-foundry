@@ -12,11 +12,15 @@
  */
 
 export type DecisionPhase = "now" | "before-anchor" | "before-live";
+export type DecisionCategory = "security" | "resources" | "governance" | "release";
+export type DecisionSeverity = "critical" | "high" | "medium";
 
 export interface OwnerDecision {
   key: string;
   name: string;
   description: string;
+  category: DecisionCategory;
+  severity: DecisionSeverity;
   options: string[];
   safeDefault: string;
   risk: string;
@@ -30,6 +34,28 @@ export interface OwnerDecision {
 }
 
 export const OWNER_DECISIONS: OwnerDecision[] = [
+  {
+    key: "admin-key-location",
+    name: "SH-7 — מיקום מפתח-האדמין: מחוץ לעץ הפרויקט",
+    description:
+      "קיים קובץ מפתח-אדמין מקומי upload/saos-admin-key.txt בתוך עץ הפרויקט (מנוטר ב-repo-status — נבדק קיום בלבד, תוכנו מעולם לא נקרא; upload/ חסום ב-gitignore והוא מעולם לא נכנס להיסטוריית הריפו). נוהל-קבע: המפתח צריך לחיות מחוץ לעץ הפרויקט — למשל ~/.secrets/saos-admin-key עם הרשאות 600 — ולא להישמר בצ׳אט, בריפו או ב-worklog. המערכת עצמה מאחסנת hash בלבד (SAOS_ADMIN_KEY_HASH) — לעולם לא את המפתח הגלוי.",
+    options: [
+      "העברה מחוץ לעץ: ~/.secrets/saos-admin-key, הרשאות 600, עדכון .env בלי להדפיס את המפתח",
+      "רוטציה מלאה (מפתח חדש + hash חדש ב-.env) — חובה אם יש חשש שנחשף",
+      "השארה במקום (לא מומלץ — סיכון כניסה בטעות לריפו/גיבוי/ארכיון)"
+    ],
+    safeDefault: "העברה מחוץ לעץ הפרויקט עם הרשאות 600, בלי להדפיס/להעתיק את המפתח בשום ערוץ",
+    risk: "מפתח בתוך עץ פרויקט עלול להיכנס בטעות לריפו, לגיבוי או לארכיון; אם נחשף — נדרשת רוטציה מיידית",
+    cost: "אפס",
+    time: "דקות (העברה + עדכון נתיב ב-.env)",
+    requiredAction: "להעביר את הקובץ מחוץ לעץ (למשל ~/.secrets/saos-admin-key), להגדיר 600, למחוק את העותק המקומי; לבצע רוטציה אם יש חשש חשיפה — ולתעד כפעולת בעלים",
+    phase: "now",
+    ownerRole: "בעלים",
+    critical: true,
+    category: "security",
+    severity: "critical",
+    sourceRef: "docs/secret-hygiene.md SH-7"
+  },
   {
     key: "sh3-historical-file",
     name: "SH-3 — קובץ היסטורי לא-מוכר בהיסטוריית git",
@@ -47,6 +73,8 @@ export const OWNER_DECISIONS: OwnerDecision[] = [
     phase: "now",
     ownerRole: "בעלים",
     critical: true,
+    category: "security",
+    severity: "critical",
     sourceRef: "docs/secret-hygiene.md SH-3"
   },
   {
@@ -63,6 +91,8 @@ export const OWNER_DECISIONS: OwnerDecision[] = [
     phase: "now",
     ownerRole: "בעלים",
     critical: false,
+    category: "governance",
+    severity: "medium",
     sourceRef: "docs/deployment.md + פרוטוקול הדחיפה הבטוחה"
   },
   {
@@ -82,6 +112,8 @@ export const OWNER_DECISIONS: OwnerDecision[] = [
     phase: "before-anchor",
     ownerRole: "בעלים",
     critical: true,
+    category: "resources",
+    severity: "critical",
     sourceRef: "docs/next-steps.md §חסימות לפני מצב-חי + docs/external-signer.md"
   },
   {
@@ -98,6 +130,8 @@ export const OWNER_DECISIONS: OwnerDecision[] = [
     phase: "before-anchor",
     ownerRole: "בעלים/משאבים",
     critical: true,
+    category: "resources",
+    severity: "critical",
     sourceRef: "docs/next-steps.md §טבלת חסימות + docs/anchor-preflight.md"
   },
   {
@@ -114,6 +148,8 @@ export const OWNER_DECISIONS: OwnerDecision[] = [
     phase: "before-anchor",
     ownerRole: "בעלים/משאבים",
     critical: true,
+    category: "resources",
+    severity: "critical",
     sourceRef: "docs/next-steps.md §טבלת חסימות + tron-energize.ts"
   },
   {
@@ -130,6 +166,8 @@ export const OWNER_DECISIONS: OwnerDecision[] = [
     phase: "before-live",
     ownerRole: "בעלים",
     critical: true,
+    category: "governance",
+    severity: "critical",
     sourceRef: "docs/decisions.md D12 + docs/deployment.md §מעברי-מצב"
   },
   {
@@ -146,6 +184,8 @@ export const OWNER_DECISIONS: OwnerDecision[] = [
     phase: "before-live",
     ownerRole: "בעלים",
     critical: false,
+    category: "release",
+    severity: "medium",
     sourceRef: "docs/next-steps.md + docs/deployment.md"
   },
   {
@@ -162,6 +202,8 @@ export const OWNER_DECISIONS: OwnerDecision[] = [
     phase: "now",
     ownerRole: "סוכן",
     critical: false,
+    category: "release",
+    severity: "medium",
     sourceRef: "docs/next-steps.md §מועמד לסבב 7"
   }
 ];
@@ -172,6 +214,21 @@ export const DECISION_PHASE_LABEL: Record<DecisionPhase, string> = {
   "before-live": "נדרש לפני מצב חי"
 };
 
-/** the statuses an owner can record for a decision */
-export const DECISION_STATUSES = ["open", "decided-default", "decided-custom", "deferred"] as const;
+/** the statuses an owner can record for a decision (Task 11 closure tooling) */
+export const DECISION_STATUSES = [
+  "open",
+  "decided-default",
+  "decided-custom",
+  "needs-resource",
+  "resolved-external",
+  "deferred",
+  "rejected"
+] as const;
 export type DecisionStatus = (typeof DECISION_STATUSES)[number];
+
+export const DECISION_CATEGORY_LABEL: Record<DecisionCategory, string> = {
+  security: "אבטחה",
+  resources: "משאבים",
+  governance: "ניהול",
+  release: "שחרור"
+};

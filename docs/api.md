@@ -433,3 +433,31 @@
 **סטטוס**: ✅ עובד — 7/7 טענות api-check (registry+מקורות, 401, fail-closed ×2, רישום מאומת, שיקוף ב-GET).
 
 **סה״כ נתיבים**: 16 (13 ב-Task 6 + research ששוחזר + 2 חדשים). **api-check: 80 טענות.**
+
+---
+
+## Task 11 — נתיב חדש + שדרוגי חוזה
+
+### 18. `POST /api/saos/auth/revoke-all` (חדש Task 11) — ביטול-סשנים גלובלי
+
+- **נדרש**: התאמת אדמין (cookie או Bearer). rate-limit 4/דק' (`SAOS_RL_AUTH_REVOKE_PER_MIN`).
+- **פעולה**: רוטציית session epoch ב-`SessionControl` — כל cookie שנחתם לפני הקריאה מתבטל מיידית, **כולל הקורא** (התגובה מוחקת את ה-cookie). ללא רשימת-סשנים, ללא חומר-סוד. Bearer key אינו מושפע (עיצוב מכוון).
+- **תשובה**: `{ok:true, revokedAt, note}`; תמיד מאומת — `AuditEvent kind=auth-revoke-all`; 401/403/429 לפי משטר האבטחה.
+- **UI**: מסך אבטחה ומאגר → "נתק את כל הסשנים" + דיאלוג אישור + toast הצלחה/כשל.
+
+### חוזה `GET /api/saos/decisions` v2
+
+לכל החלטה נוספו: `id` · `title` · `category` (security/resources/governance/release) · `severity` (critical/high/medium) · `status` (כינוי ל-recordedStatus) · `defaultSafeAction` · `requiredOwnerAction` · `timeEstimate` · `updatedAt` · **`auditTrail`** (אירועי decision-update: at/actor/detail — בלי סודות). הסטטוסים הורחבו: `needs-resource` · `resolved-external` · `rejected` (בנוסף ל-open/decided-default/decided-custom/deferred). counts כולל `needsResource`.
+
+### חוזה `/api/saos/signer` v2
+
+- **GET**: כל שורה כוללת `purpose` (תווית עברית ל-kind), `resultPublic` ({txid, proofRef, anchorRef} | null), `verificationStatus` (`verified` / `unverified` / `not-checked` / null), ו-**`auditTrail`** לכל בקשה (אירועי signer-create/result/cancel/fail שמכילים `id=<sig-…>` ב-detail — מ-Task 11 ואילך).
+- **POST**: `dryRun:true` מוצהר בתשובה (יצירה = מסמך יבש, אפס שידור); פרמטר **`ttlSeconds`** (שלם 60..86400, ברירת-מחדל מ-env) — מאפשר בדיקת פקיעה כנה; fail-closed מחוץ לטווח.
+
+### חוזה `GET /api/saos/anchor-preflight` v2
+
+שדה חדש **`firstAnchorReadiness`**: `{status: not-ready|partial|conditional, recommendedNetwork, recommendedReason, blockers, requiredResource, ownerAction, openCriticalDecisions, runbook:"docs/first-anchor-runbook.md"}`. כנות: אין ערך "ready" — גם הכול ירוק נשאר `conditional` עד אישור-בעלים + חתימה חיצונית. `security-open-items` עודכן: ביטול-סשנים כבר לא פער; SH-7 כן.
+
+### חוזה `GET /api/saos/repo-status` v2
+
+`secrets.adminKeyFileInTree` (boolean — בדיקת קיום של `upload/saos-admin-key.txt` בלבד; התוכן לעולם לא נקרא) + `secrets.adminKeyRule` (כלל hash-בלבד). `knownOpenItems` כולל אוטומטית SH-7 כשהקובץ בעץ.

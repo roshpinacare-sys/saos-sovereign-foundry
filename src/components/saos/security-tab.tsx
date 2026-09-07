@@ -1,7 +1,8 @@
 "use client";
 
-import { CheckCircle2, FileLock2, GitBranch, KeyRound, LogOut, ShieldCheck, XCircle } from "lucide-react";
+import { CheckCircle2, FileLock2, Fingerprint, GitBranch, KeyRound, LogOut, ShieldCheck, Unlink, XCircle } from "lucide-react";
 import { useState } from "react";
+import * as Dialog from "@radix-ui/react-dialog";
 import { toast } from "sonner";
 
 import {
@@ -15,7 +16,7 @@ import {
   fmtDateTime
 } from "@/components/ui/kit";
 import { EP, errText, refreshKey, useSaos } from "./api";
-import type { AuthStateResponse, LiveGateResponse, RepoStatusResponse } from "./types";
+import type { AuthStateResponse, LiveGateResponse, RepoStatusResponse, RevokeAllResponse } from "./types";
 
 export function SecurityTab() {
   const repoQ = useSaos<RepoStatusResponse>("repo-status", () => fetch(EP.repoStatus).then((r) => r.json() as Promise<RepoStatusResponse>));
@@ -44,6 +45,11 @@ export function SecurityTab() {
         }}
         refresh={authQ.refresh}
       />
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {repoQ.state === "ready" ? <SecretHygieneCard data={repoQ.data} /> : <LoadingPanel rows={3} label="היגיינת סודות" />}
+        <SessionRevocationCard authState={authQ.state === "ready" ? authQ.data : null} onChanged={authQ.refresh} />
+      </div>
 
       {repoQ.state === "ready" ? <RepoPanel data={repoQ.data} onRefresh={repoQ.refresh} refreshing={repoQ.refreshing} /> : <LoadingPanel rows={4} label="מצב ריפו" />}
       {repoQ.state === "error" && <ErrorState kind={repoQ.err.kind} detail={errText(repoQ.err)} onRetry={repoQ.refresh} retrying={repoQ.refreshing} />}
@@ -159,6 +165,122 @@ function AuthCard({
           </div>
         </form>
       )}
+    </Panel>
+  );
+}
+
+function SecretHygieneCard({ data }: { data: RepoStatusResponse }) {
+  const s = data.secrets;
+  const inTree = s.adminKeyFileInTree;
+  return (
+    <Panel
+      title="היגיינת סודות (SH)"
+      icon={<Fingerprint className="size-4 text-amber-400" aria-hidden />}
+      source="/api/saos/repo-status · secrets"
+      lastChecked={data.generatedAt}
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge tone={inTree ? "warn" : "ok"}>{inTree ? "SH-7 פתוח: קובץ מפתח בתוך עץ הפרויקט" : "אין קובץ מפתח בעץ הפרויקט"}</Badge>
+        <Badge tone={s.envValuesExposed === false ? "ok" : "danger"}>{s.envValuesExposed === false ? "אפס ערכי-סוד ב-API" : "חשיפה?"}</Badge>
+      </div>
+      <MetaRows
+        rows={[
+          { label: "כלל hash בלבד", value: "המערכת מאחסנת hash של מפתח-האדמין — לעולם לא המפתח" },
+          { label: "קובץ מפתח בעץ הפרויקט", value: inTree ? "קיים (קיום בלבד נבדק — התוכן לא נקרא)" : "לא נמצא", mono: false },
+          { label: "הרשאות .env", value: s.envFilePerms ?? "—", mono: true },
+          { label: "סריקת סודות אחרונה", value: `${s.scanCoveredFiles} קבצים · ${s.scanMatches.length} התאמות` }
+        ]}
+      />
+      {inTree && (
+        <p className="mt-2.5 rounded-lg border border-amber-500/30 bg-amber-500/5 p-2.5 text-[11px] leading-relaxed text-amber-200">
+          פעולת בעלים מומלצת: להעביר את הקובץ מחוץ לעץ הפרויקט (למשל <Mono>~/.secrets/saos-admin-key</Mono> עם הרשאות 600), בלי להדפיס/להעתיק את המפתח בשום ערוץ. אם יש חשש שנחשף — רוטציה מלאה (מפתח חדש + hash חדש ב-.env) ותיעוד כפעולת בעלים. הנוהל: <Mono>docs/secret-hygiene.md</Mono>.
+        </p>
+      )}
+      {s.scanMatches.length > 0 && (
+        <ul dir="ltr" className="mt-2 space-y-0.5 font-mono text-[10px] text-zinc-500">
+          {s.scanMatches.map((m, i) => (
+            <li key={`${m.file}-${m.pattern}-${i}`} className="break-all">
+              {m.file} → {m.pattern}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
+  );
+}
+
+function SessionRevocationCard({ authState, onChanged }: { authState: AuthStateResponse | null; onChanged: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function revokeAll() {
+    setBusy(true);
+    try {
+      const res = await fetch(EP.revokeAll, { method: "POST" });
+      if (res.status === 401 || res.status === 403) {
+        toast.error("נדרשת התחברות — התחבר במסך זה ואז נתק את הסשנים", { duration: 6000 });
+        return;
+      }
+      if (res.status === 429) {
+        toast.error("הגבלת קצב — המתן מספר שניות ונסה שוב");
+        return;
+      }
+      const body = (await res.json()) as RevokeAllResponse;
+      if (body.ok) {
+        toast.success("כל הסשנים נותקו — נדרשת התחברות מחדש (האירוע נרשם ביומן הביקורת)", { duration: 7000 });
+        setOpen(false);
+        onChanged();
+      } else {
+        toast.error(`ניתוק נדחה: ${body.error ?? "שגיאה"}`);
+      }
+    } catch {
+      toast.error("שגיאת רשת — הניתוק לא בוצע");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Panel
+      title="ביטול סשנים גלובלי"
+      icon={<Unlink className="size-4 text-rose-400" aria-hidden />}
+      source="POST /api/saos/auth/revoke-all"
+      lastChecked={null}
+    >
+      <p className="text-xs leading-relaxed text-zinc-400">
+        ניתוק מיידי של <strong className="text-zinc-200">כל</strong> סשני האופרטור הפעילים — כולל הסשן שלך — באמצעות רוטציית epoch של הסשן. ללא אחסון רשימת סשנים וללא חומר-סוד; האירוע נרשם ביומן הביקורת. מפתח Bearer (סקריפטים) אינו מושפע מכוון.
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <Btn variant="danger" size="sm" onClick={() => setOpen(true)} disabled={authState ? !authState.authenticated : false} ariaLabel="נתק את כל הסשנים הפעילים">
+          <Unlink className="size-3.5" aria-hidden />
+          נתק את כל הסשנים
+        </Btn>
+        {authState && !authState.authenticated && (
+          <span className="text-[11px] text-zinc-500">נדרשת התחברות לפני ביצוע הניתוק</span>
+        )}
+      </div>
+
+      <Dialog.Root open={open} onOpenChange={(o) => !o && setOpen(false)}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/70" />
+          <Dialog.Content className="fixed start-1/2 top-1/2 z-50 w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 rtl:translate-x-1/2 -translate-y-1/2 rounded-xl border border-rose-500/40 bg-zinc-900 p-5 shadow-2xl focus-visible:outline-2 focus-visible:outline-rose-400">
+            <Dialog.Title className="text-sm font-bold text-zinc-100">לנתק את כל הסשנים?</Dialog.Title>
+            <Dialog.Description className="mt-2 text-xs leading-relaxed text-zinc-400">
+              כל סשני האופרטור יבוטלו מיידית — כולל הסשן הנוכחי, ותידרש התחברות מחדש. הפעולה נרשמת ביומן הביקורת. לא מבוצע שינוי מפתח, לא מבוצע שידור, ולא מוצג חומר-סוד.
+            </Dialog.Description>
+            <div className="mt-4 flex justify-start gap-2">
+              <Btn variant="danger" onClick={revokeAll} loading={busy} ariaLabel="אישור ניתוק כל הסשנים">
+                כן — נתק הכול
+              </Btn>
+              <Dialog.Close asChild>
+                <Btn variant="ghost" disabled={busy} ariaLabel="ביטול — סגור בלי ניתוק">
+                  בטל
+                </Btn>
+              </Dialog.Close>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </Panel>
   );
 }

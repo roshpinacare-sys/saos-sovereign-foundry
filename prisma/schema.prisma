@@ -165,6 +165,20 @@ model DecisionRecord {
   @@index([status])
 }
 
+// ─── Session revocation control (בקרת ביטול-סשנים — Task 11) ──────────────────
+// Sessions are stateless HMAC cookies. Global revocation = rotating the session
+// epoch: the HMAC secret is derived as sha256("saos-session:"+hash+":"+epoch),
+// so a NEW epoch instantly invalidates EVERY cookie issued before it — no
+// session list to maintain, no key material stored (only a random epoch).
+
+model SessionControl {
+  id         String   @id @default("singleton")
+  sessionEpoch String // random hex; absent row = "bootstrap" (pre-revocation behavior)
+  rotatedAt  DateTime @default(now())
+  rotatedBy  String? // non-reversible actor label (cookie:<8hex> / bearer:<8hex>)
+  note       String?
+}
+
 // ─── Keyless signing queue (תור חתימה ללא-מפתחות — Task 5) ───────────────────
 // The system prepares a transaction FOR signing; it NEVER holds, stores or
 // transmits private keys. Only the PUBLIC result (txid) is recorded back.

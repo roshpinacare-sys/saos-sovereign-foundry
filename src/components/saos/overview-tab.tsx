@@ -28,6 +28,7 @@ import {
   Mono,
   Panel,
   Stat,
+  cn,
   fmtDateTime
 } from "@/components/ui/kit";
 import { EP, errText, useSaos } from "./api";
@@ -105,6 +106,40 @@ export function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void 
           </div>
         </CardContent>
       </Card>
+
+      {/* first-anchor readiness (Task 11) */}
+      <FirstAnchorCard readiness={preflight.firstAnchorReadiness} generatedAt={preflight.generatedAt} onNavigate={onNavigate} />
+
+      {/* open critical decisions — must surface as blockers (Task 11 part ד) */}
+      {decisions.decisions.filter((d) => d.critical && d.recordedStatus === "open").length > 0 && (
+        <Panel
+          title="החלטות בעלים קריטיות פתוחות — חוסמות התקדמות"
+          icon={<ShieldAlert className="size-4 text-rose-400" aria-hidden />}
+          source="/api/saos/decisions · critical+open"
+          lastChecked={decQ.lastChecked}
+          onRefresh={decQ.refresh}
+          refreshing={decQ.refreshing}
+          actions={
+            <Btn variant="ghost" size="sm" onClick={() => onNavigate("decisions")} ariaLabel="מעבר למסך החלטות הבעלים לסגירה">
+              לסגירה במסך ההחלטות
+            </Btn>
+          }
+        >
+          <ul className="space-y-2">
+            {decisions.decisions
+              .filter((d) => d.critical && d.recordedStatus === "open")
+              .map((d) => (
+                <li key={d.key} className="rounded-lg border border-rose-500/30 bg-rose-500/5 p-2.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-bold text-zinc-100">{d.name}</span>
+                    <Badge tone="danger">קריטית · פתוחה</Badge>
+                  </div>
+                  <p className="mt-1 text-[11px] leading-relaxed text-zinc-400">{d.requiredOwnerAction}</p>
+                </li>
+              ))}
+          </ul>
+        </Panel>
+      )}
 
       {/* status stat row */}
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
@@ -290,5 +325,74 @@ export function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void 
         </Panel>
       </div>
     </div>
+  );
+}
+
+// ─── First-anchor readiness card (Task 11 part ה) ────────────────────────────
+
+function FirstAnchorCard({
+  readiness,
+  generatedAt,
+  onNavigate
+}: {
+  readiness: PreflightResponse["firstAnchorReadiness"];
+  generatedAt: string;
+  onNavigate: (tab: string) => void;
+}) {
+  const statusInfo =
+    readiness.status === "not-ready"
+      ? { label: "לא מוכן", tone: "danger" as const, icon: <ShieldAlert className="size-4 text-rose-400" aria-hidden /> }
+      : readiness.status === "partial"
+        ? { label: "מוכן חלקית", tone: "warn" as const, icon: <Rocket className="size-4 text-amber-400" aria-hidden /> }
+        : { label: "מוכן בתנאי", tone: "info" as const, icon: <CheckCircle2 className="size-4 text-sky-400" aria-hidden /> };
+  return (
+    <Panel
+      title="עוגן ראשון — מוכנות"
+      icon={statusInfo.icon}
+      source="/api/saos/anchor-preflight · firstAnchorReadiness"
+      lastChecked={generatedAt}
+      onRefresh={undefined}
+      actions={<Badge tone={statusInfo.tone}>{statusInfo.label}</Badge>}
+      className={cn(readiness.status === "not-ready" && "border-rose-500/30")}
+    >
+      <MetaRows
+        rows={[
+          { label: "רשת מומלצת", value: readiness.recommendedNetwork ?? "—", mono: true },
+          { label: "נימוק", value: readiness.recommendedReason },
+          { label: "משאב נדרש", value: readiness.requiredResource },
+          { label: "פעולת בעלים", value: readiness.ownerAction },
+          { label: "החלטות קריטיות פתוחות", value: readiness.openCriticalDecisions },
+          { label: "נוהל מלא", value: readiness.runbook, mono: true }
+        ]}
+      />
+      {readiness.blockers.length > 0 ? (
+        <ul className="mt-2.5 space-y-1.5">
+          {readiness.blockers.map((b) => (
+            <li key={b.id} className="flex items-start gap-2 rounded-lg border border-zinc-800 bg-zinc-950/60 p-2.5">
+              <ShieldAlert className="mt-0.5 size-3.5 shrink-0 text-rose-400" aria-hidden />
+              <div className="min-w-0">
+                <div className="text-[11px] font-bold text-zinc-200" dir="ltr">{b.id}</div>
+                <p className="text-[11px] leading-relaxed text-zinc-400">{b.detail}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-2.5 flex items-center gap-2 text-xs text-emerald-400">
+          <CheckCircle2 className="size-4" aria-hidden /> אין חוסמים קשים — המוכנות מוגבלת לחתימה חיצונית ולאישור בעלים בלבד.
+        </p>
+      )}
+      <p className="mt-2 text-[11px] leading-relaxed text-zinc-500">
+        הסטטוס כנה: גם כשהכול ירוק, עוגן ראשון נותר &quot;מוכן בתנאי&quot; עד אישור בעלים מפורש וחתימה חיצונית — המערכת אינה מציגה עצמה כמוכנה לעוגן אמיתי בזמן שהיא חסומה.
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Btn variant="outline" size="sm" onClick={() => onNavigate("networks")} ariaLabel="מעבר למסך הרשתות לבחירת יעד">
+          בחירת רשת-יעד
+        </Btn>
+        <Btn variant="outline" size="sm" onClick={() => onNavigate("decisions")} ariaLabel="מעבר לסגירת החלטות חוסמות">
+          סגירת החלטות
+        </Btn>
+      </div>
+    </Panel>
   );
 }

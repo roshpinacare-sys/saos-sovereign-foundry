@@ -24,6 +24,13 @@ import type { SealRecord } from "@prisma/client";
 export type SignerKind = "none" | "external" | "manual" | "hardware";
 export type SignerStatus = "disconnected" | "ready" | "awaiting-approval" | "error";
 
+/** Hebrew purpose label per request kind — what the owner is being asked to sign FOR */
+export function purposeLabel(kind: string): string {
+  return kind === "checkpoint"
+    ? "עיגון נקודת-ציון (checkpoint) — הטמעת חותמה ברשת החוץ"
+    : "עיגון שזירה (weave) — הטמעת שורש המרקל ברשת החוץ";
+}
+
 export interface SignRequest {
   id: string;
   network: "STEEM" | "BLURT" | "HIVE" | "TRON";

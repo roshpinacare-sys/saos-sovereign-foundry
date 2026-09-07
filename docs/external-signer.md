@@ -113,3 +113,24 @@ The correct route for any future vault recovery is the one this module enforces:
 Never: importing keys into the agent, the repo, working files, logs or any
 uncontrolled networked server. Any request that would require the system to
 hold a key is refused by design and recorded as "דורש אישור חיצוני".
+
+---
+
+## 8. Task 11 — חוזה SignRequest v2 (מבנה מלא, יבש בלבד)
+
+`SignRequest` — המסמך שהמערכת מפיקה לחותם-החיצוני; אין בו ואין לו שדה מפתח:
+
+| שדה | תיאור |
+|---|---|
+| `id` | `sig-<uuid>` — יציב, נישא בכל אירועי הביקורת |
+| `network` | STEEM · BLURT · HIVE · TRON |
+| `purpose` | תווית עברית ל-kind: weave (עיגון שזירה) / checkpoint (נקודת-ציון) |
+| `payload` | תוכן העסקה הקנוני — ציבורי מבנייה |
+| `digestToSign` | ה-hash המדויק שהחותם חותם מחוץ למערכת |
+| `createdAt` / `expiresAt` | תוקף — `ttlSeconds` 60..86400 (ברירת-מחדל מ-env); פקיעה → `expired` (מצב סופי) |
+| `status` | מחזור-החיים המלא (סעיף 3) — פקיעה ורישום הם סופיים |
+| `resultPublic` | `{txid, proofRef, anchorRef}` | null — רק התוצאה הציבורית חוזרת למערכת |
+| `verificationStatus` | `verified` · `unverified` (לעולם לא סופי) · `not-checked` · null (עוד אין תוצאה) |
+| `auditTrail` | אירועי create/result/cancel/fail עם actor בלתי-הפיך |
+
+**ערבויות מצב-יבש**: יצירת בקשה (`POST /signer`, כולל `dryRun:true` בתשובה) אינה משדרת ואינה מבצעת עסקה; אין דרישה למפתח פרטי בשום שלב; השידור עצמו תמיד מחוץ למערכת. בדיקות-חיים ב-api-check §19–§23: יצירה, פקיעה (ttl=60s → expired, מוטציה נדחית), ביטול, תוצאה לא-מאומתת, חוסר-שינוי במצב סופי.

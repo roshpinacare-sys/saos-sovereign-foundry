@@ -1,10 +1,16 @@
-# Secret Hygiene (היגיינת סודות) — Task 6
+# Secret Hygiene (היגיינת סודות) — Task 6, updated Task 11
 
 > Iron rule: private keys, seed phrases, signing keys, tokens, passwords and live
 > permission files NEVER enter the repo, the logs, the DB or the agent context.
 > This document records what EXISTS on disk, what is (or was) in git history,
 > and the exact owner actions required — no history is rewritten without
 > explicit owner approval.
+>
+> **THE HASH-ONLY RULE (permanent, Task 11):** the system stores ONLY the
+> sha256 hash of the admin key (`SAOS_ADMIN_KEY_HASH`) — never the plaintext
+> key, never a secret file inside the project tree when a safer alternative
+> exists. Any new code that would store a plaintext secret is a violation of
+> the architecture (docs/security.md §2, principle 7).
 
 ## 1. Scan performed (2026-09-07, Task 6 / M1)
 
@@ -31,6 +37,7 @@ never read, printed or copied by any agent):
 | SH-4 | Admin-key backup `upload/saos-admin-key.txt` | disk only, gitignored | **No** | Low (by design) | KEEP — this is the disaster-recovery copy mandated by BUG-008 lesson 3 ("save generated credentials twice"). **File structure note**: line 1 is a human label (contains "SAOS"), line 2 is the key itself — consumers must take line 2 only, never concatenate the file (a naive whole-file read yields a wrong key; discovered during browser-verification this session and corrected) |
 | SH-5 | File permissions too open | `.env` was 664, upload files 777 | — | Low | Fixed this session for `.env` (now 600); `upload/` files are owned by another uid — chmod not permitted in sandbox → owner should run `chmod 600 upload/*.txt` outside the sandbox |
 | SH-6 | `.env.example` | tracked (intentional) | Yes | None | Safe — variable NAMES only, no values; verified |
+| SH-7 | **Admin-key file inside the project tree** — `upload/saos-admin-key.txt` (Task 11) | disk only, gitignored, never in history | **No** | Medium | Owner: move outside the project tree → `~/.secrets/saos-admin-key` with `chmod 600`; update the `.env` workflow without printing the key; delete the in-tree copy. If exposure is even suspected — **rotate** (new key + new `SAOS_ADMIN_KEY_HASH` in `.env`, never printed) and record as an owner action. Monitored LIVE by `/api/saos/repo-status` → `secrets.adminKeyFileInTree` (existence check via stat ONLY — the content is never read, printed or stored) and surfaced in the Security tab + decisions registry (`admin-key-location`)
 
 ## 3. Current protections (verified live)
 
@@ -60,9 +67,29 @@ For SH-3 (historical file), options in order of safety:
 ## 5. Discipline going forward
 
 1. Any new secret is generated **outside** the agent context and handed over
-   via gitignored paths only (`upload/` today, `~/.secrets/` preferred).
+   via gitignored paths only (`upload/` today, `~/.secrets/` preferred — and
+   for the admin key: REQUIRED, see SH-7).
 2. Every round ends with the same scan as §1 (patterns + `git ls-files` +
    secret-pattern grep) — it costs seconds and is recorded in the worklog.
 3. No `print`, `cat`, `echo` of secret file contents — by any agent, ever.
 4. Logs (`dev.log`) and DB never receive key material (verified by api-check's
    no-key-leak assertions).
+
+## 6. Admin-key rotation procedure (Task 11 — owner-executed, never printed)
+
+Trigger: suspected exposure of the admin key (SH-2 or SH-7 scenarios), or
+routine rotation (recommended every 90 days).
+
+1. Owner generates a NEW key locally, outside the agent context (e.g.
+   `openssl rand -base64 24`) — the key is NEVER pasted into chat, repo,
+   worklog or logs.
+2. Owner computes the new hash and writes it to `.env`:
+   `SAOS_ADMIN_KEY_HASH=$(printf '%s' '<new-key>' | sha256sum | cut -d' ' -f1)`
+   — run in a private shell; the command history concern is the owner's own.
+3. Owner updates the local recovery copy (moved outside the tree per SH-7,
+   `~/.secrets/saos-admin-key`, chmod 600) and deletes the in-tree copy.
+4. Owner restarts the server. All old sessions stay valid only until the
+   next revocation — run `POST /api/saos/auth/revoke-all` once for a clean
+   break (docs/runbook.md §revocation).
+5. Record the rotation as an owner decision (`docs/owner-decisions.md`) —
+   status only, no key material, no hash value in the docs.

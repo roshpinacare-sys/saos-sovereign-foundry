@@ -141,6 +141,17 @@ export async function GET(req: Request) {
     const envPerms = envStat ? `0${(envStat.mode & 0o777).toString(8)}` : null;
     const scan = await secretScan();
 
+    // SH-7 (Task 11): is the local admin-key file still inside the project
+    // tree? EXISTENCE ONLY via stat — the file's content is never read,
+    // never printed and never stored (docs/secret-hygiene.md SH-7).
+    const adminKeyPath = path.join(process.cwd(), "upload", "saos-admin-key.txt");
+    let adminKeyFileInTree = false;
+    try {
+      adminKeyFileInTree = statSync(adminKeyPath).isFile();
+    } catch {
+      adminKeyFileInTree = false;
+    }
+
     const mode = saosMode();
     return NextResponse.json({
       ok: true,
@@ -166,15 +177,17 @@ export async function GET(req: Request) {
         envFilePresent: envStat !== null,
         envFilePerms: envPerms,
         envValuesExposed: false,
+        adminKeyFileInTree,
+        adminKeyRule: "המערכת מאחסנת hash בלבד (SAOS_ADMIN_KEY_HASH) — לעולם לא את המפתח הגלוי; קובץ מפתח בתוך עץ הפרויקט הוא פריט SH-7 פתוח (החלטת בעלים)",
         scanPerformedAt: scan.at,
         scanCoveredFiles: scan.scannedFiles,
         scanMatches: scan.matches,
         scanNote: "סריקת דפוסים על קבצים מעוקבים (שמות + תוכן טקסטואלי, תוצאות שמות בלבד) — מטמון 5 דקות; הנוהל המלא: docs/secret-hygiene.md"
       },
       knownOpenItems: [
+        ...(adminKeyFileInTree ? ["SH-7: קובץ מפתח-אדמין מקומי בתוך עץ הפרויקט (upload/saos-admin-key.txt) — נדרשת העברה מחוץ לעץ (החלטת בעלים; קיום בלבד נבדק, התוכן לא נקרא)"] : []),
         "SH-3: קובץ היסטורי לא-מסווג בהיסטוריית git — דורש החלטת בעלים (docs/secret-hygiene.md)",
         "GitHub Actions CI לא קיים — הרצת בדיקות ידנית (bun run check)",
-        "אין session revocation גלובלי — סיבוב SAOS_SESSION_SECRET מבטל הכול",
         "SQLite single-writer — לא לפריסה אופקית"
       ],
       mode: mode.mode,

@@ -191,3 +191,22 @@ bun run restore backups/<dir> --yes         # שחזור אמיתי (ה-db הק�
 | `DecisionRecord` (חדש) | `key @id` (=מפתח ברישום owner-decisions.ts) · `status` (open/decided-default/decided-custom/deferred) · `note?` (≤300, ציבורי) · `updatedAt` | `POST /api/saos/decisions` (auth+audit) | `GET /api/saos/decisions` (ציבורי) |
 
 תוספת אדיטיבית בלבד (טבלה חדשה, ללא שינוי במודלים קיימים); `db push` נקי. הרישום עצמו (תוכן ההחלטות) נשאר בקוד המתועד — ה-DB מחזיק רק את הסטטוס שהוקלט.
+
+---
+
+## עדכון Task 11 — מודל חדש + הרחבות סטטוס
+
+### SessionControl (חדש — בקרת ביטול-סשנים)
+| שדה | תוכן |
+|---|---|
+| `id` | `"singleton"` (שורה יחידה) |
+| `sessionEpoch` | מחרוזת hex אקראית (24 בייטים) — **לא חומר-סוד**; גורם-נגזרת של סוד-ה-HMAC: `sha256("saos-session:"+adminKeyHash+":"+epoch)`. רוטציה (`POST /auth/revoke-all`) מבטלת מיידית את כל ה-cookies שנחתמו לפניה |
+| `rotatedAt` / `rotatedBy` | מתי ועל-ידי מי (תווית בלתי-הפיכה) |
+| `note` | הקשר ציבורי |
+
+שורה חסרה = `"bootstrap"` — נגזרת זהה לפני-Task-11, כך שפריסה לא מנתקת סשנים קיימים. קריאת ה-epoch מבוטלת 3 שניות per-process + bust ברוטציה; כשל-קריאה חוזר לערך האחרון (זמינות לפני הכל).
+
+### הרחבות למודלים קיימים (אדיטיביות, ללא שינוי סכמה)
+- `DecisionRecord.status` — מערך הערכים החוקי הורחב בשכבת-היישום: `needs-resource` · `resolved-external` · `rejected` (העמודה String — הוולידציה ב-route).
+- `PendingSignature` — ללא שינוי סכמה; שדות `ttlSeconds` (60..86400, ברירת-מחדל מ-env) והיסטוריית-ביקורת נגזרים בקריאה/כתיבה.
+- אסור סוד: ל-`SessionControl` אין שדה סוד; ל-`DecisionRecord.note` ול-`PendingSignature` אין עמודת מפתח — מבנית.
