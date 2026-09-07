@@ -1,6 +1,6 @@
 # צעדים הבאים — SAOS Sovereign Foundry v2
 
-עודכן: 2026-09-07 · סטטוסים: ⬜ פתוח · 🔶 חלקי · ✅ סגור · 🚫 חסום
+עודכן: 2026-09-07 (Task 4) · סטטוסים: ⬜ פתוח · 🔶 חלקי · ✅ סגור · 🚫 חסום
 
 ## מסלול מסונתז (מתוך `SYNTHESIS.roadmap` — נשמר כמסמך-אם)
 
@@ -14,13 +14,18 @@
 
 ## עדיפויות מיידיות (סבב הבא)
 
-1. ⬜ **תיקון מירוץ height (F1)** — עטוף `height` נגזר+create בטרנזקציה או רצף serial ב-SQLite; בדיקה: שתי פעימות מקבילות → לפחות אחת מצליחה, אין שתיים באותו height.
-2. ⬜ **כותבים ל-EnergyPlan/EconomySnapshot** — `/api/saos/energy` ו-`/api/saos/economy` ישמרו גם שורת-מודל (היום רק קבלות). הערך: היסטוריית תוכניות ניתנת-שאילתה.
-3. ⬜ **חשיפת `verifyChain`** כ-API (`/api/saos/receipts/verify`) — הפונקציה קיימת ולא נגישה.
-4. ⬜ **CI בסיסי** — סקריפט שמריץ lint + tsc + selftest (curl) ונכשל על סטייה; חסר לחלוטין.
-5. 🔶 **וולידציית קלט מפורשת** — הודעות שגיאה ידידותיות (היום הקנוניה זורקת "float/inf rejected" על `rc=abc`).
-6. ⬜ **בקשות חתומות / auth** — חובה לפני כל מצב live (security.md §4.1).
-7. ⬜ **audit תלויות** — `bun audit` / `npm audit` תקופתי; לא רץ מעולם.
+1. ✅ **תיקון מירוץ height (F1)** — סגור Task 4: טרנזקציה+mutex+retry+idempotency; הוכח 8/8 מקבילות.
+2. ✅ **כותבים ל-EnergyPlan/EconomySnapshot** — סגור Task 4 (planId/snapshotId + `/plans` לקריאה).
+3. ✅ **חשיפת אימות שרשרת** — סגור Task 4: `/api/saos/verify-chain` (chain/seal/leaf).
+4. ✅ **CI מינימלי** — סגור Task 4: `bun run check` (26 בדיקות + 8 מקבילות); build מוגדר-וחסום-סביבה.
+5. ✅ **הפרדת מצבים** — סגור Task 4: modes.ts + אישור-כפול ל-live; נבדק אנד-טו-אנד.
+6. ✅ **תצוגת רשתות חוץ** — סגור Task 4: network-status.ts + שדה networks ב-/status.
+7. 🔶 **וולידציית קלט מפורשת** — הודעות קנוניה טכניות עדיין על חלק מהקלטים (`float/inf rejected`).
+8. ⬜ **auth + rate-limit** — חובה לפני live; לא התחיל.
+9. ⬜ **GitHub Actions** — ריצת `check` על push; לא קיים בסנדבוקס.
+10. ⬜ **audit תלויות** — `npm audit`; לא רץ מעולם.
+11. ⬜ **retention לקבלות/תוכניות GET** — ניקוי/ארכוב לטבלאות הצומחות.
+12. ⬜ **`bun run build` מחוץ לסנדבוקס** — לאמת build פרודקשן (חסום-סביבה).
 
 ## עוגן ציבורי — הסטטוס המדויק
 
@@ -52,3 +57,28 @@
 3. `git push origin main`
 4. עדכון `worklog.md` (append)
 5. סיכום למשתמש — מה בוצע/נבדק/נשאר/נדחף
+
+---
+
+## טבלת סטטוס רכיבים (סוף Task 4)
+
+| רכיב | סטטוס | הערה |
+|---|---|---|
+| kernel.ts (מכונת מדינה + selftest 7) | ✅ עובד | נבדק חי כל סבב |
+| canonical-json / merkle / evidence | ✅ עובד | כולל verifyChainDag |
+| receipt-store (אטומיות) | ✅ עובד | mutex+retry+idempotency; הוכח 8/8 |
+| modes.ts (dry-run/safe/live/maintenance) | ✅ עובד | נבדק אנד-טו-אנד; live דורש אישור-כפול |
+| network-status.ts (תצוגת רשתות חוץ) | ✅ עובד | חישוב בלבד — לא קורא לרשתות |
+| POST /seal | ✅ עובד | אטומי + idempotent |
+| GET /status /kernel /verify-pack /research | ✅ עובד | |
+| GET /verify-chain (chain/seal/leaf) | ✅ עובד | 41 קבלות + כל העלים מאומתים; fork[17] מדווח |
+| GET /energy /economy + כותבי יישויות | ✅ עובד | planId/snapshotId |
+| GET /plans | ✅ עובד | קריאה-בלבד |
+| UI (5 לשוניות + תג מצב) | ✅ עובד | נבדק דפדפן desktop+mobile, אפס שגיאות |
+| scripts: api-check / concurrency-check / backfill | ✅ עובד | חלק מ-check |
+| `bun run check` (פקודה אחת) | ✅ עובד | יציאה 0 |
+| `bun run build` | 🚫 חסום-סביבה | מוגדר; ריצה אסורה בסנדבוקס — דורש אישור/סביבה חוץ |
+| auth / rate-limit | ⬜ לא התחיל | חוסם לפני live |
+| GitHub Actions CI | ⬜ לא התחיל | אין runner בסנדבוקס |
+| חיבור רשתות אמיתי (STEEM/BLURT/HIVE/TRON) | 🚫 חסום | דורש כספת (שלב 2) + מימון TRX (שלב 3) — אישור משתמש |
+| retention לטבלאות GET | ⬜ לא התחיל | צמיחה איטית, לא דחוף |

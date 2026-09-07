@@ -33,6 +33,9 @@ interface ChainGate {
 
 interface StatusData {
   ok: boolean;
+  mode?: string;
+  modeDetail?: string;
+  writesEnabled?: boolean;
   matrix: ChainGate[];
   historic: { network: string; txRef: string | null; state: string; note: string }[];
   seals: {
@@ -192,10 +195,49 @@ export default function Home() {
             <Flame size={14} className="text-amber-500" />
             SAOS Sovereign Foundry v2.0.0 — כל הראיות משורשרות-האש
           </span>
+          <ModeBadge />
           <span className="text-amber-500/90 font-bold">אנחנו מנצחים את הבלוקצ&apos;יין</span>
         </div>
       </footer>
     </div>
+  );
+}
+
+// ─── mode badge (footer) ─────────────────────────────────────────────────────
+
+const MODE_STYLES: Record<string, string> = {
+  "dry-run": "border-emerald-500/40 bg-emerald-500/10 text-emerald-400",
+  safe: "border-rose-500/40 bg-rose-500/10 text-rose-400",
+  live: "border-amber-500/60 bg-amber-500/15 text-amber-400",
+  maintenance: "border-zinc-600 bg-zinc-800/60 text-zinc-300"
+};
+
+function ModeBadge() {
+  const [mode, setMode] = useState<string | null>(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      fetch("/api/saos/status")
+        .then((r) => r.json())
+        .then((d: StatusData) => {
+          if (d.ok && d.mode) setMode(d.mode);
+        })
+        .catch(() => {
+          /* network blip — badge stays neutral */
+        });
+    }, 0);
+    return () => clearTimeout(t);
+  }, []);
+
+  const style = mode ? MODE_STYLES[mode] ?? "border-zinc-700 bg-zinc-900 text-zinc-400" : "border-zinc-800 bg-zinc-900/60 text-zinc-500";
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-bold ${style}`}
+      title={mode === "live" ? "דורש SAOS_MODE=live + SAOS_LIVE_CONFIRM=YES" : "מצב פעולה של המערכת"}
+    >
+      <Lock size={11} />
+      {mode ?? "…"}
+    </span>
   );
 }
 

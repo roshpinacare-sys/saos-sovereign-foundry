@@ -1,25 +1,29 @@
 # בדיקות — SAOS Sovereign Foundry v2
 
-עודכן: 2026-09-07
+עודכן: 2026-09-07 (Task 4)
 
 ## 1. איך מריצים
 
 ```bash
-# איכות קוד (eslint flat config, Next 16):
-bun run lint                # = eslint . — נקי = יציאה 0
+# === הפקודה האחת (חובה לפני commit) — דורשת dev server רץ ===
+bun run check     # lint + typecheck + test (26 בדיקות API) + verify (8 פעימות מקבילות)
 
-# בדיקת טיפוסים:
-bunx tsc --noEmit           # נקי = יציאה 0
+# רכיבים בנפרד:
+bun run lint        # eslint . — נקי = יציאה 0
+bun run typecheck   # tsc --noEmit
+bun run test        # scripts/api-check.mjs — חוזה מלא על 9 ה-endpoints + fail-closed
+bun run verify      # scripts/concurrency-check.mjs — 8 POST /seal מקבילים + אינבריאנטות
+bun run build       # הגדרה בלבד — אסור להריץ בסנדבוקס (ר' §4 build)
 
-# selftest הקרנל (7 בדיקות תכונה) דרך ה-API החי:
+# selftest הקרנל:
 curl -s http://localhost:3000/api/saos/kernel | jq '.result.ok, .result.checks'
 
-# אימות כלול-מלא של החותם האחרון:
-curl -s http://localhost:3000/api/saos/verify-pack | jq '.rootMatches, .allVerified'
+# אימות השרשרת המלא (מקבילת verify-pack, מרובה-חותמים):
+curl -s http://localhost:3000/api/saos/verify-chain | jq '.ok, .receiptChain, .totals'
 
-# פעימה + תשובה:
-curl -s -X POST http://localhost:3000/api/saos/seal \
-  -H "Content-Type: application/json" -d '{"stamps":5,"memo":"test pulse"}' | jq .ok,.seal.height
+# פעימה + idempotency:
+curl -s -X POST localhost:3000/api/saos/seal -H 'Content-Type: application/json' \
+  -d '{"stamps":4,"batchId":"my-key-1"}' | jq .ok,.seal.height   # ריצה שנייה → idempotent:true
 ```
 
 ## 2. מה קיים
@@ -33,9 +37,25 @@ curl -s -X POST http://localhost:3000/api/saos/seal \
 | types | tsc | — | strict |
 | E2E דפדפן | agent-browser | ידני | 5 לשוניות, desktop+mobile, פעימה, אפס שגיאות קונסולה |
 
-**אין** פריימוורק בדיקות יחידה (ויטסט/Jest לא מותקנים) — ה-selftest-כ-API הוא פרימיטיב הבדיקה הנוכחי. זו פער מוכר ומוחלט ב-next-steps.
+**אין** פריימוורק בדיקות יחידה (ויטסט/Jest לא מותקנים) — שכבת הבדיקה: selftest-כ-API + סקריפטי check (api-check 26 בדיקות + concurrency-check). פריימוורק יחידה נשאר פער מוכר ב-next-steps.
 
-## 3. תוצאות אחרונות (הרצה חיה 2026-09-07, 12:19–12:21 UTC)
+## 3. תוצאות אחרונות (סוף Task 4, 2026-09-07)
+
+| בדיקה | תוצאה | ראיה |
+|---|---|---|
+| `bun run check` (הפקודה האחת) | ✅ lint נקי + tsc נקי + api-check 26/26 + concurrency 8/8 | הרצה מלאה |
+| api-check — כל 9 endpoints + fail-closed | ✅ 26 passed, 0 failed | scripts/api-check.mjs |
+| concurrency-check — 8 POST /seal מקבילים | ✅ 8/8 ok, heights 13..20 רציפים יחודיים, roots יחודיים, 170–213ms | scripts/concurrency-check.mjs |
+| verify-chain scope=chain | ✅ ok, receiptChain ok, 0 digestErrors/linkErrors, `forks:[17]` מדווח, כל החותמים all-verified | curl |
+| idempotency (אותו batchId ×2) | ✅ ריצה שנייה: `idempotent:true`, אותו height/root | api-check |
+| מצב safe | ✅ /status mode=safe writes=false; POST /seal → `mode-refusal` (HTTP 200); /energy מחשב עם `persisted:false` | הרצה ידנית |
+| מצב live ללא אישור | ✅ נפילה ל-dry-run + הודעת הגנה | הרצה ידנית |
+| מצב live עם אישור-כפול | ✅ mode=live, writes=true, **broadcastCapable=false** | הרצה ידנית |
+| backfill `at` (41 שורות היסטוריות) | ✅ 41/41 שוחזרו מוכח-דיג'סט, 0 כישלונות | scripts/backfill-receipt-at.ts |
+| DB עקביות מלאה | ✅ heights 1..31 רציפים יחודיים; 229 עלים תואמי-סכום; 0 יתומים | בדיקת prisma |
+| E2E דפדפן (agent-browser) | ✅ 5 לשוניות, פעימה מה-UI (height 31), תג dry-run בפוטר, mobile iPhone 14, אפס שגיאות קונסולה | agent-browser |
+
+### תוצאות סבב Task 3 (היסטורי — 12:19–12:21 UTC)
 
 | בדיקה | תוצאה | ראיה |
 |---|---|---|
@@ -71,6 +91,36 @@ curl -s -X POST http://localhost:3000/api/saos/seal \
 - **ראיה לתיקון**: `bun run lint` → יציאה 0, אפס אזהרות.
 - **סיכון נותר**: אין.
 
+### BUG-003 — מירוץ פעימות מקבילות + התנגשות שורשים באותו-מילישנייה
+- **תיאור**: תחת עומס מקביל, שתי בקשות באותה מילישנייה עם אותו מספר stamps הניבו אותו לוג-פעולות (nonces מבוססי `Date.now()`) → אותו merkle root → P2002 על root; ובנוסף מירוץ height (P2002 על height) ותקלות נעילת SQLite (P2028/SQLITE_BUSY).
+- **סיבה**: nonces נגזרו מ-`Date.now()` בלבד; קריאת max(height) + create לא היו אטומיים; retry לא כיסה תקלות-נעילה חולפות.
+- **קבצים מושפעים**: `src/app/api/saos/seal/route.ts`, `src/lib/saos/receipt-store.ts` (חדש).
+- **פתרון**: (1) `batchId` כמזרע nonces + מפתח-idempotency (default `randomUUID`); (2) כל הכתיבות בטרנזקציה אחת מאחורי `withWriteLock`; (3) `retryWrite` — backoff על P2002 + תקלות חולפות; (4) timeout טרנזקציה 20s/maxWait 10s.
+- **ראיה לתיקון**: `bun run verify` — 8/8 פעימות מקבילות ok, heights רציפים יחודיים, roots יחודיים (מול 1/8 ok לפני התיקון).
+- **סיכון נותר**: ריבוי-תהליכים (מעבר ל-instance אחד) דורש Postgres — מתועד (F5).
+
+### BUG-004 — שרשרת-הקבלות לא הייתה ניתנת-לאימות (חסר זמן-החיתום `at`)
+- **תיאור**: `verifyChain` נכשל על **כל** הקבלות ההיסטוריות — ה-`at` שנכנס לדיג'סט לא נשמר ב-DB (רק `createdAt` של השורה, שונה ב-1ms+).
+- **סיבה**: העמודה לא הייתה קיימת בסכימה; האימות השתמש ב-createdAt כתחליף.
+- **קבצים מושפעים**: `prisma/schema.prisma` (+`at DateTime?`), `receipt-store.ts` (כותב at), `scripts/backfill-receipt-at.ts` (חדש), `verify-chain/route.ts`.
+- **פתרון**: עמודה + כתיבה לכל קבלה חדשה + backfill חד-פעמי **מוכח-דיג'סט** (חיפוש מילישנייה בחלון 10 שניות שה-digest שלה מתאים — 41/41 שוחזרו, 0 כישלונות). לא שכתוב נתונים — שחזור שדה ע"י הוכחת האש.
+- **ראיה לתיקון**: `GET /verify-chain` → `receiptChain.digestErrors: []`.
+- **סיכון נותר**: אין (השחזור מוכח מתמטית; קבלות עתידיות נשמרות עם at).
+
+### BUG-005 — פיצול אמיתי בשרשרת ההיסטורית (אינדקס 17)
+- **תיאור**: שתי קבלות energy-plan נכתבו 1ms זו אחר זו (11:46:29.976/.977) ושתיהן chain-ו על אותו prevDigest — פיצול (F2 בפעולה).
+- **סיבה**: כתיבת קבלות בלי טרנזקציה מסדרת (באג היסטורי; המקבילות של ה-UI ירו שתי בקשות energy יחד).
+- **קבצים מושפעים**: נתונים היסטוריים; `evidence.ts` (+`verifyChainDag`), `verify-chain/route.ts`.
+- **פתרון**: מבנית — קבלת seal נכתבת בתוך טרנזקציית ה-seal (אי-אפשר להתפצל); אימות — `verifyChainDag` סובלני-פיצולים: כל prevDigest חייב להיות digest של קבלה קודמת; פיצולים **מדווחים** (`forks:[17]`), לעולם לא נשכתבים.
+- **ראיה לתיקון**: `GET /verify-chain` → ok:true, `forks:[17]`, linkErrors ריקים.
+- **סיכון נותר**: אין — ההיסטוריה נשמרת כפי שהייתה, דווקא זו העדות.
+
+### BUG-006 — סטיית-קוד שנתפסה בשער (tsc), לא הגיעה לריצה
+- **תיאור**: בכתיבת ה-seal האטומי הפוך סדר ארגומנטים ב-`applyTx(tx, state)` (החתימה: `(state, tx)`).
+- **תפיסה**: `bunx tsc --noEmit` — TS2345. לא רץ מעולם בפרודקשן.
+- **פתרון**: סדר נכון. **ראיה**: tsc נקי.
+- **סיכון נותר**: אין; מאשר את ערך שער ה-typecheck ב-check.
+
 ### באגים היסטוריים מסבב הבנייה (מתועדים ב-worklog Task 2)
 1. canonical JSON דחה float → קידוד integer-safe (per-mille/micro-units) ב-payloads של Hive/economy.
 2. Next 16 הסיר `next lint` → eslint flat config (השלמת BUG-002 הסבב זה).
@@ -81,23 +131,28 @@ curl -s -X POST http://localhost:3000/api/saos/seal \
 
 | נושא | מצב |
 |---|---|
-| בדיקות יחידה ממוסדות (vitest) | לא קיימות — selftest-כ-API במקום; מומלץ להוסיף ולקשור ל-CI |
-| מירוץ seal מקביל (F1) | לא נבדק אוטומטית; סימולציה ידנית בלבד |
-| hash-chain על ריצות ארוכות (`verifyChain`) | פונקציה קיימת ולא נקראת באף נתיב API — לא נבדקה חיה |
-| רינדור מובייל אמיתי | נבדק פעם אחת ב-agent-browser (390×844); אין רגרסיה אוטומטית |
+| בדיקות יחידה ממוסדות (vitest) | לא קיימות — selftest-כ-API + סקריפטי check במקום |
+| ריבוי-תהליכים/מופעים מרובים מול SQLite | לא נבדק — mutex הוא בתהליך; דורש Postgres (F5) |
+| עומסים ממושכים/זמן-ריצה ארוך | לא נבדק (concurrency-check הוא רץ קצר) |
+| רינדור מובייל אמיתי | נבדק ב-agent-browser (iPhone 14 + 390×844 קודם); אין רגרסיה אוטומטית |
 | קישוריות לרשתות אמיתיות (STEEM/BLURT/HIVE/TRON nodes) | **לא קיימת ב-v2** — כל המתמטיקה מקומית; דורש כספת + קריאות חיות |
-| עומסים/זמן ארוך | לא נבדק |
+| `bun run build` | **חסום-סביבה**: הסקריפט מוגדר אך ריצת build אסורה בסנדבוקז (מדיניות — dev-server בלבד); נדרש אישור/סביבה חוץ |
 | Lighthouse/a11y | לא נבדק (RTL מלא, תמיכת מקלדת בסיסית בכפתורים) |
 
 ## 6. מה עבר אוטומציה
 
+- **`bun run check` — הפקודה האחת**: lint + typecheck + 26 בדיקות חוזה + 8 פעימות מקבילות עם בדיקות אינבריאנטה.
 - selftest קרנל — כל קריאת `/api/saos/kernel` (כולל כניסה למגדל-פיקוח ב-UI).
-- verify-pack — כל כניסה ללשונית הוכחות.
-- lint + tsc — ידני לפני commit (חסר CI).
+- verify-pack + verify-chain — כל כניסה ללשונית הוכחות / קריאת סקריפט.
+- חסר: ריצת check אוטומטית על push (אין GitHub Actions בסנדבוקז — ר' next-steps).
 
 ## 7. מה נכשל וטופל (היסטוריה מרוכזת)
 
-- height unique (BUG-001) → תוקן ונבדק.
-- `next lint` (BUG-002) → תוקן ונבדק הסבב הזה.
-- דחיית float בקנוניה → הופכת באג לתכונה: קלט רע נדחה fail-closed; הנתיבים מקודדים integer-safe.
-- התנגשות digest בקבלות בריצה חוזרת → מטופל בכוונה (try/catch נסבל).
+- BUG-001 height unique (Task 3) → תוקן ונבדק.
+- BUG-002 lint script (Task 3) → תוקן ונבדק.
+- BUG-003 מירוץ מקביל + התנגשות שורשים (Task 4) → תוקן (batchId+mutex+retry) והוכח 8/8.
+- BUG-004 שרשרת לא-ניתנת-לאימות, חסר at (Task 4) → תוקן (עמודה + backfill מוכח-דיג'סט 41/41).
+- BUG-005 פיצול היסטורי באינדקס 17 (Task 4) → תוקן מבנית + דיווח forks.
+- BUG-006 סטיית applyTx נתפסה ב-tsc (Task 4, לא רץ) → תוקן.
+- דחיית float בקנוניה → תכונה: קלט רע נדחה fail-closed.
+- התנגשות digest בריצה חוזרת זהה → מטופל בכוונה (השרשרת שומרת על הקיים).

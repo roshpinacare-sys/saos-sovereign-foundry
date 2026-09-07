@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
 import { simulateEconomy, DEFAULT_ECONOMY, type EconomyInput } from "@/lib/saos/economy";
-import { forgeReceipt } from "@/lib/saos/evidence";
+import { appendReceipt } from "@/lib/saos/receipt-store";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * GET /api/saos/economy — flywheel simulation + persistence.
+ * Every call:
+ *   1. computes the 4-stream economy simulation (pure math)
+ *   2. persists an EconomySnapshot row (the previously write-less entity)
+ *   3. chains an evidence receipt (money as micro-units — integers only)
+ */
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
@@ -23,30 +30,40 @@ export async function GET(req: Request) {
 
     const result = simulateEconomy(input);
 
-    const prev = await db.evidenceReceipt.findFirst({ orderBy: { createdAt: "desc" } });
-    const receipt = await forgeReceipt(
+    // persist the snapshot — EconomySnapshot writer
+    const saved = await db.economySnapshot.create({
+      data: {
+        label: `sim-${new Date().toISOString().slice(0, 19)}`,
+        inputs: JSON.stringify(input),
+        streams: JSON.stringify(result.streams),
+        totalPerDay: result.totalPerDay,
+        flywheelPct: input.flywheelPct
+      }
+    });
+
+    const appended = await appendReceipt(
       "economy-sim",
       // canonical discipline: integers only — SAOS as micro-units (×100)
       {
         totalPerDayMicro: Math.round(result.totalPerDay * 100),
         retainedMicro: Math.round(result.retainedPerDay * 100),
-        flywheelPct: Math.round(input.flywheelPct)
-      },
-      prev?.digest ?? null
+        flywheelPct: Math.round(input.flywheelPct),
+        snapshotId: saved.id
+      }
     );
-    try {
-      await db.evidenceReceipt.create({
-        data: { kind: receipt.kind, digest: receipt.digest, prevDigest: receipt.prevDigest, payload: JSON.stringify(receipt.payload) }
-      });
-    } catch {
-      /* collision tolerated */
-    }
 
-    return NextResponse.json({ ok: true, input, result, receipt: receipt.digest });
+    return NextResponse.json({
+      ok: true,
+      input,
+      result,
+      snapshotId: saved.id,
+      receipt: appended.receipt.digest,
+      persisted: appended.persisted
+    });
   } catch (e) {
     return NextResponse.json(
       { ok: false, error: e instanceof Error ? e.message : "economy failed" },
-      { status: 200 }
+      { status: 200 } // never 500
     );
   }
 }

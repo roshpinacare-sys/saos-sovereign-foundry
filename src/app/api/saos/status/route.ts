@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { anchoringMatrix } from "@/lib/saos/anchor-gates";
 import { HISTORIC_ANCHORS } from "@/lib/saos/historic";
+import { networkStatuses } from "@/lib/saos/network-status";
+import { saosMode } from "@/lib/saos/modes";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +11,7 @@ export async function GET() {
   try {
     const rcPct = Number(process.env.HIVE_RC_PCT ?? 0.6);
     const tronEnergy = Number(process.env.TRON_ENERGY ?? 0);
+    const mode = saosMode();
 
     const [seals, receipts, opCount] = await Promise.all([
       db.sealRecord.findMany({
@@ -23,7 +26,12 @@ export async function GET() {
     return NextResponse.json({
       ok: true,
       motto: "אנחנו מנצחים את הבלוקצ'יין",
+      mode: mode.mode,
+      modeDetail: mode.detail,
+      writesEnabled: mode.writesEnabled,
+      broadcastCapable: mode.broadcastCapable,
       matrix: anchoringMatrix(rcPct, tronEnergy),
+      networks: networkStatuses(rcPct, tronEnergy),
       historic: HISTORIC_ANCHORS,
       seals: seals.map((s) => ({
         id: s.id,

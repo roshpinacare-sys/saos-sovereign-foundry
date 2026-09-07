@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { buildMerkleTree, merkleProof, verifyMerkleProof } from "@/lib/saos/merkle";
-import { forgeReceipt } from "@/lib/saos/evidence";
+import { appendReceipt } from "@/lib/saos/receipt-store";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
  * verify-pack — the public proof surface: latest seal → merkle tree →
  * inclusion proof for every leaf → independent verification.
  * Anyone can verify without trusting us. (steem-main verify-pack discipline)
+ * For the full multi-seal + receipt-chain verification use /api/saos/verify-chain.
  */
 export async function GET() {
   try {
@@ -38,24 +39,10 @@ export async function GET() {
     }
     const allVerified = proofs.every((p) => p.verified);
 
-    const prev = await db.evidenceReceipt.findFirst({ orderBy: { createdAt: "desc" } });
-    const receipt = await forgeReceipt(
+    const appended = await appendReceipt(
       "verify-pack",
-      { sealRoot: seal.root, leaves: leaves.length, allVerified, rootMatches },
-      prev?.digest ?? null
+      { sealRoot: seal.root, leaves: leaves.length, allVerified, rootMatches }
     );
-    try {
-      await db.evidenceReceipt.create({
-        data: {
-          kind: receipt.kind,
-          digest: receipt.digest,
-          prevDigest: receipt.prevDigest,
-          payload: JSON.stringify(receipt.payload)
-        }
-      });
-    } catch {
-      // repeat-run digest collision — tolerated
-    }
 
     return NextResponse.json({
       ok: true,
@@ -70,7 +57,8 @@ export async function GET() {
       allVerified,
       proofs,
       sampleProof: await merkleProof(tree, 0),
-      receipt: receipt.digest,
+      receipt: appended.receipt.digest,
+      persisted: appended.persisted,
       howToVerify: [
         "קח את sampleProof.path",
         "hash = leaf; לכל צעד: dir==='R' ? sha256(hash+sibling) : sha256(sibling+hash)",
@@ -80,7 +68,7 @@ export async function GET() {
   } catch (e) {
     return NextResponse.json(
       { ok: false, error: e instanceof Error ? e.message : "verify-pack failed" },
-      { status: 200 }
+      { status: 200 } // never 500
     );
   }
 }

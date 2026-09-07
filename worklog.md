@@ -119,3 +119,34 @@ Work Log:
 
 Stage Summary:
 - Commit 51298c7 on roshpinacare-sys/saos-sovereign-foundry: 9 docs files + package.json lint fix + worklog Task 3
+
+---
+
+Task ID: 4 (gap-closure-production-readiness)
+Agent: Z.ai Code (orchestrator)
+Task: Close the critical gaps from Task 3 — atomic seal writes, entity writers, chain-verification API, minimum CI, operation modes, external-network status views — with full documentation, bug records, component status table and push.
+
+Work Log:
+- M1 (atomic seal): rewrote POST /seal — one Prisma transaction (max(height) read + SealRecord + leaves + AnchorTx×4 + receipt + OpLog) behind in-process write mutex (`withWriteLock`), wrapped in `retryWrite` (exponential backoff on P2002 + transient lock errors P2024/SQLITE_BUSY), transaction timeout 20s/maxWait 10s; added `batchId` idempotency key (default randomUUID) seeding all nonces → same batch ⇒ same root; re-submit returns existing seal (`idempotent:true`)
+- M1 test: `scripts/concurrency-check.mjs` — 8 concurrent POSTs: **8/8 ok** (was 1/8 before fix), heights 13..20 contiguous+unique, roots unique, chain intact after; ~200ms
+- M2 (entity writers): mapped all 8 models' lifecycle (table in database.md §3.1); `/api/saos/energy` now persists EnergyPlan rows (planId), `/api/saos/economy` persists EconomySnapshot rows (snapshotId); new read-only `GET /api/saos/plans`; schema indexes added (EnergyPlan[network,createdAt], EconomySnapshot[createdAt]) after DB backup
+- M3 (verify-chain API): `GET /api/saos/verify-chain` — scopes chain/seal/leaf; output contract ok/root/height/leafCount/verifiedLeaves/invalidLeaves/proofResult/errors; validated: full chain ✅, per-seal by height+root ✅, single leaf ✅, fail-closed ×6 (missing selector, bad root/height format, unknown scope, out-of-batch index, unknown height) — all ok:false HTTP 200
+- M3 discovery (BUG-004): legacy receipts were UNVERIFIABLE — forge-time `at` was never persisted. Fix: `at DateTime?` column + persist for new receipts + one-time **digest-proven backfill** (`scripts/backfill-receipt-at.ts`, ms-window search accepted only when recomputed sha256 matches) → **41/41 recovered, 0 failures**. No data rewritten — the hash is the proof
+- M3 discovery (BUG-005): real historical fork at receipt index 17 (two energy receipts 1ms apart chained to the same predecessor). Fix: structural (receipt written inside seal transaction — fork now impossible) + honest reporting via `verifyChainDag` (fork-tolerant linkage; `forks:[17]` reported forever, never rewritten)
+- M4 (minimum CI): package.json scripts lint/typecheck/test/verify/check/build; `bun run check` = one command (26 api-check assertions + 8 parallel seals); scripts eslint-ignored (validated by execution); api-check covers all 9 endpoints + fail-closed + idempotency + never-500 sweep
+- M5 (modes): `src/lib/saos/modes.ts` — dry-run (default) / safe (writes refused) / live (requires SAOS_MODE=live AND SAOS_LIVE_CONFIRM=YES — missing either falls back to dry-run with warning) / maintenance; GET-side-effect persistence honors writesEnabled (`persisted:false` in safe); status exposes mode/modeDetail/writesEnabled/broadcastCapable; UI footer mode badge (Lock icon, per-mode colors). Verified e2e: safe → seal refused `mode-refusal` HTTP 200; live-without-confirm → dry-run fallback; live-with-confirm → mode:live, broadcastCapable:false
+- M6 (networks): `src/lib/saos/network-status.ts` — per-network status/mode/lastVerifiedAnchor/nextAction/blocker/requiredResource/unblockPlan (STEEM/BLURT vault blocker; HIVE rc-floor + regen hours; TRON energy-0 + minStake 25,958 TRX for 4 settlements/day); exposed via status.networks; zero live network calls (iron rules honored)
+- M8 (health): `bun run check` exit 0; DB consistency: 31 seals heights 1..31 contiguous+unique, roots unique, 229 leaves = Σ leavesCount, 0 orphans; agent-browser: 5 tabs cycled, live seal from UI (height 31), mode badge visible, mobile iPhone 14 OK, 0 console/page errors; dev.log clean after fix period
+- M7 (docs): updated docs/README.md, architecture.md (F1/F2 closed, F9 added, modes implemented, concurrency design), api.md (9 endpoints, new common-errors, gaps), database.md (lifecycle map, at column, indexes, counts, W3/W4/W6 closed, W7 new), testing.md (check suite, results, BUG-003..006, coverage), security.md (mode gate, double-confirm), runbook.md (SAOS_MODE/SAOS_LIVE_CONFIRM, check commands, backfill, health metrics), decisions.md (D11–D14), next-steps.md (priorities closed 1–6, component status table)
+
+Bugs found this session:
+- BUG-003 concurrent seals: same-ms identical batches → identical roots → P2002 + height race + SQLite lock timeouts (7/8 failures before fix). Fixed+proven 8/8
+- BUG-004 missing `at` → chain unverifiable. Fixed+proven 41/41 digest-proven backfill
+- BUG-005 historical fork index 17. Fixed structurally + reported honestly
+- BUG-006 applyTx arg-order caught by tsc before ever running. Fixed
+- (Minor, fixed in-flight) anchors:[] in seal response (include-before-createMany); plans counts returned arrays; stale Prisma client after db:push required dev-server restart
+
+Stage Summary:
+- F1 ✅ closed (proven 8/8 parallel), F2 ✅ closed (structural + DAG reporting), entities write+read ✅, verify-chain API ✅, one-command check ✅, modes enforced ✅, per-network status ✅
+- Chain state: 31 seals (1..31 contiguous), 229 leaves, 117 receipts fully verified (fork[17] disclosed), 15 EnergyPlans, 5 EconomySnapshots
+- Remaining open: auth/rate-limit (pre-live blocker), GitHub Actions, npm audit, retention, build outside sandbox (blocked), real-network anchoring (vault/TRX — user approval)

@@ -65,15 +65,17 @@ model AnchorTx {
 model EnergyPlan {
   id          String   @id @default(cuid())
   network     String // TRON | HIVE
-  mode        String // energize | powerup | delegate
-  trxStaked   Int? // sun
+  mode        String // energize | rc-recovery (planning artifacts — execution is a later stage)
+  trxStaked   Int? // TRX (planning input)
   energyOut   Int? // estimated daily energy
   settlements Int? // USDT settlements per day (~65k energy each)
-  burnCost    Int? // sun/day if no staking
+  burnCost    Int? // TRX/day (rounded) if no staking
   rcFloorPct  Float? // hive floors
   notes       String?
-  payload     String // full canonical plan JSON
+  payload     String // integer-safe plan JSON (canonical discipline)
   createdAt   DateTime @default(now())
+
+  @@index([network, createdAt])
 }
 
 // ─── Economy (המשק — harvest & grid) ────────────────────────────────────────
@@ -81,20 +83,23 @@ model EnergyPlan {
 model EconomySnapshot {
   id          String   @id @default(cuid())
   label       String
-  inputs      String // canonical JSON inputs
+  inputs      String // JSON inputs (display data, not digested)
   streams     String // JSON per-stream output
   totalPerDay Float
   flywheelPct Float
   createdAt   DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 // ─── Evidence (ראיות — hash-chained receipts) ────────────────────────────────
 
 model EvidenceReceipt {
   id         String      @id @default(cuid())
-  kind       String // seal | selftest | verify-pack | energy-plan | economy-sim
+  kind       String // seal | selftest | verify-pack | energy-plan | economy-sim | verify-chain
   digest     String      @unique
   prevDigest String?
+  at         DateTime? // forge time — part of the digest; legacy rows backfilled digest-proven
   payload    String
   seal       SealRecord? @relation(fields: [sealId], references: [id])
   sealId     String?

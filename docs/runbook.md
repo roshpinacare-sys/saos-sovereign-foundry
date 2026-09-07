@@ -1,6 +1,6 @@
 # Runbook — SAOS Sovereign Foundry v2
 
-עודכן: 2026-09-07 · סביבת הרצה: sandbox, פורט 3000, Node 24 / Bun 1.3
+עודכן: 2026-09-07 (Task 4) · סביבת הרצה: sandbox, פורט 3000, Node 24 / Bun 1.3
 
 ## 1. הקמה מאפס (שחזור מלא מהריפו)
 
@@ -35,6 +35,8 @@ curl -s http://localhost:3000/api/saos/verify-pack | jq '.rootMatches'     # צ�
 | `DATABASE_URL` | ✅ | — | `file:./custom.db` (יחסית ל-prisma) |
 | `HIVE_RC_PCT` | — | 0.6 | אחוז RC נוכחי של Hive — מזין את המטריצה |
 | `TRON_ENERGY` | — | 0 | אנרגיית TRON זמינה — מזין את המטריצה |
+| `SAOS_MODE` | — | dry-run | מצב פעולה: `dry-run` \| `safe` \| `live` \| `maintenance`; ערך לא-מוכר → dry-run |
+| `SAOS_LIVE_CONFIRM` | — | — | חייב `YES` כדי ש-`SAOS_MODE=live` ייקלט (הגנת אישור-כפול); גם אז `broadcastCapable:false` עד כספת |
 
 ## 3. פעולות שגרה
 
@@ -46,7 +48,12 @@ curl -s http://localhost:3000/api/saos/verify-pack | jq '.rootMatches'     # צ�
 | תוכנית TRON | `curl -s 'localhost:3000/api/saos/energy?net=tron&trx=6500&txs=4'` |
 | תוכנית HIVE | `curl -s 'localhost:3000/api/saos/energy?net=hive&rc=0.6'` |
 | כלכלה | `curl -s 'localhost:3000/api/saos/economy?fly=30'` |
-| lint / types | `bun run lint` · `bunx tsc --noEmit` |
+| lint / types | `bun run lint` · `bun run typecheck` |
+| **בדיקה מלאה (פקודה אחת)** | `bun run check` — lint+typecheck+test(26)+verify(8 מקבילות); דורש dev רץ |
+| בדיקות חוזה בלבד | `bun run test` (scripts/api-check.mjs) |
+| בדיקת מקביליות | `bun run verify` (scripts/concurrency-check.mjs; N פרמטרי: `node scripts/concurrency-check.mjs 10`) |
+| אימות שרשרת מלא | `curl -s localhost:3000/api/saos/verify-chain \| jq .ok,.receiptChain,.totals` |
+| שחזור `at` לקבלות (חד-פעמי, אידמפוטנטי) | `bun scripts/backfill-receipt-at.ts` |
 | לוג חי | `tail -f dev.log` (קריאת-זנב בלבד — תמיד הרשומות האחרונות) |
 
 ## 4. תחזוקה
@@ -76,7 +83,8 @@ curl -s -X POST localhost:3000/api/saos/seal -d '{}' -H 'Content-Type: applicati
 
 | תסמין | סיבה | טיפול |
 |---|---|---|
-| `Unique constraint failed on the fields: (height)` בתשובת seal | מירוץ שתי פעימות (F1) | פשוט נסה שוב; העתיד: תיקון אטומי |
+| `mode-refusal: כתיבה אסורה במצב …` | השרת רץ ב-safe/maintenance | הפעל מחדש עם `SAOS_MODE=dry-run` (או live+confirm) |
+| `Timed out fetching a connection` / `SQLITE_BUSY` חוזרים | עומס כתיבה חריג מעל יכולת ה-retry | נסה שוב; אם נמשך — בדוק תהליכים כפולים על אותו קובץ DB |
 | `float/inf rejected — integers only` | פרמטר לא-מספרי ב-query | תקן את הפרמטר |
 | `P1003: database file does not exist` | db push לא רץ / נתיב DATABASE_URL שגוי | `bun run db:push`, בדוק `.env` |
 | `Invalid project directory … /lint` | סקריפט lint ישן (`next lint`) | BUG-002 תוקן — ודא `"lint": "eslint ."` ב-package.json |
@@ -101,8 +109,11 @@ git push origin main
 
 | מדד | ערך תקין |
 |---|---|
-| `GET /status` → `ok` | true |
+| `GET /status` → `ok` | true (+ `mode` מוצג) |
 | `GET /kernel` → `result.ok` | true (7/7) |
 | `GET /verify-pack` → `rootMatches` + `allVerified` | true + true (אחרי פעימה ראשונה) |
+| `GET /verify-chain` → `ok` | true; `receiptChain.digestErrors=[]`, `linkErrors=[]`; `forks` יכול להכיל [17] היסטורי |
+| `bun run check` | יציאה 0 (26 api-check + 8/8 concurrency) |
+| DB עקביות | heights רציפים יחודיים; leaves = Σ leavesCount; 0 יתומים |
 | dev.log | ללא stack traces חדשים; 200-ים בקריאות שגרה |
 | HTTP codes | 200 תמיד; כישלון מזוהה על `ok:false` |

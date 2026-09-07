@@ -1,6 +1,6 @@
 # מסד נתונים — SAOS Sovereign Foundry v2
 
-עודכן: 2026-09-07
+עודכן: 2026-09-07 (Task 4)
 
 ## 1. סוג ומיקום
 
@@ -47,20 +47,21 @@
 | meta | String? | JSON נלווה (rcPct, tronEnergy…) |
 
 ### EnergyPlan — תוכניות אנרגיה
-network (TRON/HIVE), mode (energize/powerup/delegate), trxStaked?, energyOut?, settlements?, burnCost?, rcFloorPct?, notes?, payload (JSON קנוני מלא), createdAt.
-**⚠️ פער ידוע**: המודל קיים אך **אף נתיב API לא כותב אליו כיום** — `/api/saos/energy` משורשר קבלה אך לא שומר EnergyPlan. ר' next-steps.
+network (TRON/HIVE), mode (energize | rc-recovery — תוצרי תכנון בלבד), trxStaked? (TRX), energyOut?, settlements?, burnCost? (TRX/יום מעוגל), rcFloorPct?, notes?, payload (JSON integer-safe), createdAt. **@@index([network, createdAt])** (נוסף Task 4).
+**✅ נכתב מאז Task 4**: `/api/saos/energy` שומר שורה בכל קריאה (planId מוחזר); נקרא דרך `/api/saos/plans`.
 
 ### EconomySnapshot — צילומי כלכלה
-label, inputs (JSON), streams (JSON), totalPerDay (Float), flywheelPct, createdAt.
-**⚠️ פער ידוע**: כנ"ל — מוגדר, לא נכתב.
+label, inputs (JSON), streams (JSON), totalPerDay (Float), flywheelPct, createdAt. **@@index([createdAt])** (נוסף Task 4).
+**✅ נכתב מאז Task 4**: `/api/saos/economy` שומר שורה בכל קריאה (snapshotId מוחזר); נקרא דרך `/api/saos/plans`.
 
 ### EvidenceReceipt — קבלות ראיות
 | שדה | טיפוס | אילוצים |
 |---|---|---|
 | id | String | PK |
-| kind | String | seal/selftest/verify-pack/energy-plan/economy-sim; @@index([kind]) |
+| kind | String | seal/selftest/verify-pack/energy-plan/economy-sim/verify-chain; @@index([kind]) |
 | digest | String | **unique** — דיג'סט הקבלה |
-| prevDigest | String? | קישור לקבלה הקודמת (hash chain) |
+| prevDigest | String? | קישור לקבלה קודמת (hash chain / DAG) |
+| at | DateTime? | **זמן-החיתום — חלק מהדיג'סט**; שומר מאז Task 4; שורות ישנות שוחזרו ב-backfill מוכח-דיג'סט |
 | payload | String | JSON של ה-payload |
 | sealId | String? | FK אופציונלי |
 
@@ -70,11 +71,26 @@ archive (**unique**), rank, score (0..100), verdict, salvage (JSON), evidence (J
 ### OpLog — יומן תפעול
 op (String, @@index([op])), detail?, createdAt. נכתב נכון להיום רק על `seal`.
 
-## 3. מצב נוכחי (מדידה חיה 2026-09-07)
+## 3. מצב נוכחי (מדידה חיה בסוף Task 4)
 
 ```
-seals=3  leaves=25  anchors=12  receipts=28  energyPlans=0  economy=0  findings=10  oplog=3
+seals=31 (heights 1..31 רציפים ויחודיים)  leaves=229 (דיג'סטים יחודיים, סכום תואם)
+anchors=124  receipts=117  energyPlans=15  economySnapshots=5  findings=10  oplog=31
+orphanLeaves=0  orphanAnchors=0  orphanReceipts=0
 ```
+
+### 3.1 מיפוי מחזור-חיים לכל ישות (Task 4)
+
+| ישות | כותב | מתי | קלט | פלט/שימוש | נקרא דרך | בדיקה |
+|---|---|---|---|---|---|---|
+| SealRecord | POST /seal | כל פעימה (בתוך טרנזקציה) | batchId, stamps, memo | height/root/stateRoot/gasUsed | /status, /verify-pack, /verify-chain | api-check + concurrency-check |
+| SealLeaf | POST /seal | אותה טרנזקציה | digests של פעולות הבאצ' | עלי מרקל להוכחה | /verify-pack, /verify-chain | api-check + verify-chain |
+| AnchorTx | POST /seal | אותה טרנזקציה | מטריצת העגינה | סטטוסים כנים לכל רשת | /status | api-check |
+| EvidenceReceipt | /seal, /kernel, /verify-pack, /verify-chain, /energy, /economy | אחרי כל פעולה ראויה-ראיה | kind, payload, prevDigest, at | שרשרת ראיות | /status, /verify-chain | verify-chain (digest+link) |
+| EnergyPlan | GET /energy | כל קריאה (persisted בהתאם למצב) | trx/txs או rc | היסטוריית תוכניות | /plans | api-check |
+| EconomySnapshot | GET /economy | כל קריאה | פרמטרי הסימולציה | היסטוריית צילומים | /plans | api-check |
+| ResearchFinding | GET /research | upsert idempotent | findings.ts | פסק-הדין בביקורת | /research | api-check |
+| OpLog | POST /seal | אותה טרנזקציה | op=seal + detail | יומן תפעול | מונה ב-/status | api-check |
 
 ## 4. מיגרציות
 
@@ -112,7 +128,8 @@ curl -s http://localhost:3000/api/saos/verify-pack | jq . > backup-verify-pack.j
 |---|---|---|---|
 | W1 | SQLite קובץ-יחיד | אין ריבוי-מופעים; תלות בדיסק מקומי | מספיק לסנדבוקז; מעבר Postgres דורש שינוי provider בלבד (הסכימה תואמת) |
 | W2 | `db push` ללא היסטוריית מיגרציות | שינוי סכמה עלול לבקש reset בעתיד | לפני כל push: גיבוי |
-| W3 | מירוץ height (F1) | unique constraint → ok:false | ר' architecture.md; תיקון אטומי ב-next-steps |
-| W4 | hash-chain prevDigest לפי createdAt | כתיבה כפולה כמעט-מקבילה עלולה לפצל שרשרת | מופע יחיד מקטין סיכוי; verifyChain חושף |
-| W5 | Float על כסף (EconomySnapshot.totalPerDay) | עיגול-נקודה-צפה | מקבילת micro-units נאכפת בקבלות; שדה ה-DB לא נכתב כיום (הפער מגן בפועל) |
-| W6 | EnergyPlan/EconomySnapshot ללא כותב | טבלאות מתות | מסומן ב-next-steps |
+| W3 | ~~מירוץ height~~ | ~~unique constraint → ok:false~~ | **סגור Task 4**: טרנזקציה+mutex+retry+idempotency; מוכח 8/8 מקבילות | ✅ |
+| W4 | ~~פיצול hash-chain~~ | ~~כתיבה כפולה~~ | **סגור Task 4**: קבלה בתוך טרנזקציית ה-seal; פיצול היסטורי (אינדקס 17) מדווח בלי שכתוב | ✅ |
+| W5 | Float על כסף (EconomySnapshot.totalPerDay) | עיגול-נקודה-צפה בשדה התצוגה | קבלות מקודדות micro-units (שלמים); שדה Float הוא תצוגה בלבד, לא מדוג'סט | מופחת |
+| W6 | ~~EnergyPlan/EconomySnapshot ללא כותב~~ | ~~טבלאות מתות~~ | **סגור Task 4**: כותבים + /plans לקריאה | ✅ |
+| W7 | קבלות GET (energy/economy/kernel/verify) צומחות בכל קריאה | נפח | ללא retention/prune — מסומן ב-next-steps | פתוח |

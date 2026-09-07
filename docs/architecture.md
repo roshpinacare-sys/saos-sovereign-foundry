@@ -23,23 +23,34 @@ SAOS היא רשת-גשר לכל מטבעות הקריפטו: העברה חופ�
 | `canonical-json.ts` | סריאליזציה קנונית: מיון מפתחות, שלמים בלבד, דחייה fail-closed של float/inf/NaN, מחזוריות, symbol/function. `sha256Hex` דרך WebCrypto. | unified-platform `src/contracts/crypto.ts` + דיסציפלינת steem-main |
 | `kernel.ts` | מכונת מדינה דטרמיניסטית: `GAS_TABLE` מוקפאת (stamp 20 / seal 60 / harvest 20 / relay 0 / relay_ack 0 / wallet 40), dedupe קשיח על `issuer:nonce`, שמירת ערך בכל wallet, `stateRootOf` = sha256(canonical(state)), `replay`, selftest של 7 וקטורי-תכונה. | steem-main `sovereign/core/kernel.cjs` |
 | `merkle.ts` | עץ מרקל (עלה אי-זוגי → שכפול), `merkleProof`, `verifyMerkleProof` — אימות כלול-בלי-אמון. | zip2pdf `src/merkle.ts`, workspace-TFA transparency-log |
-| `evidence.ts` | קבלות משורשרות-האש: `forgeReceipt(kind, payload, prevDigest) → {digest, truth:{externalEffectsExecuted:0, productionAuthority:"NONE"}}`, `verifyChain`. | qodo `services/receipt.ts`, V33.30 |
+| `evidence.ts` | קבלות משורשרות-האש: `forgeReceipt`, `verifyChain` (לינארי קפדני) + `verifyChainDag` (סובלני-פיצולים: כל prevDigest חייב להיות digest של קבלה קודמת; פיצולים מדווחים, לעולם לא נכתבים מחדש). | qodo `services/receipt.ts`, V33.30 |
+| `receipt-store.ts` | **כתיבה אטומית**: `appendReceipt`/`appendReceiptTx` (קבלה בתוך טרנזקציה מסודרת — בלי פיצולי-שרשרת), `withWriteLock` (mutex בתהליך — סידור כותבים על SQLite), `retryWrite` (backoff מעריכי על P2002 + תקלות-נעילה חולפות P2024/P2028/SQLITE_BUSY), `persistenceAllowed` (מודע-מצב). | חדש Task 4 |
+| `modes.ts` | מצבי פעולה dry-run/safe/live/maintenance; live דורש אישור-כפול (`SAOS_MODE=live` + `SAOS_LIVE_CONFIRM=YES`); `assertWritesEnabled` fail-closed. | חדש Task 4 |
+| `network-status.ts` | תצוגת-מצב לכל רשת חוץ: status/mode/lastVerifiedAnchor/nextAction/blocker/requiredResource/unblockPlan — חישוב בלבד, אפס קריאות חיות. | חדש Task 4 |
 | `anchor-gates.ts` | שערי עגינה כנים: מטריצת STEEM/BLURT/HIVE/TRON לפי `rcPct` ו-`tronEnergy`; מתמטיקת התאוששות Hive (רגן 20%/יום, ספי 8%/12%); חוק עמלת BLURT `0.05 + 0.2 × KB`, cooldown 30 דק'. | steem-main `agent/hive_rc.cjs`, `blurt_health.json` |
 | `tron-energize.ts` | **החתיכה שחסרה בכל 10 הארכיונים**: תוכנית `freezeBalanceV2` + `delegateResource` + יישוב; פרמטרים: 420 sun/energy שריפה, ~64,895 אנרגיה להעברת USDT, 10 אנרגיה/יום ל-TRX מוהמר, נעילת 14 יום; break-even; `minStakeForSettlements`. | חדש (חוסר מתועד ב-worklog של הארכיון, Task 113/114) |
-| `economy.ts` | סימולטור גלגל-החור: 4 זרמי הכנסה (pool fees / grid micro-ticks / inbound STEEM rail / THE-DOOR fees), אחוז מיחזור, תקציב TRX (60% מהמיחזור) → יישובים נתמכים. | steem-main `harvest.cjs`, `grid98.cjs` |
-| `findings.ts` | פסק-הדין על 10 הארכיונים (דירוג 1–10, ציון 51–97) + `SYNTHESIS` (הבחירה, הנימוקים, מפת-דרכים 5 שלבים). | מפגש מחקר מעמיק (worklog Task 1) |
+| `economy.ts` | סימולטור גלגל-החור: 4 זרמי הכנסה, אחוז מיחזור, תקציב TRX (60% מהמיחזור) → יישובים נתמכים. | steem-main `harvest.cjs`, `grid98.cjs` |
+| `findings.ts` | פסק-הדין על 10 הארכיונים (דירוג 1–10, ציון 51–97) + `SYNTHESIS`. | מפגש מחקר מעמיק (worklog Task 1) |
 | `historic.ts` | הרפרנסים הציבוריים ההיסטוריים — חלקיים במכוון (ממוסכים), עם מקור מפורש. | דוח הרשת הקודמת |
 
 ### 2.2 שכבת API `src/app/api/saos/`
 
-7 routes — כולם `dynamic = "force-dynamic"`, כולם מחזירים HTTP 200 גם בשגיאה (שגיאה היא נתון). פירוט מלא ב-[api.md](./api.md).
+9 routes — כולם `dynamic = "force-dynamic"`, כולם מחזירים HTTP 200 גם בשגיאה (שגיאה היא נתון). פירוט מלא ב-[api.md](./api.md).
 
-### 2.3 שכבת נתונים
+### 2.3 סקריפטים תפעוליים `scripts/`
+
+| סקריפט | תפקיד |
+|---|---|
+| `api-check.mjs` | `bun run test` — 26 בדיקות חוזה על כל ה-endpoints (כולל fail-closed) |
+| `concurrency-check.mjs` | `bun run verify` — 8 פעימות מקבילות + בדיקות אינבריאנטות שלמות |
+| `backfill-receipt-at.ts` | שחזור חד-פעמי, מוכח-דיג'סט, של זמן-החיתום לקבלות היסטוריות |
+
+### 2.4 שכבת נתונים
 
 - `src/lib/db.ts` — Prisma singleton (לוג warn/error, מופע גלובלי ב-dev).
 - `prisma/schema.prisma` — 8 מודלים על SQLite. פירוט ב-[database.md](./database.md).
 
-### 2.4 ממשק `src/app/page.tsx` + `src/components/ui/kit.tsx`
+### 2.5 ממשק `src/app/page.tsx` + `src/components/ui/kit.tsx`
 
 - מגדל-פיקוח RTL בעברית, 5 לשוניות: מגדל-פיקוח (tower) / אנרגיה (energy) / כלכלה (economy) / הוכחות (proofs) / פורץ דרך (verdict).
 - ערכת רכיבים פנימית: Card, Badge, Button, Progress, Slider, Stat.
@@ -104,22 +115,23 @@ UI (לשונית מגדל-פיקוח, כפתור פעימה)
 
 | # | נקודה | אפקט | התמודדות נוכחית | סטטוס |
 |---|---|---|---|---|
-| F1 | **מירוץ בין שני POST /seal במקביל** — שניהם קוראים `max(height)` ומכתיבים אותו | השני נכשל ב-unique constraint → `ok:false` (לא 500), נדרש ניסיון חוזר | catch כללי ב-route; הכשל מתועד בתשובה | מוכר, לא סגור (ר' next-steps) |
-| F2 | **hash-chain של קבלות** — `prevDigest` = הקבלה האחרונה לפי `createdAt` | שתי כתיבות כמעט-במקביל עלולות ליצור שני ענפים | מופע יחיד + כתיבות קצרות; `verifyChain` יחשוף ענף | מוכר, לא סגור |
+| F1 | **מירוץ בין שני POST /seal במקביל** | השני נכשל ב-unique constraint | **סגור Task 4**: טרנזקציה אחת (max(height) + כל הכתיבות) מאחורי `withWriteLock` + `retryWrite` + idempotency (batchId). מוכח: 8/8 פעימות מקבילות, heights רציפים ללא כפילויות | ✅ סגור |
+| F2 | **hash-chain של קבלות** — `prevDigest` = הקבלה האחרונה | כתיבה כמעט-מקבילה יוצרת ענפים | **סגור Task 4**: קבלה נכתבת בתוך טרנזקציית ה-seal המסודרת; פיצול היסטורי אמיתי (אינדקס 17) נמצא ומדווח ע"י `verifyChainDag` במקום לשכתבו | ✅ סגור |
 | F3 | **unique(digest) על EvidenceReceipt** — ריצה חוזרת זהה לחלוטין | הכנסה נכשלת | מתוכנן: try/catch שמקבל התנגשות וממשיך (השרשרת נשארת) | מטופל |
 | F4 | **קלט float/NaN** — למשל `?rc=abc` | `canonicalize` זורק → `ok:false` עם הודעת קנוניה (טכנית נכונה, לא ידידותית) | fail-closed מכוון | מוכר; הודעת-משתמש נקייה דורשת ולידציה מפורשת |
 | F5 | **SQLite קובץ-יחיד** | אין בטיחות ריבוי-מופעים; תלות בדיסק | מוגבל לסנדבוקס; גיבוי = העתקת קובץ | מוכר |
 | F6 | **HIVE_RC_PCT / TRON_ENERGY מ-env** — לא שאילתה חיה מהרשתות | מצב המטריצה יכול להיות מיושן | ברירות-מחדל 0.6/0 משקפות את המצב המדוד האחרון | מוכר — שלב 2/3 יחליף בקריאה חיה |
 | F7 | **רפרנסים היסטוריים חלקיים** (txid ממוסך) | לא ניתן לאמת מלא מקוד v2 בלבד | `historic.ts` מצהיר על provenance חלקי | מודע ומתועד |
 | F8 | **אין מפתחות חתימה בסנדבוקס** | שידור אמיתי בלתי-אפשרי מכאן | `advisory-mode` מוצהר בכל תשובת seal | מכוון |
+| F9 | תהליך מת בזמן כתיבה | — | טרנזקציה מתגלגלת — אין מצב-ביניים; החותם והקבלה נכתבים יחד או לא נכתבים | מטופל מבנית |
 
 ## 6. מנגנוני אימות (verification)
 
 1. **Selftest של הקרנל** — 7 בדיקות תכונה (`GET /api/saos/kernel`): דטרמיניזם, טבלת-GAS, dedupe קשיח, שמירת-ערך, fail-closed, רגישות-סדר, שער אפס-גז. כל ריצה משורשרת בקבלה.
 2. **Verify-pack** — בנייה מחדש של עץ המרקל מתוך ה-DB בלבד ואימות כלול-עצמאי לכל עלה; אם `root` ב-DB והעץ המשוחזר חורגים — `rootMatches:false` ייחשף.
 3. **Replay עצמאי** — `replay(txs)` מ-genesis מניב stateRoot זהה; זהו הפרימיטיב לאימות צד-שלישי.
-4. **שרשרת קבלות** — `verifyChain` מחשב מחדש כל digest וקשר prevDigest; שבירה מדווחת באינדקס.
-5. **Agent-browser** — בדיקת זהב אנד-טו-אנד (desktop+mobile) שבוצעה ומתועדת ב-testing.md.
+4. **שרשרת קבלות** — `GET /api/saos/verify-chain` מחשב מחדש כל digest ומאמת קישוריות (סובלני-פיצולים עם דיווח `forks`); פלט כולל verifiedLeaves/invalidLeaves/proofResult/errors.
+5. **Agent-browser** — בדיקת זהב אנד-טו-אנד (desktop+mobile) שבוצעה ומתועדת ב-testing.md; כולל לחיצת פעימה חיה מה-UI.
 
 ## 7. מנגנוני אבטחה
 
@@ -129,10 +141,13 @@ UI (לשונית מגדל-פיקוח, כפתור פעימה)
 - **Fail-closed**: קרנל זורק על קלט בלתי-חוקי; אין דרדור שקט.
 - **גבול אמת**: `productionAuthority: "NONE"` עד עגינה ציבורית — מוצהר בקוד, לא בפרוזה.
 
-## 8. מצבי עבודה
+## 8. מצבי עבודה (מומש בקוד — `src/lib/saos/modes.ts`)
 
-| מצב | מה רץ | מה אסור | איך נכנסים |
+| מצב | מה רץ | מה נחסם | כניסה |
 |---|---|---|---|
-| **dry-run / advisory (המצב הנוכחי)** | כל 7 ה-API, קרנל, מרקל, קבלות, UI | שידור חתימות; אין מפתחות בסביבה | ברירת-מחדל: `HIVE_RC_PCT`/`TRON_ENERGY` מ-env, `advisory-mode` ב-seal |
-| **live (מיועד, עתידי)** | כל הנ"ל + חתימה ושידור לרשתות דרך כספת | ריצה ללא selftest ירוק קודם | דורש: שחזור כספת (שלב 2 ב-next-steps) + הזרמת `HIVE_RC_PCT`/`TRON_ENERGY` חיים |
-| **maintenance** | `bun run db:push`, גיבוי `db/custom.db`, הרצות בדיקה | תנועת משתמש בזמן החלפת סכמה | עצירת dev, גיבוי, push, הפעלה מחדש (ר' runbook.md) |
+| **dry-run (ברירת-מחדל)** | חישוב מלא + כתיבה (חותמים/קבלות/יישויות) + עגינה advisory | שידור חיצוני (בלתי-אפשרי — אין כספת) | ללא env |
+| **safe** | קריאה וחישוב בלבד | כל כתיבה: seal מוחזר `ok:false "mode-refusal"`; קבלות מחושבות ולא נשמרות (`persisted:false`) | `SAOS_MODE=safe` |
+| **live** | כמו dry-run + דגל liveArmed | שידור עדיין בלתי-אפשרי (`broadcastCapable:false` — אין כספת) | `SAOS_MODE=live` **וגם** `SAOS_LIVE_CONFIRM=YES`; חסר אחד → נפילה ל-dry-run עם הודעה |
+| **maintenance** | כמו safe + פעולות db:push/גיבוי | כל כתיבה נדחית | `SAOS_MODE=maintenance` |
+
+המצב ניתן לצפייה ב-`/status` (mode, modeDetail, writesEnabled, broadcastCapable) ובתג בפוטר ה-UI. נבדק אנד-טו-אנד: safe → סירוב כתיבה; live ללא אישור → dry-run; live עם אישור → mode:live + broadcast:false. מצב לא-מוכר נופל ל-dry-run.

@@ -55,3 +55,40 @@ export async function verifyChain(
   }
   return { ok: true, brokenAt: null };
 }
+
+/**
+ * Fork-tolerant chain verification (strict-linear keeps failing forever on a
+ * legacy branch — see worklog Task 4: receipts 16/17 both chained to 15).
+ *
+ * Guarantees checked per receipt:
+ *   1. digest integrity — recomputed hash matches the stored digest
+ *   2. linkage — prevDigest is either null (genesis, index 0 only) or equals
+ *      the digest of SOME earlier receipt (the writer attests "I chained onto
+ *      the latest receipt I saw" — concurrent branches are legitimate history)
+ * Forks are REPORTED (never hidden, never rewritten).
+ */
+export async function verifyChainDag(
+  receipts: { kind: string; at: string; payload: Record<string, unknown>; prevDigest: string | null; digest: string }[]
+): Promise<{ ok: boolean; digestErrors: number[]; linkErrors: number[]; forks: number[] }> {
+  const digestErrors: number[] = [];
+  const linkErrors: number[] = [];
+  const forks: number[] = [];
+  const seen = new Set<string>();
+  let prev: string | null = null;
+
+  for (let i = 0; i < receipts.length; i++) {
+    const r = receipts[i]!;
+    const recomputed = await canonicalDigest({ kind: r.kind, at: r.at, payload: r.payload, prevDigest: r.prevDigest });
+    if (recomputed !== r.digest) digestErrors.push(i);
+    if (r.prevDigest === null) {
+      if (i !== 0) linkErrors.push(i);
+    } else if (!seen.has(r.prevDigest)) {
+      linkErrors.push(i);
+    } else if (prev !== null && r.prevDigest !== prev) {
+      forks.push(i);
+    }
+    seen.add(r.digest);
+    prev = r.digest;
+  }
+  return { ok: digestErrors.length === 0 && linkErrors.length === 0, digestErrors, linkErrors, forks };
+}

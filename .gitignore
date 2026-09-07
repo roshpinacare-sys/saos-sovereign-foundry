@@ -33,3 +33,6 @@ dev.log
 .DS_Store
 *.tsbuildinfo
 next-env.d.ts
+
+# db backups (runtime data)
+backups/

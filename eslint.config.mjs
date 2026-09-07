@@ -14,7 +14,9 @@ const eslintConfig = defineConfig([
     "skills/**",
     "tool-results/**",
     ".next/**",
-    "db/**"
+    "db/**",
+    "backups/**",
+    "scripts/**" // standalone Node ops-scripts — validated by execution (bun run test/verify), not by app lint rules
   ]),
   {
     rules: {

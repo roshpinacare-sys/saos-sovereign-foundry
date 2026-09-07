@@ -1,6 +1,6 @@
-# API — SAOS Sovere Foundry v2
+# API — SAOS Sovereign Foundry v2
 
-עודכן: 2026-09-07 · כל הנתיבים תחת `/api/saos/*` · כולם `dynamic = "force-dynamic"`.
+עודכן: 2026-09-07 (Task 4) · כל הנתיבים תחת `/api/saos/*` · 9 endpoints · כולם `dynamic = "force-dynamic"`.
 
 ## כלל על
 
@@ -79,13 +79,14 @@
 
 ## 3. `POST /api/saos/seal`
 
-**מה**: פעימת עגינה — בניית באצ' קרנל → replay → stateRoot → עץ מרקל → persist (SealRecord+SealLeaf+AnchorTx×4) → קבלה → OpLog. בסנדבוקס: **advisory-mode** (סטטוסים כנים, `txid:null`).
+**מה**: פעימת עגינה אטומית — mode-gate → בניית באצ' קרנל (nonces נזרעים מ-batchId) → replay → stateRoot → מרקל → **טרנזקציה אחת מאחורי write-lock** (SealRecord+leaves+AnchorTx×4+קבלה+OpLog) → retry על התנגשויות.
 
 **קלט** (JSON body, כולו אופציונלי):
-| שדה | טיפוס | ברירת-מחדל | מגבלה |
+| שדה | טיפוס | ברירת-מחדל | משמעות |
 |---|---|---|---|
-| `stamps` | number | 6 | מקובץ: `Math.min(24, Math.max(3, n))` |
-| `memo` | string | "פעימת עגינה מהמגדל" | נשמר כ-note |
+| `stamps` | number | 6 | 3..24 (מחוץ לטווח נחתך) |
+| `memo` | string | "פעימת עגינה מהמגדל" | note |
+| `batchId` | string (≤64, `[\w.-]`) | randomUUID | **מפתח-idempotency**: אותו batchId+stamps ⇒ אותו root; שליחה חוזרת מחזירה את החותם הקיים (`idempotent:true`), לא יוצרת כפילות |
 
 באצ' קבוע מעל ה-stamps: `harvest` (grid-98, 42 SAOS) + `relay` (→ steem:headcorner) + `seal`.
 
@@ -93,23 +94,21 @@
 ```json
 {
   "ok": true,
-  "seal": { "id": "cmtr7jff3…", "height": 3, "root": "7e3b3fc8…", "stateRoot": "459c971a…", "leaves": 8, "gasUsed": 180 },
-  "anchors": [
-    { "network": "STEEM", "status": "pending", "gate": "advisory-mode: …" },
-    { "network": "BLURT", "status": "pending", "gate": "advisory-mode: …" },
-    { "network": "HIVE",  "status": "gated",   "gate": "rc-floor(0.6%<8%) · advisory-mode: …" },
-    { "network": "TRON",  "status": "transit", "gate": "energy-0 · advisory-mode: …" }
-  ],
-  "receipt": "<digest>"
+  "idempotent": false,
+  "batchId": "…",
+  "mode": "dry-run",
+  "seal": { "id": "…", "height": 4, "root": "6c79…", "stateRoot": "db56…", "leaves": 8, "gasUsed": 180 },
+  "anchors": [ { "network": "STEEM", "status": "pending", "gate": "advisory-mode: …" }, "…×4" ],
+  "receipt": "3a0a…"
 }
 ```
 
 **שגיאות אפשריות**:
-- `seal requires stamps in batch` — אם stamps מחושב 0 (קלט לא-מספרי).
-- `Unique constraint failed on the fields: (height)` — מירוץ בין שתי פעימות מקבילות (F1 ב-architecture.md). התמודדות: נסיון חוזר.
-- כל שגיאה אחרת → `{ok:false, error}` (HTTP 200).
+- `mode-refusal: כתיבה אסורה במצב safe|maintenance` — דחיית מצב (fail-closed, HTTP 200).
+- `seal requires stamps in batch` — קלט stamps לא-מספרי.
+- התנגשויות height/root מטופלות פנימית (retryWrite) — לא נחשפות למשתמש.
 
-**סטטוס**: ✅ עובד — נבדק חי 2026-09-07: `{"stamps":5}` → height 3, root `7e3b3fc8…`, 8 עלים, גז 180. קלט שגוי `{"stamps":"abc"}` → `{ok:false,"error":"seal requires stamps in batch"}` (HTTP 200).
+**סטטוס**: ✅ עובד — נבדק חי (Task 4): idempotency 2×אותו-root; 8/8 פעימות מקבילות דרך concurrency-check; קלט שגוי `stamps=abc` → `{ok:false}` (HTTP 200).
 
 ---
 
@@ -142,7 +141,7 @@
 
 ## 5. `GET /api/saos/energy`
 
-**מה**: מחשבוני ריבונות אנרגיה — TRON energize (ברירת-מחדל) או Hive RC recovery; כל תוכנית משורשרת בקבלה.
+**מה**: מחשבוני ריבונות אנרגיה — TRON energize (ברירת-מחדל) או Hive RC recovery; **כל קריאה משמרת שורת EnergyPlan** (`planId` בתשובה) ומשורשרת בקבלה.
 
 **קלט** (query):
 | פרמטר | רשת | ברירת-מחדל | משמעות |
@@ -167,7 +166,7 @@
 
 ## 6. `GET /api/saos/economy`
 
-**מה**: סימולטור גלגל-החור — 4 זרמי הכנסה, סה"כ/יום, מיחזור לאנרגיה (60% מהמיחזור → TRX → יישובים).
+**מה**: סימולטור גלגל-החור — 4 זרמי הכנסה, סה"כ/יום, מיחזור לאנרגיה (60% מהמיחזור → TRX → יישובים); **כל קריאה משמרת שורת EconomySnapshot** (`snapshotId` בתשובה) ומשורשרת בקבלה.
 
 **קלט** (query, כל הפרמטרים אופציונליים עם ברירות-מחדל): `pool` (50,000 מחזור יומי), `fee` (0.3%), `rounds` (1,800 סבבי מיקרו-טיק), `profit` (0.4 לסבב), `rail` (3,000 STEEM נכנס), `rate` (1000 — 0.001 STEEM = 1 SAOS), `door` (250 קריאות THE-DOOR), `doorFee` (2), `fly` (30% מיחזור).
 
@@ -212,14 +211,78 @@
 
 | הודעה | מקור | פירוש | פעולה |
 |---|---|---|---|
-| `Unique constraint failed on the fields: (height)` | seal | מירוץ בין שתי פעימות (F1) | נסיון חוזר |
+| `mode-refusal: כתיבה אסורה במצב …` | modes | כתיבה נדחית ב-safe/maintenance | הגדר `SAOS_MODE=dry-run` (או live+confirm) |
 | `float/inf rejected — integers only` | canonicalize | קלט לא-מספרי/NaN הגיע לקנוניה (F4) | תקן את הפרמטר |
 | `seal requires stamps in batch` | קרנל | קלט stamps לא-מספרי → 0 | שלח מספר 3..24 |
+| `seal not found for the given selector` | verify-chain | height/root לא קיים | בדוק קלט מול /status |
+| `index out of batch — leafCount=N` | verify-chain | index מחוץ לטווח העלים | 0..N-1 |
 | `status failed` / `seal failed` / כו' | מעטפת | כישלון לא-צפוי (לרוב DB) | בדוק לוג dev, ר' runbook.md |
 
 ## מה עוד לא מושלם ב-API
 
-1. אין שכבת auth/rate-limit — ר' security.md.
+1. אין שכבת auth/rate-limit — ר' security.md (חוסם לפני live).
 2. `stamps` מחוץ ל-3..24 נחתך בשקט (מכוון, אך לא מדווח בתשובה).
-3. אין פגינציה ב-status (מקובע: 8 seals / 10 receipts).
-4. EnergyPlan/EconomySnapshot מוגדרים ב-DB אך אף נתיב לא כותב אליהם (ר' database.md).
+3. אין פגינציה ב-status וב-plans (מקובע: 8 seals / 10 receipts / 10+10).
+4. GET ל-energy/economy כותב שורת-מודל בכל קריאה — ללא ניקוי/retention (טבלאות צומחות לאט).
+5. `idempotency` מבוססת root: אותו batchId עם `stamps` שונה = root אחר = חותם חדש (מתועד, מכוון).
+
+---
+
+## 8. `GET /api/saos/verify-chain` (חדש Task 4)
+
+**מה**: משטח האימות העצמאי המלא — בדיקת שרשרת-הקבלות + בנייה מחדש ואימות של כל חותם/עלה. כל ריצה משורשרת בקבלה משלה (kind=`verify-chain`); הריצה מאמתת את השרשרת כפי שהייתה **לפני** הקבלה של עצמה.
+
+**קלט** (query):
+| פרמטר | ברירת-מחדל | משמעות |
+|---|---|---|
+| `scope` | `chain` | `chain` (הכול) \| `seal` (חותם אחד) \| `leaf` (עלה בודד) |
+| `height` | — | בחירת חותם לפי גובה (scope seal/leaf) |
+| `root` | — | בחירת חותם לפי root (64 hex) |
+| `index` | — | מספר העלה (scope=leaf בלבד) |
+
+**פלט scope=chain**:
+```json
+{
+  "ok": true,
+  "scope": "chain",
+  "receiptChain": { "ok": true, "checked": 41, "digestErrors": [], "linkErrors": [], "forks": [17] },
+  "seals": [ { "height": 1, "root": "…", "leafCount": 8, "rootMatches": true, "verifiedLeaves": 8, "invalidLeaves": 0, "proofResult": "all-verified" } ],
+  "totals": { "sealsChecked": 25, "leafCount": 180, "verifiedLeaves": 180, "invalidLeaves": 0 },
+  "proofResult": "all-verified",
+  "root": "…", "height": 25, "leafCount": 180, "verifiedLeaves": 180, "invalidLeaves": 0,
+  "errors": [],
+  "receipt": "…", "persisted": true
+}
+```
+
+**פלט scope=seal**: `ok, height, root, stateRoot, leafCount, rootMatches, verifiedLeaves, invalidLeaves, proofResult, proofs[], sampleProof, errors, receipt`.
+**פלט scope=leaf**: `ok, verified, height, root, leafCount, index, proof{leaf,root,path}, proofResult, verifiedLeaves, invalidLeaves, errors, receipt`.
+
+**משמעות `forks`**: אינדקסי קבלות היסטוריות ש-chain-ו על קבלה שאינה הקודמת המיידית (ענפים מהתקופה שלפני הכתיבה האטומית) — **מדווחים, לעולם לא נשכתבים**. המשמעות המבצעית: `ok:true` גם עם forks — כל עוד digestErrors ו-linkErrors ריקים.
+
+**שגיאות אפשריות** (כולן `{ok:false}` HTTP 200):
+- `missing selector: provide height or root` · `invalid root format — expected 64 hex chars` · `invalid height format` · `seal not found for the given selector` · `index out of batch — leafCount=N` · `unknown scope "…" — expected chain | seal | leaf`.
+
+**סטטוס**: ✅ עובד — נבדק חי (Task 4): 41 קבלות מאומתות (כולל שחזור `at` מוכח-דיג'סט), fork באינדקס 17 מדווח; כל עלי כל החותמים verified; 6 מקרי fail-closed ירוקים.
+
+---
+
+## 9. `GET /api/saos/plans` (חדש Task 4)
+
+**מה**: משטח קריאה לשתי היישויות שעד Task 4 היו מוגדרות-ולא-נכתבות: 10 שורות EnergyPlan האחרונות + 10 EconomySnapshot האחרונות. קריאה-בלבד — ללא כתיבה וללא קבלות.
+
+**קלט**: ללא.
+
+**פלט**:
+```json
+{
+  "ok": true,
+  "energyPlans": [ { "id": "…", "network": "TRON", "mode": "energize", "trxStaked": 6500, "energyOut": 65000, "settlements": 1, "burnCost": 109, "rcFloorPct": null, "notes": "…", "payload": {…}, "createdAt": "…" } ],
+  "economySnapshots": [ { "id": "…", "label": "sim-2026-09-07T…", "inputs": {…}, "streams": […], "totalPerDay": 152.5, "flywheelPct": 30, "createdAt": "…" } ],
+  "counts": { "energyPlans": 15, "economySnapshots": 5 }
+}
+```
+
+**שגיאות אפשריות**: כישלון DB → `{ok:false, error}` (HTTP 200).
+
+**סטטוס**: ✅ עובד — נבדק חי (Task 4): counts אחרי הרצות = energyPlans 15 / economySnapshots 5.
