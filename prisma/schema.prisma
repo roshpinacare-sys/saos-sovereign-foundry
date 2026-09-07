@@ -25,6 +25,7 @@ model SealRecord {
   anchors     AnchorTx[]
   leaves      SealLeaf[]
   receipts    EvidenceReceipt[]
+  signatures  PendingSignature[]
 
   @@index([createdAt])
 }
@@ -129,4 +130,48 @@ model OpLog {
   createdAt DateTime @default(now())
 
   @@index([op])
+}
+
+// ─── Security audit (יומן ביקורת אבטחה — Task 5) ─────────────────────────────
+// Records every sensitive-operation attempt (allowed or denied).
+// Privacy discipline: NO key material, NO raw secrets; actor is a role label
+// and ip is a truncated hash — enough for incident response, not for profiling.
+
+model AuditEvent {
+  id        String   @id @default(cuid())
+  kind      String // auth-login | auth-login-failed | auth-logout | sensitive-denied | sensitive-allowed | signer-create | signer-result | live-gate-attempt
+  actor     String // "anonymous" | "bearer" | "cookie:<8hex>" — never key material
+  action    String // endpoint / operation attempted
+  allowed   Boolean
+  ipHash    String? // sha256(ip) truncated — coarse, correlation-only
+  detail    String?
+  createdAt DateTime @default(now())
+
+  @@index([kind, createdAt])
+  @@index([createdAt])
+}
+
+// ─── Keyless signing queue (תור חתימה ללא-מפתחות — Task 5) ───────────────────
+// The system prepares a transaction FOR signing; it NEVER holds, stores or
+// transmits private keys. Only the PUBLIC result (txid) is recorded back.
+// By column design there is no place where a private key could even be saved.
+
+model PendingSignature {
+  id           String       @id @default(cuid())
+  sealId       String?
+  seal         SealRecord?  @relation(fields: [sealId], references: [id])
+  network      String // STEEM | BLURT | HIVE | TRON
+  kind         String // weave | checkpoint
+  payload      String // canonical JSON content to sign (public by construction)
+  payloadHash  String // sha256 of payload
+  digestToSign String // the exact hash the external signer signs out-of-band
+  signer       String // none | external | manual | hardware
+  signerStatus String // disconnected | ready | awaiting-approval | error
+  txid         String? // filled ONLY with the public on-chain result after out-of-band signing
+  resultAt     DateTime?
+  expiresAt    DateTime
+  createdAt    DateTime     @default(now())
+
+  @@index([signerStatus])
+  @@index([network, createdAt])
 }

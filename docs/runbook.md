@@ -1,6 +1,6 @@
 # Runbook — SAOS Sovereign Foundry v2
 
-עודכן: 2026-09-07 (Task 4) · סביבת הרצה: sandbox, פורט 3000, Node 24 / Bun 1.3
+עודכן: 2026-09-07 (Task 5) · סביבת הרצה: sandbox, פורט 3000, Node 24 / Bun 1.3
 
 ## 1. הקמה מאפס (שחזור מלא מהריפו)
 
@@ -78,6 +78,51 @@ curl -s localhost:3000/api/saos/status | jq .ok
 rm -rf .next db/custom.db && bun run db:push && bun run dev
 curl -s -X POST localhost:3000/api/saos/seal -d '{}' -H 'Content-Type: application/json'  # פעימה ראשונה
 ```
+
+### 4.3 הרשאות — איך מגדירים מפתח-מנהל (Task 5)
+
+```bash
+# בחר מפתח ארוך ואקראי, שמור אותו אצלך מחוץ לריפו, ושים את ה-hash ב-.env:
+node -e "console.log(require('crypto').createHash('sha256').update('YOUR_LONG_KEY').digest('hex'))"
+# ב-.env:  SAOS_ADMIN_KEY_HASH=<ה-hash>
+# (אופציונלי) SAOS_SESSION_SECRET=$(openssl rand -hex 32)
+```
+
+- התחברות: `POST /api/saos/auth {"key":"..."}` → cookie חתום 12h; סקריפטים: `Authorization: Bearer <key>`.
+- **fail-closed**: בלי `SAOS_ADMIN_KEY_HASH` כל פעולה רגישה מקבלת 403 auth-unconfigured.
+- סיבוב מפתח: החלף את ה-hash + הפעלה-מחדש; שינוי `SAOS_SESSION_SECRET` מבטל את כל הסשנים.
+- בדיקה: `GET /api/saos/auth` → `{authConfigured, authenticated}`.
+
+### 4.4 גיבוי ושחזור (Task 5)
+
+```bash
+bun run backup                          # snapshot מאומת + manifest + OpLog(verified) + רטנשן 10
+bun run restore backups/<dir>           # dry-run — אימות בלבד
+bun run restore backups/<dir> --target /tmp/drill.db   # תרגיל בטוח
+bun run restore backups/<dir> --yes     # שחזור אמיתי; אחריו RESTART + bun run check
+```
+
+- live-gate דורש גיבוי מאומת <7 ימים; cleanup דורש <24 שעות.
+- אימות כולל sha256 לכל קובץ + integrity_check + השוואת ספירות; קובץ פגום → נדחה (הוכח).
+
+### 4.5 רטנשן/ניקוי (Task 5)
+
+```bash
+bun run cleanup           # dry-run: מה יימחק (protected: seals/leaves/anchors/receipts/findings/audit)
+bun run cleanup --yes     # רק עם גיבוי מאומת <24h; אחרת נדחה
+```
+
+מדיניות מלאה: docs/database.md §retention.
+
+### 4.6 שער ה-live (Task 5)
+
+```bash
+curl -s http://localhost:3000/api/saos/live-gate | jq '{readyForLive, blockers, warnings}'
+curl -s -X POST -H "Authorization: Bearer $KEY" http://localhost:3000/api/saos/live-gate | jq .readyForLive
+```
+
+חובה לפני כל מעבר ל-live: `readyForLive=true` (אפס blockers). ה-POST מחייב הרשאה ונרשם ב-audit.
+זכור: השער מדווח — ההפעלה היא רק restart עם `SAOS_MODE=live + SAOS_LIVE_CONFIRM=YES`.
 
 ## 5. תקלות נפוצות
 

@@ -1,6 +1,6 @@
 # API — SAOS Sovereign Foundry v2
 
-עודכן: 2026-09-07 (Task 4) · כל הנתיבים תחת `/api/saos/*` · 9 endpoints · כולם `dynamic = "force-dynamic"`.
+עודכן: 2026-09-07 (Task 5) · כל הנתיבים תחת `/api/saos/*` · 13 endpoints · כולם `dynamic = "force-dynamic"`.
 
 ## כלל על
 
@@ -11,6 +11,21 @@
 ```
 
 — עם **HTTP 200**. לכן זיהוי כשל נעשה על `ok`, לא על קוד HTTP.
+
+**תיקון Task 5 — יוצאי-מכחול לשכבת האבטחה בלבד:**
+
+| קוד | מתי | body |
+|---|---|---|
+| `401` | פעולה רגישה בלי הרשאה/עם הרשאה פגה | `{ok:false, error:"auth-required…"}` |
+| `403` | auth לא מוגדר על השרת (fail-closed) | `{ok:false, error:"auth-unconfigured…"}` |
+| `429` | מעבר להגבלת-הקצב | `{ok:false, error:"rate-limited…", retryAfterSec}` + header `Retry-After` |
+
+בכל המקרים body נשאר JSON קריא — השגיאה היא נתון גם כאן.
+
+**הגבלת קצב (Task 5)** — חלון של דקה, per-IP per-route, בזיכרון:
+`status 120` · `seal 30` · `verify-chain 60` · `kernel/verify-pack/energy/economy 30` · `plans 60` · `auth 8` · `live-gate 30` · `signer 30` · `audit 30` — אחלפי `SAOS_RL_<ROUTE>_PER_MIN`.
+
+**פעולות רגישות (401/403 בלי הרשאה):** `POST /signer` · `PATCH /signer` · `POST /live-gate` · `GET /audit` · `POST /seal` כשהמצב live.
 
 מוסכמת קלט: פרמטרים מספריים שאינם מספר (למשל `rc=abc`) מתנהגים לפי fail-closed — הקנוניה דוחה NaN/float והנתיב מחזיר `ok:false` (ר' שגיאות נפוצות בסוף).
 
@@ -216,15 +231,20 @@
 | `seal requires stamps in batch` | קרנל | קלט stamps לא-מספרי → 0 | שלח מספר 3..24 |
 | `seal not found for the given selector` | verify-chain | height/root לא קיים | בדוק קלט מול /status |
 | `index out of batch — leafCount=N` | verify-chain | index מחוץ לטווח העלים | 0..N-1 |
+| `auth-required: …` | auth | פעולה רגישה בלי cookie/Bearer תקף (401) | `POST /auth` או Bearer key |
+| `auth-unconfigured: …` | auth | `SAOS_ADMIN_KEY_HASH` חסר על השרת (403) | הגדר את ה-hash (deployment.md §3) |
+| `auth-denied: מפתח שגוי` | auth | מפתח התחברות שגוי (401) | בדוק את המפתח מול מי שיצר את ה-hash |
+| `rate-limited` | rate-limit | מעבר על המגבלה (429) | המתן `retryAfterSec` |
+| `txid already recorded — רישום הוא בלתי-הפיך` | signer | ניסיון לשכתב תוצאה רשומה | אין — רישום הוא היסטוריה |
 | `status failed` / `seal failed` / כו' | מעטפת | כישלון לא-צפוי (לרוב DB) | בדוק לוג dev, ר' runbook.md |
 
 ## מה עוד לא מושלם ב-API
 
-1. אין שכבת auth/rate-limit — ר' security.md (חוסם לפני live).
-2. `stamps` מחוץ ל-3..24 נחתך בשקט (מכוון, אך לא מדווח בתשובה).
-3. אין פגינציה ב-status וב-plans (מקובע: 8 seals / 10 receipts / 10+10).
-4. GET ל-energy/economy כותב שורת-מודל בכל קריאה — ללא ניקוי/retention (טבלאות צומחות לאט).
-5. `idempotency` מבוססת root: אותו batchId עם `stamps` שונה = root אחר = חותם חדש (מתועד, מכוון).
+1. `stamps` מחוץ ל-3..24 נחתך בשקט (מכוון, אך לא מדווח בתשובה).
+2. אין פגינציה ב-status וב-plans (מקובע: 8 seals / 10 receipts / 10+10).
+3. GET ל-energy/economy כותב שורת-מודל בכל קריאה — יש מדיניות רטנשן (database.md §retention) אך לא ניקוי אוטומטי.
+4. `idempotency` מבוססת root: אותו batchId עם `stamps` שונה = root אחר = חותם חדש (מתועד, מכוון).
+5. rate-limit אינו משותף בין תהליכים (in-memory) — לפריסה אופקית דרוש limiter חיצוני.
 
 ---
 
@@ -268,7 +288,6 @@
 ---
 
 ## 9. `GET /api/saos/plans` (חדש Task 4)
-
 **מה**: משטח קריאה לשתי היישויות שעד Task 4 היו מוגדרות-ולא-נכתבות: 10 שורות EnergyPlan האחרונות + 10 EconomySnapshot האחרונות. קריאה-בלבד — ללא כתיבה וללא קבלות.
 
 **קלט**: ללא.
@@ -286,3 +305,67 @@
 **שגיאות אפשריות**: כישלון DB → `{ok:false, error}` (HTTP 200).
 
 **סטטוס**: ✅ עובד — נבדק חי (Task 4): counts אחרי הרצות = energyPlans 15 / economySnapshots 5.
+
+---
+
+## 10. `POST /api/saos/auth` + `GET` + `DELETE` (חדש Task 5)
+
+**מה**: שכבת-ההרשאות. השרת מחזיק **רק sha256** של מפתח-המנהל (`SAOS_ADMIN_KEY_HASH`); ההתחברות משווה hash-ל-hash בזמן-קבוע.
+
+| verb | קלט | פלט | סטטוסים |
+|---|---|---|---|
+| `POST` | `{"key":"..."}` | `{ok:true, authenticated:true, sessionTtlSec}` + Set-Cookie `saos_session` (HttpOnly, SameSite=Strict, 12h) | 200 / 401 שגוי / 403 לא-מוגדר / 429 |
+| `GET` | — | `{ok, authConfigured, authenticated, actor, ipHash}` — בלי חומר-סוד | 200 / 429 |
+| `DELETE` | — | התנתקות (ניקוי cookie) + audit | 200 / 429 |
+
+חלופה לסקריפטים: `Authorization: Bearer <key>` על כל נתיב רגיש (אותה השוואת-hash).
+**כל ניסיון כושל/מוצלח נרשם ב-AuditEvent — בלי חומר-מפתח בשום שדה.**
+
+**סטטוס**: ✅ עובד — נבדק חי: כניסה שגויה→401, נכונה→cookie, סשן מאמת, יציאה מנקה (api-check 45/45).
+
+## 11. `GET /api/saos/live-gate` + `POST` (חדש Task 5)
+
+**מה**: שער המעבר ל-live — רשימת-בדיקה אוטומטית של 10 בדיקות; מדווח בדיוק מה חוסם. **לא מפעיל כלום** — ההפעלה בפועל דורשת restart עם שני הדגלים.
+
+**קלט**: GET — אופציונלי `?deep=1` (מוסיף אימות-עלים מלא). POST — דורש הרשאה (401 בלי); מבצע את אותה ריצה + audit.
+
+**פלט**:
+```json
+{
+  "ok": true, "readyForLive": false,
+  "blockers": [ { "id": "backup-verified", "detail": "…" } ],
+  "warnings": [ { "id": "networks-ready", "detail": "…" } ],
+  "checks": [ { "id": "auth-configured", "status": "pass", "detail": "…" }, … ],
+  "generatedAt": "…"
+}
+```
+
+**10 הבדיקות**: `auth-configured` (fail אם חסר) · `rate-limit-active` · `mode-gate` · `backup-verified` (fail אם אין גיבוי מאומת <7 ימים) · `restore-plan` (warn אם docs חסרים בראנטיים) · `chain-integrity` (fail אם שרשרת פגומה) · `networks-ready` (warn — רשתות advisory) · `security-open` (warn — 4 פריטים ידועים) · `signer-attached` (fail אם אין חותם) · `tests-green` (warn — דורש `bun run check` טרי).
+
+**סטטוס**: ✅ עובד — נבדק חי: איתור blocker אמיתי (אין-גיבוי) → תיקון (backup) → readyForLive=true עם 3 אזהרות.
+
+## 12. `/api/saos/signer` — GET + POST + PATCH (חדש Task 5)
+
+**מה**: תור חתימה **ללא-מפתחות**. המערכת מייצרת SignRequest (payload קנוני + payloadHash + digestToSign + metadata + הוראות); החתימה עצמה מתבצעת מחוץ למערכת; חוזר רק ה-txid הציבורי. אין שדה שבו מפתח פרטי יכול אפילו להישמר.
+
+| verb | הרשאה | קלט | פלט |
+|---|---|---|---|
+| `GET` | פתוח (קריאה-ציבורית) | — | registry (manual=ready, external/hardware/none=disconnected) + counts + 20 אחרונות |
+| `POST` | **נדרש** | `{network: STEEM\|BLURT\|HIVE\|TRON, signer?: manual\|external\|hardware, height?/sealId?}` | SignRequest מלא; בקשה זהה-פתוחה קיימת → `idempotent:true` |
+| `PATCH` | **נדרש** | `{id, txid}` | רישום התוצאה הציבורית → `signerStatus:"ready"`; **בלתי-הפיך** (רישום-כפול נדחה); txid לא-תקני נדחה |
+
+מחזור-חיים: `awaiting-approval` → (חתימה מחוץ למערכת) → `ready` עם txid. תוקף בקשה: 24h (`SAOS_SIGN_TTL_H`).
+
+**סטטוס**: ✅ עובד — נבדק חי: יצירה→ממתין→רישום→אי-שכתוב; idempotency; דחיית txid פגום; אפס חומר-מפתח בתגובות (api-check).
+
+## 13. `GET /api/saos/audit` (חדש Task 5)
+
+**מה**: קריאת יומן-הביקורת האבטחתי. **הרשאה נדרשת** — היומן עצמו רגיש.
+
+**קלט**: `?take=1..100` (ברירת-מחדל 50).
+
+**פלט**: `{counts:{total, denied, byKind[]}, events:[{kind, actor, action, allowed, ipHash, detail, createdAt}]}`.
+
+סוגי-אירועים: `auth-login` / `auth-login-failed` / `auth-logout` / `sensitive-denied` / `signer-create` / `signer-result` / `live-gate-attempt`.
+
+**סטטוס**: ✅ עובד — נבדק חי: 401 לאנונימיים, ספירות נכונות, אפס חומר-מפתח (נבדק אוטומטית ב-api-check).

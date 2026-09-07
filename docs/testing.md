@@ -1,6 +1,6 @@
 # בדיקות — SAOS Sovereign Foundry v2
 
-עודכן: 2026-09-07 (Task 4)
+עודכן: 2026-09-07 (Task 5)
 
 ## 1. איך מריצים
 
@@ -156,3 +156,42 @@ curl -s -X POST localhost:3000/api/saos/seal -H 'Content-Type: application/json'
 - BUG-006 סטיית applyTx נתפסה ב-tsc (Task 4, לא רץ) → תוקן.
 - דחיית float בקנוניה → תכונה: קלט רע נדחה fail-closed.
 - התנגשות digest בריצה חוזרת זהה → מטופל בכוונה (השרשרת שומרת על הקיים).
+
+
+---
+
+## Task 5 — בדיקות שכבת-האבטחה וה-hardening (2026-09-07)
+
+### api-check הורחב: 26 → 45 בדיקות
+
+קטגוריות חדשות (כולן ירוקות, הרצה חיה בסבב זה):
+
+| קטגוריה | מה נבדק | תוצאה |
+|---|---|---|
+| live-gate | חוזה מלא (ok/readyForLive/blockers/warnings/checks≥8), ids קיימים, POST ללא-הרשאה→401 | ✅ |
+| auth | מצב מדווח; פעולה-רגישה בלי-הרשאה→401; מפתח שגוי→401; מפתח נכון→cookie; סשן מאמת | ✅ |
+| keyless signer | יצירה מאושרת→SignRequest; אפס שדות-מפתח; כפילות→idempotent; רישום txid→ready; שכתוב→נדחה; txid פגום→נדחה | ✅ |
+| audit | 401 לאנונימיים; אירועי allowed+denied נרשמים; **אפס חומר-מפתח ביומן** (assert אוטומטי) | ✅ |
+| rate-limit | burst ×14 על POST /auth (מגבלה 8/דק') → 429 מרובים + Retry-After | ✅ (נבדק אחרון — מרוקן את החלון) |
+| never-500 | כל הנתיבים עדיין ללא 500 (כולל שכבת האבטחה) | ✅ |
+
+### גיבוי/שחזור/ניקוי — תרגילים מלאים
+
+| תרגיל | פקודה | תוצאה |
+|---|---|---|
+| גיבוי מאומת | `bun run backup` | ✅ VACUUM INTO + integrity=ok + counts-match + OpLog(verified=true) |
+| שחזור dry-run | `bun run restore <dir>` | ✅ אימות מלא, לא נגע בכלום |
+| תרגיל שחזור | `--target db/test-restore.db` | ✅ עותק ליעד-בדיקה, live untouched |
+| **ביקורת-תיחום** | בת-בייט שנוסף ל-snapshot → restore | ✅ **נדחה**: "verification failed — nothing was touched" |
+| ניקוי dry-run | `bun run cleanup` | ✅ 0 שורות-ניתנות-למחיקה (DB צעיר); protected list מוצהר |
+
+### תוצאה מלאה של `bun run check` בסוף הסבב
+
+lint ✅ · typecheck ✅ · api-check **45/45** ✅ · concurrency **8/8** (heights 48..55 רציפים, roots ייחודיים, שרשרת תקינה) ✅
+
+### מה עדיין לא מכוסה
+
+1. GitHub Actions — כל הבדיקות ידניות (`bun run check`).
+2. אין unit-tests למודולים (auth/rate-limit) בנפרד — נבדקים שחה דרך ה-API בלבד.
+3. next 16.3.4 לא נבדק ב-`next build` (חסום בסנדבוקס) — ר' deployment.md.
+4. דפדפן: טאב "שער-חיים" נבדק ידנית (desktop+iPhone 14, 0 שגיאות קונסולה) — אין בדיקת-e2e אוטומטית.

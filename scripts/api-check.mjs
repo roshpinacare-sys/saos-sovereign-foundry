@@ -11,8 +11,15 @@
  *   5. verify-pack + verify-chain (chain/seal/leaf scopes) all verified
  *   6. energy/economy persist their entities (planId/snapshotId) + /plans reads them
  *   7. fail-closed: bad inputs → ok:false with HTTP 200
+ *   Task 5 (live gate & hardening):
+ *   8. live-gate output contract (ok/readyForLive/blockers/warnings/checks)
+ *   9. auth: unauthenticated sensitive ops → 401; wrong key → 401; login → session cookie
+ *  10. keyless signer: create (authed) → awaiting-approval → record txid → immutable
+ *  11. audit trail records denied + allowed events (authed read)
+ *  12. rate-limit: burst beyond the limit → 429 (runs LAST — exhausts the auth window)
  */
 const BASE = process.env.SAOS_BASE_URL ?? "http://localhost:3000";
+const ADMIN_KEY = process.env.SAOS_ADMIN_KEY ?? "";
 let pass = 0, fail = 0;
 const failures = [];
 
@@ -23,7 +30,7 @@ function report(name, cond, detail = "") {
 
 async function j(path, init) {
   const res = await fetch(BASE + path, init);
-  return { status: res.status, body: await res.json() };
+  return { status: res.status, body: await res.json(), headers: res.headers };
 }
 
 async function main() {
@@ -101,9 +108,70 @@ async function main() {
   const f6 = await j("/api/saos/verify-chain?scope=leaf&height=1&index=999");
   report("fail-closed: verify-chain leaf index out of batch", f6.status === 200 && f6.body.ok === false);
 
+  // ─── Task 5: live gate, auth, keyless signer, audit ─────────────────────────
+
+  // 9. live-gate contract
+  const lg = await j("/api/saos/live-gate");
+  report("GET /live-gate ok", lg.status === 200 && lg.body.ok === true);
+  report("live-gate contract (readyForLive/blockers/warnings/checks)", typeof lg.body.readyForLive === "boolean" && Array.isArray(lg.body.blockers) && Array.isArray(lg.body.warnings) && Array.isArray(lg.body.checks) && lg.body.checks.length >= 8, `checks=${lg.body.checks?.length} blockers=${lg.body.blockers?.length} warnings=${lg.body.warnings?.length}`);
+  report("live-gate check ids present", ["auth-configured", "backup-verified", "chain-integrity", "signer-attached"].every((id) => lg.body.checks?.some((c) => c.id === id)));
+  const lgPost = await j("/api/saos/live-gate", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+  report("POST /live-gate without auth → 401", lgPost.status === 401 && lgPost.body.ok === false);
+
+  // 10. auth layer
+  const authState = await j("/api/saos/auth");
+  report("GET /auth state", authState.status === 200 && authState.body.ok === true && authState.body.authConfigured === true, "authConfigured=true (sandbox .env)");
+  const sigNoAuth = await j("/api/saos/signer", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ network: "STEEM" }) });
+  report("sensitive op without auth → 401", sigNoAuth.status === 401 && sigNoAuth.body.ok === false);
+  const auditNoAuth = await j("/api/saos/audit");
+  report("audit without auth → 401", auditNoAuth.status === 401);
+  const badLogin = await j("/api/saos/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key: "definitely-wrong-key" }) });
+  report("login wrong key → 401", badLogin.status === 401 && badLogin.body.ok === false);
+  let cookie = "";
+  if (ADMIN_KEY) {
+    const login = await j("/api/saos/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key: ADMIN_KEY }) });
+    const setCookie = login.headers.get("set-cookie") ?? "";
+    cookie = setCookie.split(";")[0] ?? "";
+    report("login correct key → 200 + session cookie", login.status === 200 && login.body.ok === true && cookie.startsWith("saos_session="));
+    const me = await j("/api/saos/auth", { headers: { cookie } });
+    report("session cookie authenticates", me.body.authenticated === true && me.body.actor === "cookie");
+  } else {
+    report("login correct key → 200 + session cookie", false, "SAOS_ADMIN_KEY missing from env — add it to .env (value only, gitignored)");
+  }
+
+  // 11. keyless signer flow (authed)
+  const sigCreate = await j("/api/saos/signer", { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ network: "BLURT", signer: "manual" }) });
+  const sigId = sigCreate.body.signature?.id;
+  report("signer create (authed) → SignRequest", sigCreate.status === 200 && sigCreate.body.ok === true && typeof sigId === "string" && typeof sigCreate.body.signature?.digestToSign === "string", `id=${sigId?.slice(0, 18)}…`);
+  report("signer emits NO key material (payload/digest/metadata only)", sigCreate.body.signature && !("privateKey" in sigCreate.body.signature) && !("key" in sigCreate.body.signature));
+  const sigDup = await j("/api/saos/signer", { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ network: "BLURT", signer: "manual" }) });
+  report("signer duplicate → idempotent", sigDup.body.ok === true && sigDup.body.idempotent === true && sigDup.body.signature?.id === sigId);
+  const sigResult = await j("/api/saos/signer", { method: "PATCH", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ id: sigId, txid: `api-check-tx-${Date.now()}` }) });
+  report("signer record public result (authed)", sigResult.status === 200 && sigResult.body.ok === true && sigResult.body.signature?.signerStatus === "ready");
+  const sigReplay = await j("/api/saos/signer", { method: "PATCH", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ id: sigId, txid: "replay-tx-attempt" }) });
+  report("signer result immutable (replay refused)", sigReplay.body.ok === false && /immutab|בלתי-הפיך/.test(sigReplay.body.error ?? ""));
+  const sigBadTxid = await j("/api/saos/signer", { method: "PATCH", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ id: sigId, txid: "x" }) });
+  report("signer rejects malformed txid", sigBadTxid.body.ok === false);
+
+  // 12. audit trail (authed)
+  const auditRead = await j("/api/saos/audit?take=50", { headers: { cookie } });
+  const evKinds = (auditRead.body.events ?? []).map((e) => e.kind);
+  report("audit (authed) shows allowed + denied events", auditRead.status === 200 && auditRead.body.ok === true && evKinds.includes("signer-create") && evKinds.includes("sensitive-denied"), `denied=${auditRead.body.counts?.denied}`);
+  report("audit never logs key material", (auditRead.body.events ?? []).every((e) => !String(e.detail ?? "").includes(ADMIN_KEY || "___never___") && !/bearer:[0-9a-f]{64}/.test(e.actor)));
+
   // never-500 sweep over every touched endpoint
   console.log("\nnever-500 sweep:");
   report("all responses were HTTP 200", true, "asserted per-request above");
+
+  // 13. rate-limit — MUST be last: exhausts the shared 60s auth window
+  console.log("\nrate-limit burst (POST /auth x14, limit 8/min):");
+  const codes = [];
+  for (let i = 0; i < 14; i++) {
+    const r = await fetch(BASE + "/api/saos/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key: "burst" }) });
+    codes.push(r.status);
+  }
+  const limited = codes.filter((c) => c === 429).length;
+  report("rate-limit returns 429 beyond the limit", limited >= 1, `codes=[${codes.join(",")}] → ${limited}×429`);
 
   console.log(`\napi-check: ${pass} passed, ${fail} failed${fail ? ` → ${failures.join(", ")}` : ""}\n`);
   process.exit(fail === 0 ? 0 : 1);

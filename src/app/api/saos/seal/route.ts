@@ -7,6 +7,8 @@ import { canonicalDigest, canonicalize } from "@/lib/saos/canonical-json";
 import { anchoringMatrix } from "@/lib/saos/anchor-gates";
 import { appendReceiptTx, retryWrite, withWriteLock } from "@/lib/saos/receipt-store";
 import { assertWritesEnabled } from "@/lib/saos/modes";
+import { audit, requireAuth } from "@/lib/saos/auth";
+import { enforceRateLimit } from "@/lib/saos/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +31,26 @@ const BATCH_ID_RE = /^[\w.-]{1,64}$/;
 
 export async function POST(req: Request) {
   try {
+    // rate limit (30/min default) — 429 for abusers, audited below
+    const rl = enforceRateLimit("seal", req);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { ok: false, error: "rate-limited: פעימות רבות מדי — המתן", retryAfterSec: rl.retryAfterSec },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+      );
+    }
+
     const modeState = assertWritesEnabled();
+
+    // auth gate: in live mode a seal becomes broadcast-adjacent — it requires
+    // an authenticated operator. In dry-run/safe it stays an open simulation.
+    if (modeState.liveArmed) {
+      const auth = requireAuth(req);
+      if (!auth.ok) {
+        await audit({ kind: "sensitive-denied", actor: auth.actorRef, action: "POST /seal (live)", allowed: false, req, detail: auth.error });
+        return NextResponse.json({ ok: false, error: auth.error ?? "auth-required" }, { status: auth.status });
+      }
+    }
 
     let body: { stamps?: number; memo?: string; batchId?: string } = {};
     try {

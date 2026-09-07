@@ -1,6 +1,6 @@
 # מסד נתונים — SAOS Sovereign Foundry v2
 
-עודכן: 2026-09-07 (Task 4)
+עודכן: 2026-09-07 (Task 5)
 
 ## 1. סוג ומיקום
 
@@ -71,6 +71,18 @@ archive (**unique**), rank, score (0..100), verdict, salvage (JSON), evidence (J
 ### OpLog — יומן תפעול
 op (String, @@index([op])), detail?, createdAt. נכתב נכון להיום רק על `seal`.
 
+
+### AuditEvent — יומן ביקורת אבטחה (חדש Task 5)
+
+כל ניסיון פעולה-רגישה (מאושר או נדחה). **אין חומר-מפתח** — actor הוא תווית בלתי-הפיכה (`cookie:<8hex>` / `bearer:<8hex>` / `anonymous`), ipHash מקוצר לקורלציה בלבד.
+אינדקסים: `[kind, createdAt]`, `[createdAt]`. נשמר **לתמיד** (protected — ר' §retention).
+
+### PendingSignature — תור חתימה ללא-מפתחות (חדש Task 5)
+
+בקשת-חתימה שנוצרת ע"י המערכת: payload קנוני, payloadHash, digestToSign, signer (none/external/manual/hardware), signerStatus (disconnected/ready/awaiting-approval/error), txid ציבורי **בלתי-הפיך** אחרי רישום, expiresAt (ברירת-מחדל 24h).
+עיצוב-מפתח: **אין עמודה שבה מפתח פרטי יכול להישמר** — ההגנה מבנית, לא נוהלית.
+אינדקסים: `[signerStatus]`, `[network, createdAt]`. קשר ל-SealRecord (sealId, optional).
+
 ## 3. מצב נוכחי (מדידה חיה בסוף Task 4)
 
 ```
@@ -98,29 +110,42 @@ orphanLeaves=0  orphanAnchors=0  orphanReceipts=0
 - **תיקון היסטורי**: הסוג `Double` נדחה על SQLite → הוחלף ל-`Float` (worklog Task 2).
 - **אילץ ייחודי height**: נוסף מההתחלה; הבאג שחשף אותו מתועד ב-testing.md (BUG-001).
 
-## 5. גיבוי
+## 5. גיבוי — סקריפט מאומת (Task 5)
 
 ```bash
-# גיבוי מלא (קובץ יחיד):
-cp db/custom.db "backups/custom-$(date +%Y%m%d-%H%M%S).db"
-
-# ייצור נתונים לוגיים (לצורך ביקורת):
-curl -s http://localhost:3000/api/saos/status | jq . > backup-status.json
-curl -s http://localhost:3000/api/saos/verify-pack | jq . > backup-verify-pack.json
+bun run backup    # scripts/backup.mjs
 ```
 
-- **תדירות נדרשת**: לפני כל `db push` ולפני כל סבב תחזוקה (ר' runbook.md).
-- **הכללה בריפו**: `db/` ו-`prisma/*.db` מנוטרלים ב-.gitignore — קובץ ה-DB **אינו** בריפו במתכוון (נתוני ריצה, לא קוד). הסכימה עצמה בריפו.
+- **snapshot עקבי-אונליין** באמצעות SQLite `VACUUM INTO` (בטוח גם כשהשרת רץ)
+- manifest.json: git commit, גרסאות, sha256+size לכל קובץ, ספירות-שורות לכל המודלים, רשימת החרגות מפורשת
+- **אימות**: פתיחת ה-snapshot ב-PrismaClient נפרד → `PRAGMA integrity_check` + השוואת ספירות מול ה-manifest
+- רישום `OpLog(op=backup, detail=…verified=true…)` — ה-live-gate קורא אותו (backup-verified, תוקף 7 ימים)
+- **ההחרגות קבועות**: .env, upload/, research/, node_modules — סודות לעולם לא נכנסים לגיבוי
+- רטנשן: שומר 10 האחרונים (backups/ כולו gitignored)
 
-## 6. שחזור
+## 6. שחזור — תמיד מאומת (Task 5)
 
-1. `bun install`
-2. הגדר `.env` עם `DATABASE_URL="file:./custom.db"` (יחסית ל-`prisma/`).
-3. `bun run db:push` — יוצר סכמה מלאה מתוך `schema.prisma`.
-4. (אופציונלי) שחזור נתונים: העתקת קובץ גיבוי ל-`db/custom.db`, או ריצה מחדש של פעימות seal + `curl /api/saos/research` למילוי ResearchFinding.
-5. הפעלה: `bun run dev`.
+```bash
+bun run restore backups/<dir>               # dry-run: אימות בלבד, לא נוגע בכלום
+bun run restore backups/<dir> --target X    # תרגיל: שחזור ליעד ניסיוני
+bun run restore backups/<dir> --yes         # שחזור אמיתי (ה-db הקודם מקבל שם .pre-restore-<ts>)
+```
 
-שחזור מלא מהריפו מובטח עבור: קוד, תלויות (bun.lock), סכימה, תיעוד. נתוני ריצה משוחזרים מגיבוי קובץ או ע"י יצירה מחדש (הפלטפורמה דטרמיניסטית — פעימה חדשה תניב שורשים חדשים תקינים).
+אימות בכל מצב: manifest תקין → sha256 לכל קובץ → integrity_check → השוואת ספירות. **כישלון אימות = נגיעה אסורה.**
+הוכח בביקורת-עצמית (תיחום): שינוי בת-בייט אחד ב-snapshot → `❌ restore aborted — verification failed`.
+
+### מדיניות רטנשן (Task 5, מיסיון 6) — `bun run cleanup`
+
+| טבלה | מדיניות |
+|---|---|
+| SealRecord, SealLeaf, AnchorTx, EvidenceReceipt, ResearchFinding, **AuditEvent** | **לתמיד — protected**: הסקריפט מסרב לגעת |
+| OpLog | מעל 90 יום, תוך שמירת 1000 הצעירות |
+| EnergyPlan | מעל 180 יום |
+| EconomySnapshot | מעל 180 יום, תוך שמירת 100 הצעירות |
+| PendingSignature | שפג-תוקף לפני מעל 30 יום |
+| backups/ | מעבר ל-10 האחרונים (בתוך backup.mjs) |
+
+`cleanup` (dry-run ברירת-מחדל) מדפיס מה יימחק; `--yes` מבצע **רק אם קיים גיבוי מאומת <24h** (אחרת: "אין גיבוי → אין מחיקה"). כל ריצת מחיקה נרשמת ב-OpLog.
 
 ## 7. נקודות תורפה
 
@@ -132,4 +157,4 @@ curl -s http://localhost:3000/api/saos/verify-pack | jq . > backup-verify-pack.j
 | W4 | ~~פיצול hash-chain~~ | ~~כתיבה כפולה~~ | **סגור Task 4**: קבלה בתוך טרנזקציית ה-seal; פיצול היסטורי (אינדקס 17) מדווח בלי שכתוב | ✅ |
 | W5 | Float על כסף (EconomySnapshot.totalPerDay) | עיגול-נקודה-צפה בשדה התצוגה | קבלות מקודדות micro-units (שלמים); שדה Float הוא תצוגה בלבד, לא מדוג'סט | מופחת |
 | W6 | ~~EnergyPlan/EconomySnapshot ללא כותב~~ | ~~טבלאות מתות~~ | **סגור Task 4**: כותבים + /plans לקריאה | ✅ |
-| W7 | קבלות GET (energy/economy/kernel/verify) צומחות בכל קריאה | נפח | ללא retention/prune — מסומן ב-next-steps | פתוח |
+| W7 | קבלות GET צומחות בכל קריאה | נפח | **מופחת Task 5**: מדיניות רטנשן קיימת (cleanup) אך ידנית — אין ריצה אוטומטית | מופחת |

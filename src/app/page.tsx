@@ -17,7 +17,11 @@ import {
   ScrollText,
   Lock,
   Activity,
-  GitBranch
+  GitBranch,
+  KeyRound,
+  LogIn,
+  LogOut,
+  PenLine
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, Badge, Button, Progress, Slider, Stat } from "@/components/ui/kit";
 
@@ -149,6 +153,7 @@ const TABS = [
   { id: "energy", label: "אנרגיה", icon: Zap },
   { id: "economy", label: "כלכלה", icon: Coins },
   { id: "proofs", label: "הוכחות", icon: ShieldCheck },
+  { id: "gate", label: "שער-חיים", icon: KeyRound },
   { id: "verdict", label: "פורץ דרך", icon: Compass }
 ] as const;
 
@@ -186,6 +191,7 @@ export default function Home() {
           {tab === "energy" && <Energy />}
           {tab === "economy" && <Economy />}
           {tab === "proofs" && <Proofs />}
+          {tab === "gate" && <Gate />}
           {tab === "verdict" && <Verdict />}
         </div>
       </main>
@@ -959,6 +965,339 @@ function Verdict() {
         <TriangleAlert size={12} className="text-amber-600" />
         כל פריט כאן נבדק ידנית במחקר עומק — כולל הפרכת-עצמי של הארכיונים (HOSTILE_AUDIT / BASELINE-VERIFICATION)
       </p>
+    </section>
+  );
+}
+
+// ─── tab 6: live gate (שער-חיים) — Task 5 ───────────────────────────────────
+
+interface GateCheck {
+  id: string;
+  status: "pass" | "warn" | "fail";
+  detail: string;
+}
+interface GateData {
+  ok: boolean;
+  readyForLive: boolean;
+  mode: string;
+  blockers: { id: string; detail: string }[];
+  warnings: { id: string; detail: string }[];
+  checks: GateCheck[];
+  generatedAt: string;
+}
+interface AuthData {
+  ok: boolean;
+  authConfigured: boolean;
+  authenticated: boolean;
+  actor: string;
+}
+interface SigPending {
+  id: string;
+  network: string;
+  kind: string;
+  signer: string;
+  signerStatus: string;
+  payloadHash: string;
+  digestToSign: string;
+  sealHeight: number | null;
+  txid: string | null;
+  resultAt: string | null;
+  expiresAt: string;
+}
+interface SignerData {
+  ok: boolean;
+  registry: { signer: string; status: string; detail: string; emits: string; acceptsBack: string }[];
+  counts: { awaitingApproval: number; recorded: number };
+  pending: SigPending[];
+}
+
+const GATE_CHECK_ICON: Record<string, typeof CheckCircle2> = {
+  pass: CheckCircle2,
+  warn: TriangleAlert,
+  fail: TriangleAlert
+};
+const GATE_CHECK_STYLE: Record<string, string> = {
+  pass: "text-emerald-400",
+  warn: "text-amber-400",
+  fail: "text-rose-400"
+};
+
+function Gate() {
+  const [gate, setGate] = useState<GateData | null>(null);
+  const [auth, setAuth] = useState<AuthData | null>(null);
+  const [signer, setSigner] = useState<SignerData | null>(null);
+  const [key, setKey] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [net, setNet] = useState("STEEM");
+  const [txidDrafts, setTxidDrafts] = useState<Record<string, string>>({});
+
+  const load = useCallback(async () => {
+    try {
+      const [g, a, s] = await Promise.all([
+        fetch("/api/saos/live-gate").then((r) => r.json()),
+        fetch("/api/saos/auth").then((r) => r.json()),
+        fetch("/api/saos/signer").then((r) => r.json())
+      ]);
+      if (g.ok) setGate(g as GateData);
+      if (a.ok) setAuth(a as AuthData);
+      if (s.ok) setSigner(s as SignerData);
+    } catch {
+      /* network blip */
+    }
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => void load(), 0);
+    return () => clearTimeout(t);
+  }, [load]);
+
+  async function login() {
+    setBusy("login");
+    setMsg(null);
+    try {
+      const r = await fetch("/api/saos/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key })
+      }).then((r) => r.json());
+      setMsg(r.ok ? "התחברות בוצעה — cookie חתום פעיל 12h" : `שגיאה: ${r.error}`);
+      if (r.ok) setKey("");
+      await load();
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function logout() {
+    setBusy("login");
+    try {
+      await fetch("/api/saos/auth", { method: "DELETE" }).then((r) => r.json());
+      setMsg("התנתקות בוצעה");
+      await load();
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function createSignRequest() {
+    setBusy("sign");
+    setMsg(null);
+    try {
+      const r = await fetch("/api/saos/signer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ network: net, signer: "manual" })
+      }).then((r) => r.json());
+      setMsg(
+        r.ok
+          ? r.idempotent
+            ? `בקשת חתימה קיימת חזרה (${r.signature.id.slice(0, 14)}…)`
+            : `SignRequest נוצר ל-${r.signature.network} — payload+digestToSign מוכנים לחתימה מחוץ למערכת (ללא מפתח)`
+          : `שגיאה: ${r.error}`
+      );
+      await load();
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function recordResult(id: string) {
+    setBusy(`tx-${id}`);
+    setMsg(null);
+    try {
+      const r = await fetch("/api/saos/signer", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, txid: txidDrafts[id] })
+      }).then((r) => r.json());
+      setMsg(r.ok ? `txid ציבורי נרשם — ${r.signature.txid}` : `שגיאה: ${r.error}`);
+      if (r.ok) setTxidDrafts((d) => ({ ...d, [id]: "" }));
+      await load();
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <section aria-label="שער חיים" className="space-y-4">
+      {/* auth panel */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <KeyRound size={15} className="text-amber-400" /> הרשאות (access control)
+          </CardTitle>
+          {auth ? (
+            auth.authenticated ? (
+              <Badge tone="green"><CheckCircle2 size={12} /> מחובר ({auth.actor})</Badge>
+            ) : auth.authConfigured ? (
+              <Badge tone="amber"><Lock size={12} /> לא מחובר</Badge>
+            ) : (
+              <Badge tone="rose"><TriangleAlert size={12} /> לא מוגדר</Badge>
+            )
+          ) : (
+            <Badge tone="zinc">…</Badge>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-zinc-400 leading-relaxed">
+            פעולות רגישות (בקשות חתימה, רישום תוצאות, ניסיון מעבר ל־live) דורשות התחברות. השרת מחזיק רק hash של המפתח — אף מפתח פרטי לא נשמר, מודפס או נשלח.
+          </p>
+          {auth?.authenticated ? (
+            <Button onClick={logout} disabled={busy === "login"} className="w-full sm:w-auto">
+              {busy === "login" ? <Loader2 size={16} className="animate-spin" /> : <LogOut size={16} />}
+              התנתק
+            </Button>
+          ) : (
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="password"
+                value={key}
+                onChange={(e) => setKey(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && key && void login()}
+                placeholder="מפתח מנהל (SAOS_ADMIN_KEY)"
+                aria-label="מפתח מנהל"
+                dir="ltr"
+                className="flex-1 min-h-[44px] rounded-lg border border-zinc-800 bg-zinc-950 px-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-amber-500/60 focus:outline-none"
+              />
+              <Button onClick={login} disabled={!key || busy === "login"}>
+                {busy === "login" ? <Loader2 size={16} className="animate-spin" /> : <LogIn size={16} />}
+                התחבר
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {msg && (
+        <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">{msg}</p>
+      )}
+
+      {/* live gate */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <ShieldCheck size={15} className="text-emerald-400" /> שער מעבר ל־live (live gate)
+          </CardTitle>
+          {gate ? (
+            gate.readyForLive ? (
+              <Badge tone="green"><CheckCircle2 size={12} /> מוכן (עם {gate.warnings.length} אזהרות)</Badge>
+            ) : (
+              <Badge tone="rose"><Lock size={12} /> חסום ({gate.blockers.length})</Badge>
+            )
+          ) : (
+            <Badge tone="zinc">…</Badge>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {gate?.blockers.map((b) => (
+            <p key={b.id} className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-300">
+              <span className="font-bold">חסימה · {b.id}</span> — {b.detail}
+            </p>
+          ))}
+          <ul className="space-y-2 max-h-80 overflow-y-auto scroll-slim pl-1">
+            {(gate?.checks ?? []).map((c) => {
+              const Icon = GATE_CHECK_ICON[c.status] ?? CheckCircle2;
+              return (
+                <li key={c.id} className="flex items-start gap-2 text-xs">
+                  <Icon size={14} className={`shrink-0 mt-0.5 ${GATE_CHECK_STYLE[c.status] ?? "text-zinc-400"}`} />
+                  <span>
+                    <span className="font-mono text-zinc-300" dir="ltr">{c.id}</span>{" "}
+                    <span className="text-zinc-500">{c.detail}</span>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="text-[11px] text-zinc-600">
+            הפעלה בפועל דורשת הפעלה-מחדש עם SAOS_MODE=live + SAOS_LIVE_CONFIRM=YES — אין קיצור-דרך בראנטיים.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* signer */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <PenLine size={15} className="text-amber-400" /> תור חתימה חיצוני (keyless)
+          </CardTitle>
+          <div className="flex gap-1.5">
+            <Badge tone="amber">{signer?.counts.awaitingApproval ?? 0} ממתין</Badge>
+            <Badge tone="green">{signer?.counts.recorded ?? 0} נרשם</Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {(signer?.registry ?? []).map((s) => (
+              <div key={s.signer} className="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono text-xs text-zinc-200" dir="ltr">{s.signer}</span>
+                  <Badge tone={s.status === "ready" ? "green" : s.status === "error" ? "rose" : "zinc"}>{s.status}</Badge>
+                </div>
+                <p className="text-[11px] text-zinc-500 mt-1 leading-relaxed">{s.detail}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2">
+            <select
+              value={net}
+              onChange={(e) => setNet(e.target.value)}
+              aria-label="רשת לעגינה"
+              className="flex-1 min-h-[44px] rounded-lg border border-zinc-800 bg-zinc-950 px-3 text-sm text-zinc-200 focus:border-amber-500/60 focus:outline-none"
+            >
+              {["STEEM", "BLURT", "HIVE", "TRON"].map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+            <Button onClick={createSignRequest} disabled={busy === "sign" || !auth?.authenticated}>
+              {busy === "sign" ? <Loader2 size={16} className="animate-spin" /> : <PenLine size={16} />}
+              הכן לחתימה
+            </Button>
+          </div>
+          {!auth?.authenticated && (
+            <p className="text-[11px] text-amber-400/80">הכנת בקשת חתימה היא פעולה רגישה — התחבר קודם.</p>
+          )}
+
+          <div className="max-h-80 overflow-y-auto scroll-slim space-y-2 pl-1">
+            {(signer?.pending ?? []).map((p) => (
+              <div key={p.id} className="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2 space-y-2">
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <Badge tone="gold">{p.network}</Badge>
+                  <span className="font-mono text-zinc-500 text-[10px]" dir="ltr">{p.id.slice(0, 18)}…</span>
+                  <span className="text-zinc-600">seal#{p.sealHeight ?? "—"}</span>
+                  <Badge tone={p.signerStatus === "ready" ? "green" : p.signerStatus === "awaiting-approval" ? "amber" : "zinc"}>
+                    {p.signerStatus}
+                  </Badge>
+                </div>
+                <p className="text-[10px] font-mono text-zinc-500" dir="ltr">digestToSign: {p.digestToSign.slice(0, 24)}…</p>
+                {p.txid ? (
+                  <p className="text-xs text-emerald-400 font-mono" dir="ltr">txid: {p.txid}</p>
+                ) : (
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      value={txidDrafts[p.id] ?? ""}
+                      onChange={(e) => setTxidDrafts((d) => ({ ...d, [p.id]: e.target.value }))}
+                      placeholder="txid ציבורי לאחר חתימה מחוץ למערכת"
+                      aria-label="txid"
+                      dir="ltr"
+                      className="flex-1 min-h-[40px] rounded-lg border border-zinc-800 bg-zinc-950 px-3 text-xs text-zinc-200 placeholder:text-zinc-600 focus:border-amber-500/60 focus:outline-none"
+                    />
+                    <Button
+                      onClick={() => void recordResult(p.id)}
+                      disabled={!txidDrafts[p.id] || busy === `tx-${p.id}` || !auth?.authenticated}
+                      className="text-xs"
+                    >
+                      {busy === `tx-${p.id}` ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                      רשום תוצאה
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </section>
   );
 }

@@ -4,10 +4,20 @@ import { anchoringMatrix } from "@/lib/saos/anchor-gates";
 import { HISTORIC_ANCHORS } from "@/lib/saos/historic";
 import { networkStatuses } from "@/lib/saos/network-status";
 import { saosMode } from "@/lib/saos/modes";
+import { authConfigured } from "@/lib/saos/auth";
+import { enforceRateLimit, ruleFor } from "@/lib/saos/rate-limit";
+import { signerRegistry } from "@/lib/saos/signer";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const rl = enforceRateLimit("status", req);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { ok: false, error: "rate-limited", retryAfterSec: rl.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+    );
+  }
   try {
     const rcPct = Number(process.env.HIVE_RC_PCT ?? 0.6);
     const tronEnergy = Number(process.env.TRON_ENERGY ?? 0);
@@ -30,6 +40,11 @@ export async function GET() {
       modeDetail: mode.detail,
       writesEnabled: mode.writesEnabled,
       broadcastCapable: mode.broadcastCapable,
+      security: {
+        authConfigured: authConfigured(),
+        rateLimit: { active: true, status: ruleFor("status").perMinute, seal: ruleFor("seal").perMinute, auth: ruleFor("auth").perMinute },
+        signer: signerRegistry().map((s) => ({ signer: s.signer, status: s.status }))
+      },
       matrix: anchoringMatrix(rcPct, tronEnergy),
       networks: networkStatuses(rcPct, tronEnergy),
       historic: HISTORIC_ANCHORS,

@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { buildMerkleTree, merkleProof, verifyMerkleProof } from "@/lib/saos/merkle";
 import { verifyChainDag } from "@/lib/saos/evidence";
 import { appendReceipt } from "@/lib/saos/receipt-store";
+import { enforceRateLimit } from "@/lib/saos/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,13 @@ async function checkSeal(sealId: string): Promise<SealCheck & { stateRoot: strin
 }
 
 export async function GET(req: Request) {
+  const rl = enforceRateLimit("verify-chain", req);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { ok: false, error: "rate-limited", retryAfterSec: rl.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+    );
+  }
   try {
     const url = new URL(req.url);
     const scope = (url.searchParams.get("scope") ?? "chain").toLowerCase();

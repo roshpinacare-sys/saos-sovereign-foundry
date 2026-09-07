@@ -162,3 +162,31 @@ Work Log:
 
 Stage Summary:
 - Task 4 fully on remote: atomic seals, entity writers, verify-chain API, mode gate, minimum CI, network status views, complete docs
+
+---
+
+Task ID: 5 (live-gate-keyless-anchor-production-hardening)
+Agent: Z.ai Code (orchestrator)
+Task: Task 5 — Live Gate, Keyless Anchor Readiness & Production Hardening: access control, rate limiting, live-gate checklist, keyless external signing interface, verified backup/restore, retention policy, dependency audit, deployment docs, full docs refresh, all pushed to repo. Iron rules: no real transactions, no secrets anywhere, honest status at all times.
+
+Work Log:
+- M1 (auth): `src/lib/saos/auth.ts` — server holds ONLY sha256 (`SAOS_ADMIN_KEY_HASH`); timing-safe compare; signed HttpOnly session cookie (HMAC, 12h, SameSite=Strict) via POST /api/saos/auth; Bearer alternative; **fail-closed**: no hash ⇒ 403 on every sensitive op; new `AuditEvent` model — every sensitive attempt (allowed/denied) logged with irreversible labels only (cookie:<8hex>, ipHash truncated, zero key material)
+- M2 (rate-limit): `src/lib/saos/rate-limit.ts` — in-memory fixed-window per-IP per-route (60s), defaults: status 120 / seal 30 / verify-chain 60 / auth 8 / … env-overridable `SAOS_RL_*_PER_MIN`; 429 + Retry-After; applied to ALL 13 endpoints; no PII persisted (memory only)
+- M3 (live-gate): `GET/POST /api/saos/live-gate` — 10 checks (auth-configured, rate-limit-active, mode-gate, backup-verified <7d, restore-plan, chain-integrity via verifyChainDag, networks-ready, security-open ×4, signer-attached, tests-green) → {ok, readyForLive, blockers[], warnings[], checks[]}; POST = go-live ATTEMPT (auth required + audited); activation still requires restart with BOTH flags (no runtime shortcut); live-proven: detected missing-backup blocker → after `bun run backup` → readyForLive=true with 3 honest warnings
+- M4 (keyless signer): `src/lib/saos/signer.ts` + `PendingSignature` model + `/api/saos/signer` GET/POST/PATCH — SignRequest = canonical payload + payloadHash + digestToSign + instructions + metadata; signer kinds none/external/manual/hardware (manual=ready, others disconnected — honest); create/list-pending public, create+record-result AUTH required; txid is public-result-only and immutable (replay refused); duplicate-open-request → idempotent; **structurally no column where a private key could exist**
+- M5 (backup/restore): `scripts/backup.mjs` — online-consistent snapshot via SQLite `VACUUM INTO`, manifest (git commit, versions, sha256+size per file, row counts, explicit exclusions), verification (PRAGMA integrity_check + counts match via second PrismaClient), OpLog(op=backup, verified) that live-gate reads, retention keep-10; `scripts/restore.mjs` — dry-run default, `--target` drill, `--yes` real (previous db renamed); **tamper drill: one appended byte → sha256 mismatch → "restore aborted — nothing was touched"** ✅
+- M6 (retention): `scripts/cleanup.mjs` — protected-forever list (SealRecord/SealLeaf/AnchorTx/EvidenceReceipt/ResearchFinding/AuditEvent) hard-refused; prunable: OpLog>90d(keep 1000), EnergyPlan>180d, EconomySnapshot>180d(keep 100), PendingSignature expired>30d; dry-run default; `--yes` requires verified backup <24h else refuses; policy documented in database.md §retention
+- M7 (dependency audit): `bun audit` + `npm audit` → found next 16.1.1 with 15 advisories (8 high: DoS/middleware-bypass/SSRF/XSS), postcss 4, deepmerge-ts 1, 2 dead deps → **fixed**: next→16.3.4 + eslint-config-next aligned (14 advisories closed), overrides deepmerge-ts ^8.0.0 (prisma db:push re-verified), removed tailwind-merge + class-variance-authority (0 imports) → **bun audit: No vulnerabilities found**; full check suite re-run green after upgrade
+- M8 (deployment): `docs/deployment.md` — env requirements/versions, install/run, env-vars table (hash-only secret policy), mode-transition diagram, forbidden-without-approval list, sandbox blockers documented (build untested in sandbox — not bypassed), secure-cookie note behind HTTPS
+- M9 (UI): new 6th tab "שער-חיים" — access-control panel (login/logout, key input, states), live-gate panel (readyForLive badge, blockers/warnings, 10 checks with pass/warn/fail icons), keyless signer panel (registry×4, counts, create request by network, record txid per row); browser-verified: login→מחובר(cookie), create→awaiting-approval, record→ready+txid, 0 console errors, mobile iPhone 14 clean
+- M10 (final checks): api-check extended 26→**45 assertions** (live-gate contract, auth 401/200 flows, keyless-signer full lifecycle + no-key-material assert, audit read + no-key-leak assert, rate-limit burst → 429s, never-500 sweep); found BUG-007 (bun run does not propagate .env to node child → api-check missed SAOS_ADMIN_KEY; fixed: test script now `bun scripts/api-check.mjs`); final `bun run check`: lint ✅ typecheck ✅ **45/45** ✅ concurrency **8/8** (heights 48..55 contiguous) ✅; DB consistency: 55 seals 1..55 contiguous, roots 55/55 unique, 401 leaves = Σ, 191 receipts (fork[17] disclosed), 53 audit events, 5 signatures
+
+Bugs found this session:
+- BUG-007 `bun run test` (node child) did not inherit .env → api-check auth tests failed. Root cause: bun run does not inject .env into spawned node processes. Fix: test runner switched to bun. Proven 45/45.
+- (Minor, fixed in-flight) cleanup.mjs: self-referential const line (caught on write), cosmetic `(total undefined)` label; api.md stale "9 endpoints" header → 13.
+
+Stage Summary:
+- The system now has its production gate: nothing sensitive happens anonymously; abuse meets 429; going live requires live-gate green + restart double-flag; signing is structurally keyless; backups are verified and restore-proven; dependencies at zero known vulnerabilities
+- API surface: 13 endpoints, status discipline 200-errors-as-data + 401/403/429 security-only exception (D16)
+- Chain state after round: 55 seals (1..55 contiguous), 401 leaves, 191 receipts (fork[17] disclosed), fresh verified backup backup-2026-09-07T14-12-51
+- Remaining open (honest): GitHub Actions CI absent; build unverified outside sandbox (blocked); real-network anchoring requires vault/TRX + owner approval; session revocation is coarse (secret rotation)

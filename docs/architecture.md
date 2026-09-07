@@ -124,6 +124,7 @@ UI (לשונית מגדל-פיקוח, כפתור פעימה)
 | F7 | **רפרנסים היסטוריים חלקיים** (txid ממוסך) | לא ניתן לאמת מלא מקוד v2 בלבד | `historic.ts` מצהיר על provenance חלקי | מודע ומתועד |
 | F8 | **אין מפתחות חתימה בסנדבוקס** | שידור אמיתי בלתי-אפשרי מכאן | `advisory-mode` מוצהר בכל תשובת seal | מכוון |
 | F9 | תהליך מת בזמן כתיבה | — | טרנזקציה מתגלגלת — אין מצב-ביניים; החותם והקבלה נכתבים יחד או לא נכתבים | מטופל מבנית |
+| F10 | rate-limit אינו משותף בין תהליכים | in-memory לתהליך יחיד; איפוס ב-restart | מקובל בשלב זה; פריסה אופקית דורשת limiter משותף |
 
 ## 6. מנגנוני אימות (verification)
 
@@ -151,3 +152,24 @@ UI (לשונית מגדל-פיקוח, כפתור פעימה)
 | **maintenance** | כמו safe + פעולות db:push/גיבוי | כל כתיבה נדחית | `SAOS_MODE=maintenance` |
 
 המצב ניתן לצפייה ב-`/status` (mode, modeDetail, writesEnabled, broadcastCapable) ובתג בפוטר ה-UI. נבדק אנד-טו-אנד: safe → סירוב כתיבה; live ללא אישור → dry-run; live עם אישור → mode:live + broadcast:false. מצב לא-מוכר נופל ל-dry-run.
+## שכבת האבטחה (Task 5)
+
+```
+בקשה ──▶ rate-limit (רך: 429 per-IP per-route, 60s window) ──▶ [נתיב רגיש?]
+                                                              │
+   ┌──────────────────────────────────────────────────────────┘
+   ▼
+auth: cookie חתום (HMAC, HttpOnly, 12h) או Bearer → השוואת sha256 בזמן-קבוע
+   │ fail-closed: SAOS_ADMIN_KEY_HASH חסר ⇒ 403 לכל פעולה רגישה
+   ▼
+AuditEvent (כל ניסיון: allowed/denied, בלי חומר-מפתח)
+   ▼
+הפעולה עצמה (mode-gate עדיין רץ: safe/maintenance דוחים כתיבה)
+```
+
+מודולים: `src/lib/saos/auth.ts` (hash בלבד, session signing, audit) · `rate-limit.ts` (in-memory fixed window) · `signer.ts` (SignRequest/SignResponse, registry, אפס מפתחות) · routes: `/auth`, `/live-gate`, `/signer`, `/audit`.
+
+זרימת חתימה keyless: seal (k) ──▶ POST /signer (יצירת SignRequest: payload+digestToSign) ──▶ חתימה מחוץ למערכת ──▶ PATCH /signer (txid ציבורי בלבד, בלתי-הפיך).
+
+הערה: 401/403/429 מותרים **רק** לשכבת האבטחה — שאר ה-API ממשיך בכלל "שגיאה כנתון HTTP 200".
+
