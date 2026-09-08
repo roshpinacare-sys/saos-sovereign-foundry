@@ -34,3 +34,17 @@ totals: 44260 raw pattern hits → 44211 are hash-shaped hex64 (benign class, se
 
 ## Method
 11 repos × {full-history path-pattern scan (git log --all --name-only), HEAD content scan (code ≤512KB, lockfiles skipped, secret-path files never opened), daemon broadcast map, wallet keys.ts storage-facts} — value-redacted end-to-end.
+
+---
+
+## CORRECTION (Task 22, 2026-09-08) — the "0 broadcast" line above is WRONG
+
+The daemon-logic map in this report (Task 21 run) under-counted: its regex missed
+real broadcast call-sites. Verified at HEAD: he_sell.cjs:134, he_unstake.cjs:103,
+mint_borrow.cjs:118/126/143, yield.cjs:150 all contain broadcast-capable paths, and
+runtime state shows he_unstake ran `dry:false` (09-03) and mint_borrow `mode:live`
+(09-04). Only rebalance102 is planner-only. Additionally: he_sell/he_unstake default
+to LIVE (`DRY = argv.includes('--dry')`, he_sell.cjs:29) — bare execution broadcasts.
+Fix belongs to the steem-owning agent (P0 in NETWORK-MASTER-SUMMARY.md §7.1).
+The pattern-classification methodology (paths/types only) remains valid; the
+broadcast-map counting is what failed. Kept here unedited for the record.
