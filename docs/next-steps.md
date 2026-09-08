@@ -634,6 +634,9 @@ account_update נמדדה ≈14%). מדידה-חיה לכל 11 החיילים:
 ### החלטות
 - `hive-rc-floor`: **needs-resource → decided-custom** (המשאב קיים, המסילה נבנתה והוכחה, נותר פעולת-הרצה אחת על-הרנטיים). `tron-stake`/`vault-restore` נשארים כנים (TRX אבק בלי נתיב; שחזור-חוץ).
 
+### תקרית שנתפסה ותוקנה (Task 27-b)
+במהלך-ההפעלה הראשונה של ה-DEX דלף DATABASE_URL מה-shell (foundry custom.db דרס את .env של ה-DEX — קדימות process.env) וקו-הריליי שלו כתב 2 קבלות-זרות לשרשרת-ה-foundry (23:14:38/23:15:14). נתפס בבדיקת-החובה שלפני-סגירה: אוכסן (docs/evidence/dex-relay-pollution-archive-2026-09-08.json, sha256 34f3a606…), הוסר, והסכימה הוקשתה — EvidenceReceipt.at נעשה REQUIRED כך שכותב-זר נכשל מבנית. verifyChainDag PASS מחדש.
+
 ### פתוח מ-Task 27
 - **הרצה-מסיימת על-הרנטיים** (בעלים/רנטיים): `node agent/he_powerup.cjs --amount ALL` → אחריה ה-UI יראה RC עולה (מדידה חיה ב-.env תעודכן), ושער-המשאבים נסגר מקצה-לקצה.
 - ה-runtime מוחק קבצים שאין-לו (last-writer-wins snapshot) — DAEMONS.md/תיקוני-קוד יישמרו בהיסטוריה וב-clone-טרי; הערוץ-העמיד הוא ה-foundry-repo + הבעלים.

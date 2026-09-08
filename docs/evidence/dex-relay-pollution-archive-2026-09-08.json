@@ -1,0 +1,28 @@
+{
+  "archivedAt": "2026-09-08T23:40:00Z",
+  "incident": "dex-relay-pollution — 2 foreign receipts written into the foundry chain",
+  "rootCause": "saos-dex instance started with inherited shell DATABASE_URL (foundry custom.db) overriding its own .env; the dex relay's reconcile queue (restored 12 anchor records from prior run) wrote 2 batch receipts (fromHeight 18-24, 25-36 — pre-reset dex chain) through its own prisma model (schema WITHOUT `at` column, digest = payload-only convention) into the foundry's EvidenceReceipt (at=NULL, foreign digest convention) — verifyChainDag digest+link errors followed. Caught by the mandatory post-task preflight re-check.",
+  "disposition": "archived verbatim + removed from EvidenceReceipt; foundry schema hardened: EvidenceReceipt.at DateTime? → DateTime (required) so foreign writers structurally fail; dex now runs with explicit isolated DATABASE_URL",
+  "rows": [
+    {
+      "id": "cmttae9eq0007m6d9yvfchssp",
+      "kind": "seal",
+      "digest": "fbec77dd8efa2132fba52e5b1cc28d9a001f910a26d09dd4d737e776998303e0",
+      "prevDigest": null,
+      "at": null,
+      "payload": "{\"at\":1788909278496,\"digest\":\"d7efa1484b434b1cab7d334ce47f9152b43b58ad77adb607ae2b85a902f28659\",\"fromHeight\":18,\"leaves\":7,\"root\":\"62bee750b010028f5de139ac56ed950bf5afe14a53e7d73968f5497c71b3b63a\",\"stateRoot\":\"aa2fd9157548a5ae487335f67e0c36de7d83344969651deea0b655c0d849f60f\",\"toHeight\":24}",
+      "sealId": null,
+      "createdAt": 1788909278499
+    },
+    {
+      "id": "cmttaf174000lm6d93chmznez",
+      "kind": "seal",
+      "digest": "ec7688a278c9b1f436b3f2eb28af63a220c70181c6267eac99e7c2dd498fc5cd",
+      "prevDigest": "fbec77dd8efa2132fba52e5b1cc28d9a001f910a26d09dd4d737e776998303e0",
+      "at": null,
+      "payload": "{\"at\":1788909314512,\"digest\":\"a555ae5bbc9802ccd814dfbc5529bcae4274fcd49afed8f384f875a3f08a2eb7\",\"fromHeight\":25,\"leaves\":12,\"root\":\"40f6b3ceddb332f111cabde0f9f08d971de4efead0e05e35e4a92631f287aaae\",\"stateRoot\":\"462e16b2486743c2459fc1d9c75b5bd8c0037601f57af281f284b5abc460f628\",\"toHeight\":36}",
+      "sealId": null,
+      "createdAt": 1788909314513
+    }
+  ]
+}

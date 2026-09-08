@@ -100,7 +100,7 @@ model EvidenceReceipt {
   kind       String // seal | selftest | verify-pack | energy-plan | economy-sim | verify-chain
   digest     String      @unique
   prevDigest String?
-  at         DateTime? // forge time — part of the digest; legacy rows backfilled digest-proven
+  at         DateTime  // forge time — part of the digest; REQUIRED since Task 27 (foreign writers structurally fail)
   payload    String
   seal       SealRecord? @relation(fields: [sealId], references: [id])
   sealId     String?

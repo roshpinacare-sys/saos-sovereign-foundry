@@ -914,3 +914,15 @@ Work Log:
 
 Stage Summary:
 - The owner's "money" was found (9.682 HIVE), the DEX rail was BUILT and USED for real on-chain conversions (2 landed sells + 1 accepted withdraw through DEX→signer→chain with authority+RC gates), the runtime deadlock that kept the cure unreachable is fixed and pushed (ade0b5e), and hive-rc-floor is closed as decided-custom with one honest remaining command on the live runtime: `node agent/he_powerup.cjs --amount ALL` → max_rc 25.6G→~40G. The envelope is re-understood as the fleet's HIVE key set (9/9 verified) — the foundry is now HIVE-capable for the fleet. Zero secrets printed; fail-closed gates proven live; foundry push follows this entry.
+---
+Task ID: 27-b (continuation — post-push incident caught by mandatory re-check)
+Agent: Z.ai Code (main coordinator)
+Task: Preflight re-check before closing — found chain-intact FAIL (digestErrors=2, linkErrors=1), root-caused, archived, hardened.
+
+Work Log:
+- ROOT CAUSE (self-inflicted, caught, fixed): the first saos-dex instance I started at 23:12 inherited the shell's DATABASE_URL (foundry custom.db) which overrides the dex .env (process.env precedence); its relay reconcile queue ("restored 12 anchor records from prior run") wrote 2 foreign batch receipts (payload {at: millis, digest, fromHeight 18-24/25-36, leaves, root, stateRoot, toHeight} — the dex's own digest convention, at column NULL) into the foundry's EvidenceReceipt at 23:14:38/23:15:14. Timestamps proven via epoch math (my first 22:34 reading was an arithmetic error).
+- DISPOSITION: 2 rows archived verbatim (docs/evidence/dex-relay-pollution-archive-2026-09-08.json, sha256 34f3a606…, rows+root-cause inside) then removed — same archival discipline as Task 26 (never silent deletes). Chain back to 1 legit genesis-era receipt → verifyChainDag PASS (preflight re-run: chain-intact PASS).
+- HARDENING: prisma schema EvidenceReceipt.at DateTime? → DateTime (required) — any foreign writer without `at` now fails structurally (schema as guardian); dex now runs with explicit DATABASE_URL override and its db is isolated (saos-dex/db/dex.db).
+
+Stage Summary:
+- The foundry chain is clean and the remaining preflight state is the honest one: 1 fail = network-resources (HIVE RC 0.69% < 8% · TRON energy=0 — pending the runtime power-up runbook), 1 warn = security-open-items (deployment-phase notes). Incident documented with archive + structural prevention. All evidence in-repo.
