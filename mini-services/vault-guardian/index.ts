@@ -40,9 +40,9 @@ const WATCH = [
   { repo: "anchor-baseline", branch: "main", forbiddenSuffix: [".enc"] },
 ];
 
-let lastRun = null;
+let lastRun: { at: string; runCount: number } | null = null;
 let runCount = 0;
-const actions = [];
+const actions: { at: string; repo: string; hits: number; result: string }[] = [];
 
 function log(level, msg) {
   const line = `${new Date().toISOString()} [${level}] ${msg}`;
@@ -177,7 +177,7 @@ async function cycle() {
 
 Bun.serve({
   port: PORT,
-  fetch(req) {
+  fetch(req: Request) {
     const u = new URL(req.url);
     if (u.pathname === "/status") {
       return Response.json({ ok: true, lastRun, runCount, actions: actions.slice(-20), watch: WATCH.map((w) => w.repo) });
