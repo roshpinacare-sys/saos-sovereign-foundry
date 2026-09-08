@@ -1,30 +1,21 @@
-# בריף ראש-המטה — 2026-09-08T23:23:24.748Z
+# בריף ראש-המטה — 2026-09-08T23:30:19.737Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: ef357cf
+HEAD: d654b12
+- d654b12 fix(27-b): chain pollution archived + schema hardened — EvidenceReceipt.at required
 - ef357cf feat(27): HIVE conversion rail — signer v2 (authority+RC gates), dex convert route, deadlock fix evidence, decisions+docs
 - 014cb18 ops(task-26): chief-of-staff closing briefing
 - 3bd1f1c ops(task-26): 'connect and execute' — system CONNECTED live: external signer service (:3033, supervisor-watched, envelope-in-memory, txid-only contract) · mode=live broadcastCapable · blockers 5→1 (verified backup, seal h2, chain REGENESSED with legacy-receipt archival, live-measured HIVE RC 0%/TRON energy=0 kept honest) · 'מחובר' rendered via dev-managed audited session · REAL anchor attempt hit honest root finding: envelope keys NOT the on-chain authorities (0/99 backups match; live fleet anchors with its own keys — partners-status.md) · remaining unblock = one fleet_vault --seal sync on live runtime
 - 331f10a ops(task-25): chief-of-staff closing briefing — ingests full Task 25 state (dex-auth closed, history rewritten, guardian blind-spot closed, vault verified, live gates)
-- 6a1942c ops(task-25): browser verification caught+fixed real incident (sandbox wiped db/custom.db tables → db:push resync + admin key re-provisioned 600 + hash-in-env, 9/9 decisions re-recorded from docs) — home route browser-proven: 8 tabs render, 0 console errors, decisions screen shows restored balance, footer mt-auto natural-push verified
-guardian: ok=true runs=90 devMode=true tickAlive=true token=true
-briefings אחרונים: BRIEF-2026-09-08T21-24-19.md, BRIEF-2026-09-08T21-53-30.md, BRIEF-2026-09-08T22-21-57.md, BRIEF-2026-09-08T22-23-30.md, BRIEF-2026-09-08T22-53-30.md
+guardian: ok=true runs=94 devMode=true tickAlive=true token=true
+briefings אחרונים: BRIEF-2026-09-08T21-53-30.md, BRIEF-2026-09-08T22-21-57.md, BRIEF-2026-09-08T22-23-30.md, BRIEF-2026-09-08T22-53-30.md, BRIEF-2026-09-08T23-23-24.md
 ── זנב next-steps.md ──
 …
-t.cjs --seal` על-הרנטיים-החי → ה-guardian יגבה → החותם יאמת-התאמה → עוגן STEEM חינם-RC אמיתי.
-
-### הצעד הבא היחיד שחוסם עוגן-אמיתי
-סנכרון-המעטפת מהרנטיים-החי (צעד אחד, מנגנון-מוכח) — ואז: backup → seal → sign → txid → recorded, והעוגן הראשון מוקלט.
-
----
-
-## Task 27 (2026-09-08) — "יש כסף ומערכת dex שתמיר": השגת-HIVE וסגירת פינת-המשאבים
-
-**הנחיית-בעלים**: "יש לך כסף ומערכת dex שצריכה לדעת להמיר מה שצריך תשתמש בזה תעשה מה שצריך תשיג hive ותעשה את זה וסגור את הפינה הזו דחוף לריפו בסיום".
+ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
 
 ### המשאב שנמצא (כנות-מלאה)
 - **9.682 HIVE נזילים על headcorner** (שרשרת HIVE) — הכסף האמיתי היחיד בצי; כל השאר אבק (טוקני-HE זעירים, TRX ~$0.5 ללא נתיב-המרה ללא CEX חיצוני — נשארים בסביבה שלנו).
@@ -42,24 +33,36 @@ t.cjs --seal` על-הרנטיים-החי → ה-guardian יגבה → החותם
 ### החלטות
 - `hive-rc-floor`: **needs-resource → decided-custom** (המשאב קיים, המסילה נבנתה והוכחה, נותר פעולת-הרצה אחת על-הרנטיים). `tron-stake`/`vault-restore` נשארים כנים (TRX אבק בלי נתיב; שחזור-חוץ).
 
+### תקרית שנתפסה ותוקנה (Task 27-b)
+במהלך-ההפעלה הראשונה של ה-DEX דלף DATABASE_URL מה-shell (foundry custom.db דרס את .env של ה-DEX — קדימות process.env) וקו-הריליי שלו כתב 2 קבלות-זרות לשרשרת-ה-foundry (23:14:38/23:15:14). נתפס בבדיקת-החובה שלפני-סגירה: אוכסן (docs/evidence/dex-relay-pollution-archive-2026-09-08.json, sha256 34f3a606…), הוסר, והסכימה הוקשתה — EvidenceReceipt.at נעשה REQUIRED כך שכותב-זר נכשל מבנית. verifyChainDag PASS מחדש.
+
 ### פתוח מ-Task 27
 - **הרצה-מסיימת על-הרנטיים** (בעלים/רנטיים): `node agent/he_powerup.cjs --amount ALL` → אחריה ה-UI יראה RC עולה (מדידה חיה ב-.env תעודכן), ושער-המשאבים נסגר מקצה-לקצה.
-- ה-runtime מוחק קבצים שאין-לו (last-writer-wins snapshot) — DAEMONS.md/תיקוני-קוד יישמרו בהיסטוריה וב-clone-טרי; הערוץ-העמיד ה
+- ה-runtime מוחק קבצים שאין-לו (last-writer-wins snapshot) — DAEMONS.md/תיקוני-קוד יישמרו בהיסטוריה וב-clone-טרי; הערוץ-העמיד הוא ה-foundry-repo + הבעלים.
+- lsa withdraw (0.00248 SWAP.HIVE) ממתין ל-RC (~3.5h) — יושלם דרך אותה-מסילה.
+
+── זנב owner-decisions.md ──
+…
+e-push של שכתוב-היסטוריה (היוצא-מן-הכלל השני לכלל AGENTS.md, לצד guardian-פרודקשן): רק עם גיבוי-bundle + בדיקת-remo
 ```
 </details>
 ## מצב רשת
-הרשת מופעלת במצב חי עם חותם חיצוני (external-signer v2) ו-DEX פעיל. נמצאו 9.682 HIVE נזילים על headcorner עם RC מוגבל (0.003%) מהמערכת. המערכת פועלת עם חסימה אחרונה של סנכרון-המעטפת מהרנטיים-החי.
+הרשת פועלת במצב חי (live) עם חתימה חיצונית מאובטחת, מערכת DEX פעילה, ומכשול RC ב-HIVE שתוקן. קיימים 9.682 HIVE נזילים ומפתחות HIVE מורשים. המערכת מוגנת באמצעות EvidenceReceipt וניטור guardian.
 
 ## סיכונים / דברים מדממים
-הסיכון העיקרי הוא המחסור ב-RC ב-HIVE (פעולה אחת כל ~25 דקות במקום כל 36 שניות), מה שמאט משמעותית את קצב הביצועים. חסימה זמנית של סנכרון-המעטפת מהרנטיים-החי מונעת את הקלטת העוגן הראשון.
+ה-RC של HIVE נמוך מאוד (0.003%) מה שמגביל קצב עיבוד לכל ~25 דקה. הכספים ב-HIVE נמצאים בסיכון עד לפעולת ה-powerup המלאה. חסימה אחרונה לעוגן STEEM היא סנכרון fleet_vault --seal.
 
 ## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
-1. [רנטיים-החי] הפעלת `node agent/he_powerup.cjs --amount ALL` על הרנטיים-החי כדי להגדיל את ה-RC ולאפשר ביצוע מהיר יותר של פעולות HIVE.
-2. [רנטיים-החי] הפעלת `t.cjs --seal` על הרנטיים-החי כדי לסנכרן את המעטפת ולאפשר קלטת עוגן STEEM אמיתי.
-3. [סוכן-DEX] בדיקה ואימות של מצב ה-DEX לאחר פעולות ההמרה האחרונות ווידוא זמינות הנתיבים להמרה.
+1. [רנטיים/ראש-המטה] הפעל `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי + אימת עלייה ב-RC לאחר מכן
+2. [רנטיים/מערכת] צפה בביצוע ה-withdraw של lsa (0.00248 SWAP.HIVE) ואימת הצלחה בגשר-hivepegged
+3. [רנטיים/מערכת] הפעל `fleet_vault --seal` על הרנטיים החי כדי לסנכרן את המעטפת עם השרשרת
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-אישור להמשך הפעילות במסגרת Task 27 לסגירת פינת-המשאבים עם המשאבים הקיימים (9.682 HIVE וה-DEX הפעיל). אישור להמשך הפעילות עם הגבלת ה-RC הקיימת ב-HIVE עד להגדלתו על ידי הפעולה המתוכננת.
+המערכת מוכנה לפעולה. הקצב RC של HIVE ישתפר משמעותית לאחר פעולת ה-powerup. ה-DEX פעיל ומאובטח. ניתן להמשיך בפעולות המתוכננות כמתואר בתוכנית הבאה.
 
-## נשאר לבעלים בלבד
-הפעלת `t.cjs --seal` על הרנטיים-החי ואישור סופי לקלטת העוגן STEEM האמיתי לאחר סנכרון המעטפת.
+## נשאר לבעלים בלבד (או "כלום")
+- החלטות על שינויי ארכיטקטורה עליונים
+- אישור סופי לשחזור היסטוריה עם גיבוי
+- הפעלת מצב פרודקשן מלא (HE_LIVE=1)
+- בדיקת ואישור סופי של מעטפות המפתחות הריבוניות
+- החלטות על רוטציה של טוקנים אם יידרש
