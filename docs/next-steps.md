@@ -534,3 +534,22 @@ account_update נמדדה ≈14%). מדידה-חיה לכל 11 החיילים:
 ### תלוי-בעלים שנותר
 - החלטות 1-3 לעיל (ניקוי-היסטוריה של fleet_keys / בדיקת mnemonic.ts / אישור fixtures).
 - רוטציית-טוקן לפי שיקול-הבעלים (כלל-עומד: הבעלים מטפל במפתחות).
+
+---
+
+## Task 23 (2026-09-08) — סריקת שרשרת-אספקה נגד קוד-זר/חבלן
+
+**מנדט-בעלים**: "תמשיך יותר עמוק... רק צריך להיזהר שלא ייכנס קוד זר של חבלן מהרשת לרשת".
+
+**פסק-דין**: אפס קוד-זר בכל 10 הריפואים — 0 typosquats (1,876/1,876 tarballs = npmjs + sha512), 0 lifecycle-hooks, 0 eval/obfuscation, 0 endpoints זרים, git-plumbing נקי. דוח מלא: **`docs/task-23-supply-chain.md`**.
+
+**חידודים מעבר ל-Task 21/22**:
+1. **mnemonic.ts מסווג**: חומר-מפתח בצורת-קוד — 11 מילים מפוזרות בשורות-קוד (לא הערות), `const phrase` מורכב בזמן-ריצה (:31), אפס placeholder/dummy, קומיט היום `3653ce5`. **נקודה-עיוורת ב-guardian** (blacklist מבוסס-נתיב לא תופס `scripts/`) + **אין גיבוי ב-vault**. החלטת-בעלים בלבד; מומלץ להוסיף ל-blacklist ה-guardian כצפייה.
+2. **P0 הוכחו קודית**: DEX = 9 POST ללא auth (מטריצה מלאה בדוח) + bind לכל-הממשקים; steem `he_sell.cjs:41`/`he_unstake.cjs:39` live-default (broadcast `:134`).
+3. **תוקן**: טוקן-GitHub הוסר מ-`.git/config` של כל 10 ה-clones (http.extraHeader מ-Task 21) — 10/10 scrub, 0 נותרו, אפס חשיפת-ערך.
+4. **exec route (steem)**: 0 auth אך whitelist-gated (16, כולל on-chain) + cooldown; he_* לא ברשימה.
+5. Sdk ריק — ייסרק ב-push הראשון.
+
+**החלטות-בעלים שנוספו/עודכנו**: mnemonic.ts (קריאה אישית → vault+stub+rewrite, אין גיבוי חלופי); כתיבת-היסטוריה מתואמת אחת (fleet_keys-steem + F-1-platform); ZIPs ב-Project-files; רוטציית-טוקן.
+
+**P0 לסוכנים הבעלים**: steem→היפוך ל-`--live` opt-in; dex→middleware auth + `-H 127.0.0.1` + רגנרציית audit-package; platform→blacklist-צפייה ב-guardian (בלי לגעת בקובץ).
