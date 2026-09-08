@@ -59,12 +59,12 @@
 | push-approval | governance | medium | now | **decided-default** — הבעלים אישר במפורש ("שידחוף דחוף"); f012014 נדחף לפי הפרוטוקול ואומת מרחוק |
 | github-actions-ci | release | medium | now | **decided-custom** (Task 13) — ה-workflow קיים בפועל וריצה #4 ירוקה מקצה-לקצה (4e853a9: lint+typecheck+build+api-check+concurrency); סטטוס ה-CI נשלף חי ב-/api/saos/live-proof |
 | vault-restore | resources | critical | before-anchor | **needs-resource** — נדרש שחזור כספת מחוץ למערכת; לא ניתן לביצוע אוטונומי |
-| hive-rc-floor | resources | critical | before-anchor | **needs-resource** — RC נמוך מהסף; נדרש power-up/delegate או המתנה לרגן |
+| hive-rc-floor | resources | critical | before-anchor | **decided-custom** (Task 27) — המשאב נמצא (9.682 HIVE על headcorner); מסילת-המרה נבנתה והוכחה חי (signer v2 + שער-אימות-סמכות + DEX convert); deadlock של הרנטיים תוקן ונדחף (ade0b5e); נותרת הרצה-אחת: `he_powerup.cjs --amount ALL` על-הרנטיים-החי |
 | tron-stake | resources | critical | before-anchor | **needs-resource** — אנרגיה=0; נדרש מימון TRX או המשך tronbridge |
 | build-verification | release | medium | before-live | **deferred** — חסום-סביבה (מדיניות dev-server בלבד); ה-build יאומת בריצות ה-CI |
 | live-mode-approval | governance | critical | before-live | **decided-custom** (Task 13) — הבעלים אישר במפורש בצ'אט: להפעיל live במצב הבטוח ביותר — live **ללא שידור אמיתי**. בוצע (דגלים כפולים); broadcastCapable נשאר false עד חיבור חותם חיצוני; כל עוגן אמיתי עדיין דורש אישור פר-עוגן + משאב + חתימה חיצונית |
 
-מאזן (עודכן Task 13, 2026-09-08): **9 מתוך 9 מוקלטות — 0 פתוחות, 0 קריטיות-פתוחות** (5 decided, 3 needs-resource, 1 deferred). שתי הסגירות החדשות (live-mode-approval, github-actions-ci) מבוססות על הנחיית-הבעלים ב-Task 13 ועל מצב בפועל שנמדד — לא סגירות-פיקטיביות. כל העדכונים עם auditTrail ב-API.
+מאזן (עודכן Task 27, 2026-09-08): **9 מתוך 9 מוקלטות — 0 פתוחות** (7 decided כולל hive-rc-floor, 2 needs-resource: tron-stake/vault-restore — כנים: אבק-TRX בלי נתיב-המרה בסביבה שלנו; שחזור-חוץ). שתי הסגירות החדשות (live-mode-approval, github-actions-ci) מבוססות על הנחיית-הבעלים ב-Task 13 ועל מצב בפועל שנמדד — לא סגירות-פיקטיביות. כל העדכונים עם auditTrail ב-API.
 
 > הסטטוס החי הוא תמיד `GET /api/saos/decisions` — הטבלה היא תמונת-מצב לתיעוד בלבד.
 

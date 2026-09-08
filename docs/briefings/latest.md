@@ -1,18 +1,18 @@
-# בריף ראש-המטה — 2026-09-08T22:21:57.137Z
+# בריף ראש-המטה — 2026-09-08T22:53:30.265Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: 3bd1f1c
+HEAD: 014cb18
+- 014cb18 ops(task-26): chief-of-staff closing briefing
 - 3bd1f1c ops(task-26): 'connect and execute' — system CONNECTED live: external signer service (:3033, supervisor-watched, envelope-in-memory, txid-only contract) · mode=live broadcastCapable · blockers 5→1 (verified backup, seal h2, chain REGENESSED with legacy-receipt archival, live-measured HIVE RC 0%/TRON energy=0 kept honest) · 'מחובר' rendered via dev-managed audited session · REAL anchor attempt hit honest root finding: envelope keys NOT the on-chain authorities (0/99 backups match; live fleet anchors with its own keys — partners-status.md) · remaining unblock = one fleet_vault --seal sync on live runtime
 - 331f10a ops(task-25): chief-of-staff closing briefing — ingests full Task 25 state (dex-auth closed, history rewritten, guardian blind-spot closed, vault verified, live gates)
 - 6a1942c ops(task-25): browser verification caught+fixed real incident (sandbox wiped db/custom.db tables → db:push resync + admin key re-provisioned 600 + hash-in-env, 9/9 decisions re-recorded from docs) — home route browser-proven: 8 tabs render, 0 console errors, decisions screen shows restored balance, footer mt-auto natural-push verified
 - e97cdcf ops(task-25): autonomous PM round executed end-to-end (owner away, delegated authority) — DEX P0 closed (9/9 mutating routes operator-auth fail-closed + 127.0.0.1 bind, live-verified, pushed 7b79f3e) · platform history REWRITTEN clean (token blob+.env+ledger purged, 41→36 commits, a92b979 remote-verified, bundle-backed) · guardian blind-spot closed (scripts/ mnemonic watch + head-sha dedupe, live-proven) + vault envelope GCM-verified (7 sealed key files incl. mnemonic — 'no backup' concern retired) · steem --live gate pushed (he_sell/he_unstake + HE_LIVE_CONFIRM contract, 1e7eff4; mint_borrow broadcast correction → new P1) · zip-resources wave-2 (release-truth-audit 6/6 PASS + SESSION-HANDOFF + acceptance-gates) · zero secrets printed anywhere
-- 204b086 ops(task-24): chief-of-staff briefing #2 — state-aware post-mandate (HEAD 9843c25, guardian DEV_MODE, AGENTS.md v1.0 registered; remaining P0s: dex-auth, exec-route) — management loop proven end-to-end: state→fingerprint→LLM→briefing→repo
-guardian: ok=true runs=47 devMode=true tickAlive=true token=true
-briefings אחרונים: BRIEF-2026-09-08T20-30-44.md, BRIEF-2026-09-08T20-53-25.md, BRIEF-2026-09-08T21-23-27.md, BRIEF-2026-09-08T21-24-19.md, BRIEF-2026-09-08T21-53-30.md
+guardian: ok=true runs=69 devMode=true tickAlive=true token=true
+briefings אחרונים: BRIEF-2026-09-08T21-23-27.md, BRIEF-2026-09-08T21-24-19.md, BRIEF-2026-09-08T21-53-30.md, BRIEF-2026-09-08T22-21-57.md, BRIEF-2026-09-08T22-23-30.md
 ── זנב next-steps.md ──
 …
 nemonic.ts` + `*.enc`; דה-דופ לפי head-sha מבטל רעש-גיבוי (הוכחה קריפטוגרפית בקוד). אומת חי: ALERT+גיבוי על היט ראשון, `deduped` במחזור הבא. **ואימות-כספת**: המעטפת נפתחה (GCM OK, 17:46Z v21 RE-ARM) — 7 קבצי-מפתח חתומים כולל mnemonic → דאגת "אין-גיבוי" מ-Task 23 פרשה סופית.
@@ -34,26 +34,24 @@ nemonic.ts` + `*.enc`; דה-דופ לפי head-sha מבטל רעש-גיבוי (�
 
 ### מה השתנה בפועל (הוכחות)
 1. **מחובר**: חותם-חיצוני חדש `mini-services/external-signer` (:3033, פיקוח-מפקח, טוקן-timing-safe) — מחזיק את המעטפת החתומה בזיכרון בלבד; ה-foundry נשאר בלי-מפתחות (הארכיטקטורה-הזהובה שלמה). מצב: live + broadcastCapable=true; מחוון-ה-UI מציג **"מחובר"** (auto-session מנוהל לשלב-פיתוח — `SAOS_DEV_AUTOSESSION=1`, כבוי-אוטומטית בפרודקשן).
-2. **חסימות 5 → 1**: גיבוי-מאומת טרי ✓ (`bun run backup`, integrity ok) · חותמה height=2 ✓ · **שרשרת-קבלות תוקנה** — 2 קבלות-מורשת עם digest לא-מאומת (עידן-קודם, יתומות אחרי-מחיקת ה-DB) אוכסנו ב-`docs/evidence/legacy-chain-archive-2026-09-08.json`, השרשרת נולדה-מחדש נקייה (verifyChainDag PASS) · מצב live ע
+2. **חסימות 5 → 1**: גיבוי-מאומת טרי ✓ (`bun run backup`, integrity ok) · חותמה height=2 ✓ · **שרשרת-קבלות תוקנה** — 2 קבלות-מורשת עם digest לא-מאומת (עידן-קודם, יתומות אחרי-מחיקת ה-DB) אוכסנו ב-`docs/evidence/legacy-chain-archive-2026-09-08.json`, השרשרת נולדה-מחדש נקייה (verifyChainDag PASS) · מצב live עם 3 דגלים מפורשים ✓.
+3. **הנותרת (1)**: משאבי-רשת — HIVE RC חי 0% (< 8%) + TRON energy=0 חי (מדידה 22:05Z; יתרה מרבית 17.6 TRX) — כנה, דורשת משאב כלכלי/זמן-רגן (לא ניתן לפתרון תוכנה).
+4. **ETH/
 ```
 </details>
 ## מצב רשת
-הרשת מחוברת חיה עם חותם חיצוני פעיל (:3033), מצב broadcastCapable, והשרשרת רגנרטיה נקייה. חסימות צומצמו מ-5 ל-1, כאשר הנותרת היא משאבי רשת (HIVE RC 0%, TRON energy=0). המעטפה החתומה אינה מוסמכת על השרשרת החיה.
+הרשת מחוברת חיה עם חותם חיצוני (:3033), שרשרת נולדה-מחדש נקייה (5 חסימות הוסרו ל-1), והמעטפה אינה מוסמכת על-השרשרת. הצי חי (11/11) אך עוגן STEEM אמיתי חסום.
 
 ## סיכונים / דברים מדממים
-הסיכון הקריטי הוא אי-התאמה בין המעטפה החתומה לסמכויות על השרשרת החיה (0/99 גיבויים תואמים), מה שמונע ביצוע עוגן STEEM אמיתי. כמו כן, מצב משאבי הרשת (HIVE RC 0%, TRON energy=0) דורש תשומת לב כלכלית/זמן-רגן.
+הסיכון הקריטי הוא שהמעטפה אינה מוסמכת על-השרשרת (0/99 מעטפות-גיבוי תואמות), מה שמונע עוגן STEEM אמיתי. כמו כן, קיים מחסור במשאבי רשת (HIVE RC 0%, TRON energy=0) שדורש פתרון כלכלי/זמן.
 
 ## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
-1. [סוכן] הפעלת `fleet_vault --seal` על סביבת הרנטיים החיים כדי לסנכרן את המעטפה עם השרשרת + קריטריון-אימת: הצי (fleet) מדווח על מעטפה מסונכרנת ומאומתת (מספר סידורי עדכני).
-2. [סוכן] הפעלת `backup` מהסביבה המסונכרנת כדי ליצור גיבוי מאומת + קריטריון-אימת: דוח גיבוי מראה integrity ok ומכיל את המעטפה המעודכנת.
-3. [סוכן] ביצוע עוגן STEEM אמיתי דרך החותם המסונכרן + קריטריון-אימת: קבלת txid מוצלח מהשרשרת ורישום העוגן ב-docs/evidence/.
+1. [סוכן] בצע `fleet_vault --seal` על הרנטיים-החי + הפעל `guardian backup` → קריטריון: ה-guardian מסיים בהצלחה עם גיבוי חדש.
+2. [סוכן] השלם את הסנכרון-המעטפה והפעל `external-signer confirm-live` → קריטריון: החותם מציג live=true ומאמת התאמה למעטפה.
+3. [סוכן] בצע `signRequest` עבור עוגן STEEM ושלח את ה-transaction → קריטריון: ה-transaction מוקלט בשרשרת עם txid מאומת.
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-1. הפעלת מנגנון ה-monitoring של ה-guardian כדי לוודא שהסנכרון בין המעטפה לשרשרת נשמר.
-2. ניהול סדר העדיפויות של פתרון משאבי הרשת (HIVE RC ו-TRON energy) על ידי תכנון תקופת רגן מתוכננת.
-3. קביעת סדר הפעולות להרחבת הגילוי של שער ה--live לכ-14 הדיימונים הנוספים (P1).
+אישור הפעלת הסנכרון-המעטפה והעוגן הראשון. ניהול המעבר ממצב פיתוח למצב פרודקשן עם הסרת `SAOS_DEV_AUTOSESSION=1`. הקצאת משאבי רשת מינימליים להשלמת העוגן הראשון.
 
 ## נשאר לבעלים בלבד (או "כלום")
-- החלטה על הזרמת משאבים כלכליים לשיקום מצב משאבי הרשת (HIVE RC ו-TRON energy).
-- החלטה סופית על רוטציית טוקן (token rotation), כאשר ההיסטוריה נקייה והמערכת מוכנה.
-- אישור סופי להטמעת שער ה--live על כל הדיימונים הנוספים לאחר ביצוע P1.
+החלטה על רוטציית טוקן (security, high) - כל ההיסטוריות נקיות והבעלים יכול לרוטט בנחת בחזרתו.

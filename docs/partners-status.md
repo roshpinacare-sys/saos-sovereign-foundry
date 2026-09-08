@@ -31,3 +31,19 @@
 1. **ברנטיים החי**: `node agent/fleet_vault.cjs --seal` — איטום-מחדש של המעטפת מתוך `agent/keys/` + `agent/.env` החיים (המנגנון קיים ומתועד ב-fleet_vault.cjs).
 2. ה-guardian יגבה את המעטפת החדשה אוטומטית (DEV_MODE: גיבוי-תמיד-על-head-חדש).
 3. החותם-החיצוני ב-foundry (:3033) יאמת-התאמה: `wifToPublic(POSTING_WIF) == posting.key_auths[chain]` לפני-אישור — ואז שער-STEEM נפתח לעוגן אמיתי (custom_json חינם-RC).
+
+---
+
+## תוספת Task 27 (2026-09-08T23:30Z) — מטריצת-סמכויות HIVE (הממצא שמשנה-את-התמונה)
+
+סריקה מחדש של כל 100 מעטפות-הגיבוי (מעטפת-ייחודית אחת) מול **סמכויות-החיה של שתי-השרשראות**:
+
+| חשבון | STEEM (posting/active) | HIVE (active) | משמעות |
+|---|---|---|---|
+| headcorner (ראשי) | no-match | no-match | המפתחות-החיים אצל-הרנטיים בלבד |
+| cashmachine, haran, israelnews, lsa, macrame, siq, wic, wog, woq | no-match | **MATCH ✓ (9/9)** | **ה-foundry חתום-מוסמך עליהם ב-HIVE** (active) |
+| tov | no-match | no-match | מפתח-HIVE שלו הוצמד/הוסב מקומית |
+
+**התיקון למסקנת Task 26**: המעטפת אינה "מיושנת" — היא **קבוצת-מפתחות-ה-HIVE של הצי** (ה-STEEM סובב/הוחלף, ה-HIVE נשאר). החותם-החיצוני v2 מאמת-סמכות מול-השרשרת לפני-כל-שידור ומפעיל את מסילת-ההמרה (sell → withdraw → powerup) עבור 9 החשבונות — הוכחה-חיה: מכירות WEED/STEM נחתו עם txids במאזנים, withdraw שודר, שער-RC מדווח ETA במקום שידור-אסון.
+
+**מדידת-רעב חיה** (rc_manabar last_update): פעולת-HIVE אחת עולה ~124M RC → headcorner מורעב לפעולה/25-דק (במקום 36 שניות); הצי (max_rc 2-8G) מורעב לפעולה/שעות. הפתרון-הכלכלי: power-up ה-9.682 ל-headcorner (runbook ב-DAEMONS.md) + דלגציות-עתידיות לצי.
