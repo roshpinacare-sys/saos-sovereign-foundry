@@ -10,6 +10,7 @@
     "test": "bun scripts/api-check.mjs",
     "verify": "bun scripts/concurrency-check.mjs",
     "check": "npm run lint && npm run typecheck && npm run test && npm run verify",
+    "release-truth-audit": "bun scripts/release-truth-audit.mjs",
     "build": "next build",
     "backup": "bun scripts/backup.mjs",
     "restore": "bun scripts/restore.mjs",

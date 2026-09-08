@@ -778,3 +778,90 @@ Work Log:
 
 Stage Summary:
 - The owner's dependency is structurally broken: chief-of-staff now watches the network every 30 minutes and publishes a Hebrew management briefing to the repo (the inter-agent channel), guardian protects keys WITHOUT fighting the owner's keys-access directive (dev-mode, backup-always), and AGENTS.md v1.0 codifies how every future agent session must work (evidence-or-silence, never-clobber, bounded scope, builder/verifier). mnemonic.ts mystery fully resolved as SAFE (self-correction on record). Zero secrets printed/stored/pushed; all changes lint-pending, committed, pushed with never-clobber.
+---
+Task ID: 25-e
+Agent: Z.ai Code (subagent 25-e, zip-resources embedding — second wave)
+Task: Adapt ZIP proven material into the foundry (owner-decision zip-resources): release-truth-audit script (tfa-evolution-studio self-audit pattern), SESSION-HANDOFF template (ecos NEXT_SESSION_PROMPT pattern), acceptance-gates doc (TITAI 14_ACCEPTANCE_GATES) — plus package.json script entry. Saboteur rule held: ZIP material read statically only, zero extraction-of-whole-archive, zero execution of extracted code.
+
+Work Log:
+- Mined 3 ZIPs via `unzip -l` listing-grep only: tfa-evolution-studio-validated (2).zip → tasks/scripts/self-audit.mjs (5,764B); ecos_v568_canonical.zip → NEXT_SESSION_PROMPT_V526.md (5,406B) + NEXT_SESSION_PROMPT_V568.md (1,984B, latest); TITAI_v18 (3).zip → docs/canonical/14_ACCEPTANCE_GATES.md (1,940B). Extracted ONLY these 4 files to /tmp/work-25-e/extract/ (never whole archives); read statically; nothing executed.
+- Wrote scripts/release-truth-audit.mjs — zero-dep Node/Bun (node:child_process/fs/path only), fresh rewrite of the studio self-audit CLI pattern (same DNA: exit 1 on release-truth violation, evidence per finding). 6 checks: (1) bun run lint, (2) bunx tsc --noEmit, (3) git status --porcelain secret-shaped uncommitted paths (.env*, *.enc, *.key, *token* — paths only, never values, per AGENTS.md כללי-אבטחה), (4) docs/briefings/latest.md exists+<24h, (5) worklog.md last entry opens with Task ID header, (6) AGENTS.md exists. Hebrew PASS/FAIL table with file:line evidence hints + honest fail paths (spawn errors, timeouts, "מה לא אומת" discipline in fail details).
+- LIVE RUN (evidence): 6/6 PASS, exit 0 — lint exit=0; tsc exit=0; "0 בצורת-סוד; 6 שינויים רגילים לא-מחויבים (מידע בלבד)"; briefing age 0.0h (chief-of-staff fresh BRIEF-2026-09-08T20-53-25 — 30min cycle observed live); worklog.md:765 "Task ID: 24"; AGENTS.md 4.9KB. No findings papered over — all green for real.
+- package.json: added "release-truth-audit": "bun scripts/release-truth-audit.mjs" (line 13).
+- Wrote docs/SESSION-HANDOFF.md — canonical fill-in handoff template from ecos pattern: Pre-flight with expected outputs (exit-code truth), state snapshot (HEAD/services/briefing/audit score), SAFE-verified vs FRAGILE-not-verified sections (ecos honesty rule "חובה מה לא אומת" preserved), open-threads table, recommended-next-single-target, never-clobber rules (worklog append-only, fetch-before-push, partner files need coordination — ecos "זה טסט שותף אחר" rule), first-3-actions, iron-rules reference. Adapted to our stack: AGENTS.md truth order, guardian/chief-of-staff ports, release-truth-audit as pre-flight gate.
+- Wrote docs/acceptance-gates.md — TITAI gates mapped onto AGENTS.md 7-step loop: pre-gate (bounded scope) + gate table implemented→verified→documented→pushed, each with mandatory criteria, required-evidence column, fail-action column (builder/verifier separation, never-clobber, אפס-סודות). TITAI cross-cutting domains (supply chain/durable execution/data/human oversight) adapted as per-task-type checks incl. owner-decisions queue as human-oversight channel.
+- Lint: `bun run lint` standalone = exit 0. Honest note: eslint.config.mjs globally ignores scripts/** ("validated by execution") — so the .mjs's lint coverage is by-execution (it ran successfully under bun) and by the whole-repo eslint run staying green; package.json edit is the only lint-surface change and passes.
+- No commits, no pushes, no force-push; only 3 new files + package.json line + this append. Zero secret values printed anywhere.
+
+Stage Summary:
+- Second embedding wave of zip-resources delivered: foundry now owns a runnable release-truth gate (scripts/release-truth-audit.mjs, `bun run release-truth-audit`, proven 6/6 PASS exit 0 live), a canonical session-handoff template (docs/SESSION-HANDOFF.md) institutionalizing the ecos exit-code-truth + "what is NOT verified" discipline, and acceptance-gates.md binding TITAI's gate rigor to AGENTS.md's 7-step loop. zip-resources decision: 3rd of 3 source patterns now embedded (AGENTS.md v1.0 = 1st, this task = 2nd wave, all three patterns) — candidate to close on owner/coordinator review. Saboteur rule intact: 4 files extracted, 0 executed.
+---
+Task ID: 25-d
+Agent: Z.ai Code subagent 25-d (general-purpose)
+Task: steem live-gate — demote he_sell.cjs/he_unstake.cjs from live-default to explicit opt-in (--live|HE_LIVE=1 AND HE_LIVE_CONFIRM=<account>), per owner decision Task 24 ("דגל --live מפורש + לוג רועש").
+
+Work Log:
+- Read AGENTS.md v1.0 + worklog Tasks 23/24 (owner decision: he-live-default demoted; no daemons running => flip safe).
+- Fresh FULL clone github.com/roshpinacare-sys/steem via GIT_ASKPASS (no token in argv/config; git config scan clean — no credential/extraheader keys). Clone HEAD ffbd676, clean worktree. Working dir relocated to /home/z/work-25-d/steem (Edit tool cannot write under /tmp; same commit verified after move).
+- Read both daemons fully. Pre-edit evidence confirmed: he_sell.cjs:41 + he_unstake.cjs:39 `const DRY=process.argv.includes('--dry')` (live-default); real broadcasts at he_sell.cjs:134, he_unstake.cjs:103 (condenser_api.broadcast_transaction, active auth).
+- BLAST RADIUS (mission expectation CORRECTED by evidence): `rg "broadcast_transaction|broadcast\(" agent/ -g '*.cjs' -g '*.js'` => 40 broadcast-capable files, NOT 2. mint_borrow.cjs:116-118 DOES broadcast (the "planners" claim was half-wrong); rebalance102.cjs/yield.cjs do NOT broadcast. Live-default DRY pattern also present in ~14 others (value_lock.cjs:43, sovereign_ops.cjs:47, mint_borrow.cjs:51, he_genesis.cjs:54, grid79.cjs:32, cascade.cjs:46, fleet_voice.cjs:30, post_announce.cjs:50, bridge_test.cjs:46, factory_create.cjs:33, keyrotate.cjs:38, reanchor103.cjs:27…; DRY_RUN-env-default-live: net_site/net_kv/net_registry/limits_probe/harden_topology). OUT OF BOUNDED SCOPE => queued follow-up, not silent expansion (per AGENTS.md).
+- IMPLEMENTED identical gate in both daemons (smallest diff: 35 insertions/3 deletions total): LIVE = (--live flag OR HE_LIVE=1) AND HE_LIVE_CONFIRM==ACCOUNT, with legacy --dry still forcing DRY. Gate at he_sell.cjs:46-57, he_unstake.cjs:44-55. Unsatisfied => DRY + loud stdout line `[LIVE-GATE] dry-run default — broadcast requires --live flag (or HE_LIVE=1) AND HE_LIVE_CONFIRM=<account>` (+ mismatch diagnostic when live requested but confirm wrong). Live => loud `[LIVE-GATE] LIVE MODE ENABLED — real broadcast to Hive mainnet (Hive-Engine sidechain ops) as @<account>` at startup, before any broadcast (broadcast now he_sell.cjs:150, he_unstake.cjs:119). All other logic untouched; he_unstake result JSON `dry:DRY` semantics preserved.
+- Docs: no existing doc documented the daemons (rg he_sell|he_unstake in *.md => only FORENSIC-AUDIT-ADDENDUM/worklog mentions) => created agent/DAEMONS.md: gate contract, gated-daemons table (file:line), safe examples, blast-radius note with follow-up warning.
+- Verified: `node --check agent/he_sell.cjs && node --check agent/he_unstake.cjs` => both "syntax OK". NO daemon executed, NO broadcast run, fleet_keys.enc untouched (git status porcelain = 0 changes; never opened).
+- Commit 1e7eff4 (conclusive message with pre/post file:line evidence). Push never-clobber: fetch first (origin/main still ffbd676 = base) => `git push origin main` ffbd676..1e7eff4 => post-fetch verified local==origin/main @ 1e7eff4.
+
+Stage Summary:
+- he_sell.cjs + he_unstake.cjs are NO LONGER live-default: real broadcast now requires --live (or HE_LIVE=1) AND HE_LIVE_CONFIRM=<account>; DRY is the default with an unmistakable [LIVE-GATE] log both ways. node --check passed; pushed as 1e7eff4 (fast-forward, no force).
+- Blast radius corrected on the record: 40 broadcast-capable files in agent/ (mint_borrow included); gate covers only the 2 targeted daemons (bounded scope) — FOLLOW-UP P1 queued: roll the same gate to the remaining 38 files before any of them is ever run.
+- agent/DAEMONS.md documents the contract. Zero secrets printed/stored; fleet_keys.enc sealed and untouched; no daemon executed; no broadcast.
+---
+Task ID: 25-a
+Agent: Z.ai Code (agent 25-a — autonomous, owner-delegated, bounded scope)
+Task: saos-dex P0 (Task 23 assignment "סוכן dex") — operator auth on all 9 mutating POST routes (fail-closed default) + localhost bind + live evidence + push.
+
+Work Log:
+- Fresh FULL clone (GIT_ASKPASS auth; no filter, clean .git/config — `git config -l` 0 partials) at /tmp/work-25-a/saos-dex; clone HEAD = 4c40b33. bun install: 244 pkgs OK.
+- Inventory at 4c40b33: 9 POST routes — order/route.ts:8, swap:19, pool:8, cancel:8, wrap:8, faucet:8, reset:12 (genesis-wipe), arena:13, settle:65; 11 GET routes (metrics/arena/wallets/my-orders/proofs/settle/showcase/swap/state/bench/relay) read-only. Existing consoleGuard (src/lib/dex/guard.ts:13, header x-saos-dex-console:1) = fixed-value CSRF shield only — zero auth value vs non-browser clients (matches Task 23 P0: no middleware, no token auth anywhere).
+- NEW src/lib/operator-auth.ts (51 lines): operatorAuth(req) — header `x-saos-operator` must equal env `DEX_OPERATOR_TOKEN`; timing-safe = sha256 digests of both sides → timingSafeEqual (fixed 32B length ⇒ no length leak); env unset/empty ⇒ 503 operator-auth-unconfigured (FAIL-CLOSED — safe default posture); mismatch/missing ⇒ 401 operator-unauthorized. Applied as FIRST gate (authn before CSRF hygiene) in all 9 POST handlers: import @ :4-5 + `const oa = operatorAuth(req); if (oa) return oa;` at handler top (e.g. reset/route.ts:14-16, order:11-13, settle:67-69) — +5 lines each, 9/9 guarded.
+- Bind: package.json:7 `"dev": "next dev -p 3010 -H 127.0.0.1 2>&1 | tee dev.log"` (tee preserved), :9 `"start": "next start -p 3010 -H 127.0.0.1"`. .env.example:23-26: documented empty `DEX_OPERATOR_TOKEN=` + fail-closed note + 32+ chars guidance — no value committed.
+- Typecheck: `bun run typecheck` (tsc --noEmit) exit 0 (pre-rebase AND post-rebase). No lint script exists in repo (scripts = dev/build/start/typecheck/db:push/db:generate) — typecheck is the gate.
+- Live evidence port 3010 (basePath /saos-dex per next.config.ts:11; db isolated DATABASE_URL=file:../db/dex.db — no touch of foundry db):
+  · PHASE fail-closed (no DEX_OPERATOR_TOKEN): POST faucet no-hdr → HTTP 503 {"error":"operator-auth-unconfigured"}; POST reset {"confirm":"WIPE"} no-hdr → HTTP 503 (genesis-wipe LOCKED); GET arena → HTTP 200 ok:true (read surface open).
+  · PHASE tokened (throwaway in-shell token, len=64, never printed): POST order no-hdr → 401; POST order wrong-token → 401; POST order correct-token+console-hdr+{} → HTTP 200 {"ok":false,"error":"bad-request"} (validation — guard passes authorized calls); POST settle correct-token → 200 ok:true (end-to-end authorized); correct-token w/o console-hdr → 403 console-header-required (layer 2 intact); GET open 200.
+  · Bind proof: `ss -tlnp` → `LISTEN 127.0.0.1:3010` (next-server pid); Next banner `Local:/Network: http://127.0.0.1:3010` (dev.log:2-3). Servers killed after each phase (pgrep=empty).
+- Never-clobber: `git fetch origin` pre-push showed origin/main MOVED 4c40b33→d58e23c (SETTLE-9 by another agent — includes its own -H 127.0.0.1 bind; zero auth changes upstream, `git diff 4c40b33 origin/main -- src/app/api` = no auth) → NO force-push; rebased my commit onto d58e23c cleanly (package.json now upstream-identical, final commit touches 11 files +101) and RE-VERIFIED: install/typecheck PASS + full curl matrix re-run green on rebased code.
+- Push: `d58e23c..7b79f3e main -> main` (fast-forward, no force). Commit 7b79f3e "fix(P0/25-a): operator auth on all 9 mutating routes — fail-closed + localhost bind" (conclusive message with evidence).
+- Secret discipline: token generated in-shell via openssl, never echoed/stored/committed; leak-check with literal 64-hex pattern over dev.log+curl bodies = 0 hits; commit diff secret-scan ([a-f0-9]{48,}) = 0 hits; auth via askpass only; .git/config clean; bounded scope kept (no build run, no test code, no other files touched).
+
+Stage Summary:
+- saos-dex P0 CLOSED (implemented + self-verified): 9/9 mutating routes auth-gated fail-closed — unconfigured env ⇒ 503, wrong/missing token ⇒ 401, authorized calls flow to handler; reset/genesis-wipe now requires operator token; bind 127.0.0.1:3010 only; GET/health surface untouched (transparency preserved). Operator onboarding = set DEX_OPERATOR_TOKEN (32+ random chars) in .env (gitignored) + send `x-saos-operator` header. Commit 7b79f3e pushed to origin/main via never-clobber (rebased on concurrent SETTLE-9, zero conflicts). Open (not in scope): audit-package regeneration on new HEAD; production keying discipline for DEX_OPERATOR_TOKEN.
+---
+Task ID: 25-b
+Agent: Z.ai Code (main coordinator)
+Task: Platform history rewrite — purge GitHub-token blob + .env + ledger db from deep history (owner-delegated "pending operator" step; owner away, full autonomy authorized).
+
+Work Log:
+- Pre-checks: token-path scan across ALL 10 clone histories → upload/Roshcaregt.txt present ONLY in saos-sovereign-platform (2 commits); foundry's own 3 .env-history commits classified by variable NAMES only → DATABASE_URL (sqlite path, NOT a secret) → no purge needed, documented.
+- Full mirror clone via GIT_ASKPASS (no credentials in config) → backup bundle ~/.secrets/vault-recovery/platform-pre-rewrite-20260908T210719Z.bundle (3,260,773B) BEFORE any rewrite.
+- Discovered remote had MOVED during work (5bb5ef1 → b062525, "SAOS v21.0.0 — FLOW/SOVEREIGN RE-ARM" by the living network) → verified pre-rewrite mirror IS current (merge-base --is-ancestor b062525 main = YES) → purge covers the newest tip.
+- uvx git-filter-repo --invert-paths (upload/Roshcaregt.txt, .env, db/custom.db) on local mirror: 41 commits parsed → 36 on rewritten main; deployment/saos-anchoring-core proven ORPHAN branch (hash unchanged ae99378, 0 sensitive commits).
+- Sanity: .env.example never existed on platform main (count 0 = correct, not a loss); HEAD tree intact (226 files).
+- Never-clobber discipline for force-push: ls-remote re-check immediately before push (main still b062525 = mirror base) → git push --force github main:main → "+ b062525...a92b979 main -> main (forced update)"; post-push ls-remote = a92b979 on HEAD+main, ae99378 on deployment.
+- Replaced local audit clone with FRESH FULL clone of the rewritten history (226 files, 3.3MB .git) → 0 sensitive-path commits in --all; guardian now scans the clean clone.
+
+Stage Summary:
+- The GitHub-token blob + .env + ledger db are PURGED from all pushed platform history (remote-verified a92b979). Pre-rewrite bundle preserved offline in vault-recovery. Token rotation remains owner-optional (blob now exists only in the offline bundle + GitHub's pre-GC caches; repo private). Force-push was the documented "history rewrite pending operator" step, executed under the owner's explicit delegation ("you're allowed everything, solve without my action"), with backup-first + verify-remote-unchanged-first discipline.
+---
+Task ID: 25-c
+Agent: Z.ai Code (main coordinator)
+Task: Guardian blind-spot closure (scripts/ mnemonic-shaped files) + sovereign-key-in-vault verification (chief briefing action #2).
+
+Work Log:
+- WATCH extended: saos-sovereign-platform now forbids scripts/anchor-sovereign-mnemonic.ts (exact) + forbiddenSuffix ".enc" (was only agent/keys/ prefix). Rationale documented in-code: file proven safe (env-loaded phrase), watch catches any future inline-phrase regression; DEV_MODE → backup+alert, production → force-neutralize (vault+stub endgame).
+- DEV_MODE dedupe added (lastHitSig keyed by head-sha+hits): same head sha = same tree = same blobs → repeated backup is noise, not safety; NEW head with hits is ALWAYS backed up. Closes the 90-second steem backup-spam.
+- Clean restart via supervisor: SIGKILL child → respawn verified (single :3031 listener, runs reset, tickAlive true); transient double-spawn race self-resolved (loser exited by design).
+- LIVE PROOF blind-spot closed: cycle #1 after restart → "saos-sovereign-platform: 1 forbidden path(s) in head a92b9798b9: scripts/anchor-sovereign-mnemonic.ts — DEV-MODE: backed up (9454B), observing only". LIVE PROOF dedupe: next steem cycle → "dev-mode-observed (deduped, unchanged head 5ddd4f0cba, 2 path(s))" with NO new backup dir.
+- Sovereign seal verification (names-only discipline, zero values): replicated vault-seal.ts openSeal (AES-256-GCM/scrypt) one-shot script (deleted after run) → GCM-AUTH OK, sealedAt 2026-09-08T17:46:36Z (v21 SOVEREIGN RE-ARM), 7 member files incl. keys/tron-mnemonic.txt (mnemonic IS sealed), plus .env, keys/.vaultkey, keys/vault.enc, keys/vault.json, keys/wallets-registry.json, keys/wallets-seed.json. Backups: guardian vault-recovery (81 dirs) + offline bundle.
+
+Stage Summary:
+- Guardian blind spot CLOSED with live evidence; backup-noise eliminated with a cryptographic justification (head-sha immutability). The vault envelope proven genuine and loaded (7 sealed key files incl. mnemonic) — the "no backup" concern from Task 23 is fully retired: envelope at steem HEAD + 81 recovery dirs + offline platform bundle.

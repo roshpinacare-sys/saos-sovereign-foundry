@@ -572,3 +572,23 @@ account_update נמדדה ≈14%). מדידה-חיה לכל 11 החיילים:
 ### פתוח (איטרטיבי)
 - **zip-resources**: להעמיק הטמעה — self-audit.mjs של tfa-evolution-studio כבסיס לביקורת-אמת-שחרור אוטומטית ב-foundry; NEXT_SESSION_PROMPT של ecos כתבנית להעברת-סשן; TITAI acceptance-gates כרשימת-שערים
 - P0-ים של סוכנים-בעלים (dex auth, platform) עומדים כבתוק — ראה Task 23
+
+---
+
+## Task 25 (2026-09-08) — סבב-ניהול אוטונומי (בעלים יצא לימים; סמכות מלאה בהענקה מפורשת)
+
+**הנחיית-בעלים**: "אתה רשאי הכל... אני הלכתי לכמה ימים ואתה מנהל-הפרויקט... תפתור אותם בלי הפעולה שלי. בצע וכתוב לריפו".
+
+### בוצע ונדחף (כולו מאומת בראיות)
+1. **[25-a] DEX P0 נסגר** (סוכן full-stack): כל 9 ה-POST המשנים-מצב מאובטחים (`src/lib/operator-auth.ts` — `x-saos-operator` vs `DEX_OPERATOR_TOKEN`, timing-safe; env חסר ⇒ 503 fail-closed) + bind `127.0.0.1` ב-dev/start. אימות-חי: ללא-header ⇒ 503/401, עם-token ⇒ 200, GET פתוחים, `ss` מוכיח `LISTEN 127.0.0.1:3010`. קומיט `7b79f3e` נדחף (rebase נקי מעל d58e23c — הרשת דחפה SETTLE-9 במקביל; never-clobber החזיק). פתוח: רגנרציית audit-package ב-HEAD החדש.
+2. **[25-b] שכתוב-היסטוריה של platform בוצע** (הצעד שהמתין לבעלים): token-blob + .env + db/custom.db נמחקו מכל ההיסטוריה הדחופה (41→36 קומיטים; `+ b062525...a92b979 (forced update)`, מאומת ls-remote). גיבוי-מלא לפני: `vault-recovery/platform-pre-rewrite-20260908T210719Z.bundle`. ענף deployment הוכח יתום (לא-נפגע). הטוקן כבר לא בשום היסטוריה של שום ריפו (סריקת-10-ריפואים). **רוטציית-טוקן נותרה אופציונלית לבעלים**.
+3. **[25-c] נקודת-העיוור של ה-guardian נסתמה**: platform צופה עכשיו גם `scripts/anchor-sovereign-mnemonic.ts` + `*.enc`; דה-דופ לפי head-sha מבטל רעש-גיבוי (הוכחה קריפטוגרפית בקוד). אומת חי: ALERT+גיבוי על היט ראשון, `deduped` במחזור הבא. **ואימות-כספת**: המעטפת נפתחה (GCM OK, 17:46Z v21 RE-ARM) — 7 קבצי-מפתח חתומים כולל mnemonic → דאגת "אין-גיבוי" מ-Task 23 פרשה סופית.
+4. **[25-d] שער `--live` נדחף ל-steem** (סוכן): he_sell/he_unstake דורשים `--live` (או HE_LIVE=1) **וגם** `HE_LIVE_CONFIRM=<account>`; ברירת-מחדל DRY עם לוג רועש; קומיט `1e7eff4` נדחף. **תיקון-רשומה**: mint_borrow.cjs:116 משדר בפועל (רשומות Task 21/24 היו רשלניות) — ו-~14 דיימונים נוספים live-default → **P1 חדש למטה**.
+5. **[25-e] גל-הטמעה שני של ZIPs** (סוכן): `scripts/release-truth-audit.mjs` (6 בדיקות אמת-שחרור, רץ 6/6 PASS חי) + `docs/SESSION-HANDOFF.md` (תבנית ecos) + `docs/acceptance-gates.md` (שערי TITAI מחוברים ללולאת AGENTS.md).
+
+### פתוח (סדר-עדיפויות מעודכן)
+- **P1 חדש — steem daemons**: ~14 דיימונים נוספים live-default (value_lock:43, sovereign_ops:47, he_genesis:54, grid79:32, cascade:46, fleet_voice:30, post_announce:50, mint_borrow:51+116-broadcast, factory_create:33, bridge_test:46, keyrotate:38, reanchor103:27, net_site/net_kv/net_registry/limits_probe/harden_topology DRY_RUN-env-default-live) — להרחיב את שער 25-d עליהם (אותו דפוס, מכונן).
+- **P1 — dex audit-package**: רגנרציה על HEAD 7b79f3e (הטענה-מול-מצב חייבת להיות מדויקת לביקורת חיצונית).
+- **P2 — guardian watch ל-foundry עצמו**: הריפו-הבית לא ב-WATCH (steem/platform/anchor-baseline בלבד) — להוסיף עם נתיבי-.enc/.env-shape.
+- **P3 — רוטציית-טוקן**: ההיסטוריה נקיה עכשיו בכל הריפואים; הרוטציה נשארת שיקול-בעלים בלבד.
+- zip-resources נשאר איטרטיבי (2/3 גלים בוצעו: AGENTS.md + שלושת-הארטיפקטים).

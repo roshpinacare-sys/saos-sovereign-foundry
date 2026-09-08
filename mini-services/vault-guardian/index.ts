@@ -43,9 +43,17 @@ const API = "https://api.github.com";
 /** רשימת-הריפואים והנתיבים האסורים המפורשים (מדויק, לא רחב-מדי) */
 const WATCH = [
   { repo: "steem", branch: "main", forbidden: ["agent/fleet_keys.enc", "agent/fleet_keys.meta.json"] },
-  { repo: "saos-sovereign-platform", branch: "main", forbiddenPrefix: ["agent/keys/"] },
+  // Task 25-c: סתימת נקודת-העיוור — קובץ-העיגון תחת scripts/ לא נתפס ברשימה הישנה (מבוססת-נתיב צרה).
+  // הקובץ נבדק ובטוח (הצירוף מ-env), אבל אם מישהו יטמיע בו צירוף-אמת — ה-guardian יתפוס, יגבה וידווח
+  // (ב-DEV_MODE לא מוחק); בפרודקשן הנטרול-הכוחני הוא היעד המתועד (vault+stub).
+  { repo: "saos-sovereign-platform", branch: "main", forbidden: ["scripts/anchor-sovereign-mnemonic.ts"], forbiddenPrefix: ["agent/keys/"], forbiddenSuffix: [".enc"] },
   { repo: "anchor-baseline", branch: "main", forbiddenSuffix: [".enc"] },
 ];
+
+/** Task 25-c: דה-דופ ל-DEV_MODE — גיבוי+ALERT רק כשהחתימה (head-sha + hits) משתנה.
+ * הוכחה: אותו head-sha = אותו עץ = אותם בלובים → גיבוי-חוזר על אותו head הוא רעש, לא בטיחות.
+ * head חדש עם היטים → תמיד מגובה. */
+const lastHitSig: Record<string, string> = {};
 
 // Task 24 (הנחיית-בעלים 2026-09-08): מצב-פיתוח — סוכנים מורשים לגישת-מפתחות בסביבה הפרטית.
 // DEV_MODE (ברירת-מחדל ON): נתיב אסור ב-HEAD → דווח + גיבוי ל-vault, בלי מחיקת-כוח.
@@ -229,13 +237,21 @@ async function cycle(onlyRepo?: string) {
         if (status !== 200) { log("ERROR", `${w.repo}: head fetch HTTP ${status}`); continue; }
         const paths = (await treeOf(w.repo, head.sha)).filter((t) => t.type === "blob").map((t) => t.path);
         const hits = forbiddenIn(w, paths);
-        if (!hits.length) { log("OK", `${w.repo}: clean (${paths.length} files, head ${head.sha.slice(0, 10)})`); continue; }
-        await backupBlobs(w.repo, head.sha, hits, stamp); // גיבוי תמיד — גם ב-dev (stay safe)
+        if (!hits.length) { log("OK", `${w.repo}: clean (${paths.length} files, head ${head.sha.slice(0, 10)})`); delete lastHitSig[w.repo]; continue; }
         if (DEV_MODE) {
+          // Task 25-c: דה-דופ לפי חתימה — אותו head = אותם בלובים, גיבוי-חוזר הוא רעש
+          const sig = `${head.sha}:${hits.join(",")}`;
+          if (lastHitSig[w.repo] === sig) {
+            log("INFO", `${w.repo}: dev-mode-observed (deduped, unchanged head ${head.sha.slice(0, 10)}, ${hits.length} path(s))`);
+            continue;
+          }
+          lastHitSig[w.repo] = sig;
+          await backupBlobs(w.repo, head.sha, hits, stamp); // גיבוי תמיד על head חדש — stay safe
           log("ALERT", `${w.repo}: ${hits.length} forbidden path(s) in head ${head.sha.slice(0, 10)}: ${hits.join(", ")} — DEV-MODE: backed up, observing only (owner keys-access directive 2026-09-08, no force-push)`);
           actions.push({ at: new Date().toISOString(), repo: w.repo, hits: hits.length, result: "dev-mode-observed" });
           continue;
         }
+        await backupBlobs(w.repo, head.sha, hits, stamp); // פרודקשן: גיבוי לפני נטרול
         log("ALERT", `${w.repo}: ${hits.length} forbidden path(s) in head ${head.sha.slice(0, 10)}: ${hits.join(", ")}`);
         const r = await neutralize(w, hits, stamp);
         actions.push({ at: new Date().toISOString(), repo: w.repo, hits: hits.length, result: r.done ? "neutralized" : r.reason });

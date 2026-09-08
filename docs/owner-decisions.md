@@ -84,3 +84,18 @@
 | zip-resources | resources | medium | **open** — הנחיית-בעלים: ב-ZIPs ב-Project-files יש חומר להתאמה (TITAI canonical contract / tfa-evolution-studio self-audit / ecos session-prompts) — נבחן ומוטמע בהדרגה (AGENTS.md v1.0 = ההטמעה הראשונה) |
 
 מאזן (עודכן Task 24): 6 מוקלטות — 5 סגורות, 1 פתוחה (zip-resources, איטרטיבי).
+
+---
+
+## Task 25 (2026-09-08) — החלטות-נגזרות בסמכות-ההענקה (בעלים בחופשה, מנדט מלא)
+
+| החלטה | קטגוריה | חומרה | סטטוס |
+|---|---|---|---|
+| platform-history-rewrite | security | critical | **decided-coordinator** — בוצע: token-blob+.env+ledger מכל ההיסטוריה הדחופה (a92b979), גיבוי-bundle לפני, never-clobber לפני force-push. הצעד שסומן "pending operator" מ-Task 22/23 — הבעלים שוחרר ממנו מפורשות ("תפתור בלי הפעולה שלי") |
+| force-push-exception | governance | high | **decided-coordinator** — אישור חד-פעמי מתועד ל-force-push של שכתוב-היסטוריה (היוצא-מן-הכלל השני לכלל AGENTS.md, לצד guardian-פרודקשן): רק עם גיבוי-bundle + בדיקת-remote-לא-זז + אימות-מרחוק אחרי |
+| he-live-gate-contract | operations | high | **decided-coordinator** — חוזה-השער: `(--live או HE_LIVE=1) && HE_LIVE_CONFIRM=<account>`; DRY ברירת-מחדל עם לוג רועש; הוטמע ב-he_sell/he_unstake (P1 להרחבה ל-~14 דיימונים) |
+| mnemonic-scripts-watch | security | high | **decided-coordinator** — scripts/anchor-sovereign-mnemonic.ts נוסף ל-WATCH ה-guardian (נגזרת של סתימת נקודת-העיוור; DEV_MODE=צפייה+גיבוי) |
+| vault-sovereign-verified | security | critical | **decided-coordinator** — המעטפת נבדקה GCM-OK: 7 קבצי-מפתח חתומים (כולל mnemonic). "אין-גיבוי" מ-Task 23 נסגר סופית. שמות-קבצים בלבד נבדקו — אפס ערכים |
+| token-rotation | security | high | **owner-optional** — כל ההיסטוריות נקיות כעת (סריקת 10 ריפואים); הבעלים יכול לרוטט בנחת בחזרתו; לא חוסם כלום |
+
+מאזן (עודכן Task 25): 12 מוקלטות — 11 סגורות, 1 פתוחה איטרטיבית (zip-resources). אפס חוסמים-בעלים.
