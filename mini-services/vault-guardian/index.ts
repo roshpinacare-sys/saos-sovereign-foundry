@@ -98,7 +98,7 @@ async function api(url, opts = {}) {
 }
 
 function sh(cmd, cwd) {
-  return execSync(cmd, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+  return execSync(cmd, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], maxBuffer: 64 * 1024 * 1024 }).trim();
 }
 
 function headOf(repo, branch) {
@@ -142,7 +142,7 @@ async function neutralize(w, hits, stamp) {
   const header = `Authorization: Basic ${Buffer.from(`x-access-token:${token()}`).toString("base64")}`;
   const url = `https://github.com/roshpinacare-sys/${w.repo}.git`;
   sh(`rm -rf ${work}`);
-  sh(`git -c "http.extraHeader=${header}" clone --depth 10 --filter=blob:none ${url} ${work}`);
+  sh(`git -c "http.extraHeader=${header}" clone -q --depth 10 --filter=blob:none ${url} ${work}`);
   // ההורים חייבים להיות נקיים — אחרת זה תיקון-ידני, לא אוטומטי
   const parents = sh(`git rev-list --parents -n 1 HEAD`, work).split(" ").slice(1);
   for (const par of parents) {

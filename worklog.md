@@ -621,3 +621,34 @@ Bugs / findings this session:
 
 Stage Summary:
 - Local foundry main is ON the latest known GitHub commit (ef155c7) with an exactly-clean tree — and a real bleed was found and fixed on the way: a post-push amend had quietly absorbed .env/db/logs/.next through a gutted .gitignore (remote never saw it; reset+restore+re-guard, nothing deleted from disk, forensic hash kept); the guardian now survives credential loss entirely (one-line WARN, zero API calls, auto-resume on token reappearance) and the supervisor can now SEE zombie-timer states via the new tick.alive heartbeat; the full inventory of never-examined agent folders (Saosmartwallet 1,335 files, steem/mini-services, THE_WEAVE, trading-daemon logic, roshpina/saos-dex) is compiled and token-blocked — the moment the owner re-uploads the token: fetch-verify → push → guardian auto-resumes → the deep agent-folder sweep begins with this order as authorization; zero secrets printed/stored/logged throughout, zero keys touched, zero deletions
+
+---
+Task ID: 21 (owner-full-authorization-pipeline-armed)
+Agent: Z.ai Code (orchestrator)
+Task: Owner (Hebrew): "אני מאשר לפתוח ולטפל בהכל בצע ודחוף לריפו" — full authorization to open and handle everything (Saosmartwallet, steem/mini-services, THE_WEAVE, trading-daemon logic, roshpina/saos-dex — the Task 20 inventory), execute, and push to the repo.
+
+Work Log:
+- BLOCKER CONFIRMED FIRST (honesty before motion): re-checked for the token after the owner's message — upload/ still empty, no new files anywhere, ~/.secrets still absent, `git credential fill` empty, no gh CLI. The authorization is executable the moment the token exists; GitHub access itself is impossible before that (private repos, anonymous ls-remote fails — re-verified)
+- BUILT scripts/deep-agent-audit.cjs — the authorization as a one-command pipeline (self-tested, armed):
+  1. token handling: --token-src <uploaded-file> installs to ~/.secrets/github-token (0600), SHAPE-check before install, uploaded copy removed from tree, value never printed; no token → clean WAITING-FOR-TOKEN exit(2)
+  2. foundry push with a NEVER-CLOBBER policy: fetch → if remote moved (gitkeeper-style auto-save), SKIP push + WARN (needs merge decision) — this closes the exact diverged-amend class Task 20 suffered
+  3. for EVERY repo the token can see: blobless clone → history scan by PATH patterns only (never opens secret-file contents) → HEAD secret-path detection → guardian-style NEUTRALIZE for live HEAD leaks (backup to ~/.secrets/vault-recovery → parents-clean guard → strip → force-push → remote re-verify) → CRITICAL-report-only for deep history (no destructive rewrite without owner eyes)
+  4. HEAD content scan of code files (skip secret-patterned paths + lockfiles): WIF-51/52, xprv, SK_/sk-, PEM blocks, hex64, privateKey assignments, 12-word seed phrases — findings are {repo,path,line,patternType} ONLY
+  5. targeted logic answers the forensic docs demanded: steem trading daemons (he_sell/he_unstake/mint_borrow/yield/rebalance) → broadcast-class call map by file:line; Saosmartwallet → vault/keys.ts storage facts (localStorage/sessionStorage/indexedDB/file-write/CSPRNG/encryption) — code facts, no values
+  6. report lands in docs/agent-audit-report.md + .json
+- VERIFICATION (no token available, so verified everything short of GitHub):
+  - selftest PASS: all pattern classifications + negative tests (clean code → 0 hits, normal sentence → no seed hit)
+  - WIF pattern correctness: caught and fixed TWICE during testing (52-char vector then wrong-length regex; final: 51-char '5' + 52-char 'K/L' canonical forms, vectors match)
+  - SEED_HINT rebuilt: backreference design only matched REPEATED words — real seeds are 12 DISTINCT words; rebuilt as first-seed-word + 11 more seed-words; verified true-positive on 12 in-list words, false-negative guard on normal sentences
+  - end-to-end on a synthetic git repo: history path hits ✓ (.env, agent/keys/foo.enc), head secret files ✓, content scan ✓ (leak.js:1 WIF hit; clean.js silent)
+  - foundry lint green; guardian alive (tick:true) and unaffected
+- COMMITS: 8a570c7 (Task 20 triage+guardian hardening) and ce0226f (this pipeline) both staged on local main; push attempted and documented (credential-fail), pipeline will push them the moment the token lands
+- NO secret printed/stored/logged anywhere in this task either (the only "secret-shaped" strings touched were synthetic test vectors)
+
+Bugs / findings this session:
+- (test-vector discipline) two of my three initial pattern tests were wrong, not the patterns: wrong vector length (54≠51) and a seed design that couldn't match real seeds — lesson: for leak-pattern code, build vectors FROM the canonical spec (WIF = Base58Check(0x80[+0x01]), 51/52 chars), then verify against live chain formats as Task 17 did
+- (backreference trap) /(w)(?:\1{11,})/ style regexes match REPEATED tokens; BIP39 seeds are distinct words — a "passing" selftest with repeated words would have shipped a detector that never fires in reality
+- (clobber-guard) the pipeline refuses any non-FF foundry push: the gitkeeper daemon pushes to the same repos from outside the sandbox, so force-push tooling here is a footgun; only the guardian's leak-neutralize path force-pushes (with parents-clean + backup guards)
+
+Stage Summary:
+- The owner's full authorization is now ARMED as a verified pipeline rather than a promise: one command does token-install → never-clobber push of the two staged commits → deep scan of every visible repo (history paths + HEAD contents, value-redacted) → trading-daemon broadcast map → Saosmartwallet keys.ts answer → auto-neutralize of live HEAD leaks with backups — all selftested (pattern classification + false-positive guards + synthetic end-to-end); the single missing ingredient is the token file, which only the owner can provide; zero secrets printed/stored/logged, zero keys touched, zero deletions
