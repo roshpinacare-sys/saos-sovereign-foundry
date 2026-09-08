@@ -35,6 +35,7 @@ import { verifyChainDag } from "@/lib/saos/evidence";
 import { networkStatuses, type NetworkStatusView } from "@/lib/saos/network-status";
 import { signerRegistry, effectiveStatus, type SignRequest } from "@/lib/saos/signer";
 import { OWNER_DECISIONS } from "@/lib/saos/owner-decisions";
+import { externalSignerHealth } from "@/lib/saos/external-signer-client";
 
 export type CheckStatus = "pass" | "warn" | "fail";
 export interface PreflightCheck {
@@ -273,7 +274,8 @@ export async function computePreflight(target: SignRequest["network"] | null): P
         : `מצב ${mode.mode} — אין שידור אמיתי; עוגן אמיתי דורש SAOS_MODE=live + SAOS_LIVE_CONFIRM=YES ואישור בעלים מפורש`
   );
 
-  // signer readiness summary
+  // signer readiness summary — Task 26: refresh the external-signer health first
+  await externalSignerHealth();
   const registry = signerRegistry();
   const signerReady = registry.some((s) => s.signer !== "none" && (s.status === "ready" || s.status === "awaiting-approval"));
   const externalSignerConnected = registry.some((s) => (s.signer === "external" || s.signer === "hardware") && s.status !== "disconnected");

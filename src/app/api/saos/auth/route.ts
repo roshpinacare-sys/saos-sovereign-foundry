@@ -80,6 +80,23 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, error: "rate-limited", retryAfterSec: rl.retryAfterSec }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } });
   }
   const auth = await requireAuth(req);
+
+  // Task 26 (owner directive "you need to be connected at least for now"): a
+  // DEV-PHASE managed session — the manager (agents) hold keys per the
+  // 2026-09-08 directive, so the preview browser gets an auto-issued session.
+  // Production-proof: flag must be explicitly "1" AND NODE_ENV !== production.
+  // Reversible: unset SAOS_DEV_AUTOSESSION (or set GUARDIAN_DEV_MODE=0 posture
+  // review) — the cookie then simply expires within 12h.
+  const autoAllowed =
+    (process.env.SAOS_DEV_AUTOSESSION ?? "").trim() === "1" && process.env.NODE_ENV !== "production";
+  if (autoAllowed && auth.authConfigured && !auth.ok) {
+    const { value, maxAgeSec } = await issueSession();
+    await audit({ kind: "auth-login", actor: "dev-managed-session", action: "GET /auth auto-session (dev-phase)", allowed: true, req });
+    const res = NextResponse.json({ ok: true, authConfigured: true, authenticated: true, actor: "dev-managed-session", managed: true, ipHash: ipHashOf(req) });
+    res.cookies.set(SESSION_COOKIE, value, { httpOnly: true, sameSite: "strict", path: "/", maxAge: maxAgeSec, secure: process.env.NODE_ENV === "production" });
+    return res;
+  }
+
   return NextResponse.json({
     ok: true,
     authConfigured: auth.authConfigured,

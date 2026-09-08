@@ -8,6 +8,8 @@
 
 export type SaosMode = "dry-run" | "safe" | "live" | "maintenance";
 
+import { externalSignerCached } from "./external-signer-client";
+
 export interface ModeState {
   mode: SaosMode;
   /** DB writes allowed (seal, receipts, entity rows) */
@@ -46,9 +48,15 @@ export function saosMode(): ModeState {
       mode: "live",
       writesEnabled: true,
       liveArmed: true,
-      // honest: even armed, this sandbox has no signing vault — broadcast stays impossible
-      broadcastCapable: false,
-      detail: "live: כתיבה מאושרת; שידור חיצוני נותר בלתי-אפשרי עד חיבור כספת חתימה"
+      // Task 26: broadcast possible ONLY when a REAL external signer is health-OK
+      // AND the third explicit flag is set — still no accidental path to broadcast.
+      broadcastCapable:
+        externalSignerCached().connected && (process.env.SAOS_BROADCAST_ENABLE ?? "").trim().toUpperCase() === "YES",
+      detail: externalSignerCached().connected
+        ? (process.env.SAOS_BROADCAST_ENABLE ?? "").trim().toUpperCase() === "YES"
+          ? "live: כתיבה מאושרת; חותם-חיצוני מחובר — שידור אפשרי דרך החותם (המערכת מקבלת רק txid)"
+          : "live: כתיבה מאושרת; חותם-חיצוני מחובר אך חסר SAOS_BROADCAST_ENABLE=YES"
+        : "live: כתיבה מאושרת; שידור חיצוני נותר בלתי-אפשרי עד חיבור כספת חתימה"
     };
   }
   return { mode: "dry-run", writesEnabled: true, liveArmed: false, broadcastCapable: false, detail: "dry-run (ברירת-מחדל): חישוב מלא, עגינה advisory, אפס שידור" };

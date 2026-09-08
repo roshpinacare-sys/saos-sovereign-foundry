@@ -8,6 +8,7 @@
 import { HIVE_RC_FLOOR_HEAVY, HIVE_RC_FLOOR_LIGHT, hiveRcHoursToTarget, BLURT_COOLDOWN_MIN, BLURT_FEE_FORMULA } from "./anchor-gates";
 import { minStakeForSettlements } from "./tron-energize";
 import { HISTORIC_ANCHORS } from "./historic";
+import { externalSignerCached } from "./external-signer-client";
 import { ethereumStatus } from "./networks/ethereum";
 import { solanaStatus } from "./networks/solana";
 import type { ChainType, RpcStatus } from "./networks/types";
@@ -57,7 +58,15 @@ export interface NetworkStatusView {
 
 export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatusView[] {
   const historicOf = (n: NetworkName) => HISTORIC_ANCHORS.find((h) => h.network === n);
-  const vaultBlocker = "vault: אין מפתחות חתימה בסנדבוקס (שלב 2 — שחזור כספת)";
+  // Task 26 (live forensics 2026-09-08): the external signer IS connected
+  // (mini-services/external-signer :3033, envelope GCM-genuine), but the sealed
+  // envelope's STEEM keys derive to pubkeys that are NOT the on-chain
+  // authorities of any of the 11 fleet accounts — the live runtime anchors
+  // with its own keys. The honest blocker is key-AUTHORIZATION, not key-ABSENCE.
+  const signerConnected = externalSignerCached().connected;
+  const vaultBlocker = signerConnected
+    ? "keys: המעטפת החתומה אינה מוסמכת על-השרשרת — דרוש סנכרון-מעטפת מהרנטיים החי (fleet_vault --seal) או רוטציית-סמכויות עם מפתח-השליטה"
+    : "vault: אין מפתחות חתימה בסנדבוקס (שלב 2 — שחזור כספת)";
 
   const nowIso = new Date().toISOString();
   // honest stage flag: no vault/signer is connected in this sandbox — every
@@ -183,7 +192,7 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
       tronEnergy > 0
         ? "מסלול ישיר פתוח: TriggerSmartContract עם stateRoot בנתוני הקריאה"
         : "הישארות ברכבת tronbridge היומית (root בתוך stateRoot) עד מימון ההימור",
-    blocker: tronEnergy > 0 ? vaultBlocker : `energy-0: אפס אנרגיה בכל 6 כתובות הכספת (מדידה היסטורית)`,
+    blocker: tronEnergy > 0 ? vaultBlocker : `energy-0: אפס אנרגיה בכל 6 כתובות הכספת (מדידה חיה 2026-09-08T22:05Z; יתרה מרבית 17.6 TRX — מתחת לסף-שריפה)`,
     requiredResource: `TRX stake ≥ ${minStake.toLocaleString()} TRX ל-4 יישובי USDT/יום (או שריפה ~27.26 TRX/tx)`,
     unblockPlan: [
       `1. מימון הימור: ≥ ${minStake.toLocaleString()} TRX`,

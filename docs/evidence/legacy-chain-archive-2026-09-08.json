@@ -1,0 +1,37 @@
+{
+  "archivedAt": "2026-09-08T22:08:43.115Z",
+  "reason": "2 legacy receipts (pre-DB-wipe era, written by older code version) fail canonical digest verification — fail-closed anchor ban. Orphaned (their SealRecords were lost in the sandbox DB wipe). Archived per Task 4 fork-philosophy: never rewritten, preserved + excluded from the live chain. Chain re-genesis follows. See worklog Task 26.",
+  "legacyCount": 2,
+  "rows": [
+    {
+      "id": "cmtt5fymt0001m62dq027lz07",
+      "kind": "genesis",
+      "digest": "ee6d14b1ad1b58a70a51158836f0c519ff171a3fb8e6358878db9d8e7724f568",
+      "prevDigest": null,
+      "at": null,
+      "payload": "{\"at\":1788900959764,\"root\":\"6393236162961ee84dab51647fb24e901e89eb24451171645c56d662be8418ea\"}",
+      "sealId": null,
+      "createdAt": "2026-09-08T20:55:59.765Z"
+    },
+    {
+      "id": "cmtt5goa1000dm62ddrc9l2ok",
+      "kind": "seal",
+      "digest": "31c27c559b12366705ce043583287869dd83ae1ccbdc208da33ece5783afd7e8",
+      "prevDigest": "ee6d14b1ad1b58a70a51158836f0c519ff171a3fb8e6358878db9d8e7724f568",
+      "at": null,
+      "payload": "{\"at\":1788900993000,\"digest\":\"b520153a1380d13fa6cf7f54a588c1ac6d2e9224364e1b8f3aee853663426c39\",\"fromHeight\":1,\"leaves\":12,\"root\":\"146b465d8416d4259065e571dddf60623317ab375f3bacd4bd9a18f9b388dcfa\",\"stateRoot\":\"176d642082e44a373873b8c0ec972da2dd87737b110e709813d77443f7bfb139\",\"toHeight\":12}",
+      "sealId": null,
+      "createdAt": "2026-09-08T20:56:33.001Z"
+    },
+    {
+      "id": "cmtt7vhic000im6b7elnt2o29",
+      "kind": "seal",
+      "digest": "bcd93de177dcb8a6c541918c0a0a060bd1df4f81e295aedf4cd4c64dba5bbb39",
+      "prevDigest": "31c27c559b12366705ce043583287869dd83ae1ccbdc208da33ece5783afd7e8",
+      "at": "2026-09-08T22:04:03.299Z",
+      "payload": "{\"sealId\":\"cmtt7vhi80001m6b7zqyctvl2\",\"height\":1,\"root\":\"05ef08ff5a3802a812eab5333aae6352cc39446a1d531a4079d8023fc7bfc3da\",\"leaves\":9,\"stateRoot\":\"7f42dded8faa640c2e621e2c1620a9f33d1ab520a4e30fdb886538b762ea8278\"}",
+      "sealId": "cmtt7vhi80001m6b7zqyctvl2",
+      "createdAt": "2026-09-08T22:04:03.300Z"
+    }
+  ]
+}

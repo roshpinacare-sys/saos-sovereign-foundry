@@ -48,6 +48,7 @@ export async function register() {
   const SERVICES: Watched[] = [
     mk("vault-guardian", 3031, "guardian-dev.log", "SAOS_NO_GUARDIAN", 15_000),
     mk("chief-of-staff", 3032, "chief-dev.log", "SAOS_NO_CHIEF", 25_000),
+    mk("external-signer", 3033, "signer-dev.log", "SAOS_NO_SIGNER", 35_000),
   ];
 
   const logFor = (s: Watched, msg: string) => {

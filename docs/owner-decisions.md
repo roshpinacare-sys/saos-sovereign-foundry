@@ -99,3 +99,14 @@
 | token-rotation | security | high | **owner-optional** — כל ההיסטוריות נקיות כעת (סריקת 10 ריפואים); הבעלים יכול לרוטט בנחת בחזרתו; לא חוסם כלום |
 
 מאזן (עודכן Task 25): 12 מוקלטות — 11 סגורות, 1 פתוחה איטרטיבית (zip-resources). אפס חוסמים-בעלים.
+
+---
+
+## Task 26 (2026-09-08) — החלטות-נגזרות (מנדט: "התחבר ובצע")
+
+| החלטה | קטגוריה | חומרה | סטטוס |
+|---|---|---|---|
+| external-signer-built | architecture | critical | **decided-coordinator** — החותם-החיצוני המתועד (JSON-over-HTTPS, "future" ב-docs) מומשך: mini-service :3033 מחזיק את המעטפת; ה-foundry מקבל רק txid. שלושה-דגלים לשידור: live + LIVE_CONFIRM + BROADCAST_ENABLE |
+| dev-autosession | governance | high | **decided-coordinator** — סשן-מנוהל לשלב-פיתוח (SAOS_DEV_AUTOSESSION=1, NODE_ENV-guard) לפי "אתה צריך להיות מחובר לפחות לעת עתה"; audited; נשלל אוטומטית בפרודקשן |
+| chain-regenesis | integrity | critical | **decided-coordinator** — 2 קבלות-מורשת בלתי-מאומתות (דיגסט-עידן-קודם, יתומות) אוכסנו (לא נמחקו-שקט) והשרשרת חודשה; fail-closed לא נפגע — המאמת נשאר קפדני |
+| envelope-resync-required | security | critical | **decided-coordinator (ממצא)** — המעטפת אינה מוסמכת על-השרשרת (הוכח בשרשרת עצמה); נדרש `fleet_vault --seal` מהרנטיים-החי. זה החסם-היחיד לעוגן-STEEM האמיתי |

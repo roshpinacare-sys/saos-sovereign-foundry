@@ -22,6 +22,7 @@ import { canonicalDigest, canonicalize } from "./canonical-json";
 import type { SealRecord } from "@prisma/client";
 import { ethereumReadRpcCandidate } from "./networks/ethereum";
 import { solanaReadRpcCandidate } from "./networks/solana";
+import { externalSignerCached } from "./external-signer-client";
 
 export type SignerKind = "none" | "external" | "manual" | "hardware";
 export type SignerStatus = "disconnected" | "ready" | "awaiting-approval" | "error";
@@ -72,6 +73,7 @@ export interface SignerDescriptor {
 
 /** the signer registry — honest states; nothing is connected in this stage */
 export function signerRegistry(): SignerDescriptor[] {
+  const ext = externalSignerCached();
   return [
     {
       signer: "manual",
@@ -82,10 +84,12 @@ export function signerRegistry(): SignerDescriptor[] {
     },
     {
       signer: "external",
-      status: "disconnected",
-      detail: "ארנק/שירות חיצוני — ממשק מוגדר, אין endpoint מחובר בשלב זה",
-      emits: "SignRequest (JSON over HTTPS, עתידי)",
-      acceptsBack: "SignResponse חתום (txid / signature-ref)"
+      status: ext.connected ? "ready" : "disconnected",
+      detail: ext.connected
+        ? `${ext.detail} — המערכת מקבלת רק txid ציבורי (Task 26, הנחיית-בעלים)`
+        : "ארנק/שירות חיצוני — ממשק מוגדר; החיבור נבדק מול mini-services/external-signer (:3033)",
+      emits: "SignRequest (JSON over HTTPS)",
+      acceptsBack: ext.connected ? "txid ציבורי מהחותם" : "SignResponse חתום (txid / signature-ref)"
     },
     {
       signer: "hardware",

@@ -1,0 +1,12 @@
+{
+  "name": "external-signer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SAOS external signer (:3033) — holds the sealed fleet envelope, signs+broadcasts outside the keyless foundry. Golden architecture: the system receives only public txids.",
+  "scripts": {
+    "dev": "bun --hot index.ts"
+  },
+  "dependencies": {
+    "steem": "0.7.10"
+  }
+}
