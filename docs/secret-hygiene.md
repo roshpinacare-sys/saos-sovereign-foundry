@@ -185,3 +185,57 @@ verification. **No secret value was ever printed, stored in a doc, or echoed.**
   fix and stays an owner action per the forensic audit's kill order.
 - The current full-scope classic PAT remains valid until the owner rotates it
   (cannot be self-revoked by this agent without cutting its own access).
+
+## 10. Task 16 — re-leak incident: gitkeeper auto-save re-introduced the fleet vault (2026-09-08)
+
+### 10.1 What happened
+
+- An independent re-sweep of the **whole account** (all 9 repos × every branch,
+  path+filename-based, binary-aware) was ordered to verify Task 15's closure.
+- Found: `steem@main` head commit `41603ca` ("gitkeeper: auto-save … loop 21")
+  **re-introduced** `agent/fleet_keys.enc` + `agent/fleet_keys.meta.json` onto
+  the already-purged history. Only that single commit of 90 carried the vault —
+  Task 15's purge itself had been correct; the re-leak came from the automated
+  **gitkeeper** daemon (runs outside this sandbox — no process/cron found here),
+  whose source directory still holds the vault files.
+- The re-introduced copy is a **fourth, different vault version**: `.enc`
+  sha256 fp `d1e8573080473286…` (173,929 B) — matches none of the three Task-15
+  backups; the adjacent `meta.json` (370 B) is **binary, not JSON** (UTF-8/16
+  decode fails). Vault-verify metadata on the same commit reports `12/12`
+  registry/anchored accounts (vs 7 keys in the Task-15 copies).
+- Content markers scan of the binary vault (counts only): 0 WIF, 0 PEM, 0
+  `pass` fields, 0 seed phrases — consistent with an encrypted envelope, but
+  per doctrine it is treated as burned key material regardless.
+
+### 10.2 Actions taken (this round)
+
+1. **Backed up before purge**: both files saved to
+   `~/.secrets/vault-recovery/steem-main-current__fleet_keys.{enc,meta.json}`
+   (0600/700) — the owner's recovery path now covers the fourth copy too.
+2. **Purged**: `main` head rewritten via git plumbing (single-commit tree
+   rebuild — parents were already clean), honest commit message, force-pushed.
+3. **Verified remotely**: every one of the 90 remote commits' trees re-fetched
+   via API — **0/90 carry `fleet_keys` or any `.enc` path** → CLEAN.
+4. Everything else on the account re-verified clean (path sweep): foundry,
+   platform, anchor-baseline, Project-files, roshpina, saos-jummper, saos-dex,
+   Saosmartwallet — 0 critical hits (remaining matches are code/test filenames
+   and `.env.example` templates, all content-clean).
+
+### 10.3 Why Task 15's verification missed it
+
+- The re-leak happened **after** Task 15's verified purge: gitkeeper's
+  auto-save loop pushed at `2026-09-08T03:28:17Z`, minutes after the purge
+  round. The verification was true when made; it just was not the last word.
+- Lesson recorded: a purge is not "closed" until the **automation that
+  produced the leak** is stopped or its source directory cleaned. A clean
+  history behind a live leak-source is a temporal patch, not a fix.
+
+### 10.4 Owner actions (unchanged + new)
+
+1. **Stop the gitkeeper auto-save loop (or clean its source dir) before it
+   pushes loop 22** — it re-leaks whatever still sits in its watched folder.
+   This is now the TOP residual risk and cannot be fixed from this sandbox.
+2. Rotate **all fleet vault keys** (now including the fourth copy) — burned.
+3. Rotate the working full-scope classic PAT after this push.
+4. Optional hardening: branch protection on `steem` (require PRs) so no
+   daemon can direct-push again.

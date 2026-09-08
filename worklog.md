@@ -490,3 +490,26 @@ Bugs / findings this session:
 
 Stage Summary:
 - The account is swept and the bleeding is stopped: every real leak on GitHub (dead PAT in anchor-baseline history; 3 vault copies with adjacent plaintext passwords in platform+steem; embedded credential in the old clone's config) is PURGED from all history and verified remotely; the only real key material is preserved locally for the owner at ~/.secrets/vault-recovery (600) and MUST be rotated (treated as burned); the working full-scope PAT was never committed to any repo but should be rotated by the owner; 147/162-check suites remain the foundry's baseline and docs now record the whole round with zero secret values printed anywhere
+---
+Task ID: 16 (re-leak-incident-githubkeeper-purge-and-account-reverify)
+Agent: Z.ai Code (orchestrator)
+Task: Owner order — "תמשיך" continuing the leak-sweep closure. Verify everything on GitHub across ALL folders/repos, fix what leaks, push.
+
+Work Log:
+- VERIFIED Task 14/15 state: foundry local main == origin/main == a454b4f after fetch (Task 15 push had landed); Task 14 commit 4fa9a5f already on origin; lint+typecheck clean; api-check 162/162 green on running dev server; unpushed-diff secret scan of the 5 audit/purge commits (docs-only) → 0 real secrets (5 entropy hits = public txid/stateRoot/digest, context-verified masked)
+- ACCOUNT RE-SWEEP (9 repos × every branch, path+filename, binary-aware): foundry/platform/anchor-baseline/Project-files/roshpina/saos-jummper/saos-dex/Saosmartwallet clean; steem@main carried agent/fleet_keys.enc + agent/fleet_keys.meta.json at HEAD
+- ROOT CAUSE: Task 15 purge WAS correct (parent history clean) — the gitkeeper auto-save daemon ("loop 21", 2026-09-08T03:28:17Z) re-committed the vault onto clean history minutes after the purge; daemon runs OUTSIDE this sandbox (ps/cron/systemd: none here)
+- FOURTH VAULT COPY identified: .enc sha256 fp d1e8573080473286… (173,929B) ≠ all three Task-15 backups; meta.json 370B BINARY (not JSON, decode fails); vault-verify-last.json on same commit reports 12/12 accounts (vs 7 keys in old copies); binary marker scan: 0 WIF/0 PEM/0 pass-field/0 seed-words
+- BACKED UP 4th copy to ~/.secrets/vault-recovery/steem-main-current__fleet_keys.{enc,meta.json} BEFORE purge (0600/700)
+- PURGED steem@main: single-commit plumbing rewrite (read-tree → rm --cached → write-tree → commit-tree → update-ref), honest message "security(task-16): strip fleet vault re-introduced by gitkeeper auto-save loop 21…", force-pushed 9047361
+- REMOTE-VERIFIED per-commit: all 90 remote trees re-fetched via API → 0/90 carry fleet_keys or any .enc → CLEAN ✓
+- DOCS: secret-hygiene.md §10 (incident, actions, why Task-15 verification missed it, owner actions), next-steps.md Task 16 section, this worklog
+- (first push attempt failed: mirror remote forbids refspec; re-pushed by URL with header auth — succeeded)
+
+Bugs / findings this session:
+- (procedural) "purged + verified" is not "closed" while the LEAK SOURCE automation lives: gitkeeper will re-leak its watched folder on loop 22 unless stopped/cleaned — TOP residual risk, owner-side only
+- (scanner) 4th vault copy proves vaults keep mutating (12/12 accounts, binary meta) — filename sweeps must run repeatedly, and .enc content marker scans must be part of every round
+- (honesty) Task 15's "remote-verified 0 hits" was true at its timestamp; the re-leak is a NEW event, not a false record
+
+Stage Summary:
+- The account is re-swept and the steem re-leak is purged and per-commit verified remotely (0/90); the 4th vault copy is preserved for the owner at ~/.secrets/vault-recovery (600); the blocking risk is now explicitly the gitkeeper auto-save loop on the owner's infra — stop it before loop 22; all fleet keys (incl. 4th copy) burned → rotation mandatory; foundry docs record the full incident with zero secret values printed anywhere
