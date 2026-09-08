@@ -132,3 +132,56 @@ the system live as safely as possible, never print secrets. What was done:
 Lesson recorded: the "blocked" label on `~/.secrets/` from the Task-12 mapping
 was over-cautious — once the owner explicitly authorizes that path, the right
 posture is: list names, verify hash equality in memory, never surface content.
+
+## 9. Task 15 round — account-wide leak sweep & purge (2026-09-08, executed)
+
+Owner instruction: connect to GitHub, sweep ALL repos/folders for keys and
+leaks, fix everything fixable, push. Method: GitHub API trees + blob content
+scans + full tarball downloads + strict high-entropy re-scan + redacted-context
+verification. **No secret value was ever printed, stored in a doc, or echoed.**
+
+### 9.1 Sweep coverage (measured)
+
+| surface | scanned | result |
+|---|---|---|
+| 8 repos — default-branch trees (API) | all blobs | 56 suspicious filenames → content-scanned → 10 files with pattern hits, all verified code/fixtures |
+| 7 repos — full tarballs, every text file <1MB | 19,105 files | strict high-entropy secret-shaped assignments: **0** |
+| Project-files — all 10 original ZIPs | 10,843 text files | 20 hits, all verified detector-fixture/pattern strings (same artifacts as the steem repo copies) |
+| foundry — entire local git history (all 297 blobs ever committed) | all | pattern hits: **0** |
+| foundry — every REMOTE commit tree (27 commits) | all | `.env` in 8 old commits (verified: `DATABASE_URL` = local SQLite path only, non-sensitive) · `upload/חח.txt` in 7 old commits (see 9.2) |
+| account platform surfaces | gists=0, public keys=0, GPG=0, signing keys=0 | clean |
+
+### 9.2 Findings & actions (all values fingerprint-only)
+
+| # | finding | classification | action taken |
+|---|---|---|---|
+| 1 | `anchor-baseline` history held `upload/חח.txt` = **fine-grained GitHub PAT** (93 chars, fp `f0b8f6987bbf`) | REAL leak, **dead** (HTTP 401 verified live — already revoked) | history rewritten 2 commits → 1 clean commit, force-pushed; verified: tree has no `.env`/`upload/`, old commit+blob unreachable from refs |
+| 2 | `anchor-baseline` HEAD `.env` (50B) = `DATABASE_URL` → **local SQLite file path** (shape-verified: no `://`, no `@`) | non-sensitive (Task-12 warning closed) | removed from tracking + history purge (same rewrite) |
+| 3 | old clone `/home/z/saos-repo/.git/config` embedded token in remote URL (fp never recorded pre-scrub; predates current account) | credential-in-config | URL scrubbed to credential-free; verified clean |
+| 4 | **fleet vault exposed ×3** (per independent forensic audit, verified by this agent): `saos-sovereign-platform/agent/keys/fleet_keys.{enc,meta.json}` (7 keys), `steem/agent/fleet_keys.{enc,meta.json}` (7 keys), `steem/download/recovery/extracted/steem-main/agent/fleet_keys.{enc,meta.json}` (2 keys) — each `.meta.json` holds its vault password in a plaintext `pass` field (43 chars, 3 DIFFERENT passwords, fps `bb0afb880b01` / `f2265b7ced8f` / `0555908b0b0e`) | **CRITICAL — real key material with password-in-plaintext adjacent** (encryption moot) | ① all 6 files backed up locally `~/.secrets/vault-recovery/` (0600/700) ② platform repo: history rewritten (16 commits), `agent/keys/` purged from every commit, force-pushed, verified clean ③ steem repo: history rewritten via filter-repo (89 commits, ~40 commit-trees carried the vault), 4 paths purged, force-pushed, verified clean across all remote commits ④ per audit doctrine: **assume the keys burned — rotation by owner is mandatory** |
+| 5 | working GitHub token (fp `222832039d20`, classic, maximal scopes) | never committed to any repo (verified by the history scans above); flagged by the forensic audit as exposed in chat | owner should revoke/rotate after this push; replacement guidance: fine-grained, single-repo, Contents read/write only, no workflow/admin, short expiry |
+| 6 | `steem/agent/keyscan.cjs` | tool, clean (no secrets) | left in place |
+| 7 | Saosmartwallet (1,330 files, previously "unexamined") | examined this round: 0 suspicious filenames, 0 strict hits | recorded; scope note: pattern-level scan, not a semantic wallet audit |
+| 8 | saos-dex | no key material in tree (wallet route is code); live ETH key lives in the dex agent's runtime env, not git | no rewrite needed; ledger counter bug (verified 18 > anchored 16 on ETH; SOL 18 anchored/0 verified) = handover note for the dex track owner |
+
+### 9.3 Exposed-address balance sweep (read-only, keyless, no transactions)
+
+| network | address/account | balance at sweep | verdict |
+|---|---|---|---|
+| Ethereum | `0x2767…1b0f` | 0.000099721 ETH | dust — sweep to fresh wallet at owner's leisure |
+| Solana | `9knfnF…giL` | 0.029366117 SOL | dust |
+| TRON | `TYVwwu…xTy` | 0 TRX | empty |
+| STEEM | `headcorner` | 0.670 STEEM + 0.260 SBD + vesting | small |
+| HIVE | `headcorner` | 9.682 HIVE | small |
+
+### 9.4 Residual risks (honest)
+
+- GitHub retains purged objects SHA-addressable until its internal GC; they are
+  unreachable from any ref/commit. Combined with the dead PAT and the
+  mandatory key rotation, residual exposure is nil — for immediate invalidation
+  a GitHub Support ticket can be filed (owner action, optional).
+- The three vault passwords were exposed historically: rotation of all vault
+  keys (fresh keys generated on a clean device, never committed) is the true
+  fix and stays an owner action per the forensic audit's kill order.
+- The current full-scope classic PAT remains valid until the owner rotates it
+  (cannot be self-revoked by this agent without cutting its own access).
