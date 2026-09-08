@@ -217,7 +217,8 @@ export const EP = {
   auth: "/api/saos/auth",
   revokeAll: "/api/saos/auth/revoke-all",
   seal: "/api/saos/seal",
-  research: "/api/saos/research"
+  research: "/api/saos/research",
+  breakthroughDemo: "/api/saos/breakthrough-demo"
 } as const;
 
 export function lastCheckedText(iso: string | null): string {

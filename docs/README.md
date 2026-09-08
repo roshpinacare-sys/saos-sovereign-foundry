@@ -25,6 +25,9 @@
 | [security.md](./security.md) | מודל איומים, סודות, גבולות אמת, מה מוגן ומה לא |
 | [live-proof.md](./live-proof.md) (חדש Task 13) | הוכחת-חיים מתועדת: 3 רמות, evidence חי לכל רשת, עמדת safe-live, מה לא נעשה |
 | [live-runbook.md](./live-runbook.md) (חדש Task 13) | סולם-המצבים, הפעלת safe-live, כללי מותר/אסור במצב חי, תקלות מוכרות |
+| [BREAKTHROUGH.md](./BREAKTHROUGH.md) (חדש Task 14) | המסמך המרכזי של פריצת-הדרך: השעון האטומי המבוזר — בעיה, פתרון, חדשנות, הוכחה חיה, benchmarks, שימושים |
+| [breakthrough-comparison.md](./breakthrough-comparison.md) (חדש Task 14) | השוואה מפורטת מול התעשייה: מתודולוגיה, מה נמדד חי מול מה ערך-עזר, מקורות |
+| [technological-audit.md](./technological-audit.md) (חדש Task 14) | אודיט קוד (code archaeology): מה ייחודי/סטנדרטי/נחות — DAG סובל-פיצולים, גבול-אמת encoded, שעון אטומי |
 | [runbook.md](./runbook.md) | הרצה, משתני סביבה, בריאות, תקלות נפוצות, תחזוקה |
 | [decisions.md](./decisions.md) | החלטות הנדסיות: מה, למה, חלופות, סיכון, תועלת |
 | [next-steps.md](./next-steps.md) | תוכנית העבודה מסודרת בעדיפויות עם סטטוס |

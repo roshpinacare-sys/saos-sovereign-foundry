@@ -376,8 +376,8 @@ lint ✅ · typecheck ✅ · api-check **45/45** ✅ · concurrency **8/8** (hei
 | בדיקה | תוצאה |
 |---|---|
 | `bun run lint` / `bun run typecheck` | ✅ נקי |
-| `bun run test` (api-check) | ✅ **147 passed, 0 failed** (135 → 147: §1b מודע-מצב + §28 live-proof ×11) |
-| `bun run verify 8` (concurrency) | ✅ 8/8 — heights רצופים (82→90 בסבבים), שרשרת תקינה, 0 עלים פגומים |
+| `bun run test` (api-check) | ✅ **162 passed, 0 failed** (147 → 162: §29 breakthrough-demo ×15) |
+| `bun run verify 8` (concurrency) | ✅ 8/8 — heights רצופים (111→118), שרשרת תקינה, 25 חותמות/184 עלים all-verified |
 | `GET /api/saos/live-proof` חי | ✅ service=ok · safeLive=true · 5/6 רשתות מאומתות-קריאה (STEEM/HIVE/TRON/ETH chainId=0x1/SOL slots) · BLURT כנה לא-מאומתת (egress) · CI success @382d30e · errors=[] |
 | דפדפן (desktop 1280 / mobile 390 / 360) | ✅ כרטיס "הוכחת חיים" מוצג · אפס overflow · אפס שגיאות קונסול · RTL תקין |
 | `bun run backup` | ✅ טרי ומאומת (integrity ok, counts-match) |
@@ -385,6 +385,16 @@ lint ✅ · typecheck ✅ · api-check **45/45** ✅ · concurrency **8/8** (hei
 ### §28 live-proof — 11 הבדיקות חוזה חדשות
 
 structure(18-field contract) · service∈{ok,degraded,down} · **אפס דפוסי-סוד ב-payload כולו** · 6 רשתות עם probe objects · not-configured = מצב (probe source≠env) · לכל probe reason כנה (בטוח ללא-אינטרנט) · רשתות חסומות מציגות blocker · **safety בדיק-מכונה: אין שידור/עסקה/חתימה/ארנק** · proofRoot/proofHeight תואמי חותמה · rate-limit rule פעיל · decisions view ללא סגירות-פיקטיביות.
+
+### §29 breakthrough-demo — 15 הבדיקות חוזה חדשות (Task 14)
+
+structure (kind+networks+comparison+safety) · 6 רשתות בטבלת העדים · **זמן-חסום (wall < 30s, compute מדוד)** · אפס דפוסי-סוד (כולל דפוס Bearer) · **safety בדיק-מכונה** (broadcast/transaction/signing/wallet=false, liveCalls=read-only) · טבלת-השוואה כנה (בדיוק שורת-ours אחת `measured:true`, כל השאר `measured:false`) · ביטחון כן (SHA-256 256/128, ≥3 limitations, אין fake-bits — independentConsensusSets כמספר) · מדריך אימות צד-שלישי ≥4 צעדים · **לענף-עדים>0**: שורש 64-hex + עלה-לכל-עד 64-hex · הוכחות נוצרו ונאמתו-מחדש (allVerified) · הוכחה <1KB + root 32B + ≤4 ops · $0.00/keyless/gas 0/tx 0 · checkpoint משורשר (digest 64-hex + persisted בוליאני) · נופים עם reason כנה · **לענף-אפס-עדים**: available=false + root=null + הצהרה כנה (בטוח-CI-ללא-egress) · ריצה שנייה: digest טרי + זמן-חסום.
+
+### לקחי Task 14 (bugs/fixes in-flight)
+
+1. **float ב-payload של קבלה נדחה (fail-closed עבד)**: `totalComputeMs=7.8` הפיל את `forgeReceipt` ("unsafe integer rejected") — ה-canonicalizer מסרב float *במכוון*. תיקון: `Math.round` לשדות-מדידה ב-payload. לקח: payloads של קבלות = מספרים שלמים בלבד, תמיד.
+2. **דפוסי-עדים משתנים בין ריצות** (5/6 בריצה אחת, 4/6 באחרת — BLURT/HIVE לפי egress): הבדיקות מתוכננות-מצב (מבנה+כנות בכל עולם; עומק רק כשיש עדים) — גם CI ללא-egress עובד.
+3. **Mono לא מקבל `dir`** (רכיב ללא פרופ dir): עטוף ב-div עם dir=ltr — לקח JSX/RTL.
 
 ### לקחי Task 13 (bugs/fixes in-flight)
 

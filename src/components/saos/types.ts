@@ -426,3 +426,92 @@ export interface RevokeAllResponse {
   revokedAt?: string;
   note?: string;
 }
+
+// ─── /breakthrough-demo (Task 14) ────────────────────────────────────────────
+
+export interface BreakthroughComparisonRow {
+  system: string;
+  kind: string;
+  latency: string;
+  proofSize: string;
+  cost: string;
+  trustModel: string;
+  keyless: boolean;
+  measured: boolean;
+  ours: boolean;
+}
+
+export interface BreakthroughDemoResponse {
+  ok: boolean;
+  timestamp: string;
+  demo: {
+    kind: string;
+    available: boolean;
+    statement: string;
+    networks: {
+      network: string;
+      witnessed: boolean;
+      headBlock: number | null;
+      chainIdHex: string | null;
+      headTime: string | null;
+      sourceHost: string | null;
+      readAt: string | null;
+      reason?: string;
+    }[];
+    witnesses: {
+      total: number;
+      ok: number;
+      failed: number;
+      families: number;
+      excluded?: { network: string; reason: string }[];
+      note: string;
+    };
+    root: string | null;
+    leaves?: string[];
+    treeHeight?: number;
+    proof?: { index: number; leaf: string; root: string; path: { sibling: string; dir: "L" | "R" }[] } | null;
+    verification?: {
+      proofsGenerated: number;
+      proofsVerifiedOk: number;
+      allVerified: boolean;
+      verifyTimeMs: number;
+      method: string;
+    };
+    checkpoint?: { digest: string | null; prevDigest: string | null; persisted: boolean; kind: string };
+    timings?: {
+      leafPhaseMs: number;
+      treePhaseMs: number;
+      proofPhaseMs: number;
+      verifyPhaseMs: number;
+      totalComputeMs: number;
+    };
+    metrics?: {
+      rootSizeBytes: number;
+      leafSizeBytes: number;
+      proofSizeBytesJson: number;
+      proofSizeBytesRaw: number;
+      verifyHashOps: number;
+      costUsd: string;
+      keyless: boolean;
+      gasUsed: number;
+      transactionsSent: number;
+    };
+    security?: {
+      hashAlgorithm: string;
+      commitmentPreimageBits: number;
+      commitmentCollisionBits: number;
+      witnessFamilies: string[];
+      independentConsensusSets?: number;
+      witnessCount?: number;
+      note: string;
+      limitations: string[];
+    };
+    verificationGuide?: { step: string; detail: string }[];
+    probesCached?: boolean;
+  };
+  comparison: { note: string; rows: BreakthroughComparisonRow[] };
+  safety: { broadcast: boolean; transaction: boolean; signing: boolean; wallet: boolean; liveCalls: string; broadcastCapable: boolean; note: string };
+  errors: string[];
+  note: string;
+  generatedBy: string;
+}

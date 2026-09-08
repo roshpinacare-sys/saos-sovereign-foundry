@@ -504,3 +504,32 @@
 **probes ל-6 הרשתות:** קריאה-בלבד, keyless בלבד, timeout 2.5s, hostname-only, מטמון 60s (`runLiveNetworkProbes`); ETH/SOL משתמשות ב-env RPC אם מוגדר, אחרת endpoint ציבורי מוכר (publicnode / mainnet-beta) — כברירת-מחדל `/status` נשאר אפס-קריאות-חוץ (חוזה Task 12 נשמר; `?probe=1` נשאר env-keyed).
 
 **אכיפה במצב live:** `POST /seal` ב-live דורש הפעלה מאומתת (broadcast-adjacent). הסוויטה מזדהה אוטומטית כשמצב=live ו-key זמין (§1b); `concurrency-check` בהתאמה — כולל Retry-After לחלון-auth שנוצל (ר' docs/live-runbook.md §5).
+
+## Task 14 — `GET /api/saos/breakthrough-demo` (הדגמת פריצת-הדרך — חדש)
+
+**קריאה-בלבד, ללא auth, rate-limited (10/min, `SAOS_RL_BREAKTHROUGH_DEMO_PER_MIN`), לעולם לא 500.**
+מריץ חי את **שעון אטומי מבוזר** (Cross-Chain Atomic State Proof): קריאת ראשי 6 הרשתות → עדים קנוניים → שורש Merkle 32B → הוכחות-כלילה + אימות עצמאי בתוך-התהליך → צ'קפוינט משורשר לשרשרת הראיות. מסמכים: `docs/BREAKTHROUGH.md` · `docs/breakthrough-comparison.md` · `docs/technological-audit.md`.
+
+**פלט (חוזה מלא):**
+
+| שדה | תוכן |
+|---|---|
+| `demo.kind` | `cross-chain-atomic-state-proof` |
+| `demo.available` | false כשאין אף עד — כישלון כנה, לא הומצא שורש |
+| `demo.statement` | ההצהרה האטומית: "ברגע T, מצב הראש של N רשתות נקשר לשורש R…" |
+| `demo.networks` | ×6 — `witnessed` + headBlock/chainIdHex/headTime/sourceHost/readAt; לא-נכללים עם `reason` כנה |
+| `demo.witnesses` | total/ok/failed/families + excluded[] + note (עד = ראש ציבורי שנקרא חי) |
+| `demo.root` / `demo.leaves` / `demo.treeHeight` | השורש האטומי 32B · עלה 64-hex לכל עד · גבהי העץ |
+| `demo.proof` | MerkleProof מלא לעד הראשון (demonstration artifact) |
+| `demo.verification` | proofsGenerated/proofsVerifiedOk/allVerified/verifyTimeMs/method (שחזור עצמאי) |
+| `demo.checkpoint` | digest · prevDigest (שרשור לשרשרת-הראיות) · persisted · kind |
+| `demo.timings` | leafPhaseMs/treePhaseMs/proofPhaseMs/verifyPhaseMs/totalComputeMs — מדידה חיה |
+| `demo.metrics` | rootSizeBytes=32 · proofSizeBytesJson/Raw · verifyHashOps · **costUsd "0.00" · keyless · gasUsed 0 · transactionsSent 0** |
+| `demo.security` | SHA-256 256-bit preimage / 128-bit collision · witnessFamilies · independentConsensusSets · note (אין מתמטיקת "רשתות×bits" מדומה) · limitations[] כנים |
+| `demo.verificationGuide` | 5 צעדי אימות עצמאי לצד-שלישי (קריאה-חוזרת ציבורית · בניית-עלה · הליכת-נתיב · רוט אטומי · שרשרת-צ'קפוינטים) |
+| `comparison.rows` | 6 שורות — ours `measured:true`; OTS/Chainlink/LayerZero/ETH-MPT/Solana `measured:false` (עזר) + `comparison.note` |
+| `safety` | בדיק-מכונה: `broadcast=false · transaction=false · signing=false · wallet=false · liveCalls="read-only"` |
+
+**אכיפת-סודות:** אפס ערכי-סוד בפלט (רק נתוני-שרשרת ציבוריים + digests + hostnames); assertion קבוע ב-api-check §29 סורק את ה-payload כולו.
+
+**כתיבה יחידה:** קבלת `breakthrough-demo` בשרשרת-הראיות (`appendReceipt`, prevDigest ← אחרון; `productionAuthority: NONE` נאכף ב-store) — בלי שמירה במצבים ללא persistence. בדיקות: api-check §29 ×15 (מבנה, 6 עדים, זמן-חסום, הוכחה <1KB, אימות-עצמאי, $0.00 keyless, טבלת-השוואה כנה, ביטחון ללא-fake-bits, מדריך אימות, checkpoint chaining, כישלון-אפס-עדים כן, digests טריים לכל ריצה).

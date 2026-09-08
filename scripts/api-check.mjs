@@ -42,6 +42,11 @@
  *      is a warn (never a fail), unknown network still fail-closed
  *  27. signer: SignRequest creatable for ETHEREUM/SOLANA (dry doc, audited
  *      instructions), drills cancelled — no lingering open queue
+ *   Task 14 (breakthrough demo — cross-chain atomic state proof):
+ *  29. breakthrough-demo: structure, 6 witnesses, bounded time, tiny proofs
+ *      (<1KB), in-process re-verification, $0.00 keyless, honest comparison
+ *      table (ours measured / references labeled), no secrets, checkpoint
+ *      chaining, honest zero-witness failure, fresh digests per run
  */
 const BASE = process.env.SAOS_BASE_URL ?? "http://localhost:3000";
 const ADMIN_KEY = process.env.SAOS_ADMIN_KEY ?? "";
@@ -533,6 +538,83 @@ async function main() {
   );
   report("live-proof: rate limit rule active for the endpoint", lpB.rateLimit?.active === true && lpB.rateLimit?.liveProofPerMinute > 0, `${lpB.rateLimit?.liveProofPerMinute}/min`);
   report("live-proof: decisions view present (openCritical keys, no fake closures)", Array.isArray(lpB.decisions?.openCritical) && typeof lpB.decisions?.openTotal === "number", `open=${lpB.decisions?.openTotal} critical=[${(lpB.decisions?.openCritical ?? []).join(",")}]`);
+
+  // 29. Task 14 — breakthrough-demo: שעון אטומי מבוזר (structure, measurements, honesty, safety)
+  console.log("\n29. breakthrough-demo (Task 14 — שעון אטומי מבוזר):");
+  const btT0 = Date.now();
+  const bt = await j("/api/saos/breakthrough-demo");
+  const btWallMs = Date.now() - btT0;
+  const btB = bt.body ?? {};
+  const btD = btB.demo ?? {};
+  report(
+    "breakthrough: required structure present",
+    bt.status === 200 && btB.ok === true && typeof btD.kind === "string" && Array.isArray(btD.networks) && Array.isArray(btB.comparison?.rows) && typeof btB.safety === "object",
+    `kind=${btD.kind} networks=${btD.networks?.length} rows=${btB.comparison?.rows?.length}`
+  );
+  report("breakthrough: all 6 networks appear in the witness table", ["STEEM", "BLURT", "HIVE", "TRON", "ETHEREUM", "SOLANA"].every((n) => btD.networks?.some((x) => x.network === n)), `${btD.witnesses?.ok ?? 0}/6 witnessed live`);
+  report("breakthrough: runs in bounded time (wall < 30s — probes have 2.5s timeout, 60s cache)", btWallMs < 30_000, `wall=${btWallMs}ms compute=${btD.timings?.totalComputeMs ?? "?"}ms`);
+  const btNoSecrets = !/gh[pousr]_[A-Za-z0-9]{20,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----|AKIA[0-9A-Z]{16}|Bearer [A-Za-z0-9_\-\.]{20,}/.test(JSON.stringify(btB));
+  report("breakthrough: no secret-shaped strings anywhere in the payload", btNoSecrets, "token/key/bearer patterns: zero matches");
+  report(
+    "breakthrough: safety is machine-checkable — no broadcast/tx/signing/wallet, read-only live calls",
+    btB.safety?.broadcast === false && btB.safety?.transaction === false && btB.safety?.signing === false && btB.safety?.wallet === false && btB.safety?.liveCalls === "read-only",
+    "the demo proves value without touching any chain state"
+  );
+  report(
+    "breakthrough: comparison table — exactly one ours row (measured), every other row marked as reference",
+    btB.comparison?.rows?.filter((r) => r.ours === true).length === 1 && btB.comparison.rows.find((r) => r.ours === true)?.measured === true && btB.comparison.rows.filter((r) => r.ours !== true).every((r) => r.measured === false),
+    `${btB.comparison?.rows?.length ?? 0} rows · ours=measured, references=clearly labeled`
+  );
+  report(
+    "breakthrough: honest security statement — SHA-256 bits, no fake network×bits math, limitations disclosed",
+    btD.security?.commitmentCollisionBits === 128 && btD.security?.commitmentPreimageBits === 256 && Array.isArray(btD.security?.limitations) && btD.security.limitations.length >= 3 && typeof btD.security?.independentConsensusSets === "number",
+    `${btD.security?.independentConsensusSets ?? "?"} consensus families · ${btD.security?.limitations?.length ?? 0} honest limitations`
+  );
+  report("breakthrough: third-party verification guide present (≥4 independent steps)", Array.isArray(btD.verificationGuide) && btD.verificationGuide.length >= 4, `${btD.verificationGuide?.length ?? 0} steps`);
+  if ((btD.witnesses?.ok ?? 0) > 0) {
+    report(
+      "breakthrough: atomic root is a 32-byte SHA-256 value; one leaf per witness (64-hex each)",
+      /^[0-9a-f]{64}$/.test(btD.root ?? "") && btD.leaves?.length === btD.witnesses.ok && btD.leaves?.every((l) => /^[0-9a-f]{64}$/.test(l ?? "")),
+      `root=${(btD.root ?? "").slice(0, 12)}… leaves=${btD.leaves?.length}`
+    );
+    report(
+      "breakthrough: inclusion proofs generated AND independently re-verified in-process",
+      btD.verification?.proofsGenerated === btD.witnesses.ok && btD.verification?.allVerified === true && btD.verification?.proofsVerifiedOk === btD.verification?.proofsGenerated,
+      `${btD.verification?.proofsVerifiedOk}/${btD.verification?.proofsGenerated} verified in ${btD.verification?.verifyTimeMs}ms`
+    );
+    report(
+      "breakthrough: proof is tiny — < 1KB JSON, root = 32 bytes, verify ≤ 4 hash ops",
+      btD.metrics?.proofSizeBytesJson < 1024 && btD.metrics?.rootSizeBytes === 32 && btD.metrics?.verifyHashOps <= 4,
+      `proof=${btD.metrics?.proofSizeBytesJson}B raw=${btD.metrics?.proofSizeBytesRaw}B ops=${btD.metrics?.verifyHashOps}`
+    );
+    report(
+      "breakthrough: zero-cost keyless — $0.00, no gas, no transactions sent",
+      btD.metrics?.costUsd === "0.00" && btD.metrics?.keyless === true && btD.metrics?.gasUsed === 0 && btD.metrics?.transactionsSent === 0,
+      "value demonstrated without keys or funding"
+    );
+    report(
+      "breakthrough: checkpoint chained into the evidence receipt chain",
+      /^[0-9a-f]{64}$/.test(btD.checkpoint?.digest ?? "") && typeof btD.checkpoint?.persisted === "boolean" && btD.checkpoint?.kind === "breakthrough-demo",
+      `digest=${(btD.checkpoint?.digest ?? "").slice(0, 12)}… persisted=${btD.checkpoint?.persisted}`
+    );
+    const btFailedOk = (btD.witnesses?.failed ?? 0) === (btD.witnesses?.excluded?.length ?? 0) && btD.networks?.filter((x) => x.witnessed === false).every((x) => typeof x.reason === "string" && x.reason.length > 0);
+    report("breakthrough: excluded networks are disclosed with honest reasons (never invented witnesses)", btFailedOk, `excluded=${(btD.witnesses?.excluded ?? []).map((x) => x.network).join(",") || "none"}`);
+  } else {
+    report("breakthrough: zero witnesses → honest failure (available:false, statement, no invented root)", btD.available === false && btD.root === null && typeof btD.statement === "string" && btD.statement.length > 0, "no-egress environment stays honest");
+  }
+  const bt2T0 = Date.now();
+  const bt2 = await j("/api/saos/breakthrough-demo");
+  const bt2WallMs = Date.now() - bt2T0;
+  const bt2D = bt2.body?.demo ?? {};
+  const bt2DigestOk =
+    (btD.checkpoint?.digest ?? null) === null
+      ? (bt2D.checkpoint?.digest ?? null) === null && bt2WallMs < 30_000 // no-witness environment: both honest-null
+      : (bt2D.checkpoint?.digest ?? "") !== (btD.checkpoint?.digest ?? "") && bt2WallMs < 30_000 && /^[0-9a-f]{64}$/.test(bt2D.checkpoint?.digest ?? "");
+  report(
+    "breakthrough: consecutive runs produce fresh digests and stay under the time bound",
+    bt2DigestOk,
+    `run2 wall=${bt2WallMs}ms digest=${(bt2D.checkpoint?.digest ?? "").slice(0, 12)}… (append-only clock advances)`
+  );
 
   // never-500 sweep over every touched endpoint
   console.log("\nnever-500 sweep:");

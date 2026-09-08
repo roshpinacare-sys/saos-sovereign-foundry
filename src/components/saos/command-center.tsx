@@ -7,6 +7,7 @@ import {
   ListChecks,
   Network,
   RefreshCw,
+  Rocket,
   ScrollText,
   ShieldCheck,
   Signature
@@ -21,6 +22,7 @@ import type { AuthStateResponse, PreflightResponse, RepoStatusResponse, StatusRe
 import { EP, refreshMany, useSaos } from "./api";
 
 import { OverviewTab } from "./overview-tab";
+import { BreakthroughTab } from "./breakthrough-tab";
 import { ChainTab } from "./chain-tab";
 import { SignaturesTab } from "./signatures-tab";
 import { NetworksTab } from "./networks-tab";
@@ -30,6 +32,7 @@ import { AuditTab } from "./audit-tab";
 
 const TABS = [
   { value: "overview", label: "סקירה כללית", short: "סקירה", icon: Activity },
+  { value: "breakthrough", label: "פריצת הדרך", short: "פריצה", icon: Rocket },
   { value: "chain", label: "שרשרת ואימות", short: "שרשרת", icon: ListChecks },
   { value: "signatures", label: "חתימות ועוגנים", short: "חתימות", icon: Signature },
   { value: "networks", label: "רשתות ומשאבים", short: "רשתות", icon: Network },
@@ -140,6 +143,7 @@ export function CommandCenter() {
         {TABS.map((t) => (
           <Tabs.Content key={t.value} value={t.value} className="focus-visible:outline-none">
             {t.value === "overview" && <OverviewTab onNavigate={(tab) => setActive(tab as TabValue)} />}
+            {t.value === "breakthrough" && <BreakthroughTab />}
             {t.value === "chain" && <ChainTab />}
             {t.value === "signatures" && <SignaturesTab />}
             {t.value === "networks" && <NetworksTab />}
