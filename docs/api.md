@@ -472,3 +472,35 @@
 - **`GET /anchor-preflight?network=ETHEREUM|SOLANA`** — מקובל; `not-configured` מדווח **warn** (לעולם לא fail — היערכות-יבשה תקינה); `networks[]` כולל chainType/chainId/rpcStatus/blocker/ownerAction; רשת לא-מוכרת נשארת fail-closed (הודעת-השגיאה מעודכנת ל-6).
 - **`/signer`** — `SignRequest.network` מורחב ל-ETHEREUM/SOLANA (הוראות חתימה חיצונית ייעודיות: EVM calldata · Solana memo/blockhash); אימות-txid ציבורי עובד גם לשתי הרשתות (`eth_getTransactionByHash` · `getTransaction(finalized)` — כישלון = `unverified` כנה).
 - **אכיפת סודות**: RPC URL עם credentials/מפתח-בשאילתה נדחה בקוד; ה-URL לעולם לא נשמר/מוצג/חוזר ב-API (רק hostname ב-probe). משתני-סביבה: `ETH_RPC_URL`, `ETH_CHAIN_ID`, `SOL_RPC_URL`, `SOL_CLUSTER` (שמות בלבד ב-`.env.example`).
+
+## Task 13 — `GET /api/saos/live-proof` (הוכחת חיים — חדש)
+
+**קריאה-בלבד, ללא auth, rate-limited (6/min, `SAOS_RL_LIVE_PROOF_PER_MIN`), לעולם לא 500.** endpoint אחד שמוכיח שלוש רמות חיים: מערכת · רשתות (קריאה) · מוכנות-עוגן. תיעוד-ראייה: `docs/live-proof.md`.
+
+**פלט (חוזה מלא):**
+
+| שדה | תוכן |
+|---|---|
+| `timestamp` / `service` | ISO · `ok`/`degraded`/`down` (down = DB לא נגיש) |
+| `database` | ok + counts (seals/leaves/anchors/receipts/opLogs/auditEvents/decisions/signRequests/researchFindings) |
+| `auth` | configured (hash-only) · sessionEpoch (`bootstrap`/`rotated`) · revocationReady |
+| `rateLimit` | active + per-minute ל-live-proof/status/seal/auth |
+| `audit` | אירועי 24h · totalEvents · lastEventKind/at |
+| `backups` | lastBackupAt · lastVerified · fresh(<7d) |
+| `repo` | available · branch · sync (`synced`/`ahead`/`unknown`) · unpushed/uncommitted · lastCommitSha12 · remoteHost (ללא URL) |
+| `ci` | best-effort מ-GitHub API (`available` + `lastRun{status,conclusion,headSha12,startedAt,event}` או `reason`); הטוקן נקרא מ-`~/.secrets/github-token` לזיכרון-בלבד (0600 נאכף), לעולם לא מוצג/נשמר/נרשם |
+| `networks` | ×6 — סטטוס בסיס + `probe{attempted, ok, source(env/public-fallback/none), sourceHost, headBlock, chainIdHex, headTime, latencyMs, reason}` |
+| `probesSummary` | attempted/ok/unreachable · cached (60s) · plan (hostnames בלבד) |
+| `preflight` | readyForAnchor · blockers · firstAnchorStatus · recommendedNetwork · ownerAction · recommendedNextAction |
+| `decisions` | openCritical (keys) · needsResource (keys) · openTotal · total |
+| `proofRoot`/`proofHeight` | החותמה האחרונה (או null כנה כשהשרשרת ריקה) |
+| `signatureQueue` | open/signedExternally/recorded/expired/cancelled/failed |
+| `liveMode` | mode · detail · writesEnabled · liveArmed |
+| `safeLive`/`safety` | safeLive = broadcastCapable=false · safety בדיק-מכונה: `transactionAttempted=false, signingAttempted=false, walletUsed=false` |
+| `errors` | הערות כנות לתת-מערכות שלא נשלפו (מעולם לא סודות) |
+
+**אכיפת-סודות ב-endpoint:** אפס ערכי-סוד בפלט; assertion קבוע ב-api-check §28 סורק את ה-payload כולו מול דפוסי טוקן/מפתח-פרטי/AWS.
+
+**probes ל-6 הרשתות:** קריאה-בלבד, keyless בלבד, timeout 2.5s, hostname-only, מטמון 60s (`runLiveNetworkProbes`); ETH/SOL משתמשות ב-env RPC אם מוגדר, אחרת endpoint ציבורי מוכר (publicnode / mainnet-beta) — כברירת-מחדל `/status` נשאר אפס-קריאות-חוץ (חוזה Task 12 נשמר; `?probe=1` נשאר env-keyed).
+
+**אכיפה במצב live:** `POST /seal` ב-live דורש הפעלה מאומתת (broadcast-adjacent). הסוויטה מזדהה אוטומטית כשמצב=live ו-key זמין (§1b); `concurrency-check` בהתאמה — כולל Retry-After לחלון-auth שנוצל (ר' docs/live-runbook.md §5).

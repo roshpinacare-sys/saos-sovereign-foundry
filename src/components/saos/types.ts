@@ -73,6 +73,92 @@ export interface PreflightResponse {
   note: string;
 }
 
+// ─── /live-proof (Task 13 — הוכחת חיים) ──────────────────────────────────────
+
+export interface LiveProofProbe {
+  network: string;
+  attempted: boolean;
+  ok: boolean;
+  source: "env" | "public-fallback" | "none";
+  sourceHost: string | null;
+  headBlock: number | null;
+  chainIdHex: string | null;
+  headTime: string | null;
+  latencyMs: number | null;
+  reason: string;
+}
+
+export interface LiveProofResponse {
+  ok: boolean;
+  timestamp: string;
+  service: "ok" | "degraded" | "down";
+  database: { ok: boolean; counts: Record<string, number> };
+  auth: { configured: boolean; sessionEpoch: string | null; revocationReady: boolean };
+  rateLimit: { active: boolean; liveProofPerMinute: number; statusPerMinute: number; sealPerMinute: number; authPerMinute: number };
+  audit: { recentEvents24h: number; totalEvents: number; lastEventAt: string | null; lastEventKind: string | null };
+  backups: { lastBackupAt: string | null; lastVerified: boolean; fresh: boolean; detail: string | null };
+  repo: {
+    available: boolean;
+    branch: string | null;
+    sync: "synced" | "ahead" | "unknown";
+    unpushedCommits: number | null;
+    uncommittedFiles: number | null;
+    lastCommitSha12: string | null;
+    remoteConfigured: boolean;
+    remoteHost: string | null;
+  };
+  ci: {
+    available: boolean;
+    reason?: string;
+    lastRun?: { status: string | null; conclusion: string | null; headSha12: string | null; startedAt: string | null; event: string | null };
+  };
+  networks: {
+    network: string;
+    status: string;
+    mode: string;
+    chainType: string | null;
+    chainId: string | null;
+    rpcStatus: string | null;
+    blocker: string | null;
+    nextAction: string;
+    isReadyForAnchor: boolean;
+    isDryRunOnly: boolean;
+    ownerAction: string;
+    requiredResource: string | null;
+    liveProbePossible: boolean;
+    probe: LiveProofProbe | null;
+  }[];
+  probesSummary: {
+    attempted: number;
+    ok: number;
+    unreachable: number;
+    cached: boolean;
+    at: string;
+    plan: { network: string; source: string; host: string | null }[];
+    note: string;
+  };
+  preflight: {
+    readyForAnchor: boolean;
+    blockers: { id: string; detail: string }[];
+    warningsCount: number;
+    firstAnchorStatus: string;
+    recommendedNetwork: string | null;
+    ownerAction: string;
+    recommendedNextAction: string;
+    runbook: string;
+  };
+  decisions: { openCritical: string[]; needsResource: string[]; openTotal: number; total: number };
+  proofRoot: string | null;
+  proofHeight: number | null;
+  signatureQueue: Record<string, number>;
+  liveMode: { mode: string; detail: string; writesEnabled: boolean; liveArmed: boolean };
+  safeLive: boolean;
+  safety: { broadcastCapable: boolean; transactionAttempted: boolean; signingAttempted: boolean; walletUsed: boolean; note: string };
+  errors: string[];
+  note: string;
+  generatedBy: string;
+}
+
 // ─── /verify-chain ───────────────────────────────────────────────────────────
 
 export interface VerifyChainResponse {

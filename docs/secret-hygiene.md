@@ -113,3 +113,22 @@ routine rotation (recommended every 90 days).
    break (docs/runbook.md §revocation).
 5. Record the rotation as an owner decision (`docs/owner-decisions.md`) —
    status only, no key material, no hash value in the docs.
+
+## 8. Task 13 round — live activation (2026-09-08, executed)
+
+Owner instruction: search authorized assets for missing keys/configs, activate
+the system live as safely as possible, never print secrets. What was done:
+
+| item | result |
+|---|---|
+| `~/.secrets/` inventory (names only, dir 700) | `github-token` (40B, 0600) + `saos-admin-key` (172B, 0600) — both in place from Task 11-closure |
+| admin-key ↔ `SAOS_ADMIN_KEY_HASH` match | **TRUE** — sha256 of the last non-empty line compared to the env hash **in memory only**; no content printed, no copy made |
+| key search across other authorized assets | local `.env` (names verified), `.env.example`, docs, scripts, old clone `/home/z/saos-repo` (top-level only) — nothing else legitimately usable found; vault keys / network funding are **owner-external resources by design** (docs/external-signer.md), not repo-search items |
+| new runtime secret-touching path | `GET /api/saos/live-proof` reads `~/.secrets/github-token` into memory for ONE short GitHub-API read of the owner's own repo CI status; 0600 enforced (bits `077` must be zero), never echoed/logged/stored/cached-with-content; failure degrades to `available:false` |
+| keyless RPC policy | ETH/SOL live probes use well-known keyless public endpoints (publicnode / mainnet-beta) or an env URL that is validated credential-free (safeRpcUrl refuses embedded keys / key-like query params) — no secret ever needed for read-only network proof |
+| open rotation recommendations (unchanged, owner actions) | ① token embedded in `/home/z/saos-repo/.git/config` (old clone) ② `.env` present at the top of the `anchor-baseline` GitHub repo (existence observed in Task 12, never read) ③ routine 90-day rotation of the admin key and GitHub token (§7) |
+| scan coverage before this round's commit | pattern scan over tracked files + diff secret-scan before push (0 matches; `.env` and `backups/` gitignored; `upload/` empty) |
+
+Lesson recorded: the "blocked" label on `~/.secrets/` from the Task-12 mapping
+was over-cautious — once the owner explicitly authorizes that path, the right
+posture is: list names, verify hash equality in memory, never surface content.

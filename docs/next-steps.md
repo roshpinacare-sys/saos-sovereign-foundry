@@ -252,3 +252,28 @@
 1. הגדרת `ETH_RPC_URL`/`SOL_RPC_URL` ציבוריים-ללא-מפתח (אפס עלות) → נפתח probe אמיתי
 2. היגיינה רב-סוכנית: סיבוב הטוקן המוטמע ב-`/home/z/saos-repo` + הסרת `.env` מריפו `anchor-baseline` (פעולות בעלים)
 3. שאר המועמדים מהסבב הקודם בתוקף
+
+---
+
+## עדכון Task 13 (2026-09-08) — Live Activation Proof
+
+| נושא | שינוי מצב |
+|---|---|
+| מצב המערכת | **live ללא-שידור** (safe-live): `SAOS_MODE=live` + `SAOS_LIVE_CONFIRM=YES` · broadcastCapable=false מבנית. הוכחה חיה: `docs/live-proof.md` |
+| רשתות — אימות-קריאה חי | 5/6 מאומתות (STEEM head, HIVE head, TRON solidity-head, ETH chainId=0x1+block, SOL slot) · BLURT לא-נגישה מהסנדבוקס (egress) — מדווח כנה, לא חסימת-מערכת |
+| endpoint חדש | `GET /api/saos/live-proof` — הוכחת-חיים ×3 רמות + UI כרטיס "הוכחת חיים" |
+| רשתות STEEM/BLURT/HIVE/TRON | `rpcStatus: public` (endpoints ציבוריים keyless מובנים) + `liveProbePossible: true` |
+| החלטות בעלים | **9/9 מוקלטות** (0 פתוחות): live-mode-approval → decided-custom (אישור הבעלים בצ'אט), github-actions-ci → decided-custom (ריצה ירוקה) · 3 needs-resource נותרות (כספת/RC/TRON) |
+| ניקיון-אמת | preflight security-open-items דינמי (טענת-CI שקרית הוסרה; SH-7 רק כשהקובץ בעץ) · דריל ה-decisions ב-api-check לא מייצר עוד "open" מזויף |
+
+### החסימות שנותרו (כולן משאב/אישור-בעלים — לא קוד)
+
+1. **כספת חתימה** (vault-restore) — שחזור מחוץ למערכת → אז עוגן ראשון אמתי לפי docs/first-anchor-runbook.md.
+2. **HIVE RC ≥ 8%** או power-up/delegate (hive-rc-floor).
+3. **TRON stake** או המשך transit (tron-stake).
+4. **בלוט נגישות-רשת** מהסביבה (egress) — לא חסימת קוד; ייבדק שוב.
+5. רוטציות אופציונליות לבעלים (טוקן בשיבוט-ישן; `.env` ב-anchor-baseline; מחזור 90 יום) — docs/secret-hygiene.md §8.
+
+### הפעולה הבאה בעלת הערך הגבוה
+
+**עוגן ראשון אמתי** — הדרך: להשלים משאב לרשת-אחת (STEEM: שחזור posting-key חוץ-למערכת; HIVE: RC/power-up; TRON: stake) → live-gate ירוק → SignRequest → חתימה חיצונית → רישום txid + אימות. כל השאר (גלגל-החור, רשתות נוספות) נובע ממנו.

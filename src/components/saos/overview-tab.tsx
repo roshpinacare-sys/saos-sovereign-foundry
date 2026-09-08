@@ -32,6 +32,7 @@ import {
   fmtDateTime
 } from "@/components/ui/kit";
 import { EP, errText, useSaos } from "./api";
+import { LiveProofCard } from "./live-proof-card";
 import { ANCHOR_STATUS, NETWORK_STATUS } from "./labels";
 import type { DecisionsResponse, PreflightResponse, RepoStatusResponse, StatusResponse } from "./types";
 
@@ -109,6 +110,9 @@ export function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void 
 
       {/* first-anchor readiness (Task 11) */}
       <FirstAnchorCard readiness={preflight.firstAnchorReadiness} generatedAt={preflight.generatedAt} onNavigate={onNavigate} />
+
+      {/* הוכחת חיים — Live Proof (Task 13): system + 6-network read-only probes + safety posture */}
+      <LiveProofCard />
 
       {/* open critical decisions — must surface as blockers (Task 11 part ד) */}
       {decisions.decisions.filter((d) => d.critical && d.recordedStatus === "open").length > 0 && (

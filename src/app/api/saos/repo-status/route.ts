@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { execFile } from "child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "fs";
 import path from "path";
 import { db } from "@/lib/db";
 import { authConfigured } from "@/lib/saos/auth";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
 import { saosMode } from "@/lib/saos/modes";
+import { gitRun, gitSnapshot } from "@/lib/saos/repo-git";
 
 export const dynamic = "force-dynamic";
 
@@ -25,11 +25,7 @@ export const dynamic = "force-dynamic";
  *   filename/content pattern scan (cached 5m) → live secret-pattern sweep over TRACKED files
  */
 function run(cmd: string, args: string[], timeoutMs = 4000): Promise<string | null> {
-  return new Promise((resolve) => {
-    execFile(cmd, args, { cwd: process.cwd(), timeout: timeoutMs }, (err, stdout) => {
-      resolve(err ? null : stdout.toString().trim());
-    });
-  });
+  return gitRun(cmd, args, timeoutMs);
 }
 
 const SECRET_FILE_PATTERNS = [
@@ -84,20 +80,16 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, error: "rate-limited", retryAfterSec: rl.retryAfterSec }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } });
   }
   try {
-    // ── git state (best-effort, read-only) ─────────────────────────────────
-    const [branch, headSubject, headIso, headSha, dirty, unpushed, remoteUrl] = await Promise.all([
-      run("git", ["rev-parse", "--abbrev-ref", "HEAD"]),
-      run("git", ["log", "-1", "--pretty=%s"]),
-      run("git", ["log", "-1", "--pretty=%cI"]),
-      run("git", ["rev-parse", "--short=12", "HEAD"]),
-      run("git", ["status", "--porcelain"]),
-      run("git", ["rev-list", "--count", "origin/main..HEAD"]),
-      run("git", ["remote", "get-url", "origin"])
-    ]);
-    const gitAvailable = branch !== null;
-    const dirtyLines = dirty ? dirty.split("\n").filter(Boolean) : [];
+    // ── git state (best-effort, read-only; shared helper since Task 13) ────
+    const snap = await gitSnapshot();
+    const branch = snap.branch;
+    const headSubject = snap.lastCommit?.subject ?? null;
+    const headIso = snap.lastCommit?.at ?? null;
+    const headSha = snap.lastCommit?.sha ?? null;
+    const gitAvailable = snap.available;
+    const dirtyLines = snap.uncommittedSample;
     // remote URL is reported scrubbed — only whether it exists and its host
-    const remoteHost = remoteUrl ? (remoteUrl.match(/@([^/]+)\//)?.[1] ?? remoteUrl.replace(/^https?:\/\//, "").split("/")[0]) : null;
+    const remoteHost = snap.remoteHost;
 
     // ── backups (dir + authoritative OpLog) ────────────────────────────────
     const backupDir = path.join(process.cwd(), "backups");
@@ -161,8 +153,8 @@ export async function GET(req: Request) {
         lastCommit: gitAvailable && headSha ? { sha: headSha, subject: headSubject, at: headIso } : null,
         uncommittedFiles: gitAvailable ? dirtyLines.length : null,
         uncommittedSample: dirtyLines.slice(0, 10),
-        unpushedCommits: gitAvailable && unpushed !== null ? Number(unpushed) : null,
-        remoteConfigured: remoteUrl !== null,
+        unpushedCommits: snap.unpushedCommits,
+        remoteConfigured: snap.remoteConfigured,
         remoteHost
       },
       backups: {

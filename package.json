@@ -8,7 +8,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "bun scripts/api-check.mjs",
-    "verify": "node scripts/concurrency-check.mjs",
+    "verify": "bun scripts/concurrency-check.mjs",
     "check": "npm run lint && npm run typecheck && npm run test && npm run verify",
     "build": "next build",
     "backup": "bun scripts/backup.mjs",

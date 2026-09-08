@@ -57,13 +57,13 @@
 | admin-key-location | security | critical | now | **decided-default** — בוצע אוטונומית: הועבר ל-`~/.secrets/saos-admin-key` (600), `adminKeyFileInTree=false`; רוטציה נותרה פעולת בעלים אופציונלית |
 | sh3-historical-file | security | critical | now | **decided-default** — ברירת-המחדל הבטוחה פעילה (אין שכתוב; התוכן מתייחס כסוד; ריפו פרטי); סיווג סופי נותר פעולת בעלים אופציונלית |
 | push-approval | governance | medium | now | **decided-default** — הבעלים אישר במפורש ("שידחוף דחוף"); f012014 נדחף לפי הפרוטוקול ואומת מרחוק |
-| github-actions-ci | release | medium | now | **decided-default** — workflow נוצר (`.github/workflows/ci.yml`); ריצת ה-CI הראשונה תאומת ב-push הקרוב |
+| github-actions-ci | release | medium | now | **decided-custom** (Task 13) — ה-workflow קיים בפועל וריצה #4 ירוקה מקצה-לקצה (4e853a9: lint+typecheck+build+api-check+concurrency); סטטוס ה-CI נשלף חי ב-/api/saos/live-proof |
 | vault-restore | resources | critical | before-anchor | **needs-resource** — נדרש שחזור כספת מחוץ למערכת; לא ניתן לביצוע אוטונומי |
 | hive-rc-floor | resources | critical | before-anchor | **needs-resource** — RC נמוך מהסף; נדרש power-up/delegate או המתנה לרגן |
 | tron-stake | resources | critical | before-anchor | **needs-resource** — אנרגיה=0; נדרש מימון TRX או המשך tronbridge |
 | build-verification | release | medium | before-live | **deferred** — חסום-סביבה (מדיניות dev-server בלבד); ה-build יאומת בריצות ה-CI |
-| live-mode-approval | governance | critical | before-live | **open** — נותרה פתוחה בכוונה: החלטת בעלים אמיתית, לא ניתן לסגור במקומו |
+| live-mode-approval | governance | critical | before-live | **decided-custom** (Task 13) — הבעלים אישר במפורש בצ'אט: להפעיל live במצב הבטוח ביותר — live **ללא שידור אמיתי**. בוצע (דגלים כפולים); broadcastCapable נשאר false עד חיבור חותם חיצוני; כל עוגן אמיתי עדיין דורש אישור פר-עוגן + משאב + חתימה חיצונית |
 
-מאזן: 8 מתוך 9 עודכנו (4 סגורות-ברירת-מחדל, 3 needs-resource, 1 deferred); היחידה הפתוחה היא החלטת-הבעלים האמיתית (live). כל העדכונים עם auditTrail ב-API.
+מאזן (עודכן Task 13, 2026-09-08): **9 מתוך 9 מוקלטות — 0 פתוחות, 0 קריטיות-פתוחות** (5 decided, 3 needs-resource, 1 deferred). שתי הסגירות החדשות (live-mode-approval, github-actions-ci) מבוססות על הנחיית-הבעלים ב-Task 13 ועל מצב בפועל שנמדד — לא סגירות-פיקטיביות. כל העדכונים עם auditTrail ב-API.
 
 > הסטטוס החי הוא תמיד `GET /api/saos/decisions` — הטבלה היא תמונת-מצב לתיעוד בלבד.

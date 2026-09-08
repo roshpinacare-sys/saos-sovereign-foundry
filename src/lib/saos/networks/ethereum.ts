@@ -131,9 +131,15 @@ export function ethereumStatus(nowIso: string): EthereumStatusView {
  * READ-ONLY probe — eth_chainId + eth_blockNumber on the configured keyless
  * RPC. Opt-in (never called by the default status computation), 2.5s timeout,
  * every failure resolves to an honest ok:false. No transaction, no signing.
+ *
+ * Task 13: `allowPublicFallback` lets the live-proof path read from the
+ * well-known KEYLESS public endpoint when no env RPC is configured. Default
+ * (false) keeps the Task-12 contract: not-configured → probe not attempted.
+ * Both paths are keyless — a URL with embedded credentials is always refused.
  */
-export async function probeEthereumReadonly(): Promise<EthereumProbeResult> {
-  const url = safeRpcUrl();
+export async function probeEthereumReadonly(opts?: { allowPublicFallback?: boolean }): Promise<EthereumProbeResult> {
+  let url = safeRpcUrl();
+  if (!url && opts?.allowPublicFallback) url = "https://ethereum-rpc.publicnode.com";
   if (!url) {
     return { probed: false, ok: false, chainId: null, blockNumber: null, sourceHost: null, reason: "not-configured: אין ETH_RPC_URL" };
   }

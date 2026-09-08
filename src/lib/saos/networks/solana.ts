@@ -133,9 +133,14 @@ export function solanaStatus(nowIso: string): SolanaStatusView {
  * READ-ONLY probe — getSlot on the configured keyless RPC. Opt-in (never
  * called by the default status computation), 2.5s timeout, every failure
  * resolves to an honest ok:false. No transaction, no signing.
+ *
+ * Task 13: `allowPublicFallback` lets the live-proof path read from the
+ * well-known KEYLESS public endpoint when no env RPC is configured. Default
+ * (false) keeps the Task-12 contract: not-configured → probe not attempted.
  */
-export async function probeSolanaReadonly(): Promise<SolanaProbeResult> {
-  const url = safeRpcUrl();
+export async function probeSolanaReadonly(opts?: { allowPublicFallback?: boolean }): Promise<SolanaProbeResult> {
+  let url = safeRpcUrl();
+  if (!url && opts?.allowPublicFallback) url = "https://api.mainnet-beta.solana.com";
   if (!url) {
     return { probed: false, ok: false, slot: null, sourceHost: null, reason: "not-configured: אין SOL_RPC_URL" };
   }

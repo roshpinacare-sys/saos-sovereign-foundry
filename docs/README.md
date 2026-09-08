@@ -5,7 +5,7 @@
 - **גרסה**: 2.3.0 (Task 10 — Product-Grade UI Rebuild: מרכז-שליטה מבצעי ב-7 מסכים)
 - **שכבת אבטחה**: auth (hash+cookie חתום) · rate-limit · AuditEvent · live-gate · תור-חתימה keyless · backup/restore/cleanup מאומתים · bun audit = 0
 - **מוטו**: אנחנו מנצחים את הבלוקצ'יין
-- **מצבי פעולה**: dry-run (ברירת-מחדל) / safe / live (דורש אישור-כפול) / maintenance — ר' runbook
+- **מצבי פעולה**: dry-run (ברירת-מחדל) / safe / live (דורש אישור-כפול) / maintenance — ר' runbook. **מ-Task 13: הסנדבוקס רץ live ללא-שידור (safe-live)** — הוכחה: docs/live-proof.md
 - **מצב עגינה ציבורית (נכון ל-2026-09-07)**:
   - STEEM ✅ עוגן — רפרנס חלקי `3452e62bc3bf5b…dee9ee1003` (custom_json `saos.weave.v1`)
   - BLURT ✅ עוגן — רפרנס חלקי `50a857ccaf49bd…5c4c3e6a9c` (חתימה קנונית ידנית)
@@ -23,6 +23,8 @@
 | [database.md](./database.md) | סכמה, טבלאות, אינדקסים, אילוצים, גיבוי ושחזור, נקודות תורפה |
 | [testing.md](./testing.md) | איך מריצים בדיקות, תוצאות אחרונות, מה לא מכוסה |
 | [security.md](./security.md) | מודל איומים, סודות, גבולות אמת, מה מוגן ומה לא |
+| [live-proof.md](./live-proof.md) (חדש Task 13) | הוכחת-חיים מתועדת: 3 רמות, evidence חי לכל רשת, עמדת safe-live, מה לא נעשה |
+| [live-runbook.md](./live-runbook.md) (חדש Task 13) | סולם-המצבים, הפעלת safe-live, כללי מותר/אסור במצב חי, תקלות מוכרות |
 | [runbook.md](./runbook.md) | הרצה, משתני סביבה, בריאות, תקלות נפוצות, תחזוקה |
 | [decisions.md](./decisions.md) | החלטות הנדסיות: מה, למה, חלופות, סיכון, תועלת |
 | [next-steps.md](./next-steps.md) | תוכנית העבודה מסודרת בעדיפויות עם סטטוס |
@@ -33,7 +35,7 @@
 
 ```bash
 bun run dev        # שרת פיתוח (פורט 3000)
-bun run check      # lint + typecheck + test (80 בדיקות API) + verify (8 פעימות מקבילות)
+bun run check      # lint + typecheck + test (147 בדיקות API) + verify (8 פעימות מקבילות)
 bun run backup     # גיבוי מאומת (integrity+counts+manifest)
 bun run restore    # שחזור מאומת — dry-run ברירת-מחדל, --yes לביצוע
 bun run cleanup    # רטנשן — dry-run ברירת-מחדל, --yes דורש גיבוי <24h

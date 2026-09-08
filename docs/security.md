@@ -142,3 +142,13 @@
 - **probe opt-in וקריאה-בלבד**: `GET /status?probe=1` בלבד; פסק-זמן 2.5s; אין עסקה/שידור/חתימה; כישלון = `unverified`/לא-מאומת-חי — לעולם לא עוגן סופי.
 - **אימות-txid לרשתות החדשות**: `eth_getTransactionByHash` / `getTransaction(finalized)` על RPC קריאה keyless (env תקין או endpoint ציבורי ידוע); כל כישלון = unverified כנה.
 - **`.env.example`**: שמות משתנים בלבד (`ETH_RPC_URL`, `ETH_CHAIN_ID`, `SOL_RPC_URL`, `SOL_CLUSTER`) — אין ערכים אמיתיים; RPC עם מפתח אסור בריפו על-פי כלל הברזל.
+
+---
+
+## Task 13 (2026-09-08) — עמדת האבטחה במצב חי
+
+- **safe-live**: המערכת מוכיחה חיים בקריאה-בלבד; `broadcastCapable=false` מבנית (אין כספת) — הוכחת-חיים לעולם אינה הרשאת-שידור. machine-checkable: `live-proof.safety` + assertion קבוע ב-api-check §28.
+- **משטח-סוד חדש (מבוקר)**: `live-proof` קורא את `~/.secrets/github-token` (0600 נאכף בקוד) לזיכרון-בלבד עבור קריאת-API אחת לסטטוס CI של הריפו הפרטי. לא מוצג, לא נשמר, לא נרשם, לא נשלח לשום מקום אחר. תקלה → `available:false` (לא קריסה, לא חשיפה).
+- **seal ב-live = auth-required**: בעיצוב Task 5 פעימה ב-live נחשבת broadcast-adjacent; אומת חי בסבב זה (7 כשלי-סוויטה יבשה אובחנו ותוקנו — הסוויטה מזדהה אוטומטית).
+- **probes keyless בלבד**: כל probe רשת עובר דרך endpoints ציבוריים ללא מפתח (או env-RPC שאומת חסר-credentials ע"י safeRpcUrl); URL לעולם לא חוזר — hostname בלבד; מטמון 60s להגנה על ה-endpoints הציבוריים.
+- **התאמת מצבים למציאות**: פריטי-האבטחה ב-preflight דינמיים (CI קיים — הטענה הישנה הוסרה; SH-7 מוצג רק כשהקובץ בעץ). רישום-סודות הסבב: docs/secret-hygiene.md §8.

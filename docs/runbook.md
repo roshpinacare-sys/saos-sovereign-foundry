@@ -223,3 +223,13 @@ git grep -lIE 'ghp_[A-Za-z0-9]{20,}|-----BEGIN [A-Z ]*PRIVATE' -- . || echo clea
 - **הגדרת RPC (פעולת בעלים)**: ערכים ב-`.env` מקומי בלבד — **אסור** ש-RPC עם מפתח ייכנס לריפו; המערכת דוחה URL עם credentials/מפתח-בשאילתה מעצמה.
 - **הכנת בקשת-חתימה יבשה לרשתות החדשות**: מסך חתימות → צור בקשה → רשת ETHEREUM/SOLANA → הוראות חתימה חיצונית (EVM calldata / Solana memo-blockhash) → רישום תוצאה ציבורית בלבד (tx hash / signature) → אימות opt-in.
 - **איסורים קבועים**: אין עסקה, אין שידור, אין חתימה, אין ארנק מחובר, אין מימון gas/SOL — עד `SAOS_MODE=live` + `SAOS_LIVE_CONFIRM=YES` + אישור בעלים מפורש (docs/first-anchor-runbook.md).
+
+## Task 13 — נוהל מצב חי (safe-live)
+
+המערכת בסנדבוקס רצה כעת ב-**live ללא-שידור** (`SAOS_MODE=live` + `SAOS_LIVE_CONFIRM=YES` — הגנה כפולה; `broadcastCapable` נשאר false עד חותם חיצוני). נוהל מלא: **docs/live-runbook.md** · תיעוד-ראייה: **docs/live-proof.md**. קיצור:
+
+1. בדיקת-חיים שוטפת: `curl -s :3000/api/saos/live-proof` → `service=ok`, `safeLive=true`, `errors=[]`.
+2. ב-live, `POST /seal` דורש הפעלה מאומתת (cookie או `Authorization: Bearer <key>`) — ההיגיון: פעימה ב-live נחשבת broadcast-adjacent.
+3. הסוויטה מודעת-מצב: api-check מתחבר אוטומטית כשמצב=live (§1b), concurrency-check בהתאמה + Retry-After לחלון-auth; `verify` רץ דרך bun (טוען `.env` אוטומטית — node לא).
+4. חלון ה-auth (8/min, 60s) מתרוקן ע"י ה-burst בסוף api-check — בין ריצות עוקבות חכו ~60s (הסוויטה עצמה מתקנת זאת בניסיון-חוזה מבוקר).
+5. חזרה ל-dry-run: `SAOS_MODE=dry-run` ב-`.env` + הרצה-מחדש.

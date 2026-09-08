@@ -205,6 +205,7 @@ export function errText(err: SaosError | undefined): string {
 export const EP = {
   status: "/api/saos/status",
   preflight: "/api/saos/anchor-preflight",
+  liveProof: "/api/saos/live-proof",
   verifyChain: (q = "") => `/api/saos/verify-chain${q}`,
   signer: "/api/saos/signer",
   plans: "/api/saos/plans",

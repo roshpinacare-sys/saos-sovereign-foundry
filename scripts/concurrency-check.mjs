@@ -30,10 +30,36 @@ async function main() {
   const before = await (await fetch(BASE + "/api/saos/status")).json();
   const baseHeight = Math.max(0, ...before.seals.map((s) => s.height));
 
+  // Task 13: in LIVE mode a seal is broadcast-adjacent → the route requires an
+  // authenticated operator. Log in once (when a key is available) and attach
+  // the session cookie to every concurrent seal; in dry-run/safe (CI default)
+  // seals stay an open simulation — no cookie needed.
+  let cookie = null;
+  if (before.mode === "live" && process.env.SAOS_ADMIN_KEY) {
+    // bounded retry: api-check's final burst exhausts the shared 60s auth
+    // window — honor Retry-After and try again (max 2 attempts, ~70s cap)
+    for (let attempt = 0; attempt < 2 && !cookie; attempt++) {
+      const login = await fetch(BASE + "/api/saos/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key: process.env.SAOS_ADMIN_KEY }) });
+      if (login.status === 429) {
+        const wait = Math.min(70, Number(login.headers.get("retry-after") ?? 62)) + 2;
+        console.log(`  … auth window exhausted (429) — waiting ${wait}s before retry`);
+        await new Promise((r) => setTimeout(r, wait * 1000));
+        continue;
+      }
+      const c = (login.headers.get("set-cookie") ?? "").split(";")[0] ?? "";
+      if (c.startsWith("saos_session=")) cookie = c;
+    }
+  }
+  if (before.mode === "live" && !cookie) {
+    console.error("❌ live mode requires an operator session — set SAOS_ADMIN_KEY (seals are auth-gated in live)");
+    process.exit(2);
+  }
+  const sealHeaders = { "Content-Type": "application/json", ...(cookie ? { cookie } : {}) };
+
   const t0 = Date.now();
   const results = await Promise.all(
     Array.from({ length: N }, () =>
-      fetch(BASE + "/api/saos/seal", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ stamps: 4, memo: "concurrency-check" }) })
+      fetch(BASE + "/api/saos/seal", { method: "POST", headers: sealHeaders, body: JSON.stringify({ stamps: 4, memo: "concurrency-check" }) })
     )
   );
   const dt = Date.now() - t0;

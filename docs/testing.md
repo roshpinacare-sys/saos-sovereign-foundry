@@ -366,3 +366,36 @@ lint ✅ · typecheck ✅ · api-check **45/45** ✅ · concurrency **8/8** (hei
 **תוצאה:** ריצת CI על `4e853a9` — **SUCCESS** מלא (install → prisma → lint → typecheck → **next build** → dev → api-check → concurrency). זהו גם האימות הראשון של `next build` (פעולה שנאסרה בסנדבוקס) — פריט build-verification נסגר.
 
 **לקח:** קובץ קיים-מקומית-ולא-מנוטר הוא סיכון שקט; audit של `find` vs `git ls-files` על src/scripts/docs הוא בדיקת-תקינות שיש להריץ אחרי כל "שחזור" קובץ.
+
+---
+
+## Task 13 — live-proof suite (2026-09-08)
+
+### תוצאות מלאות במצב live (safe-live, ללא שידור)
+
+| בדיקה | תוצאה |
+|---|---|
+| `bun run lint` / `bun run typecheck` | ✅ נקי |
+| `bun run test` (api-check) | ✅ **147 passed, 0 failed** (135 → 147: §1b מודע-מצב + §28 live-proof ×11) |
+| `bun run verify 8` (concurrency) | ✅ 8/8 — heights רצופים (82→90 בסבבים), שרשרת תקינה, 0 עלים פגומים |
+| `GET /api/saos/live-proof` חי | ✅ service=ok · safeLive=true · 5/6 רשתות מאומתות-קריאה (STEEM/HIVE/TRON/ETH chainId=0x1/SOL slots) · BLURT כנה לא-מאומתת (egress) · CI success @382d30e · errors=[] |
+| דפדפן (desktop 1280 / mobile 390 / 360) | ✅ כרטיס "הוכחת חיים" מוצג · אפס overflow · אפס שגיאות קונסול · RTL תקין |
+| `bun run backup` | ✅ טרי ומאומת (integrity ok, counts-match) |
+
+### §28 live-proof — 11 הבדיקות חוזה חדשות
+
+structure(18-field contract) · service∈{ok,degraded,down} · **אפס דפוסי-סוד ב-payload כולו** · 6 רשתות עם probe objects · not-configured = מצב (probe source≠env) · לכל probe reason כנה (בטוח ללא-אינטרנט) · רשתות חסומות מציגות blocker · **safety בדיק-מכונה: אין שידור/עסקה/חתימה/ארנק** · proofRoot/proofHeight תואמי חותמה · rate-limit rule פעיל · decisions view ללא סגירות-פיקטיביות.
+
+### לקחי Task 13 (bugs/fixes in-flight)
+
+1. **api-check מודע-מצב (BUG-010)**: ב-live, `POST /seal` (בעיצוב מ-Task 5) דורש הפעלה מאומתת — הסוויטה היבשה נכשלה 7 בדיקות. תיקון: §1b מקים session מפעיל כשמצב=live ו-key זמין; ה-cookie בלבד עובר בין בדיקות, המפתח לעולם לא נדפס.
+2. **concurrency-check מודע-מצב**: אותו עקרון + Retry-After לחלון-auth שנוצל ע"י ה-burst של api-check (המתנה מבוקרת ≤70s, ניסיון-חוזה אחד).
+3. **node לא טוען `.env`** (בשונה מ-bun): `verify` הוסב ל-`bun scripts/concurrency-check.mjs` — אחרת `SAOS_ADMIN_KEY` לא היה קיים לסקריפט.
+4. **הסוויטה לא תיצור חוסם-פיקטיבי**: דריל §18/§19 (decisions) מסיים עם שחזור `github-actions-ci` למצבו האמתי (`decided-custom`) במקום "open" — alignment בין בדיקות למצב.
+5. **preflight פריטי-אבטחה דינמיים**: הטענה השקרית "GitHub Actions CI לא קיים" (מ-Task 11!) הוסרה; SH-7 מוצג רק כשהקובץ באמת בעץ — ה-docs וה-קוד מסונכרני-אמת.
+
+### מה עדיין לא מכוסה (כנות)
+
+- probe-קריאה חי ל-BLURT לא עובר מהסנדבוקס (egress) — העמדת ה-fail-honest נבדקה, החיבור עצמו לא.
+- לא נבדק שידור/חתימה אמתית — **במכוון ובאיסור**; המסלול היבש בלבד (SignRequest → payload/digest → רישום/ביטול).
+- CI רץ על dry-run; מצב live לא מדומה ב-CI (נבדק מקומית בלבד — מתועד כאן).
