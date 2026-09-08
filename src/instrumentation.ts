@@ -50,10 +50,12 @@ export async function register() {
     if (starting) return;
     starting = true;
     try {
-      if (await alive()) return; // מישהו כבר מאזין — לא מכפילים
+      if (await alive()) { attempts = 0; return; } // בריא — מאפסים בק-אוף, לא מכפילים
       attempts++;
       const delay = Math.min(30000, 2000 * attempts); // בק-אוף עד 30 שניות
       log(`spawn attempt #${attempts} (backoff ${delay}ms)`);
+      // ילד-קודם שכשל (למשל פורט-תפוס ונשאר כצופה-זומבי): מפנים לפני spawn חדש
+      try { if (child && child.pid) process.kill(child.pid, "SIGKILL"); } catch {}
       child = spawn("bun", ["--hot", "index.ts"], {
         cwd: GUARDIAN_DIR,
         detached: true,

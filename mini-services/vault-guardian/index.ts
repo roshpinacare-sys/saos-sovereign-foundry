@@ -24,7 +24,10 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { execSync } from "child_process";
+import { exec as execCb } from "child_process";
+import { promisify } from "util";
+
+const execP = promisify(execCb);
 
 const PORT = 3031;
 /** Task 19: קצב-נפרד לכל ריפו — steem (הריפו-שדלף) נסרק כל 90 שניות,
@@ -71,7 +74,11 @@ function tickAlive(): boolean {
 }
 
 function log(level, msg) {
-  const line = `${new Date().toISOString()} [${level}] ${msg}`;
+  // choke point: שורות-פקודה/שגיאות git עשויות להכיל כותרת-אימות — מחוסן לפני לוג
+  const safe = String(msg)
+    .replace(/Authorization:\s*(Basic|Bearer)\s+[A-Za-z0-9+/=._-]+/gi, "Authorization: [REDACTED]")
+    .replace(/gh[pousr]_[A-Za-z0-9]{10,}/g, "gh***[REDACTED]");
+  const line = `${new Date().toISOString()} [${level}] ${safe}`;
   try { fs.appendFileSync(LOG_PATH, line + "\n"); } catch {}
   console.log(line);
 }
@@ -97,8 +104,16 @@ async function api(url, opts = {}) {
   return { status: res.status, json };
 }
 
-function sh(cmd, cwd) {
-  return execSync(cmd, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], maxBuffer: 64 * 1024 * 1024 }).trim();
+// אסינכרוני: לא חוסם את ה-event loop — /status ופעימות-הלב ממשיכות לנשום גם
+// בזמן clone ארוך (שורש-תיקון לסערת-ה-spawn של המפקח: execSync היה חוסם הכל)
+async function sh(cmd, cwd) {
+  try {
+    const r = await execP(cmd, { cwd, encoding: "utf8", maxBuffer: 64 * 1024 * 1024, env: { ...process.env, GIT_TERMINAL_PROMPT: "0" } });
+    return String(r.stdout).trim();
+  } catch (e) {
+    const err = e as Error & { cmd?: string };
+    throw new Error(`git op failed: ${String(err.message || e).slice(0, 160)}`);
+  }
 }
 
 function headOf(repo, branch) {
@@ -141,34 +156,34 @@ async function neutralize(w, hits, stamp) {
   const work = `/tmp/guardian-${w.repo}`;
   const header = `Authorization: Basic ${Buffer.from(`x-access-token:${token()}`).toString("base64")}`;
   const url = `https://github.com/roshpinacare-sys/${w.repo}.git`;
-  sh(`rm -rf ${work}`);
-  sh(`git -c "http.extraHeader=${header}" clone -q --depth 10 --filter=blob:none ${url} ${work}`);
+  await sh(`rm -rf ${work}`);
+  await sh(`git -c "http.extraHeader=${header}" clone -q --depth 10 --filter=blob:none ${url} ${work}`);
   // ההורים חייבים להיות נקיים — אחרת זה תיקון-ידני, לא אוטומטי
-  const parents = sh(`git rev-list --parents -n 1 HEAD`, work).split(" ").slice(1);
+  const parents = (await sh(`git rev-list --parents -n 1 HEAD`, work)).split(" ").slice(1);
   for (const par of parents) {
-    const listing = sh(`git ls-tree -r --name-only ${par}`, work);
+    const listing = await sh(`git ls-tree -r --name-only ${par}`, work);
     const parentHits = listing.split("\n").filter((p) => hits.includes(p));
     if (parentHits.length) {
       log("CRITICAL", `${w.repo}: leak exists in parent history (${parentHits.length} paths) — manual purge needed, NOT auto-fixed`);
       return { done: false, reason: "deep-history" };
     }
   }
-  const cloneHead = sh(`git rev-parse HEAD`, work);
+  const cloneHead = await sh(`git rev-parse HEAD`, work);
   const { json: headJson } = await headOf(w.repo, w.branch);
   const remoteHead = headJson.sha;
   if (cloneHead !== remoteHead) {
     log("WARN", `${w.repo}: head moved during rewrite (${cloneHead.slice(0, 8)} → ${remoteHead.slice(0, 8)}), retry next cycle`);
     return { done: false, reason: "race" };
   }
-  for (const p of hits) sh(`git rm --cached -q "${p}"`, work);
-  const tree = sh(`git write-tree`, work);
+  for (const p of hits) await sh(`git rm --cached -q "${p}"`, work);
+  const tree = await sh(`git write-tree`, work);
   const msg = `guardian: auto-neutralize ${hits.length} forbidden path(s) re-introduced by automation (backup: ~/.secrets/vault-recovery/guardian-${stamp}) — vault-guardian, no secrets logged`;
-  const commit = sh(
+  const commit = await sh(
     `git -c user.name="vault-guardian" -c user.email="guardian@saos.local" commit-tree ${tree} -p HEAD -m "${msg}"`,
     work
   );
-  sh(`git update-ref refs/heads/${w.branch} ${commit}`, work);
-  sh(`git -c "http.extraHeader=${header}" push --force ${url} refs/heads/${w.branch}:refs/heads/${w.branch}`, work);
+  await sh(`git update-ref refs/heads/${w.branch} ${commit}`, work);
+  await sh(`git -c "http.extraHeader=${header}" push --force ${url} refs/heads/${w.branch}:refs/heads/${w.branch}`, work);
   // אימות מרחוק
   const { json: after } = await headOf(w.repo, w.branch);
   const paths = (await treeOf(w.repo, after.sha)).map((t) => t.path);
@@ -227,7 +242,8 @@ async function cycle(onlyRepo?: string) {
   }
 }
 
-Bun.serve({
+try {
+  Bun.serve({
   port: PORT,
   fetch(req: Request) {
     const u = new URL(req.url);
@@ -248,6 +264,12 @@ Bun.serve({
     return new Response("vault-guardian: /status (GET) · /run-now (POST)\n");
   },
 });
+} catch (e) {
+  // פורט-תפוס (למשל ילד-קודם עדיין מחזיק): לא לשכב כזומבי-צופה — לצאת מיד;
+  // המפקח יריץ מחדש כשיהיה-צורך. בלי זה bun --hot נשאר חי עם שרת-מת.
+  console.log(`port ${PORT} busy — exiting cleanly (${String((e as Error)?.message || e).slice(0, 80)})`);
+  process.exit(0);
+}
 
 log("INFO", `vault-guardian up on :${PORT} — steem every ${STEEM_INTERVAL_MS / 1000}s, others every ${DEFAULT_INTERVAL_MS / 60000}min, no-overlap lock on`);
 // סריקה ראשונית אחרי 5 שניות, ואז טיק כל 30 שניות שמריץ כל ריפו לפי-קצבו

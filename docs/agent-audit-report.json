@@ -1,0 +1,398 @@
+{
+  "at": "2026-09-08T17:58:10.172Z",
+  "tokenAccount": "roshpinacare-sys",
+  "repos": [
+    "saos-sovereign-foundry",
+    "steem",
+    "Saosmartwallet",
+    "saos-dex",
+    "saos-sovereign-platform",
+    "Adsmarket",
+    "saos-jummper",
+    "Sdk",
+    "roshpina",
+    "anchor-baseline",
+    "Project-files"
+  ],
+  "discipline": "path/line/pattern-TYPE only — no secret values; auth-header redaction choke point active (incident fixed this run)",
+  "totals": {
+    "all": 44260,
+    "hex64": 44211,
+    "structural": 49
+  },
+  "structural": [
+    {
+      "at": "2026-09-08T17:57:09.620Z",
+      "severity": "INFO",
+      "repo": "saos-sovereign-foundry",
+      "kind": "history-path-hit",
+      "detail": "dotenv: 2 unique path(s) — deepest: .env.example, .env"
+    },
+    {
+      "at": "2026-09-08T17:57:09.627Z",
+      "severity": "HIGH",
+      "repo": "saos-sovereign-foundry",
+      "kind": "head-secret-paths",
+      "detail": ".env.example"
+    },
+    {
+      "at": "2026-09-08T17:57:09.667Z",
+      "severity": "CRITICAL",
+      "repo": "saos-sovereign-foundry",
+      "kind": "deep-history-leak",
+      "detail": "1 path(s) in parents — NOT auto-fixed (owner decision)"
+    },
+    {
+      "at": "2026-09-08T17:57:09.753Z",
+      "severity": "HIGH",
+      "repo": "saos-sovereign-foundry",
+      "kind": "content-pem-private-block",
+      "detail": "scripts/deep-agent-audit.cjs:90"
+    },
+    {
+      "at": "2026-09-08T17:57:31.594Z",
+      "severity": "INFO",
+      "repo": "steem",
+      "kind": "history-path-hit",
+      "detail": "fleet-vault: 2 unique path(s) — deepest: agent/fleet_keys.enc, agent/fleet_keys.meta.json"
+    },
+    {
+      "at": "2026-09-08T17:57:31.594Z",
+      "severity": "INFO",
+      "repo": "steem",
+      "kind": "history-path-hit",
+      "detail": "dotenv: 2 unique path(s) — deepest: download/research/extracted/TITAI_v18_VERIFIED_INSTALLER_WITH_ARCHITECTURE_3/Titai-canonical-agent-platform-v18-capability-foundry-english/.env.example, download/research/extracted/unified-platform-v33.56-custody-authority-persistence_2/external-qualification/v33.21/postgresql/operator.env.example"
+    },
+    {
+      "at": "2026-09-08T17:57:31.613Z",
+      "severity": "HIGH",
+      "repo": "steem",
+      "kind": "head-secret-paths",
+      "detail": "agent/fleet_keys.enc, agent/fleet_keys.meta.json, download/research/extracted/TITAI_v18_VERIFIED_INSTALLER_WITH_ARCHITECTURE_3/Titai-canonical-agent-platform-v18-capability-foundry-english/.env.example, download/research/extracted/unified-platform-v33.56-custody-authority-persistence_2/external-qualification/v33.21/postgresql/operator.env.example"
+    },
+    {
+      "at": "2026-09-08T17:57:31.628Z",
+      "severity": "CRITICAL",
+      "repo": "steem",
+      "kind": "deep-history-leak",
+      "detail": "4 path(s) in parents — NOT auto-fixed (owner decision)"
+    },
+    {
+      "at": "2026-09-08T17:57:34.064Z",
+      "severity": "HIGH",
+      "repo": "steem",
+      "kind": "content-api-secret",
+      "detail": "download/research/extracted/ecos_v568_canonical/ecos_v568_canonical/tests/v264.test.cjs:304"
+    },
+    {
+      "at": "2026-09-08T17:57:34.139Z",
+      "severity": "HIGH",
+      "repo": "steem",
+      "kind": "content-pem-private-block",
+      "detail": "download/research/extracted/qodo-v24.30.49-pass76-quota-gauge_2/Vercel-claude-hebrew-tech-ministry-improvement-7qpqs3/packages/agent/tests/secret-guard.test.ts:53"
+    },
+    {
+      "at": "2026-09-08T17:57:34.572Z",
+      "severity": "HIGH",
+      "repo": "steem",
+      "kind": "content-pem-private-block",
+      "detail": "download/research/extracted/unified-platform-v33.56-custody-authority-persistence_2/release-evidence/v33.24/V33_24_SIGNATURE_FEED.json:35"
+    },
+    {
+      "at": "2026-09-08T17:57:34.572Z",
+      "severity": "HIGH",
+      "repo": "steem",
+      "kind": "content-pem-private-block",
+      "detail": "download/research/extracted/unified-platform-v33.56-custody-authority-persistence_2/release-evidence/v33.24/V33_24_SIGNATURE_FEED.json:49"
+    },
+    {
+      "at": "2026-09-08T17:57:34.941Z",
+      "severity": "HIGH",
+      "repo": "steem",
+      "kind": "content-pem-private-block",
+      "detail": "download/research/extracted/unified-platform-v33.56-custody-authority-persistence_2/scripts/malicious-repository-admission-proof-v33_11.mjs:19"
+    },
+    {
+      "at": "2026-09-08T17:57:34.989Z",
+      "severity": "HIGH",
+      "repo": "steem",
+      "kind": "content-pem-private-block",
+      "detail": "download/research/extracted/unified-platform-v33.56-custody-authority-persistence_2/src/app/external-malware-airgap-v33_24.ts:222"
+    },
+    {
+      "at": "2026-09-08T17:57:34.989Z",
+      "severity": "HIGH",
+      "repo": "steem",
+      "kind": "content-pem-private-block",
+      "detail": "download/research/extracted/unified-platform-v33.56-custody-authority-persistence_2/src/app/external-malware-airgap-v33_24.ts:223"
+    },
+    {
+      "at": "2026-09-08T17:57:34.996Z",
+      "severity": "HIGH",
+      "repo": "steem",
+      "kind": "content-pem-private-block",
+      "detail": "download/research/extracted/unified-platform-v33.56-custody-authority-persistence_2/src/app/signature-supply-scanner-federation-v33_25.ts:247"
+    },
+    {
+      "at": "2026-09-08T17:57:35.022Z",
+      "severity": "HIGH",
+      "repo": "steem",
+      "kind": "content-pem-private-block",
+      "detail": "download/research/extracted/unified-platform-v33.56-custody-authority-persistence_2/tests/ceremony-evidence-intake-portal-v33_50.test.ts:59"
+    },
+    {
+      "at": "2026-09-08T17:57:35.028Z",
+      "severity": "HIGH",
+      "repo": "steem",
+      "kind": "content-pem-private-block",
+      "detail": "download/research/extracted/unified-platform-v33.56-custody-authority-persistence_2/tests/evidence-intake-portal-v33_23.test.ts:79"
+    },
+    {
+      "at": "2026-09-08T17:57:35.032Z",
+      "severity": "HIGH",
+      "repo": "steem",
+      "kind": "content-pem-private-block",
+      "detail": "download/research/extracted/unified-platform-v33.56-custody-authority-persistence_2/tests/external-malware-airgap-v33_24.test.ts:116"
+    },
+    {
+      "at": "2026-09-08T17:57:35.032Z",
+      "severity": "HIGH",
+      "repo": "steem",
+      "kind": "content-pem-private-block",
+      "detail": "download/research/extracted/unified-platform-v33.56-custody-authority-persistence_2/tests/external-malware-airgap-v33_24.test.ts:121"
+    },
+    {
+      "at": "2026-09-08T17:57:35.039Z",
+      "severity": "HIGH",
+      "repo": "steem",
+      "kind": "content-pem-private-block",
+      "detail": "download/research/extracted/unified-platform-v33.56-custody-authority-persistence_2/tests/human-pilot-readiness-v33_6.test.ts:74"
+    },
+    {
+      "at": "2026-09-08T17:57:35.045Z",
+      "severity": "HIGH",
+      "repo": "steem",
+      "kind": "content-pem-private-block",
+      "detail": "download/research/extracted/unified-platform-v33.56-custody-authority-persistence_2/tests/release-manifest.test.ts:71"
+    },
+    {
+      "at": "2026-09-08T17:57:35.048Z",
+      "severity": "HIGH",
+      "repo": "steem",
+      "kind": "content-pem-private-block",
+      "detail": "download/research/extracted/unified-platform-v33.56-custody-authority-persistence_2/tests/sovereignty-edge-matrix-v31.test.ts:94"
+    },
+    {
+      "at": "2026-09-08T17:57:35.049Z",
+      "severity": "HIGH",
+      "repo": "steem",
+      "kind": "content-pem-private-block",
+      "detail": "download/research/extracted/unified-platform-v33.56-custody-authority-persistence_2/tests/telemetry-hardening-v25.test.ts:20"
+    },
+    {
+      "at": "2026-09-08T17:57:35.267Z",
+      "severity": "INFO",
+      "repo": "steem",
+      "kind": "daemon-logic",
+      "detail": "he_sell.cjs: 0 broadcast-class call(s)"
+    },
+    {
+      "at": "2026-09-08T17:57:35.267Z",
+      "severity": "INFO",
+      "repo": "steem",
+      "kind": "daemon-logic",
+      "detail": "he_unstake.cjs: 0 broadcast-class call(s)"
+    },
+    {
+      "at": "2026-09-08T17:57:35.267Z",
+      "severity": "INFO",
+      "repo": "steem",
+      "kind": "daemon-logic",
+      "detail": "mint_borrow.cjs: 0 broadcast-class call(s)"
+    },
+    {
+      "at": "2026-09-08T17:57:35.267Z",
+      "severity": "INFO",
+      "repo": "steem",
+      "kind": "daemon-logic",
+      "detail": "rebalance102.cjs: 0 broadcast-class call(s)"
+    },
+    {
+      "at": "2026-09-08T17:57:35.268Z",
+      "severity": "INFO",
+      "repo": "steem",
+      "kind": "daemon-logic",
+      "detail": "yield.cjs: 0 broadcast-class call(s)"
+    },
+    {
+      "at": "2026-09-08T17:57:35.268Z",
+      "severity": "INFO",
+      "repo": "steem",
+      "kind": "daemon-logic",
+      "detail": "he_sell.cjs: 0 broadcast-class call(s)"
+    },
+    {
+      "at": "2026-09-08T17:57:35.268Z",
+      "severity": "INFO",
+      "repo": "steem",
+      "kind": "daemon-logic",
+      "detail": "he_unstake.cjs: 0 broadcast-class call(s)"
+    },
+    {
+      "at": "2026-09-08T17:57:35.268Z",
+      "severity": "INFO",
+      "repo": "steem",
+      "kind": "daemon-logic",
+      "detail": "mint_borrow.cjs: 0 broadcast-class call(s)"
+    },
+    {
+      "at": "2026-09-08T17:57:35.268Z",
+      "severity": "INFO",
+      "repo": "steem",
+      "kind": "daemon-logic",
+      "detail": "rebalance102.cjs: 0 broadcast-class call(s)"
+    },
+    {
+      "at": "2026-09-08T17:57:35.268Z",
+      "severity": "INFO",
+      "repo": "steem",
+      "kind": "daemon-logic",
+      "detail": "yield.cjs: 0 broadcast-class call(s)"
+    },
+    {
+      "at": "2026-09-08T17:57:43.380Z",
+      "severity": "INFO",
+      "repo": "Saosmartwallet",
+      "kind": "history-path-hit",
+      "detail": "keys-dir: 2 unique path(s) — deepest: src/app/api/developer/keys/route.ts, src/app/api/vault/keys/route.ts"
+    },
+    {
+      "at": "2026-09-08T17:57:43.385Z",
+      "severity": "HIGH",
+      "repo": "Saosmartwallet",
+      "kind": "head-secret-paths",
+      "detail": "src/app/api/developer/keys/route.ts, src/app/api/vault/keys/route.ts"
+    },
+    {
+      "at": "2026-09-08T17:57:43.393Z",
+      "severity": "CRITICAL",
+      "repo": "Saosmartwallet",
+      "kind": "deep-history-leak",
+      "detail": "2 path(s) in parents — NOT auto-fixed (owner decision)"
+    },
+    {
+      "at": "2026-09-08T17:57:44.015Z",
+      "severity": "INFO",
+      "repo": "Saosmartwallet",
+      "kind": "wallet-keys-storage",
+      "detail": "packages/core/src/vault/keys.ts: encryption-layer"
+    },
+    {
+      "at": "2026-09-08T17:57:46.605Z",
+      "severity": "INFO",
+      "repo": "saos-dex",
+      "kind": "history-path-hit",
+      "detail": "dotenv: 1 unique path(s) — deepest: .env.example"
+    },
+    {
+      "at": "2026-09-08T17:57:46.611Z",
+      "severity": "HIGH",
+      "repo": "saos-dex",
+      "kind": "head-secret-paths",
+      "detail": ".env.example"
+    },
+    {
+      "at": "2026-09-08T17:57:46.624Z",
+      "severity": "CRITICAL",
+      "repo": "saos-dex",
+      "kind": "deep-history-leak",
+      "detail": "1 path(s) in parents — NOT auto-fixed (owner decision)"
+    },
+    {
+      "at": "2026-09-08T17:57:51.168Z",
+      "severity": "INFO",
+      "repo": "saos-sovereign-platform",
+      "kind": "history-path-hit",
+      "detail": "dotenv: 2 unique path(s) — deepest: .env, .env.example"
+    },
+    {
+      "at": "2026-09-08T17:57:51.168Z",
+      "severity": "INFO",
+      "repo": "saos-sovereign-platform",
+      "kind": "history-path-hit",
+      "detail": "mnemonic: 1 unique path(s) — deepest: scripts/anchor-sovereign-mnemonic.ts"
+    },
+    {
+      "at": "2026-09-08T17:57:51.172Z",
+      "severity": "HIGH",
+      "repo": "saos-sovereign-platform",
+      "kind": "head-secret-paths",
+      "detail": "scripts/anchor-sovereign-mnemonic.ts"
+    },
+    {
+      "at": "2026-09-08T17:57:51.179Z",
+      "severity": "CRITICAL",
+      "repo": "saos-sovereign-platform",
+      "kind": "deep-history-leak",
+      "detail": "1 path(s) in parents — NOT auto-fixed (owner decision)"
+    },
+    {
+      "at": "2026-09-08T17:57:55.011Z",
+      "severity": "INFO",
+      "repo": "saos-jummper",
+      "kind": "history-path-hit",
+      "detail": "dotenv: 1 unique path(s) — deepest: .env.example"
+    },
+    {
+      "at": "2026-09-08T17:57:55.014Z",
+      "severity": "HIGH",
+      "repo": "saos-jummper",
+      "kind": "head-secret-paths",
+      "detail": ".env.example"
+    },
+    {
+      "at": "2026-09-08T17:57:55.020Z",
+      "severity": "CRITICAL",
+      "repo": "saos-jummper",
+      "kind": "deep-history-leak",
+      "detail": "1 path(s) in parents — NOT auto-fixed (owner decision)"
+    },
+    {
+      "at": "2026-09-08T17:57:55.722Z",
+      "severity": "WARN",
+      "repo": "Sdk",
+      "kind": "clone-failed",
+      "detail": "Command failed: git -c \"http.extraHeader=Authorization: Basic [REDACTED]"
+    }
+  ],
+  "hex64ByRepo": {
+    "saos-sovereign-foundry": {
+      "hits": 2,
+      "files": 1
+    },
+    "steem": {
+      "hits": 44067,
+      "files": 1588
+    },
+    "Saosmartwallet": {
+      "hits": 4,
+      "files": 2
+    },
+    "saos-dex": {
+      "hits": 80,
+      "files": 7
+    },
+    "saos-sovereign-platform": {
+      "hits": 3,
+      "files": 2
+    },
+    "saos-jummper": {
+      "hits": 53,
+      "files": 5
+    },
+    "roshpina": {
+      "hits": 2,
+      "files": 1
+    }
+  }
+}

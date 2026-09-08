@@ -489,3 +489,48 @@ account_update נמדדה ≈14%). מדידה-חיה לכל 11 החיילים:
   דחיפת-ה-commit המקומי המוכן, guardian חוזר-לעבודה אוטומטית (לוג
   `TOKEN-RESTORED`), ופתיחת-סריקת `Saosmartwallet` + `steem/mini-services/`
   + daemonי-המסחר לפי הטבלה.
+
+---
+
+## Task 21 (2026-09-08) — הטוקן חזר: הכל בוצע, נדחף, ונסרק עד-הסוף
+
+הבעלים העלה את הטוקן (`Roshcaregt.txt` → `~/.secrets/github-token`, 0600; הערך מעולם
+לא הוצג, העותק-העולה נמחק לאחר-אימות). הצינור שהובטח ב-Task 20 בוצע ממש:
+
+- **TOKEN-RESTORED** ב-guardian תוך-טיק → fetch-אימות → **push של 8a570c7+edc07dd
+  → remote main = edc07dd** (never-clobber דרך הצינור).
+- `deep-agent-audit.cjs` סרק את **כל 11 הריפואים** הפרטיים (blobless): היסטוריה-מלאה
+  לפי-נתיבים + תוכן-HEAD + מפת-שידור ל-daemonי-המסחר + שאלת keys.ts.
+  דוח: `docs/agent-audit-report.md` (ניהולי) + `.json` (מובנה; 44,260 פגיעות-גלויות
+  דחוסות ל-49 ממצאים-מובנים — ההמון הוא hex64=האשים ב-1,588 קבצי-ראיות של steem).
+
+### מסקנות-עומק
+1. **daemonי-המסחר**: 0 פעולות-broadcast בכל חמשת הקבצים (he_sell / he_unstake /
+   mint_borrow / rebalance102 / yield ×2 עותקים) — מתכננים בלבד; אין הזזת-כספים ישירה.
+2. **Saosmartwallet keys.ts** (`packages/core/src/vault/keys.ts`): שכבת-הצפנה בלבד;
+   אין localStorage/sessionStorage/file-write/CSPRNG בקובץ. שאלת Task 20 נענתה.
+3. **CRITICAL — החלטות-בעלים** (לא נגענו — כל-ההיסטוריה-העמוקה):
+   - steem `agent/fleet_keys.enc`(+meta): ב-HEAD **וגם** בהיסטוריה → נטרול-ידני
+     (filter-repo) או קבלה; גיבוי ב-`~/.secrets/vault-recovery/guardian-*`.
+   - saos-sovereign-platform `scripts/anchor-sovereign-mnemonic.ts` — קובץ-מנוי-mnemonic
+     ב-HEAD; לא נפתח בכוונה (משמעת); לבדיקת-הבעלים והוצאה-מהריפו אם יש בו seed אמיתי.
+   - steem: 15 בלוקי-PEM בפיקסרים/ראיות-חתימה + `sk-` בקובץ-בדיקה — כנראה fixtures.
+4. השאר נקי: `.env.example` תבניתניים (אומת), hex64=האשים (manifests/forensics/
+   golden-vectors), Sdk ריק (נוצר היום, 0 קומיטים).
+
+### תקלות שנתגלו ותוקנו תוך-כדי (כולן אומתו חי)
+- **ENOBUFS לופ** שחסם את נטרול-steem: `maxBuffer` 64MB + clone שקט ב-guardian.
+- **סערת-spawn של המפקח (שורש)**: `execSync` ב-guardian חסם את ה-event loop בזמן
+  clone (~25 שניות) → /status לא ענה → המפקח החייה עותקים שלא-יכלו לאזור → זומבים.
+  תיקון: sh() אסינכרוני (promisified exec) + `await` בכל-הקריאות + exit-נקי על
+  פורט-תפוס (במקום זומבי-צופה) + המפקח מרגיש-ילד-כושל ומאפס backoff כשבריא.
+  **הוכחה**: 22/22 סקירות-/status דרך חלון-clone מלא, 0 כשלים; תהליך-אחד יציב.
+- **תקרית-היגיינה**: הודעת clone-failure שילבה כותרת-Authorization (base64) בלוגים
+  מקומיים → חוסן-redact ב-`record()`/`sh()` של הסקריפט וב-`log()` של ה-guardian;
+  חוסן בדוחות לפני-commit; **הטוקן מעולם לא נדחף ולא נשמר בעץ**. רוטציה — החלטת-בעלים.
+- רשימת-ריפואים: `/user/repos?visibility=all&affiliation=owner` (החשבון הוא user,
+  לא org — `/users/...` מחזיר רק ציבוריים, `/orgs/...` 404).
+
+### תלוי-בעלים שנותר
+- החלטות 1-3 לעיל (ניקוי-היסטוריה של fleet_keys / בדיקת mnemonic.ts / אישור fixtures).
+- רוטציית-טוקן לפי שיקול-הבעלים (כלל-עומד: הבעלים מטפל במפתחות).

@@ -70,14 +70,26 @@ const CONTENT_PATTS = [
 const WORDS = 'abandon|ability|absent|access|acid|actress|adult|advice|affair|amount|anchor|animal|answer|apple|arrive|atlas|august|banana|banner|basket|beach|because|begin|behind|below|bird|black|blade|blur|border|branch|brave|breeze|bridge|bright|broken|brother|budget|buffalo|cabin|candy|canvas|captain|castle|cattle|catch|caution|cellar|cement|chance|change|charge|cherry|chief|circle|citizen|clamp|clever|cliff|club|coal|coast|code|column|comfort|common|copper|coral|cotton|cradle|crane|crisp|crystal|cupboard|custom|damage|dawn|decade|debris|decide|deer|delta|denial|depth|desert|design|detail|device|digest|dinner|direct|dizzy|doctor|double|dragon|duty|eagle|early|earth|easily|echo|economy|edge|effort|eight|elbow|elder|electric|elegant|ember|empty|endorse|energy|enforce|engine|enjoy|enrich|ensure|entire|escape|essay|estate|ethnic|evolve|exile|exist|extra|fabric|fake|family|famous|farmer|fault|february|fence|ferry|fever|fiber|field|figure|filter|finger|fiscal|flame|flat|flight|float|flower|fluid|focus|forest|forget|fortune|forward|fossil|foster|frame|fresh|frozen|fruit|funny|gadget|galaxy|garden|garlic|gather|gauge|gently|giant|ginger|giraffe|glove|gold|gospel|govern|grace|grain|granite|gravel|grief|grocery|guard|gutter|habit|hammer|harbor|harvest|hazard|header|health|heart|heater|helmet|heritage|highway|history|hobby|hollow|honey|horizon|host|hotel|humble|humor|icicle|image|impact|impose|index|inform|insect|inside|intact|invest|invite|island|ivory|jacket|jaguar|jelly|jewel|joint|judge|juice|jumbo|kangaroo|ketchup|kidney|kingdom|knife|knock|lab|ladder|lagoon|lamp|language|laser|laugh|layer|learn|leather|legal|lemon|length|lens|leopard|lesson|letter|level|liberty|library|license|light|lily|limb|limit|linen|liquid|little|lizard|lobster|local|lock|logic|lonely|lounge|lumber|lunar|machine|magic|magnet|major|mammal|mandate|mango|manual|maple|marble|march|mask|matrix|matter|meadow|medal|median|melody|member|memory|mention|mercy|merit|metal|method|middle|midnight|milk|mimic|mineral|minute|miracle|mirror|misery|mixed|mobile|modern|modify|moment|monitor|monkey|moral|morning|mosaic|mother|motion|mountain|mouse|movie|muffin|museum|mushroom|music|mustard|mutual|myself|mystery|napkin|narrow|nation|native|nature|nebula|needle|neighbor|neither|nephew|nerve|nest|network|neutral|never|newer|nickel|ninja|noble|nominee|normal|north|notable|novel|nurse|nutmeg|oasis|object|oblige|obscure|observe|obtain|ocean|october|odds|offer|office|often|olive|onion|online|onset|opera|opinion|option|orange|orbit|orchard|order|organ|origin|orphan|ostrich|outdoor|output|oyster|ozone|paddle|palace|palm|panda|panel|panther|paper|parade|parent|parrot|partner|passage|passion|patient|patrol|pattern|payment|peace|pelican|pencil|people|pepper|period|permit|person|phrase|physical|piano|picture|piece|pigeon|pilot|pioneer|pistol|pitch|pizza|place|planet|plastic|plate|plaza|pocket|poem|poet|point|polar|police|pond|popular|portion|position|possible|postage|potato|powder|power|practice|praise|prefer|prepare|present|pretty|prevent|price|pride|primary|print|prison|private|prize|problem|process|produce|profit|program|project|promote|proof|proper|protect|proud|public|pudding|pulse|pumpkin|pupil|puppy|purchase|purity|purple|purse|puzzle|pyramid|quality|quantum|quarter|question|quick|quote|rabbit|raccoon|radio|rail|rainbow|raisin|rally|ranch|random|range|rapid|rather|reason|rebel|recall|receipt|record|recycle|reduce|reflect|reform|refuse|region|regret|regular|reject|relax|release|relief|remain|remember|remind|remote|render|renew|repair|repeat|report|rescue|research|reserve|resist|resource|response|result|retire|return|reunion|reveal|review|reward|rhythm|ribbon|rider|ridge|rifle|right|rigid|ripple|risk|ritual|rival|river|roast|robot|rocket|romance|roof|rookie|roster|rotate|round|route|royal|rubber|rugby|rumor|runner|runway|rural|sadness|safety|sailor|salad|salmon|salon|salute|sample|satisfy|satoshi|sauce|sausage|saving|scale|scatter|scenic|scheme|school|science|scissors|scout|scrap|screen|script|sculpt|search|season|second|secret|section|security|segment|select|senior|sense|sentence|series|service|settle|setup|seven|shadow|shallow|shelter|sheriff|shield|shift|shine|ship|shiver|shore|short|shoulder|shrimp|shuffle|shy|sibling|siege|signal|silent|silver|similar|simple|since|siren|sister|situate|skill|skirt|slender|slice|slide|slogan|slush|smart|smile|smoke|smooth|snack|snake|snow|soccer|social|socks|soda|solar|soldier|solid|solution|solve|someone|song|soon|sorry|sort|soul|sound|soup|source|south|space|spare|spatial|speak|special|speed|spell|spend|sphere|spice|spider|spike|spin|spirit|split|spoil|sponsor|spoon|sport|spot|spray|spread|spring|spy|square|squirrel|stable|stadium|staff|stage|stairs|stamp|stand|start|state|stay|steak|steel|stem|step|stereo|sting|stock|stomach|stone|story|stove|strategy|street|strike|strong|student|studio|study|stuff|stumble|style|subject|submit|subway|sudden|suffer|sugar|suggest|suit|summer|sun|super|surreal|surge|surprise|swamp|swear|swift|swing|switch|sword|symbol|symptom|syrup|table|tackle|tag|tail|talent|talk|tank|tape|target|task|taste|tattoo|taxi|teach|team|tell|ten|tenant|tennis|tent|term|test|text|thank|theme|theory|thing|thought|thread|thrive|thumb|thunder|ticket|tide|tiger|timber|time|tiny|tip|tired|tissue|title|toast|tobacco|today|toddler|toe|together|toilet|token|tomato|tomorrow|topic|torch|tornado|tortoise|total|tourist|toward|tower|town|toy|track|trade|traffic|tragic|train|transfer|trap|trash|travel|tray|treat|tree|trend|trial|tribe|trick|trigger|trim|trip|trophy|trouble|truck|true|trust|truth|try|tube|tuition|tumble|tuna|tunnel|turkey|turn|turtle|twelve|twenty|twice|twin|two|type|typical|umbrella|unable|unaware|uncle|uncover|under|undo|unfair|unfold|unhappy|uniform|unique|unit|universe|unknown|unlock|until|unusual|unveil|update|upgrade|uphold|upon|upper|upset|urban|usage|useful|useless|usual|utility|vacant|vacuum|vague|valid|valley|valve|vanish|vapor|various|vast|vault|vehicle|velvet|vendor|venture|venue|verb|verify|version|very|vessel|veteran|viable|vibrant|vicious|victory|video|view|village|vintage|violin|virtual|virus|visa|visit|visual|vital|vivid|vocal|voice|void|volcano|volume|vote|voyage|wage|wagon|wait|walk|wall|walnut|want|warfare|warm|warrior|wash|wasp|waste|water|wave|way|wealth|weapon|wear|weasel|weather|web|wedding|weekend|weird|welcome|west|wheel|when|where|whip|whisper|wide|width|wife|wild|will|win|window|wine|wing|wink|winner|winter|wire|wisdom|wise|wish|witness|wolf|woman|wonder|wood|wool|word|work|world|worry|worth|wrap|wreck|wrestle|wrist|write|wrong|yard|year|yellow|you|young|youth|zebra|zero|zone';
 const SEED_HINT = new RegExp('\\b(?:' + WORDS + ')\\b(?:[\\s,]+(?:' + WORDS + ')\\b){11,}', 'i');
 
+function redact(s) {
+  return String(s)
+    .replace(/Authorization:\s*(Basic|Bearer)\s+[A-Za-z0-9+/=._-]+/gi, 'Authorization: [REDACTED]')
+    .replace(/gh[pousr]_[A-Za-z0-9]{10,}/g, 'gh***[REDACTED]');
+}
+
 const findings = [];
 function record(severity, repo, kind, detail) {
-  findings.push({ at: new Date().toISOString(), severity, repo, kind, detail });
-  console.log(`  [${severity}] ${repo} · ${kind} · ${detail}`);
+  const safe = redact(detail); // choke point: אף פלט-שגיאה/פקודה לא יכיל חומר-סודות
+  findings.push({ at: new Date().toISOString(), severity, repo, kind, detail: safe });
+  console.log(`  [${severity}] ${repo} · ${kind} · ${safe}`);
 }
 
 function sh(cmd, cwd, opts = {}) {
-  return execSync(cmd, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: opts.timeout || 240000, maxBuffer: 64 * 1024 * 1024, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } }).trim();
+  try {
+    return execSync(cmd, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: opts.timeout || 240000, maxBuffer: 64 * 1024 * 1024, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } }).trim();
+  } catch (e) {
+    // לעולם לא לאפשר ל-node לצרף את שורת-הפקודה (שעשויה להכיל כותרת-אימות) להודעה
+    throw new Error(redact(e && e.message ? e.message : String(e)).split('\n')[0].slice(0, 300));
+  }
 }
 
 // ── selftest: תבניות על דוגמאות-סינתטיות (אף ערך אמיתי) ─────────────────
@@ -329,19 +341,12 @@ async function apiSafe(p, tries = 3) {
     }
   } catch (e) { record('CRITICAL', 'saos-sovereign-foundry', 'push-failed', String(e.message).split('\n')[0].slice(0, 140)); }
 
-  // 3) כל הריפואים (user + org — dedupe לפי name)
+  // 3) כל הריפואים — /user/repos עם visibility=all: כולל פרטיים (החשבון הוא user, לא org)
   const repos = [];
   for (let page = 1; ; page++) {
-    const { j } = await api(`/users/${me.j.login}/repos?per_page=100&page=${page}&sort=pushed`);
+    const { j } = await api(`/user/repos?per_page=100&page=${page}&sort=pushed&visibility=all&affiliation=owner`);
     if (!Array.isArray(j) || !j.length) break;
     repos.push(...j.map((r) => ({ name: r.name, full: r.full_name, branch: r.default_branch, size: r.size })));
-  }
-  for (let page = 1; ; page++) {
-    try {
-      const { j } = await api(`/orgs/${ORG}/repos?per_page=100&page=${page}&sort=pushed`);
-      if (!Array.isArray(j) || !j.length) break;
-      repos.push(...j.map((r) => ({ name: r.name, full: r.full_name, branch: r.default_branch, size: r.size })));
-    } catch { break; }
   }
   const seenRepos = new Set();
   for (let i = repos.length - 1; i >= 0; i--) { if (seenRepos.has(repos[i].name)) repos.splice(i, 1); else seenRepos.add(repos[i].name); }
