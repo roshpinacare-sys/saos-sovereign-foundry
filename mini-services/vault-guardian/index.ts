@@ -27,7 +27,11 @@ import path from "path";
 import { execSync } from "child_process";
 
 const PORT = 3031;
-const INTERVAL_MS = 10 * 60 * 1000;
+/** Task 19: קצב-נפרד לכל ריפו — steem (הריפו-שדלף) נסרק כל 90 שניות,
+ * השאר כל 10 דקות. טיק פנימי כל 30 שניות בודק מי בזמן. */
+const STEEM_INTERVAL_MS = 90 * 1000;
+const DEFAULT_INTERVAL_MS = 10 * 60 * 1000;
+const TICK_MS = 30 * 1000;
 const TOKEN_PATH = path.join(os.homedir(), ".secrets", "github-token");
 const RECOVERY_DIR = path.join(os.homedir(), ".secrets", "vault-recovery");
 const LOG_PATH = path.join(import.meta.dir, "guardian.log");
@@ -40,9 +44,11 @@ const WATCH = [
   { repo: "anchor-baseline", branch: "main", forbiddenSuffix: [".enc"] },
 ];
 
-let lastRun: { at: string; runCount: number } | null = null;
 let runCount = 0;
 const actions: { at: string; repo: string; hits: number; result: string }[] = [];
+let cycling = false; // נעילת-חפיפה: טיימר + /run-now לא מריצים שני מחזורים במקביל
+const dueAt: Record<string, number> = {}; // repo → epoch-ms של הסריקה-הבאה
+const lastRunByRepo: Record<string, string> = {};
 
 function log(level, msg) {
   const line = `${new Date().toISOString()} [${level}] ${msg}`;
@@ -152,27 +158,36 @@ async function neutralize(w, hits, stamp) {
   return { done: true };
 }
 
-async function cycle() {
-  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  runCount++;
-  log("INFO", `cycle #${runCount} start`);
-  for (const w of WATCH) {
-    try {
-      const { json: head, status } = await headOf(w.repo, w.branch);
-      if (status !== 200) { log("ERROR", `${w.repo}: head fetch HTTP ${status}`); continue; }
-      const paths = (await treeOf(w.repo, head.sha)).filter((t) => t.type === "blob").map((t) => t.path);
-      const hits = forbiddenIn(w, paths);
-      if (!hits.length) { log("OK", `${w.repo}: clean (${paths.length} files, head ${head.sha.slice(0, 10)})`); continue; }
-      log("ALERT", `${w.repo}: ${hits.length} forbidden path(s) in head ${head.sha.slice(0, 10)}: ${hits.join(", ")}`);
-      await backupBlobs(w.repo, head.sha, hits, stamp);
-      const r = await neutralize(w, hits, stamp);
-      actions.push({ at: new Date().toISOString(), repo: w.repo, hits: hits.length, result: r.done ? "neutralized" : r.reason });
-    } catch (e) {
-      log("ERROR", `${w.repo}: ${e.message}`);
+async function cycle(onlyRepo?: string) {
+  if (cycling) { log("INFO", "cycle skipped — previous cycle still running (no-overlap lock)"); return; }
+  cycling = true;
+  try {
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    runCount++;
+    log("INFO", `cycle #${runCount} start${onlyRepo ? " (" + onlyRepo + ")" : ""}`);
+    for (const w of WATCH) {
+      if (onlyRepo && w.repo !== onlyRepo) continue;
+      try {
+        const { json: head, status } = await headOf(w.repo, w.branch);
+        if (status !== 200) { log("ERROR", `${w.repo}: head fetch HTTP ${status}`); continue; }
+        const paths = (await treeOf(w.repo, head.sha)).filter((t) => t.type === "blob").map((t) => t.path);
+        const hits = forbiddenIn(w, paths);
+        if (!hits.length) { log("OK", `${w.repo}: clean (${paths.length} files, head ${head.sha.slice(0, 10)})`); continue; }
+        log("ALERT", `${w.repo}: ${hits.length} forbidden path(s) in head ${head.sha.slice(0, 10)}: ${hits.join(", ")}`);
+        await backupBlobs(w.repo, head.sha, hits, stamp);
+        const r = await neutralize(w, hits, stamp);
+        actions.push({ at: new Date().toISOString(), repo: w.repo, hits: hits.length, result: r.done ? "neutralized" : r.reason });
+      } catch (e) {
+        log("ERROR", `${w.repo}: ${(e as Error).message}`);
+      } finally {
+        lastRunByRepo[w.repo] = new Date().toISOString();
+        dueAt[w.repo] = Date.now() + (w.repo === "steem" ? STEEM_INTERVAL_MS : DEFAULT_INTERVAL_MS);
+      }
     }
+    log("INFO", `cycle #${runCount} end`);
+  } finally {
+    cycling = false;
   }
-  lastRun = { at: new Date().toISOString(), runCount };
-  log("INFO", `cycle #${runCount} end`);
 }
 
 Bun.serve({
@@ -180,7 +195,12 @@ Bun.serve({
   fetch(req: Request) {
     const u = new URL(req.url);
     if (u.pathname === "/status") {
-      return Response.json({ ok: true, lastRun, runCount, actions: actions.slice(-20), watch: WATCH.map((w) => w.repo) });
+      return Response.json({
+        ok: true, runCount, cycling,
+        cadence: { steem: "90s", others: "10min" },
+        lastRunByRepo, dueAt, actions: actions.slice(-20),
+        watch: WATCH.map((w) => w.repo),
+      });
     }
     if (u.pathname === "/run-now" && req.method === "POST") {
       cycle();
@@ -190,6 +210,12 @@ Bun.serve({
   },
 });
 
-log("INFO", `vault-guardian up on :${PORT}, interval ${INTERVAL_MS / 60000}min`);
+log("INFO", `vault-guardian up on :${PORT} — steem every ${STEEM_INTERVAL_MS / 1000}s, others every ${DEFAULT_INTERVAL_MS / 60000}min, no-overlap lock on`);
+// סריקה ראשונית אחרי 5 שניות, ואז טיק כל 30 שניות שמריץ כל ריפו לפי-קצבו
 setTimeout(cycle, 5000);
-setInterval(cycle, INTERVAL_MS);
+setInterval(() => {
+  const now = Date.now();
+  for (const w of WATCH) {
+    if ((dueAt[w.repo] ?? 0) <= now) cycle(w.repo);
+  }
+}, TICK_MS);
