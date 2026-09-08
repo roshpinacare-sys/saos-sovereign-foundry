@@ -33,7 +33,14 @@ export async function register() {
   const alive = async (): Promise<boolean> => {
     try {
       const r = await fetch(STATUS_URL, { signal: AbortSignal.timeout(3000) });
-      return r.ok;
+      if (!r.ok) return false;
+      // Task 20: לא מספיק שה-/status עונה — הפעימה הפנימית חייבת להיות טרייה.
+      // תופס מצב-זומבי: שרת חי, טיימרים מתים (נצפה בפועל ב-reload של bun --hot).
+      try {
+        const j: { tick?: { alive?: boolean } } = await r.json();
+        if (j && typeof j === "object" && j.tick && j.tick.alive === false) return false;
+      } catch {}
+      return true;
     } catch {
       return false;
     }

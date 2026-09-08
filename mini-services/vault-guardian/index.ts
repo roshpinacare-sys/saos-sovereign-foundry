@@ -50,6 +50,26 @@ let cycling = false; // נעילת-חפיפה: טיימר + /run-now לא מרי
 const dueAt: Record<string, number> = {}; // repo → epoch-ms של הסריקה-הבאה
 const lastRunByRepo: Record<string, string> = {};
 
+/** Task 20: מצב-טוקן חינני — סנדבוקס-ריסט מחק את ~/.secrets (16:32).
+ * במקום spam של ENOENT בכל מחזור: מזהים חוסר פעם-אחת, משהים מחזורים (אפס-קריאות API),
+ * וממשיכים לבדוק קיום-קובץ כל-טיק — המשך-עבודה אוטומטי ברגע שהטוקן חוזר. */
+let tokenMissingSince: number | null = null;
+let lastTokenMissLogAt = 0;
+const TOKEN_MISS_LOG_EVERY_MS = 30 * 60 * 1000; // תזכורת בלוג פעם ב-30 דקות בלבד
+const TOKEN_RETRY_WHEN_MISSING_MS = TICK_MS; // כשאין טוקן: בדיקת-קיום זולה כל-טיק
+
+function tokenPresent(): boolean {
+  try { fs.accessSync(TOKEN_PATH); return true; } catch { return false; }
+}
+
+/** Task 20: פעימות-לב — ה-טיק הפנימי מעדכן זמן; המפקח (instrumentation) בודק
+ * שהפעימה טרייה. זה תופס מצב-זומבי שבו ה-/status חי אבל הטיימרים מתו
+ * (נצפה בפועל ב-reload מהיר של bun --hot). */
+let lastTickAt = Date.now();
+function tickAlive(): boolean {
+  return Date.now() - lastTickAt < 3 * TICK_MS;
+}
+
 function log(level, msg) {
   const line = `${new Date().toISOString()} [${level}] ${msg}`;
   try { fs.appendFileSync(LOG_PATH, line + "\n"); } catch {}
@@ -160,6 +180,23 @@ async function neutralize(w, hits, stamp) {
 
 async function cycle(onlyRepo?: string) {
   if (cycling) { log("INFO", "cycle skipped — previous cycle still running (no-overlap lock)"); return; }
+  // ── Task 20: שער-טוקן — בלי קובץ-טוקן אין טעם לנסות API (רק ENOENT יצטבר) ──
+  if (!tokenPresent()) {
+    if (tokenMissingSince === null) {
+      tokenMissingSince = Date.now();
+      log("WARN", `TOKEN-MISSING at ${TOKEN_PATH} — cycles paused (zero API calls), auto-resume the moment the file is restored`);
+    } else if (Date.now() - lastTokenMissLogAt >= TOKEN_MISS_LOG_EVERY_MS) {
+      log("INFO", `TOKEN-MISSING since ${new Date(tokenMissingSince).toISOString()} — still paused, watching for restore`);
+    }
+    if (Date.now() - lastTokenMissLogAt >= TOKEN_MISS_LOG_EVERY_MS) lastTokenMissLogAt = Date.now();
+    for (const w of (onlyRepo ? WATCH.filter((w) => w.repo === onlyRepo) : WATCH)) dueAt[w.repo] = Date.now() + TOKEN_RETRY_WHEN_MISSING_MS;
+    return;
+  }
+  if (tokenMissingSince !== null) {
+    const downMin = Math.round((Date.now() - tokenMissingSince) / 60000);
+    log("INFO", `TOKEN-RESTORED — resuming guardianship after ~${downMin}min pause; running immediate verification cycle`);
+    tokenMissingSince = null;
+  }
   cycling = true;
   try {
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -198,6 +235,8 @@ Bun.serve({
       return Response.json({
         ok: true, runCount, cycling,
         cadence: { steem: "90s", others: "10min" },
+        token: { present: tokenPresent(), missingSince: tokenMissingSince ? new Date(tokenMissingSince).toISOString() : null },
+        tick: { lastTickAt: new Date(lastTickAt).toISOString(), alive: tickAlive() },
         lastRunByRepo, dueAt, actions: actions.slice(-20),
         watch: WATCH.map((w) => w.repo),
       });
@@ -214,6 +253,7 @@ log("INFO", `vault-guardian up on :${PORT} — steem every ${STEEM_INTERVAL_MS /
 // סריקה ראשונית אחרי 5 שניות, ואז טיק כל 30 שניות שמריץ כל ריפו לפי-קצבו
 setTimeout(cycle, 5000);
 setInterval(() => {
+  lastTickAt = Date.now();
   const now = Date.now();
   for (const w of WATCH) {
     if ((dueAt[w.repo] ?? 0) <= now) cycle(w.repo);

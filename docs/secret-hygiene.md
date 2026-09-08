@@ -239,3 +239,60 @@ verification. **No secret value was ever printed, stored in a doc, or echoed.**
 3. Rotate the working full-scope classic PAT after this push.
 4. Optional hardening: branch protection on `steem` (require PRs) so no
    daemon can direct-push again.
+
+## 11. Task 20 — sandbox-reset aftermath: lost token file, gutted `.gitignore`, garbage amend (2026-09-08 ~17:00)
+
+### 11.1 What the reset destroyed (no secret values ever printed)
+
+- The sandbox was re-provisioned (~16:32). `~/.secrets/` (dir 700: `github-token`
+  40B + `saos-admin-key` 172B) **no longer exists**; `upload/` is empty; the
+  token was never committed anywhere (verified against foundry history: the
+  only `upload/*` blob ever committed is `upload/חח.txt`, 101B, zero `gh*_`
+  matches — not a credential). **The token is unrecoverable from this sandbox**
+  and must be re-uploaded by the owner (same channel as before).
+- The guardian kept cycling on ENOENT every 90s/10min since boot —
+  **fixed** (see 11.4).
+
+### 11.2 The bleeding found & fixed: gutted `.gitignore` + garbage amend `1055003`
+
+- Discovery: local foundry `main` was `1055003` — an **amend of the already
+  pushed** Task-19 commit `ef155c7` (same message, same author date 13:48:56)
+  that swallowed runtime junk because the worktree `.gitignore` had been
+  reduced from 44 lines to 2 (`node_modules/` + `skills/`).
+- What the amend had absorbed: **`.env`** (50B, one DATABASE_URL line — benign
+  content, bad hygiene), `db/custom.db`, `dev.log`, guardian logs, `next-env.d.ts`
+  and **147 `.next/dev/**` build artifacts** (+109 mode-only changes, sandbox
+  restored files as 755).
+- Remote was NEVER touched: at last fetch the remote head is `ef155c7` and its
+  tree contains **none** of the above (verified by tree-diff). The leak was
+  local-only and is now undone.
+- Fix executed (nothing deleted from disk):
+  `git reset --mixed origin/main` → `git checkout origin/main -- .gitignore`
+  (full 44-line guard restored) → `core.fileMode=false` → `chmod 600 .env`.
+- Post-fix verification: `git diff origin/main` **empty** (worktree ≡ remote
+  truth), tracked-leak check **0** (`git ls-files | grep -E '^\.env$|custom\.db|dev\.log|guardian\.log|next-env'`),
+  untracked-but-committable files **0** (`git status --porcelain | grep '^??'`),
+  secret-pattern files in worktree **0**. Forensic hash kept in reflog:
+  `1055003`.
+
+### 11.3 New residual risk recorded
+
+- WHO gutted `.gitignore` is unproven from here (platform re-provision
+  template vs an automation run). Same failure-class as §10 (automation with a
+  stripped ignore list swallowing runtime files into a commit). If it happens
+  again, the restored `.gitignore` will keep `.env*`, `db/`, `*.log`,
+  `.next/`, `next-env.d.ts` out of the index — the guard now exists and was
+  battle-tested within the hour.
+
+### 11.4 Guardian hardened for credential loss (code, not config)
+
+- Token-gate: no token file → log **once** (`TOKEN-MISSING … cycles paused`),
+  zero API calls, cheap existence re-check every 30s tick, **auto-resume +
+  immediate verification cycle** the moment `~/.secrets/github-token` reappears
+  (`TOKEN-RESTORED` log line). No more ENOENT spam (was 1 line/repo/cycle).
+- Heartbeat: guardian `/status` now carries `tick.lastTickAt` + `tick.alive`;
+  the instrumentation supervisor treats `tick.alive === false` as DEAD and
+  respawns — catches the zombie-timer state (server answers, timers dead)
+  observed in the wild during this task's rapid hot-reloads.
+- Live-verified: fresh child spawned by supervisor after safe-restart; exactly
+  one WARN line; 0 ENOENT since; `tick.alive:true` across ticks; app home 200.
