@@ -534,3 +534,33 @@ Bugs / findings this session:
 
 Stage Summary:
 - One-key question answered from code+chain, not claims: headcorner's ONE master password provably controls STEEM+HIVE+BLURT fully (identical authorities) + EVM identity via same-scalar bridge; the fleet still has 2 independent roots — the exact binding procedure to reach true one-key is documented and is an owner decision; proof kit ready for the owner to run (12/12 verdict in seconds, zero secret exposure); daemon push-prevention impossible on free plan — vault-guardian (live) caps re-leak exposure at 10 minutes and current daemon loop is clean
+
+---
+Task ID: 18 (authority-graph-live-proof-and-daemon-block-retry)
+Agent: Z.ai Code (orchestrator)
+Task: Owner order (Hebrew): "תמשיך נסה עוד אל תוותר תשאיר את המפתחות אל תנסה לבטל לי אותם כרגע אני אתייחס לזה בהמשך" — keep trying (don't give up) on the two open fronts; DO NOT cancel/rotate/change ANY key; owner will handle credentials later.
+
+Work Log:
+- FRONT 1 (one-key proof, code-first re-audit): cloned steem@main (blobless, agent/ + sovereign/node/ only) and re-read the CODE instead of previous conclusions → found the layer Task 17 under-weighted: authority graph, not just derivation
+  - factory_v2.cjs mint: every fleet account born with owner.account_auths=[[headcorner,1]] ("עוגן-חילוץ · לעולם לא זומבי"); linkage.cjs (87·L9): headcorner inside every soldier's POSTING account_auths (weight ≥ threshold) — "הראש יכול לדבר דרך כל חייל"; keyrotate.cjs preserves account_auths verbatim across rotations
+  - vault-lib.cjs: sovereign envelope KEK = agent/keys/.vaultkey (random base64 0600) — NOT master-password-derived (honest: still separate root)
+  - fleet_vault.cjs: fleet envelope pass = random 32B stored IN PLAINTEXT inside fleet_keys.meta.json (Task 82 private-repo policy) — envelope is packaging, not protection
+  - verify_system.cjs:1054 checks ownerHasAnchor on-chain; linkage_report (04:00): soldiersTotal 11, allLinked=false, hive fixes rc-gated (RC regen ~5d, auto-retry)
+- BUILT scripts/authority-graph-proof.cjs: independent on-chain verifier — condenser_api.get_accounts × STEEM/HIVE/BLURT (fallback endpoints), self-computed weight≥threshold semantics, ZERO secrets (public data only), zero signatures/broadcasts, roster = 12 soldiers + headcorner; --selftest validates threshold interpretation incl. weight-below-threshold rejection
+- LIVE RUN (2026-09-08): STEEM → posting **12/12** ✓ (weight=1 ≥ threshold=1, key_auths intact ×12) · owner 1/12 (powerspan only) · active 0/12; HIVE → posting 2/11 (auto-heal loop rc-gated), BLURT → soldiers absent; headcorner SELF keys intact ×3 chains
+- DOCS: master-key-audit.md §7 — CORRECTED verdict (owner was right: code says something different — one headcorner key DOES reach the whole fleet posting-plane on STEEM today; derivation plane unchanged: FACTORY_MASTER/wallets-seed remain separate roots; binding procedure stays deferred per owner order); next-steps.md Task 18 section
+- FRONT 2 (daemon push blocking, keys untouched — "try again"):
+  - A. surgical PUSH-RULESET (file_path_restriction: agent/fleet_keys.enc, meta, agent/keys/*, **/*.enc; target=push, ~ALL refs, no bypass) on steem → HTTP 403 with EXACT body "Upgrade to GitHub Pro or make this repository public to enable this feature." → proves token reaches admin endpoints; the FREE PLAN is the blocker (not scopes — this corrects any ambiguity from Task 17's 403s)
+  - B. classic branch protection → 404 (endpoint hidden on free private repos); C. org ruleset → 404 — both consistent with plan limitation
+  - payload for A preserved in this worklog section (ready to fire the day the plan upgrades)
+  - vault-guardian verified LIVE: 6 cycles, 0 actions, all 3 repos clean; current steem head 227118eb (gitkeeper loop 21 @12:42, 12 files) — content-clean
+  - manual anti-sweep of current steem HEAD tree via API: 11,356 blobs → 0 suspicious paths (.enc / vaultkey / mnemonic / keys-secret patterns)
+- NOTHING deleted anywhere; NO key/credential touched/rotated/revoked; only additive: 1 script + 2 doc sections + this worklog
+
+Bugs / findings this session:
+- (audit-method) Task 17's "2 roots, one-key ≠ fleet" verdict was derivation-only thinking — the code's authority graph (account_auths anchors) already delivers one-key reach to the whole STEEM posting plane; lesson: always enumerate BOTH control planes (derivation + authority) before ruling
+- (diagnostics) GitHub returns 403-with-upgrade-message for push-rulesets but 404 for classic protection/org rulesets on free private repos — capture exact bodies instead of treating all failures as equal
+- (guardian limit) polling caps exposure at ≤10min; a GitHub webhook (free-plan-available) → guardian /run-now would cut it to seconds — blocked only on having a public URL (owner-side input needed)
+
+Stage Summary:
+- The one-key question now has a LIVE, code-independent, zero-secret proof: headcorner's posting key reaches 12/12 fleet soldiers on STEEM (owner-plane 1/12, HIVE auto-healing 2/11, BLURT n/a); derivation-plane truths from Task 17 stand unchanged and untouched; every key/credential left exactly as the owner holds them per explicit order; daemon push-prevention is PROVEN plan-gated (exact API bodies captured) — guardian remains the live ≤10-min containment with 6 clean cycles, and the moment the owner says go, either the webhook (free) or the preserved push-ruleset payload (Pro) closes the loop server-side
