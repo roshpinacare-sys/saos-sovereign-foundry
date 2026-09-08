@@ -67,3 +67,20 @@
 מאזן (עודכן Task 13, 2026-09-08): **9 מתוך 9 מוקלטות — 0 פתוחות, 0 קריטיות-פתוחות** (5 decided, 3 needs-resource, 1 deferred). שתי הסגירות החדשות (live-mode-approval, github-actions-ci) מבוססות על הנחיית-הבעלים ב-Task 13 ועל מצב בפועל שנמדד — לא סגירות-פיקטיביות. כל העדכונים עם auditTrail ב-API.
 
 > הסטטוס החי הוא תמיד `GET /api/saos/decisions` — הטבלה היא תמונת-מצב לתיעוד בלבד.
+
+---
+
+## Task 24 (2026-09-08) — המנדט המנהלי החדש (הנחיה מלאה בעברית בצ'אט)
+
+**ציטוט מהותי**: "כל עוד המפתחות כרגע לא יצאו החוצה זה בסדר... כל התיקיות פרטיות ואנחנו על רשת steem שאין עליה משתמשים... על 30$ שביזבזתי. אני חייב שלסוכנים תהיה גישה למפתחות וביצוע וגם להוריד ממני תלות... שחרר אותי מתלות. אני צריך אינטליגנציה שתנהל את הפרויקט עבורי... כל השאר אתה מוסמך לקבל החלטה."
+
+| החלטה | קטגוריה | חומרה | סטטוס |
+|---|---|---|---|
+| keys-access-dev-phase | security | critical | **decided-owner** — סוכנים מורשים לגישת-מפתחות וביצוע בסביבה הפרטית (פיתוח, repos פרטיים, רשת-בדיקה). ה-guardian עבר ל-DEV_MODE (גיבוי+דיווח, אפס force-push; אומת חי: `steem 2 → dev-mode-observed`). נטרול-כוחני חוזר בפרודקשן (GUARDIAN_DEV_MODE=0) |
+| owner-autonomy | governance | critical | **decided-owner** — הבעלים משוחרר מתלות שוטפת; ראש-המטה מקבל החלטות-שוטפות; הבעלים = החלטות-על בלבד |
+| chief-of-staff-mandate | governance | critical | **decided-owner** — אינטליגנציה מנהלת נבנתה וחיה: mini-services/chief-of-staff (:3032), בריף כל 30 דק' ל-docs/briefings/; בריף ראשון הופק ואומת חי |
+| mnemonic.ts-fate | security | critical | **decided-coordinator** (בסמכות שהוענקה) — נפתח ונבדק: **סקריפט-עיגון בטוח**, הצירוף מ-env (שורה 31), נאטם לכספת, פלט ציבורי בלבד; אין סוד בקובץ; ללא פעולה |
+| he-live-default | operations | high | **decided-coordinator** — הבעלים אישר ביצוע-סוכנים חי ברשת-הבדיקה; ה-P0 מורד מ"היפוך-ברירת-מחדל" ל-P2: דגל `--live` מפורש + לוג רועש, בלי לשבור את התנהגות-הרשת המיועדת |
+| zip-resources | resources | medium | **open** — הנחיית-בעלים: ב-ZIPs ב-Project-files יש חומר להתאמה (TITAI canonical contract / tfa-evolution-studio self-audit / ecos session-prompts) — נבחן ומוטמע בהדרגה (AGENTS.md v1.0 = ההטמעה הראשונה) |
+
+מאזן (עודכן Task 24): 6 מוקלטות — 5 סגורות, 1 פתוחה (zip-resources, איטרטיבי).

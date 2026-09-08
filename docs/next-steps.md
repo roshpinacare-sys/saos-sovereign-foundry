@@ -553,3 +553,22 @@ account_update נמדדה ≈14%). מדידה-חיה לכל 11 החיילים:
 **החלטות-בעלים שנוספו/עודכנו**: mnemonic.ts (קריאה אישית → vault+stub+rewrite, אין גיבוי חלופי); כתיבת-היסטוריה מתואמת אחת (fleet_keys-steem + F-1-platform); ZIPs ב-Project-files; רוטציית-טוקן.
 
 **P0 לסוכנים הבעלים**: steem→היפוך ל-`--live` opt-in; dex→middleware auth + `-H 127.0.0.1` + רגנרציית audit-package; platform→blacklist-צפייה ב-guardian (בלי לגעת בקובץ).
+
+---
+
+## Task 24 (2026-09-08) — המנדט המנהלי: ראש-מטה + מצב-פיתוח
+
+**הנחיית-בעלים**: סוכנים מורשים לגישת-מפתחות וביצוע (פיתוח, פרטי, רשת-בדיקה); "שחרר אותי מתלות — אני צריך אינטליגנציה שתנהל את הפרויקט"; רמז: ה-ZIPs ב-Project-files כחומר-גלם.
+
+### נבנה וחי (אומת live)
+1. **ראש-המטה** `mini-services/chief-of-staff` (:3032) — אינטליגנציה מנהלת על z-ai-web-dev-sdk (backend): gather-מצב (guardian/HEAD/next-steps/owner-decisions) → fingerprint → LLM → בריף עברית ל-`docs/briefings/BRIEF-*.md` + `latest.md`; מחזור 30 דק' + POST /brief דרישה + GET /briefing; פעימה tick.alive לפיקוח-זומבי. **בריף ראשון הופק ואומת**. נרשם במפקח (instrumentation.ts הוכלל ל-2 שירותים, spawn מדורג, SAOS_NO_CHIEF=1 לכיבוי)
+2. **Guardian DEV_MODE** (`GUARDIAN_DEV_MODE`, ברירת-מחדל ON) — נתיב אסור ב-HEAD → גיבוי ל-vault + דיווח `dev-mode-observed`, **אפס force-push** (כיוון שהבעלים דורש גישת-סוכנים למפתחות). אומת חי: `steem 2 → dev-mode-observed`. חוזר לאכיפה בפרודקשן עם `=0`
+3. **AGENTS.md v1.0** — החוזה הקנוני (הטמעה ראשונה של חומר-ה-ZIPs): סדר-מקורות-אמת, לולאת-ביצוע 7 צעדים עם never-clobber, הפרדת builder/verifier, כללי-אבטחה, טבלת ניהול-הרשת, משמעת-תיעוד
+
+### נסגרו מתור-ההחלטות
+- **mnemonic.ts**: נפתח (מאושר) — סקריפט-עיגון בטוח, צירוף מ-env, אפס סוד בקובץ; תיקון-עצמי ב-task-23-supply-chain.md
+- **he-live-default**: מורד ל-P2 (דגל `--live` מפורש) — הבעלים אישר ביצוע חי ברשת-הבדיקה
+
+### פתוח (איטרטיבי)
+- **zip-resources**: להעמיק הטמעה — self-audit.mjs של tfa-evolution-studio כבסיס לביקורת-אמת-שחרור אוטומטית ב-foundry; NEXT_SESSION_PROMPT של ecos כתבנית להעברת-סשן; TITAI acceptance-gates כרשימת-שערים
+- P0-ים של סוכנים-בעלים (dex auth, platform) עומדים כבתוק — ראה Task 23

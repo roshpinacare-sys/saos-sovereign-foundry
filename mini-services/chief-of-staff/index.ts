@@ -1,0 +1,234 @@
+/**
+ * chief-of-staff/index.ts — ראש-המטה הריבוני (Task 24)
+ * =====================================================
+ * הנחיית-בעלים 2026-09-08: "אני צריך אינטליגנציה שתנהל את הפרויקט עבורי...
+ * שחרר אותי מתלות" — הבעלים מוסמך-החלטות אחרון בלבד; הניהול השוטף כאן.
+ *
+ * מה זה עושה:
+ *   1. כל 30 דקות (וגם בדרישה POST /brief) אוסף מצב-רשת:
+ *      guardian /status, HEAD + 5 קומיטים אחרונים, פתוחים מ-next-steps,
+ *      בריאות שירותים, תמצית בריף קודם.
+ *   2. אם המצב השתנה (fingerprint) → קריאת-LLM (z-ai-web-dev-sdk, backend)
+ *      עם חוזה ראש-מטה: מצב / סיכונים / 3 פעולות-הבאות עם בעלים /
+ *      החלטות שקיבלתי בעצמי / מה נשאר לבעלים בלבד.
+ *   3. הבריף נכתב docs/briefings/BRIEF-<ts>.md + latest.md (ערוץ בין-סוכנים —
+ *      "הסוכנים האחרים מסתכלים עליך"). לא קומיט מ-כאן — הסוכן התורן מקדם.
+ *
+ * כללי-ברזל: אפס סודות בקלט/פלט/לוג; אף ביצוע-פעולה אוטומטי מכאן —
+ * ראש-המטה מנתח וממליץ, הסוכנים התורנים מבצעים עם ראיות.
+ *
+ * כיבוי-ידני: SAOS_NO_CHIEF=1  ·  פורט: 3032
+ */
+import ZAI from "z-ai-web-dev-sdk";
+import fs from "fs";
+import path from "path";
+
+const PORT = 3032;
+const TICK_MS = 30_000;
+const CYCLE_MS = 30 * 60_000;
+const FIRST_CYCLE_DELAY_MS = 20_000;
+const FOUNDRY = "/home/z/my-project";
+const BRIEF_DIR = path.join(FOUNDRY, "docs", "briefings");
+const GUARDIAN_URL = "http://127.0.0.1:3031/status";
+const KEEP_BRIEFS = 30;
+const CHIEF_LOG = path.join(import.meta.dir, "chief.log");
+
+let lastTickAt = Date.now();
+let cycles = 0;
+let llmCalls = 0;
+let lastBriefAt: string | null = null;
+let lastBriefFile: string | null = null;
+let lastStateHash = "";
+let busy = false;
+let lastError: string | null = null;
+
+const log = (level: string, msg: string) => {
+  const line = `${new Date().toISOString()} [${level}] ${msg}`;
+  try { console.log(line); } catch {}
+  try { fs.appendFileSync(CHIEF_LOG, line + "\n"); } catch {}
+};
+
+function tickAlive(): boolean {
+  return Date.now() - lastTickAt < 3 * TICK_MS;
+}
+
+async function sh(cmd: string, cwd = FOUNDRY, timeoutMs = 15_000): Promise<string> {
+  const { exec } = await import("child_process");
+  return await new Promise<string>((resolve) => {
+    exec(cmd, { cwd, timeout: timeoutMs, maxBuffer: 4 * 1024 * 1024 }, (err, stdout) => {
+      resolve(err ? "" : String(stdout));
+    });
+  });
+}
+
+async function fetchJson(url: string, timeoutMs = 4000): Promise<Record<string, unknown> | null> {
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+    if (!r.ok) return null;
+    return (await r.json()) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function readTail(p: string, max = 4000): string {
+  try {
+    const txt = fs.readFileSync(p, "utf8");
+    return txt.length > max ? "…\n" + txt.slice(-max) : txt;
+  } catch {
+    return "(לא זמין)";
+  }
+}
+
+interface Gathered {
+  hash: string;
+  text: string;
+}
+
+async function gather(): Promise<Gathered> {
+  const guardian = await fetchJson(GUARDIAN_URL);
+  const head = (await sh("git rev-parse --short HEAD")).trim();
+  const commits = (await sh(`git log --format="- %h %s" -5`)).trim();
+  const briefings = fs.existsSync(BRIEF_DIR)
+    ? fs.readdirSync(BRIEF_DIR).filter((f) => f.startsWith("BRIEF-")).sort().slice(-5).join(", ") || "(אין)"
+    : "(אין)";
+
+  const g = guardian
+    ? `guardian: ok=${(guardian as { ok?: boolean }).ok} runs=${(guardian as { runCount?: number }).runCount} devMode=${(guardian as { devMode?: boolean }).devMode} tickAlive=${(guardian as { tick?: { alive?: boolean } }).tick?.alive} token=${((guardian as { token?: { present?: boolean } }).token ?? {}).present}`
+    : "guardian: לא זמין";
+  const text = [
+    `HEAD: ${head}`,
+    commits,
+    g,
+    `briefings אחרונים: ${briefings}`,
+    "── זנב next-steps.md ──",
+    readTail(`${FOUNDRY}/docs/next-steps.md`, 3500),
+    "── זנב owner-decisions.md ──",
+    readTail(`${FOUNDRY}/docs/owner-decisions.md`, 2000),
+  ].join("\n");
+  // טביעת-אצבע: שינוי HEAD או פעילות-guardian או מספר-בריפים → מצב חדש
+  const hashSource = `${head}|${(guardian as { runCount?: number })?.runCount ?? 0}|${briefings}`;
+  const hash = Buffer.from(hashSource).toString("base64").slice(0, 32);
+  return { hash, text };
+}
+
+const SYSTEM_PROMPT = `אתה ראש-המטה של פרויקט SAOS — רשת סוכנים ריבונית על בלוקצ'יין Steem/SOL/EVM (repos פרטיים תחת roshpinacare-sys, סביבת פיתוח, הנחיית-בעלים 2026-09-08: סוכנים מורשים לגישת-מפתחות וביצוע בסביבה הפרטית; הבעלים משוחרר מתלות ומקבל רק החלטות-על).
+
+תפקידך: נתח את מצב-הרשת שניתן לך והפק בריף ניהולי בעברית, תמציתי ומבוסס-ראיות בלבד. אסור להמציא עובדות שאינן בקלט. אסור לכלול סודות/מפתחות/טוקנים (גם אם מופיעים — החלף ב-<REDACTED>).
+
+פורמט-חובה (Markdown):
+## מצב רשת (2-4 שורות)
+## סיכונים / דברים מדממים (או "אין")
+## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימות
+## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
+## נשאר לבעלים בלבד (או "כלום")
+
+כללים: פעולות חייבות להיות ניתנות-לביצוע ע"י סוכן תורן בתוך הסביבה (קוד/דוק/בדיקה), ללא כסף-אמיתי מחוץ להיקף-הפיתוח שאושר, ללא force-push. אם הקלט דל — אמור זאת ותן את הפעולות הבטוחות ביותר.`;
+
+async function writeBriefing(content: string, stateText: string): Promise<string> {
+  fs.mkdirSync(BRIEF_DIR, { recursive: true });
+  const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  const file = `${BRIEF_DIR}/BRIEF-${ts}.md`;
+  const header = [
+    `# בריף ראש-המטה — ${new Date().toISOString()}`,
+    ``,
+    `> מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.`,
+    ``,
+    `<details><summary>קלט-מצב (מקוצר)</summary>`,
+    ``,
+    "```",
+    stateText.slice(0, 5000),
+    "```",
+    `</details>`,
+    ``,
+  ].join("\n");
+  fs.writeFileSync(file, header + content + "\n");
+  fs.writeFileSync(`${BRIEF_DIR}/latest.md`, header + content + "\n");
+  // גיזום: שמור אחרונים בלבד
+  const all = fs.readdirSync(BRIEF_DIR).filter((f: string) => f.startsWith("BRIEF-")).sort();
+  for (const old of all.slice(0, Math.max(0, all.length - KEEP_BRIEFS))) {
+    try { fs.unlinkSync(`${BRIEF_DIR}/${old}`); } catch {}
+  }
+  return file;
+}
+
+async function cycle(force = false): Promise<{ skipped?: boolean; file?: string; error?: string }> {
+  if (busy) return { skipped: true, error: "busy" };
+  busy = true;
+  try {
+    cycles++;
+    const { hash, text } = await gather();
+    if (!force && hash === lastStateHash) {
+      log("INFO", `cycle #${cycles}: state unchanged — LLM skipped`);
+      return { skipped: true };
+    }
+    lastStateHash = hash;
+    const zai = await ZAI.create();
+    const completion = await zai.chat.completions.create({
+      messages: [
+        { role: "assistant", content: SYSTEM_PROMPT },
+        { role: "user", content: `מצב-רשת נוכחי:\n\n${text}` },
+      ],
+      thinking: { type: "disabled" },
+    });
+    llmCalls++;
+    const content = completion.choices[0]?.message?.content ?? "";
+    if (!content.trim()) throw new Error("empty LLM response");
+    const file = await writeBriefing(content, text);
+    lastBriefAt = new Date().toISOString();
+    lastBriefFile = file;
+    lastError = null;
+    log("INFO", `cycle #${cycles}: briefing written → ${file}`);
+    return { file };
+  } catch (e) {
+    lastError = String((e as Error)?.message ?? e);
+    log("ERROR", `cycle #${cycles} failed: ${lastError}`);
+    return { error: lastError };
+  } finally {
+    busy = false;
+  }
+}
+
+Bun.serve({
+  port: PORT,
+  async fetch(req: Request) {
+    const u = new URL(req.url);
+    if (u.pathname === "/status") {
+      return Response.json({
+        ok: true,
+        service: "chief-of-staff",
+        tick: { lastTickAt: new Date(lastTickAt).toISOString(), alive: tickAlive() },
+        cycles, llmCalls, busy,
+        lastBriefAt, lastBriefFile, lastError,
+        cadence: { cycleMinutes: CYCLE_MS / 60000 },
+      });
+    }
+    if (u.pathname === "/brief" && req.method === "POST") {
+      const r = await cycle(true);
+      return Response.json({ ok: !r.error, ...r });
+    }
+    if (u.pathname === "/briefing") {
+      try {
+        const txt = fs.readFileSync(path.join(BRIEF_DIR, "latest.md"), "utf8");
+        return new Response(txt, { headers: { "content-type": "text/plain; charset=utf-8" } });
+      } catch {
+        return new Response("(no briefing yet)", { status: 404 });
+      }
+    }
+    return new Response("chief-of-staff: see /status, POST /brief, GET /briefing\n", { status: 404 });
+  },
+});
+
+setInterval(() => {
+  lastTickAt = Date.now();
+}, TICK_MS);
+
+setInterval(() => {
+  void cycle(false);
+}, CYCLE_MS);
+
+setTimeout(() => {
+  void cycle(true); // בריף ראשוני מיידי
+}, FIRST_CYCLE_DELAY_MS);
+
+log("INFO", `chief-of-staff up on :${PORT} — first briefing in ${FIRST_CYCLE_DELAY_MS / 1000}s, cycle every ${CYCLE_MS / 60000}min`);

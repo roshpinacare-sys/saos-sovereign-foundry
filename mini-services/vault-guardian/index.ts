@@ -47,6 +47,11 @@ const WATCH = [
   { repo: "anchor-baseline", branch: "main", forbiddenSuffix: [".enc"] },
 ];
 
+// Task 24 (הנחיית-בעלים 2026-09-08): מצב-פיתוח — סוכנים מורשים לגישת-מפתחות בסביבה הפרטית.
+// DEV_MODE (ברירת-מחדל ON): נתיב אסור ב-HEAD → דווח + גיבוי ל-vault, בלי מחיקת-כוח.
+// נטרול-כוחני חוזר רק עם GUARDIAN_DEV_MODE=0 (שלב-פרודקשן).
+const DEV_MODE = process.env.GUARDIAN_DEV_MODE !== "0";
+
 let runCount = 0;
 const actions: { at: string; repo: string; hits: number; result: string }[] = [];
 let cycling = false; // נעילת-חפיפה: טיימר + /run-now לא מריצים שני מחזורים במקביל
@@ -225,8 +230,13 @@ async function cycle(onlyRepo?: string) {
         const paths = (await treeOf(w.repo, head.sha)).filter((t) => t.type === "blob").map((t) => t.path);
         const hits = forbiddenIn(w, paths);
         if (!hits.length) { log("OK", `${w.repo}: clean (${paths.length} files, head ${head.sha.slice(0, 10)})`); continue; }
+        await backupBlobs(w.repo, head.sha, hits, stamp); // גיבוי תמיד — גם ב-dev (stay safe)
+        if (DEV_MODE) {
+          log("ALERT", `${w.repo}: ${hits.length} forbidden path(s) in head ${head.sha.slice(0, 10)}: ${hits.join(", ")} — DEV-MODE: backed up, observing only (owner keys-access directive 2026-09-08, no force-push)`);
+          actions.push({ at: new Date().toISOString(), repo: w.repo, hits: hits.length, result: "dev-mode-observed" });
+          continue;
+        }
         log("ALERT", `${w.repo}: ${hits.length} forbidden path(s) in head ${head.sha.slice(0, 10)}: ${hits.join(", ")}`);
-        await backupBlobs(w.repo, head.sha, hits, stamp);
         const r = await neutralize(w, hits, stamp);
         actions.push({ at: new Date().toISOString(), repo: w.repo, hits: hits.length, result: r.done ? "neutralized" : r.reason });
       } catch (e) {
@@ -249,7 +259,7 @@ try {
     const u = new URL(req.url);
     if (u.pathname === "/status") {
       return Response.json({
-        ok: true, runCount, cycling,
+        ok: true, runCount, cycling, devMode: DEV_MODE,
         cadence: { steem: "90s", others: "10min" },
         token: { present: tokenPresent(), missingSince: tokenMissingSince ? new Date(tokenMissingSince).toISOString() : null },
         tick: { lastTickAt: new Date(lastTickAt).toISOString(), alive: tickAlive() },
