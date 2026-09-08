@@ -429,3 +429,19 @@ Stage Summary:
 - The system is PROVEN alive at all three levels, in live mode, with zero secrets exposure, zero transactions, zero broadcasts, zero signatures: live-proof = service ok · safeLive=true · 5/6 networks live-verified read-only · CI success pulled live · fresh verified backup · 147/147 + 8/8 green in live mode · 9/9 decisions recorded with audit
 - Everything possible was activated and verified; everything impossible (real anchor: vault/HIVE-RC/TRON-stake funding) is documented as owner-external with exact procedures
 - Docs now assert only measured reality: dynamic security items, live evidence in docs/live-proof.md, mode ladder + quirks in docs/live-runbook.md
+
+---
+Task ID: 13-push (push record)
+Agent: Z.ai Code (orchestrator)
+Task: Push Task 13 per the safe-push protocol; verify remote sync + CI health.
+
+Work Log:
+- Secret scan before commit: pattern scan over the full diff (github token / private key / aws key / bearer-secret shapes) → **0 matches**; sensitive-filename scan → only docs/secret-hygiene.md (the hygiene doc itself, procedures only)
+- Commit `5eec9dd` (30 files, +1810/−322): live-proof endpoint + live-probes module + preflight/repo-git extraction + UI card + mode-aware suite + BUG-010 fixes + 2 audited decision closures + 11 docs + worklog
+- Push: first attempt hit an empty credential helper (env not exported in that shell — recurring sandbox quirk, never a token problem) → re-run with env-only credential helper (token in memory, never printed, remote URL scrubbed) → `382d30e..5eec9dd main -> main`
+- Sync verified: `main...origin/main` 0/0 + `ls-remote` head == local head (5eec9dde1c8b)
+- Remote CI: run 34175470690 for 5eec9dd — **completed / success** (direct GitHub API check: lint → typecheck → next build → dev → api-check (dry-run mode) → concurrency); previous run (382d30e) also green
+- This documentation commit itself: secret-scanned (0 matches), regular push only — no force, no deletion, no history rewrite
+
+Stage Summary:
+- Task 13 fully landed: origin/main @ 5eec9dd with GREEN remote CI; sandbox running safe-live with a live, documented proof of life at every level
