@@ -296,3 +296,17 @@ verification. **No secret value was ever printed, stored in a doc, or echoed.**
   observed in the wild during this task's rapid hot-reloads.
 - Live-verified: fresh child spawned by supervisor after safe-restart; exactly
   one WARN line; 0 ENOENT since; `tick.alive:true` across ticks; app home 200.
+
+---
+
+## §12 (Task 25, 2026-09-08) — תקרית: sandbox reset מחק DB + מפתח-אדמין; שיחזור מלא אוטונומי
+
+**מה נצפה**: `db/custom.db` איבד את הטבלאות (AuditEvent/OpLog/DecisionRecord נעלמו — דפוס ה-reset של הסנדבוקס, כמו אירוע ~/.secrets ב-16:32). המסך הראשי קרס לשגיאת-רינדור; רישום-ההחלטות ב-DB חזר לברירת-מחדל (9 פתוחות); קובץ `~/.secrets/saos-admin-key` לא היה קיים (נבלע ב-reset הקודם).
+
+**שיחזור שבוצע (אוטונומי, בסמכות-ההענקה)**:
+1. `bun run db:push` — הטבלאות נוצרו מחדש מהסכמה; `GET /api/saos/decisions` חזר לחיות.
+2. מפתח-אדמין חדש הוקצה ל-`~/.secrets/saos-admin-key` (600, לא הודפס מעולם) + `SAOS_ADMIN_KEY_HASH` (sha256 של התוכן בלי רווח-סיום) נוסף ל-`.env` (600, gitignored). **הערה-טכנית**: ה-hash הראשון חושב על הקובץ כולל `\n` → "מפתח לא תקף"; תוקן ל-hash של התוכן בלבד. Next-dev טען מחדש את ה-env ללא ריסטרט.
+3. 9 ההחלטות הוקלטו מחדש דרך `POST /api/saos/decisions` (Bearer, audited) לפי הטבלה המתועדת ב-docs/owner-decisions.md §5 — יתרה חיה: **9/9 מוקלטות, 0 פתוחות, 3 needs-resource** (תואם לתיעוד).
+4. אימות-דפדפן: המסך הראשי רנדר (0 שגיאות קונסולה), מסך-ההחלטות מציג את היתרה המשוחזרת, footer נדחף טבעי.
+
+**לקח**: כל אירוע sandbox-reset עשוי למחוק db/ + ~/.secrets — תרחיש-שיחזור מתועד כאן; ה-guardian (טוקן) וה-askpass כבר self-healing מוכחים; מפתח-האדמין הצטרף לעוגן-השיחזור הזה.

@@ -865,3 +865,16 @@ Work Log:
 
 Stage Summary:
 - Guardian blind spot CLOSED with live evidence; backup-noise eliminated with a cryptographic justification (head-sha immutability). The vault envelope proven genuine and loaded (7 sealed key files incl. mnemonic) — the "no backup" concern from Task 23 is fully retired: envelope at steem HEAD + 81 recovery dirs + offline platform bundle.
+---
+Task ID: 25-h
+Agent: Z.ai Code (main coordinator)
+Task: Browser end-to-end verification of the foundry home route + incident recovery discovered during verification.
+
+Work Log:
+- agent-browser open / → FIRST RUN FAILED: "This page couldn't load" — dev.log: "The table main.AuditEvent does not exist" + client TypeError command-center.tsx:161 → root cause: sandbox reset wiped db/custom.db tables (same class as the 16:32 ~/.secrets wipe).
+- RECOVERY: bun run db:push (schema re-synced; decisions API alive). DB-held decision statuses reset to defaults (9 open) → re-recorded ALL 9 documented statuses via POST /api/saos/decisions (Bearer) per docs/owner-decisions.md §5 → live balance 9/9 decided, 0 open, 3 needs-resource = matches docs.
+- Incident: ~/.secrets/saos-admin-key missing (prior reset) → re-provisioned: new key (600, never printed) + SAOS_ADMIN_KEY_HASH in .env (600, gitignored). First hash attempt included trailing newline → "מפתח לא תקף" → corrected to content-without-newline hash; Next dev hot-reloaded env without restart. Documented as docs/secret-hygiene.md §12.
+- VERIFIED in browser (second run): title "SAOS — מרכז שליטה מבצעי"; 8 tabs render; decisions screen shows restored metrics (0 פתוחות / 9 הוכרעו / 3 דורשות משאב); security screen renders (SH cards); 0 page errors, 0 console errors; footer: mt-auto present, footerBottom=docH=1907 exactly (natural push, no gap/overlap; docH 1907 > winH 577 → below-fold-on-tall-page correct).
+
+Stage Summary:
+- The golden path is browser-proven end-to-end: render ✓, tabs ✓, live API data ✓, restored decision state ✓, footer discipline ✓, zero console errors. A real incident (DB wipe) was caught BY the verification and fixed with documented runbook (secret-hygiene §12). All Task 25 code pushed; final chief-of-staff briefing triggered as closing action.
