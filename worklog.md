@@ -1307,3 +1307,23 @@ Work Log:
 Stage Summary:
 - הריפו מסונכרן לגמרי: local main == origin/main == 337574d; אין ahead/behind.
 - "UI ישן" שהבעלים רואה = cache תצוגה מקומי/צפייה בריפו לפני הדחיפה של אתמול 22:33 — הקוד והריפו מציגים v3.
+
+---
+Task ID: 41-recovery
+Agent: Z.ai Code (main)
+Task: "5 חסימות כבר טופלו הכל טופל חסרים הרבה דברים שהיו" — אבחון ושחזור אירוע-מחיקה שהחזיר את המערכת אחורה
+
+Work Log:
+- אבחון: אירוע-מחיקה חיצוני ~22:03 הרג .env (נשאר רק DATABASE_URL), db/custom.db (מסד ריק לגמרי: 0 חותמות/קבלות/החלטות/OpLog), upload/saos-admin-key.txt ו-backups/ — זה המקור לכל 5 החסימות ולתחושת "חסרים דברים שהיו" (live→dry-run, auth נפל, חותמות נעלמו). cleanup.mjs חף (מסרב בלי גיבוי).
+- שחזור .env: SAOS_MODE=live + SAOS_LIVE_CONFIRM=YES (הסכמת-בעלים מתועדת Task 40), מפתח-אדמין חדש מחוץ-לעץ ~/.secrets (600, SH-7 נסגר כהלכה), hash בלבד בעץ, סוד-סשן חדש, RPC ציבוריים publicnode; אפס הדפסות-סודות.
+- הפעלת-שרת מחדש (יתום 1178 החזיק את הפורט — נוקה); HTTP 200.
+- bun run backup → גיבוי טרי מאומת (integrity ok) + OpLog → blocker backup נפתר כנה.
+- 9/9 החלטות נרשמו מחדש דרך ה-API עם Bearer — אך ורק מהתיעוד המגובה בגיט (worklog 1223-1266 + next-steps): 5 decided-custom / 3 resolved-external / 1 deferred / 1 needs-resource; 0 פתוחות.
+- חותמת ג'נזיס חדשה 9edc42eb (שרשרת-עדויות מתחילה מחדש, ההיסטוריה מגובה ב-legacy-chain-archive + commit e7e32cb).
+- אימות דפדפן: כותרת "מצב live", תג חסימות נעלם, "אין חוסמים קשים", חסימות פעילות 0, החלטות 9/9 (0 פתוחות), 10 טאבים.
+- עדות-אירוע מגובה: docs/evidence/INCIDENT-2026-09-09-wipe-recovery.md; preflight סופי: readyForAnchor=true, 0 hard blockers, 4 אזהרות כנות.
+
+Stage Summary:
+- כל 5 החסימות חזרו למצבן שלפני-האירוע (0 קשים) — בשחזור כנה מתיעוד, בלי להמציא החלטות-בעלים.
+- המערכת: live, מאומתת, מגובה, חתומה; ה-UI מציג את המצב האמיתי המלא.
+- מניעה מתועדת: לבדוק .env/.gitignore/db/upload בכל כניסה (דפוס wipe חוזר של גורם-חוץ); מפתח מחוץ-לעץ עמיד ל-wipe עתידי.
