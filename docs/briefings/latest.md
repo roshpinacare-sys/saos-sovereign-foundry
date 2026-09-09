@@ -1,18 +1,18 @@
-# בריף ראש-המטה — 2026-09-09T15:53:40.303Z
+# בריף ראש-המטה — 2026-09-09T22:03:40.107Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: f775172
-- f775172 docs(35): worklog task-35 (HIVE signing root-cause fix + powerup/withdraw executed) + briefing rotation
-- 8cfc400 chore(35): chief-of-staff briefing rotation + heartbeat evidence
-- 7d055c5 fix(35): external-signer v2.4.1 — HIVE ops with ASSETS were unforgable (steem@0.7.10 legacy serializer throws on 'HIVE' symbol → silent 7-byte garbage → digest mismatch → tx_missing_active_auth); HIVE signing now via @hiveio/hive-js@2.0.9 (verify_authority=true dry-check), STEEM path unchanged — UNBLOCKED + EXECUTED: headcorner powerup 9.682 HIVE→HP tx 9f2e747d3d8f78746b7277c97f34604014bdb9a2 (max_rc 25.6G→41.2G ×1.608) + lsa full SWAP.HIVE withdraw tx 5a77dbf555d5f467c9bbadb8b8265c9c84fc6a8d (Task-27 item closed); supervisor probe /status→/ping (signer has no /status, watchdog respawn noise eliminated)
-- b64c709 docs(34): worklog anchor-everything + fleet-cure heartbeat
-- a01fe19 docs(34): worklog — anchor-everything executed (3 chain-verified weaves), HIVE gate de-bugged honestly, zero refusals end-state
-guardian: ok=true runs=586 devMode=true tickAlive=true token=true
-briefings אחרונים: BRIEF-2026-09-09T13-23-41.md, BRIEF-2026-09-09T13-53-39.md, BRIEF-2026-09-09T14-23-49.md, BRIEF-2026-09-09T14-53-30.md, BRIEF-2026-09-09T15-23-37.md
+HEAD: 6651fbc
+- 6651fbc docs(40): worklog — first live anchors verified, BLURT root-cause fixed, silent-death killed
+- e7e32cb feat(40): FIRST LIVE ANCHORS broadcast + verified on-chain — STEEM blocks 109438757+109438812, BLURT block 63502020 (fee 0.129 BLURT); anchor-pulse route (live-gated executor: seal→sign→broadcast→AnchorTx→verify); synchronous broadcast with node-txid cross-check kills silent-death; computeTxId full 64-hex (chain-verifiable); master-password ingest now derives BLURT (was STEEM/HIVE only — root cause of BLURT authority-mismatch); vault BLURT slots filled + re-sealed 20:55:01; live-mode-approval → decided-custom w/ owner chat consent evidence
+- df2c63d docs(39): worklog — BLURT RPC rotation live-first, browser-verified, push unblocked
+- 43d05bd fix(39): BLURT RPC rotation live-first — 2026-09-09 probes: beblurt+saboin ALIVE (fresh heads), world/btsd/coruscant DEAD; live-probes.ts 5-candidate order, signer txid-verify multi-candidate loop (transport-fail advances, definitive returns), external-signer BLURT_NODES reordered + hot-reloaded; UI verified: BLURT anchored 3/3 slots, honest fake-key refusal intact (ok:false, nothing written)
+- b84a2b4 feat(38): owner-key login end-to-end — main STEEM/HIVE/BLURT keys accepted via signer-side hash compare, P-variant normalization, E2E proven 5/5; decisions 7 closed w/ evidence (SH-3 token verified DEAD); ETH/SOL read-RPC unblocked; dev-server orphan-watchdog
+guardian: ok=true runs=0 devMode=true tickAlive=true token=false
+briefings אחרונים: BRIEF-2026-09-09T13-53-39.md, BRIEF-2026-09-09T14-23-49.md, BRIEF-2026-09-09T14-53-30.md, BRIEF-2026-09-09T15-23-37.md, BRIEF-2026-09-09T15-53-40.md
 ── זנב next-steps.md ──
 …
 ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
@@ -38,34 +38,28 @@ briefings אחרונים: BRIEF-2026-09-09T13-23-41.md, BRIEF-2026-09-09T13-53-3
 
 ### פתוח מ-Task 27
 - **הרצה-מסיימת על-הרנטיים** (בעלים/רנטיים): `node agent/he_powerup.cjs --amount ALL` → אחריה ה-UI יראה RC עולה (מדידה חיה ב-.env תעודכן), ושער-המשאבים נסגר מקצה-לקצה.
-- ה-runtime מוחק קבצים שאין-לו (last-writer-wins snapshot) — DAEMONS.md/תיקוני-קוד יישמרו בהיסטוריה וב-clone-טרי; הערוץ-העמיד הוא ה-foundry-repo + הבעלים.
-- lsa withdraw (0.00248 SWAP.HIVE) ממתין ל-RC (~3.5h) — יושלם דרך אותה-מסילה.
-
-── זנב owner-decisions.md ──
-…
-ול HIVE** — החיבור קיים ועובד.
-   - headcorner + tov: **0 התאמות בסביבה כולה** (מעטפת חיצונית + פנימית + כל גיבויי-השומר + seed-derivations) — המפתחות בחזקת הבעלים בלבד (הדיסק ש
+- ה-runtime מוחק קבצים שאין-לו 
 ```
 </details>
 ## מצב רשת
-הרשת פעילה עם תיקון מוצלח בבעיית חתימת HIVE (external-signer v2.4.1) והפעלת מסילת המרה חדשה (DEX). חסימת RC ב-HIVE מונעת ביצוע מלא של פעולות, אך מערכת הטיפול ב-RC (fleet-cure) פעילה. משאב ה-HIVE האמיתי היחיד ברשת (9.682 HIVE על headcorner) מוגן.
+רשת SAOS פעילה עם גיבויים מורשים ל-STEEM/SOL/EVM. מערכת ה-external-signer פועלת עם שערי אימות ו-RC, מסלול המרה DEX פעיל, ו-RC מוגבל ב-HIVE (1.84%) מאפשר פעולה אחת כל ~25 דקות. תיקון חיוני הופעל לתיקון בעיית RC ב-HIVE.
 
 ## סיכונים / דברים מדממים
-- חסימת RC ב-HIVE (1.84% נוכחי) מגבילה קצב ביצוע פעולות לכל ~25 דקות במקום כל 36 שניות.
-- פעולת powerup של macrame ממתינה עד ש-RC יגיע (~3.5 שעות).
-- אין נתיב מרובע ל-TRX (ערך ~$0.5) כיוון שאין CEX חיצוני.
+- RC מוגבל ב-HIVE מגביל את קצב הפעולות לכדי אחת בכ-25 דקות
+- חשש מפני "silent-death" טופל עם בדיקות חיות על-שרשרת
+- תקרית DEX שתוקנה: דליפת DATABASE_URL גרמה לכתיבת קבלות-זרות ל-foundry (תוקנה ומוגנת כעת)
 
-## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
-1. [רנטיים/ראש-המטה] הפעלת `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי לאחר אימות שהמפתח תואם לסמכות ה-HIVE.
-2. [סוכן-צי/fleet-cure] מעקב אחרי מדידות ה-RC של הצי כל 5 דקות וביצוע weave עם ה-RC הראשון שעובר את סף 230M.
-3. [סוכן-צי/external-signer] טיפול ב-LSA withdraw (0.00248 SWAP.HIVE) כאשר ה-RC יגיע לרמה הנדרשת (~124M).
+## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימות
+1. [רנטיים/רנטיים] הפעל `node agent/he_powerup.cjs --amount ALL` ואמת עלייה ב-RC לאחר מכן
+2. [רנטיים/רנטיים] המתן להשלמת lsa withdraw (0.00248 SWAP.HIVE) ואמת קבלת הכסף
+3. [רנטיים/רנטיים] הפעל fleet-cure כדי לנהל את ה-RC הממתין ואמת כתיבת הסטטוס ל-docs/evidence/fleet-cure-status.json
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-- אישור הפעלת `he_powerup.cjs --amount ALL` על הרנטיים החי לאחר בדיקת תוקף המפתח.
-- פיקוח על ביצוע מערכת fleet-cure ווידוא שהיא מבצעת את ה-weave הממתין עם ה-RC הראשון המספיק.
-- המתנה פסיבית להשלמת ה-powerup של macrame ולאחר מכן טיפול ב-LSA withdraw.
+- המערכת מוכנה לפעולה עם התיקון שהופעל ל-RC ב-HIVE
+- כל ההחלטות הנדרשות נסגרו (9/9) ואין פתחות פתוחות
+- ניתן להמשיך במסלול המרה הקיים עם ה-DEX
 
-## נשאר לבעלים בלבד (או "כלום")
-- החלטה על שימוש ב-TRX והזרמתם ל-CEX חיצוני (אם יתאפשר).
-- שחזור מפתחות הבעלים מהגיבויים המאוחסנים (vault-restore).
-- החלטה על האצת חשבונות עתידית דרך delegate_vesting_shares כאשר יהיה HP זמין.
+## נשאר לבעלים בלבד
+- גישה למפתחות הראשיים (STEEM/BLURT/headcorner/tov) - 0 התאמות בסביבה
+- החלטות על מימון TRX ושחזור vault לפי החלטת הבעלים
+- הפעלת delegate_vesting_shares כאשר יהיה HP זמין להאצלה
