@@ -1,18 +1,18 @@
-# בריף ראש-המטה — 2026-09-09T04:23:27.579Z
+# בריף ראש-המטה — 2026-09-09T04:53:32.958Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: 45cba2e
+HEAD: b10d17d
+- b10d17d 05c9bd37-02d3-49ae-9f1f-98c615d53095
+- dbfb9f4 worklog(29-b): credential forensics (valid key, no match — different account/pre-rotation), shred, multi-agent infra pushed
+- 62edaab feat(29-b): master-password ingest (P… → active+posting+memo × both networks, owner key never derived) + relaxed proxy entries + docs/keys-access.md multi-agent contract
 - 45cba2e f4434059-c8ed-4b45-ba52-1dda41493b93
 - 13930b6 feat(29): owner key entry point — control-screen card + /api/saos/owner-keys proxy + external-signer v2.2.0 (verify-then-write /keys/ingest, network-suffixed main keys, /keys/status public view); answers owner directive 'אין לי איפה לחבר את המפתח'
-- 4f33e18 chore(28): fleet-cure status refresh (runtime artifact)
-- 78f6748 b146e076-0a09-4a3d-b617-eb5b78432282
-- 1bfc349 worklog(28)+guardian: incident addendum — gitkeeper wiped gates (38c4ec1), restored on origin (4dd033c) with self-heal (APPLY-LIVE-GATE.sh + in-repo patch); guardian required-files WATCH for live_gate module
-guardian: ok=true runs=46 devMode=true tickAlive=true token=true
-briefings אחרונים: BRIEF-2026-09-09T01-53-32.md, BRIEF-2026-09-09T02-23-33.md, BRIEF-2026-09-09T02-53-38.md, BRIEF-2026-09-09T03-23-29.md, BRIEF-2026-09-09T03-53-30.md
+guardian: ok=true runs=70 devMode=true tickAlive=true token=true
+briefings אחרונים: BRIEF-2026-09-09T02-23-33.md, BRIEF-2026-09-09T02-53-38.md, BRIEF-2026-09-09T03-23-29.md, BRIEF-2026-09-09T03-53-30.md, BRIEF-2026-09-09T04-23-27.md
 ── זנב next-steps.md ──
 …
 ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
@@ -47,22 +47,24 @@ briefings אחרונים: BRIEF-2026-09-09T01-53-32.md, BRIEF-2026-09-09T02-23-3
    - headcorner + tov: **0 התאמות בסביבה כולה** (מעטפת חיצונית + פנימית + כל גיבויי-השומר + seed-derivations) — המפתחות בחזקת הבעלים בלבד (הדיסק של הרנטיים נמחק). "אני עשיתי את זה" — הסמכויות בשרשרת הן הגדרת-הבעלים; לא נוגעים, לא מרוטטים.
    - STEEM: 0/11 התאמות (כולל הראשי) — עיגון STEEM מוחזק אצל הבעלים.
 2. **עלות-op מדודה בשרשרת**: weave על HIVE = **225,041,204 RC** (דחייה-חיה של cashmachine: "has 166,881,563 RC, needs 225,041,204").
-3. **מינימום-האצלה בשרשרת**: **1,611.18 VESTS** — גדול מכל יתרה-עצמית של חייל (מקס 268)
+3. **מינימום-האצלה בשרשרת**: **1,611.18 VESTS** — גדול מכ
 ```
 </details>
 ## מצב רשת
-הרשת פעילה עם פרויקט SAOS מתקדם. קיימת תקלה ב-HIVE RC (0.003%) המגבילה קצב פעולות, אך נמצא פתרון באמצעות חבילת he_powerup. ה-DEX פעיל ומאובטח, עם תיקון פרצת אבטחה שנתגלתה. קיימת מערכת external-signer מאובטחת עם שערי סמכות ו-RC. נמצאו 9.682 HIVE נזילים כמשאב עיקרי.
+הרשת פעילה עם HEAD ב-b10d17d, מערכת ה-RC ב-HIVE תקינה לאחר תיקון deadlock, עם 9.682 HIVE נזילים. מסילת ההמרה וה-DEX פעילים ומוכחים עם עסקאות מוצלחות. מערכת האבטחה תקינה עם שערי אימות וכשירות RC.
 
-## סיכונים / דברים מדממים (או "אין")
-ה-RC הנמוך ב-HIVE מהווה נקודת צוואר בקבב, מגביל פעולות לכל ~25 דקות במקום כל 36 שניות. עם זאת, נמצא פתרון והוא ממתין להפעלה.
+## סיכונים / דברים מדממים
+אין
 
 ## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
-1. [רנטיים/רנטיים] הפעלת `node agent/he_powerup.cjs --amount ALL` כדי להגדיל את קצב ה-RC ב-HIVE ב-55%.
-2. [רנטיים/רנטיים] המתנה עד להשלמת ה-powerup אוטומטית על ידי ה-FSM, עם מעקב אחר גידול ה-RC במדידות חיות.
-3. [רנטיים/רנטיים] הפעלת ה-DEX להמרת משאבים לאחר שה-RC יגיע לרמה מספקת, תוך שימוש במסלול המוכח של המרה ומכירה.
+1. [רנטיים/רנטיים] הרצת `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי כדי לסגור את מסילת ה-RC ולהגיע ל-max_rc ~40G
+2. [רנטיים/רנטיים] פעילות רגילה של fleet-cure (:3034) למדידת RC כל 5 דקות ושידור פעולות weave כאשר נפרד חלון RC ≥230M
+3. [רנטיים/רנטיים] פיקוח על השלמת withdraw של lsa (0.00248 SWAP.HIVE) כאש� יגיע RC מספיק לאחר פעולת ה-powerup
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-אישור הפעלת ה-he_powerup על הרנטיים החי, כיוון שהקוד מוכן ואומת, והפעולתיות המוגבלת ב-HIVE מהווה סיכון משמעותי לתפקוד הרשת.
+המערכת תקינה ופועלת כמתוכנן. מסילת ההמרה וה-DEX פעילים ומוכחים. ה-RC ב-HIVE תוקן ומתאושש. לא נדרשות החלטות נוספות מצדי כעת.
 
 ## נשאר לבעלים בלבד (או "כלום")
-הגישה למפתחות הבעלים, קבלת החלטות על שימוש במשאבים חיצוניים, ואישור סופי לשחזור מפתחות אם יידרש.
+- גישה למפתחות הבעלים (המפתחות בחזקת הבעלים בלבד ללא התאמות בסביבה)
+- החלטות על האצת TRX אם יהיה מימון
+- החלטות על שחזור מפתחות הבעלים מה-vault אם יידרש
