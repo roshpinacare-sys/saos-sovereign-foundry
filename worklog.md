@@ -1031,3 +1031,23 @@ Stage Summary:
 - headcorner reconnects the moment the owner pastes the SAOS-ROT1 seed (or the SETTLE-10 .env WIF lines) into the control-screen card — full tree recovery, verify-then-write, pipeline (powerup 9.682 HIVE + anchors) unblocks immediately after.
 - 9/11 accounts already fully live-controlled on HIVE; ynet requires original FACTORY_MASTER-era material (seed won't derive it).
 - Encrypted owner backup + decrypt tooling + complete forensic documentation pushed to repo (zero secrets).
+
+---
+Task ID: 31
+Agent: Z.ai Code (foundry)
+Task: "לא קיבלתי קובץ מאף אחד צריך לדאוג שהקובץ יגיע לגיטהאב כתוב לי פרומט אני אשלח לכולם" — make the keys file actually reach GitHub + write the rescue prompt for all agents.
+
+Work Log:
+- Verified repo state: backups/key-backup-headcorner-20260909.enc, docs/KEY-RECOVERY.md, scripts/decrypt-key-backup.mjs already tracked on origin/main (ca45334) — but local HEAD had unpushed commit (7c829bd) + uncommitted briefings; passphrase from task 30 evidently never reached owner.
+- Confirmed external-signer alive on :3033 (401 direct = fail-closed OK; 200 via proxy), envelope intact: sealedAt 2026-09-09T03:46:07Z, 10 fleet accounts + main loaded (active+posting).
+- Regenerated owner backup with NEW passphrase via POST /keys/backup (scrypt+AES-256-GCM, SAOS-KEY-BACKUP-1): main=headcorner (posting+active+owner+memo generic + STEEM/HIVE net slots), 10 fleet accounts each active+posting+owner × both networks; written 0600 to backups/key-backup-headcorner-20260909.enc; round-trip decrypt verified via scripts/decrypt-key-backup.mjs --pass-env (structure-only inspection, zero secret prints; temp plaintext deleted).
+- Created docs/OWNER-KEYS-MASTER-FILE.md — the all-users documentation the owner demanded: browser+CLI download instructions, decrypt runbook, 12-account control table (9/11 FULL HIVE control live-verified; headcorner/tov pending SAOS-ROT1 seed; STEEM 0 matches; ynet needs original material), headcorner live public authorities, recovery path, file map, iron rules, update log.
+- Created docs/PROMPT-FOR-ALL-AGENTS.md — copy-paste rescue prompt for every agent chat: locate all key material (vaults/.env/seeds), isolated /tmp opening, public-key derivation vs live chain authorities, public-only KEYS-REPORT-<agent>.md, passphrase-encrypted KEYS-<agent>-<date>.enc backup, push rules (pull --rebase, never force-push, NEVER push fleet_keys.meta.json), SAOS-ROT1 seed → /keys/ingest, worklog + report-back requirements.
+- Pushed with never-clobber (backups/ needed git add -f per established practice): origin/main ca45334..92b78b5; verified HEAD==origin/main and all four key files present in origin tree.
+- Passphrase delivered to owner in chat only (never written to any file).
+
+Stage Summary:
+- The owner can NOW download the encrypted backup from GitHub (backups/key-backup-headcorner-20260909.enc) + decrypt script, passphrase delivered in chat.
+- docs/OWNER-KEYS-MASTER-FILE.md is the single authoritative all-users file; docs/PROMPT-FOR-ALL-AGENTS.md is the prompt he asked to send to every agent.
+- The saos-dex vault (fleet_keys.enc 00:08) lives in the OTHER sandbox — the prompt is the bridge: that agent will extract/verify/backup/push + optionally ingest the SAOS-ROT1 seed, which unblocks headcorner end-to-end.
+- Commit: 92b78b5 "keys-rescue(31)".
