@@ -33,10 +33,10 @@ export async function register() {
     starting: boolean;
   }
 
-  const mk = (name: string, port: number, logFile: string, disableEnv: string, startDelayMs: number): Watched => ({
+  const mk = (name: string, port: number, logFile: string, disableEnv: string, startDelayMs: number, probePath = "/status"): Watched => ({
     name,
     dir: path.join(process.cwd(), "mini-services", name),
-    statusUrl: `http://127.0.0.1:${port}/status`,
+    statusUrl: `http://127.0.0.1:${port}${probePath}`,
     logFile,
     disabled: process.env[disableEnv] === "1",
     startDelayMs,
@@ -48,7 +48,8 @@ export async function register() {
   const SERVICES: Watched[] = [
     mk("vault-guardian", 3031, "guardian-dev.log", "SAOS_NO_GUARDIAN", 15_000),
     mk("chief-of-staff", 3032, "chief-dev.log", "SAOS_NO_CHIEF", 25_000),
-    mk("external-signer", 3033, "signer-dev.log", "SAOS_NO_SIGNER", 35_000),
+    // external-signer אין /status — רק /ping (ללא-אימות) ו-/health (Bearer) — ה-ping הוא ה-probe
+    mk("external-signer", 3033, "signer-dev.log", "SAOS_NO_SIGNER", 35_000, "/ping"),
   ];
 
   const logFor = (s: Watched, msg: string) => {

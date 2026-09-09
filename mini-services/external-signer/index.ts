@@ -620,6 +620,20 @@ function keyFor(account, authLevel, network) {
   return { target, wif, targetAccount: target.username ?? target.account };
 }
 
+// Task 35: steem@0.7.10 cannot serialize the HIVE asset symbol (legacy STEEM/SBD/VESTS
+// parser only) → any HIVE op carrying an asset (transfer_to_vesting/transfer) produced a
+// digest the node could not match → tx_missing_active_auth. @hiveio/hive-js knows HIVE
+// assets + the HIVE chain id, so HIVE signs through it; STEEM keeps the legacy path.
+let hiveLib = null;
+function hiveJs() {
+  if (!hiveLib) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- CJS-only legacy lib (signing only)
+    hiveLib = require("@hiveio/hive-js");
+    hiveLib.config.set("chain_id", HIVE_CHAIN_ID);
+  }
+  return hiveLib;
+}
+
 // ── build + sign + broadcast (transport 1:1 from he_powerup.cjs — proven) ────
 async function buildSignBroadcast(network, account, wif, operations) {
   const dgp = await rpcCall(nodeFor(network), "condenser_api.get_dynamic_global_properties", []);
@@ -630,14 +644,18 @@ async function buildSignBroadcast(network, account, wif, operations) {
     operations,
     extensions: []
   };
-  const prev = steem.config.get("chain_id");
-  const cid = chainIdFor(network);
-  if (cid) steem.config.set("chain_id", cid);
   let signed;
-  try {
-    signed = steem.auth.signTransaction(tx, [wif]);
-  } finally {
-    if (cid) steem.config.set("chain_id", prev);
+  if (network === "HIVE") {
+    signed = hiveJs().auth.signTransaction(tx, [wif]);
+  } else {
+    const prev = steem.config.get("chain_id");
+    const cid = chainIdFor(network);
+    if (cid) steem.config.set("chain_id", cid);
+    try {
+      signed = steem.auth.signTransaction(tx, [wif]);
+    } finally {
+      if (cid) steem.config.set("chain_id", prev);
+    }
   }
   const result = await rpcCall(nodeFor(network), "condenser_api.broadcast_transaction", [signed]);
   return { txid: signed?.id ?? null, result };
@@ -844,26 +862,35 @@ const server = Bun.serve({
       const net = network === "HIVE" ? "HIVE" : network === "STEEM" ? "STEEM" : null;
       if (!net) return Response.json({ ok: false, error: "unsupported network (capabilities: STEEM|HIVE)" }, { status: 400 });
 
-      const { target, wif, targetAccount } = keyFor(account, authLevel === "active" ? "active" : "posting", net);
+      // Task 35 fix: the REQUIRED authority level is a function of the op kind —
+      // resolved BEFORE keyFor so the correct network-suffixed slot is selected
+      // even when the caller omits authLevel. Before this fix transfer_to_vesting
+      // (and he_withdraw/he_market_sell/delegate, which all demand required_auths
+      // = active) resolved the POSTING slot and failed the authority gate against
+      // the active authority — self-inflicted refusal, nothing could ever broadcast.
+      const roleForKind = kind === "transfer_to_vesting" || kind === "transfer" || kind === "delegate_vesting_shares" || kind === "he_market_sell" || kind === "he_withdraw"
+        ? "active"
+        : kind === "claim_rewards"
+          ? "posting"
+          : (authLevel === "active" ? "active" : "posting"); // custom_json: explicit authLevel wins, default posting
+      const { target, wif, targetAccount } = keyFor(account, roleForKind, net);
       if (!target) return Response.json({ ok: false, error: `unknown account ${account ?? "(main)"}` }, { status: 400 });
 
       const started = Date.now();
       try {
         let operations;
-        let role = "posting"; // default: posting-level (weave)
+        let role = roleForKind; // default resolved by kind (posting-level weave unless the op demands active)
 
         if (kind === "custom_json") {
           const customId = typeof id === "string" && id ? id : "saos.weave.v1";
           const jsonStr = typeof payload === "string" ? payload : JSON.stringify(payload ?? {});
           if (jsonStr.length > 2000) return Response.json({ ok: false, error: `payload too large (${jsonStr.length}B > 2000B custom_json practical limit)` }, { status: 400 });
-          if (authLevel === "active") {
-            role = "active";
+          if (role === "active") {
             operations = [["custom_json", { required_auths: [targetAccount], required_posting_auths: [], id: customId, json: jsonStr }]];
           } else {
             operations = [["custom_json", { required_auths: [], required_posting_auths: [targetAccount], id: customId, json: jsonStr }]];
           }
         } else if (net === "HIVE" && (kind === "transfer_to_vesting" || kind === "transfer")) {
-          role = "active";
           const amt = Number(amount);
           if (!Number.isFinite(amt) || amt < 0.001) return Response.json({ ok: false, error: "amount must be ≥ 0.001" }, { status: 400 });
           if (amt > MAX_OP_HIVE) return Response.json({ ok: false, error: `amount ${amt} > MAX_OP_HIVE ${MAX_OP_HIVE} (fail-closed bound)` }, { status: 400 });
@@ -952,4 +979,4 @@ const server = Bun.serve({
   }
 });
 
-log("INFO", `external-signer v2.4.0 listening on :${PORT} (auth=${TOKEN ? "token" : "MISSING-FAIL-CLOSED"}, networks=STEEM+HIVE, authorityGate=on, keys-ingest=verify-then-write, maxOpHive=${MAX_OP_HIVE})`);
+log("INFO", `external-signer v2.4.1-task35 listening on :${PORT} (auth=${TOKEN ? "token" : "MISSING-FAIL-CLOSED"}, networks=STEEM+HIVE, authorityGate=on, keys-ingest=verify-then-write, maxOpHive=${MAX_OP_HIVE}, hiveSigning=hive-js)`);
