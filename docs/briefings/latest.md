@@ -1,18 +1,18 @@
-# בריף ראש-המטה — 2026-09-08T23:30:19.737Z
+# בריף ראש-המטה — 2026-09-08T23:53:28.855Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: d654b12
+HEAD: bdce4e4
+- bdce4e4 961e660d-f909-46db-97e5-3e8c384f8760
 - d654b12 fix(27-b): chain pollution archived + schema hardened — EvidenceReceipt.at required
 - ef357cf feat(27): HIVE conversion rail — signer v2 (authority+RC gates), dex convert route, deadlock fix evidence, decisions+docs
 - 014cb18 ops(task-26): chief-of-staff closing briefing
 - 3bd1f1c ops(task-26): 'connect and execute' — system CONNECTED live: external signer service (:3033, supervisor-watched, envelope-in-memory, txid-only contract) · mode=live broadcastCapable · blockers 5→1 (verified backup, seal h2, chain REGENESSED with legacy-receipt archival, live-measured HIVE RC 0%/TRON energy=0 kept honest) · 'מחובר' rendered via dev-managed audited session · REAL anchor attempt hit honest root finding: envelope keys NOT the on-chain authorities (0/99 backups match; live fleet anchors with its own keys — partners-status.md) · remaining unblock = one fleet_vault --seal sync on live runtime
-- 331f10a ops(task-25): chief-of-staff closing briefing — ingests full Task 25 state (dex-auth closed, history rewritten, guardian blind-spot closed, vault verified, live gates)
-guardian: ok=true runs=94 devMode=true tickAlive=true token=true
-briefings אחרונים: BRIEF-2026-09-08T21-53-30.md, BRIEF-2026-09-08T22-21-57.md, BRIEF-2026-09-08T22-23-30.md, BRIEF-2026-09-08T22-53-30.md, BRIEF-2026-09-08T23-23-24.md
+guardian: ok=true runs=111 devMode=true tickAlive=true token=true
+briefings אחרונים: BRIEF-2026-09-08T22-21-57.md, BRIEF-2026-09-08T22-23-30.md, BRIEF-2026-09-08T22-53-30.md, BRIEF-2026-09-08T23-23-24.md, BRIEF-2026-09-08T23-30-19.md
 ── זנב next-steps.md ──
 …
 ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
@@ -43,26 +43,29 @@ briefings אחרונים: BRIEF-2026-09-08T21-53-30.md, BRIEF-2026-09-08T22-21-5
 
 ── זנב owner-decisions.md ──
 …
-e-push של שכתוב-היסטוריה (היוצא-מן-הכלל השני לכלל AGENTS.md, לצד guardian-פרודקשן): רק עם גיבוי-bundle + בדיקת-remo
+e-push של שכתוב-היסטוריה (היוצא-מן-הכלל השני לכלל AGENTS.md, לצד guardian-פרודקשן): רק עם גיבוי-bundle + בדיקת-remote-לא-זז + אימות-מרחוק אחרי |
+| he-live-gate-contract | operations | high | **decided-coordinator** — חוזה-השער: `(--live או HE_LI
 ```
 </details>
 ## מצב רשת
-הרשת פועלת במצב חי (live) עם חתימה חיצונית מאובטחת, מערכת DEX פעילה, ומכשול RC ב-HIVE שתוקן. קיימים 9.682 HIVE נזילים ומפתחות HIVE מורשים. המערכת מוגנת באמצעות EvidenceReceipt וניטור guardian.
+הרשת מחוברת ופעילה עם חתימה חיצונית מוגנת, מסילת המרה HIVE-DEX פעילה ומאומתת. נמצאו ותוקנו תקלות קריטיות ב-RC ובאבטחת מסד הנתונים. נותר חסם אחד לעוגן STEEM.
 
 ## סיכונים / דברים מדממים
-ה-RC של HIVE נמוך מאוד (0.003%) מה שמגביל קצב עיבוד לכל ~25 דקה. הכספים ב-HIVE נמצאים בסיכון עד לפעולת ה-powerup המלאה. חסימה אחרונה לעוגן STEEM היא סנכרון fleet_vault --seal.
+- רגישות RC נמוכה ב-HIVE (0.003%) מגבילה קצב עיבוד לפעולה אחת כל 25 דקות
+- חסם עוגן STEEM (fleet_vault --seal) עדיין לא פתוח
+- מפתחות הרנטיים מוחזקים על-ידי רשת חיצונית ולא על-השרשרת עצמה
 
-## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
-1. [רנטיים/ראש-המטה] הפעל `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי + אימת עלייה ב-RC לאחר מכן
-2. [רנטיים/מערכת] צפה בביצוע ה-withdraw של lsa (0.00248 SWAP.HIVE) ואימת הצלחה בגשר-hivepegged
-3. [רנטיים/מערכת] הפעל `fleet_vault --seal` על הרנטיים החי כדי לסנכרן את המעטפת עם השרשרת
+## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימות
+1. [רנטיים/ראש-המטה] הפעלת `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי להגדלת RC + פתיחת שער משאבים
+2. [ראש-המטה] פיקוח על סיום תהליך ה-powerup ואימות עליית RC ב-HIVE (מדידת קצב הרגן/יום)
+3. [רנטיים/ראש-המטה] הפעלת `fleet_vault --seal` על הרנטיים החי לפתיחת עוגן STEEM האמיתי
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-המערכת מוכנה לפעולה. הקצב RC של HIVE ישתפר משמעותית לאחר פעולת ה-powerup. ה-DEX פעיל ומאובטח. ניתן להמשיך בפעולות המתוכננות כמתואר בתוכנית הבאה.
+- אישור המשך פעולת ה-DEX עם מסד הנתונים המבודד ומוגן
+- קביעת סדר עדיפויות לפעולות הבאות: הגדלת RC קודם, אחר כך פתיחת עוגן STEEM
+- פיקוח על תהליך ה-powerup עד להשלמתו ואימות התוצאות
 
 ## נשאר לבעלים בלבד (או "כלום")
-- החלטות על שינויי ארכיטקטורה עליונים
-- אישור סופי לשחזור היסטוריה עם גיבוי
-- הפעלת מצב פרודקשן מלא (HE_LIVE=1)
-- בדיקת ואישור סופי של מעטפות המפתחות הריבוניות
-- החלטות על רוטציה של טוקנים אם יידרש
+- החלטות סופיות בנוגע למפתחות הריבוניים ולאימות הסופי של העוגן
+- אישור סופי לשחרור המערכת מתלות בבעלים
+- אישור לשימוש במשאבים הנוזליים המוגבלים (9.682 HIVE)
