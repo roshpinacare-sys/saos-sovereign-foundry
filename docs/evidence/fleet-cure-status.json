@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-09-09T22:18:08.178Z",
+ "updatedAt": "2026-09-09T22:23:08.119Z",
  "purpose": "Task 26-c fleet RC cure — the pending HIVE weave SignRequest executes automatically at the first fleet RC window (keys verified live 9/9 HIVE posting; executor = external-signer :3033)",
  "opCostRc": 230000000,
  "measuredOpCostRc": 225041204,
@@ -8,65 +8,65 @@
  "accounts": [
   {
    "account": "cashmachine",
-   "mana": 138886975,
-   "manaPct": 6.6,
-   "etaToWindowMin": 312,
+   "mana": 140348562,
+   "manaPct": 6.7,
+   "etaToWindowMin": 307,
    "state": "waiting"
   },
   {
    "account": "haran",
-   "mana": 211890726,
+   "mana": 213463842,
    "manaPct": 9.4,
-   "etaToWindowMin": 58,
+   "etaToWindowMin": 53,
    "state": "waiting"
   },
   {
    "account": "israelnews",
-   "mana": 132942734,
+   "mana": 134489225,
    "manaPct": 6,
-   "etaToWindowMin": 314,
+   "etaToWindowMin": 309,
    "state": "waiting"
   },
   {
    "account": "lsa",
-   "mana": 247749698,
+   "mana": 250451703,
    "manaPct": 6.4,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "macrame",
-   "mana": 206942211,
+   "mana": 209843397,
    "manaPct": 5,
-   "etaToWindowMin": 40,
+   "etaToWindowMin": 35,
    "state": "waiting"
   },
   {
    "account": "siq",
-   "mana": 160509351,
-   "manaPct": 7,
-   "etaToWindowMin": 219,
+   "mana": 162099311,
+   "manaPct": 7.1,
+   "etaToWindowMin": 214,
    "state": "waiting"
   },
   {
    "account": "wic",
-   "mana": 178652618,
-   "manaPct": 5.8,
-   "etaToWindowMin": 120,
+   "mana": 180795507,
+   "manaPct": 5.9,
+   "etaToWindowMin": 115,
    "state": "waiting"
   },
   {
    "account": "wog",
-   "mana": 200793184,
-   "manaPct": 6.1,
-   "etaToWindowMin": 65,
+   "mana": 203066353,
+   "manaPct": 6.2,
+   "etaToWindowMin": 60,
    "state": "waiting"
   },
   {
    "account": "woq",
-   "mana": 176921196,
-   "manaPct": 7.8,
-   "etaToWindowMin": 169,
+   "mana": 178499809,
+   "manaPct": 7.9,
+   "etaToWindowMin": 164,
    "state": "waiting"
   }
  ],
