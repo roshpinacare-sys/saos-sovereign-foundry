@@ -83,9 +83,15 @@ export function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void 
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-base font-bold text-zinc-100">סקירה כללית — Command Center</h2>
-        <p className="text-xs text-zinc-500">מה המצב עכשיו, מה חסום, ומה הפעולה הבאה — משוך מנתוני /api/saos/* חיים בלבד.</p>
+      <div className="animate-rise">
+        <h2 className="text-lg font-bold leading-tight">
+          <span className="text-gradient-gold">סקירה כללית — Command Center</span>
+        </h2>
+        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500">
+          <span>מה המצב עכשיו, מה חסום, ומה הפעולה הבאה — משוך מנתוני</span>
+          <Mono className="text-zinc-400">/api/saos/*</Mono>
+          <span>חיים בלבד</span>
+        </p>
       </div>
 
       {/* the single recommended action */}

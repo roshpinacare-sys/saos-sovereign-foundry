@@ -1271,3 +1271,24 @@ Stage Summary:
 - BLURT מחובר סופית לכל השרשרת: כספת→חותם→שער-הרשאות→שידור→אימות — הבעיה מטסק 36 נפתרה בשורשה
 - הפעימה (anchor-pulse) היא עכשיו נתיב-העיגון הרשמי; cooldown BLURT 30 דק'; HIVE ממתין ל-RC (gate כנה)
 - נותרו רק שערי משאבים: TRON TRX, ETH gas, SOL rent, HIVE power-up — כולם עם תכניות מוכנות
+
+---
+Task ID: 41
+Agent: Z.ai Code (main)
+Task: עיצוב חדש מרהיב SOVEREIGN v3 + בדיקת TRX וכל הכספים + תיקון ערוץ הדחיפה — חי, מאומת, ודחוף לריפו
+
+Work Log:
+- אבחון "קומיט ישן": הטוקן ב-upload/Roshcaregt.txt מת קודם (Invalid username or token); הסקריפט askpass של הסשן הקודם שבר את פרוטוקול GIT_ASKPASS (החזיר 2 שורות לכל prompt). תוקן ל-case $1 (Username→git, Password→token) — הערוץ נפתח מיד עם הטוקן החדש שהבעלים צירף. דחיפת הפיגור: 6651fbc + ops ad32e7e → origin/main מסונכרן.
+- שחזור .gitignore שנמחק כמעט כליל ע"י כלי חיצוני (53→1 שורות; חשף .env/upload/db) — git checkout מ-HEAD. core.fileMode=false מקומית כדי להשתיק 181 שינויי-הרשאות זבל.
+- סקר כספים אמיתי (סקריפטים מקומיים בלבד, מפתחות לא נדפסו): גזירת כתובות מהצירוף החדש מהתמונה (TRON m/44'/195', ETH m/44'/60', BTC 44/84, SOL ed25519-SLIP10): TRON idx0 TAzZZ…kGr = 0.05 TRX בלבד (אבק, חשבון מופעל); ETH/BSC/POLY/ARB/BASE/SOL/BTC = 0.
+- תגלית קשה: כל 6 "כתובות הכספת" ב-docs/KEY-RECOVERY.md אינן כתובות TRON תקפות (base58check נכשל, קידומת 0x0e במקום 0x41) — מעולם לא היו אמיתיות; בדיקות-עבר ש"עברו" בלעו 400 בשקט.
+- הכסף הנזיל האמיתי (headcorner, חי): BLURT 42.283 + STEEM 0.670 (+0.260 SBD, 8.64M VESTS) + HIVE 0.000 (+33k VESTS). הפער לישוב USDT על TRON: 27.20 TRX (מתוך 27.25 נדרשים לשריפת אנרגיה 64,895×420sun).
+- SOVEREIGN v3 — עיצוב חדש מלא ב-3 שכבות ללא שינוי לוגיקה: globals.css (חלל עמוק, סריג בלופרינט, זכוכית, זהב/אמרלד, דופק חי, shimmer); kit.tsx (כל הפרימיטיבים עוצבו מחדש — API זהה); command-center.tsx (כותרת זכוכית עם צ'יפ v3, ניווט גלולות, פוטר מעודן).
+- קופה חיה (חדש): /api/saos/treasury (קריאה-בלבד, ציבורי, מטמון 60s, stagger 150ms + fallback getaccount, ולידציית base58check מקומית, "לעולם לא 500") + treasury-tab.tsx (מד פער TRX, כרטיסי רשתות, שורות שגיאה כנות) + חוק rate-limit ייעודי.
+- אימות דפדפן מלא: דסקטופ + מובייל 390px, טאבים עובדים, קופה מציגה 0.05 TRX / 42.95 נזיל / מד פער, אפס שגיאות קונסולה/עמוד, פוטר דביק. lint נקי.
+
+Stage Summary:
+- ערוץ הדחיפה חזר (טוקן חדש + askpass תקין) — הריפו מסונכרן לחלוטין.
+- העיצוב: SOVEREIGN v3 מוכח בדפדפן — הטאב "קופה חיה" עונה קבוע על "מה עם ה-TRX וכל הכספים".
+- אמת כספים: הארנק החדש 0.05 TRX; 6 "כתובות כספת" מהתיעוד פיקטיביות (יש לתקן את KEY-RECOVERY.md מהאפליקציה עצמה); הנזיל האמיתי 42.28 BLURT + 0.67 STEEM; לישוב USDT חסרים 27.20 TRX.
+- קבצים: globals.css, kit.tsx, command-center.tsx, overview-tab.tsx, treasury-tab.tsx (חדש), api/saos/treasury/route.ts (חדש), types.ts, api.ts, rate-limit.ts.

@@ -48,7 +48,7 @@ export function Card({ className, children }: { className?: string; children: Re
   return (
     <section
       className={clsx(
-        "rounded-xl border border-zinc-800 bg-zinc-900/60 shadow-lg shadow-black/30",
+        "glass glass-hover rounded-2xl",
         className
       )}
     >
@@ -58,20 +58,33 @@ export function Card({ className, children }: { className?: string; children: Re
 }
 
 export function CardHeader({ className, children }: { className?: string; children: ReactNode }) {
-  return <div className={clsx("flex flex-wrap items-center justify-between gap-2 px-4 pt-4 pb-2 sm:px-5", className)}>{children}</div>;
+  return (
+    <div
+      className={clsx(
+        "flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 pb-3 pt-4 sm:px-5",
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
 }
 
 export function CardTitle({ className, children, icon }: { className?: string; children: ReactNode; icon?: ReactNode }) {
   return (
-    <h3 className={clsx("flex items-center gap-2 text-sm font-bold tracking-wide text-zinc-100", className)}>
-      {icon}
+    <h3 className={clsx("flex items-center gap-2.5 text-sm font-bold tracking-wide text-zinc-100", className)}>
+      {icon && (
+        <span className="grid size-7 shrink-0 place-items-center rounded-lg border border-amber-400/25 bg-amber-400/10 text-amber-300 shadow-[0_0_12px_-4px_rgba(245,184,65,0.4)]">
+          {icon}
+        </span>
+      )}
       {children}
     </h3>
   );
 }
 
 export function CardContent({ className, children }: { className?: string; children: ReactNode }) {
-  return <div className={clsx("px-4 pb-4 pt-1 sm:px-5 sm:pb-5", className)}>{children}</div>;
+  return <div className={clsx("px-4 pb-4 pt-3.5 sm:px-5 sm:pb-5", className)}>{children}</div>;
 }
 
 // ─── Badge ───────────────────────────────────────────────────────────────────
@@ -79,11 +92,11 @@ export function CardContent({ className, children }: { className?: string; child
 export type Tone = "ok" | "warn" | "danger" | "info" | "neutral" | "gold";
 
 const toneClasses: Record<Tone, string> = {
-  ok: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400",
-  warn: "border-amber-500/40 bg-amber-500/10 text-amber-400",
-  danger: "border-rose-500/40 bg-rose-500/10 text-rose-400",
-  info: "border-sky-500/40 bg-sky-500/10 text-sky-400",
-  neutral: "border-zinc-700 bg-zinc-800/60 text-zinc-400",
+  ok: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
+  warn: "border-amber-500/40 bg-amber-500/10 text-amber-300",
+  danger: "border-rose-500/40 bg-rose-500/10 text-rose-300",
+  info: "border-teal-500/40 bg-teal-500/10 text-teal-300",
+  neutral: "border-zinc-600/60 bg-zinc-800/60 text-zinc-400",
   gold: "border-amber-400/40 bg-amber-400/10 text-amber-300"
 };
 
@@ -102,7 +115,7 @@ export function Badge({
     <span
       title={title}
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold leading-5",
+        "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold leading-5 backdrop-blur-sm",
         toneClasses[tone],
         className
       )}
@@ -138,11 +151,13 @@ export function Btn({
   title?: string;
 }) {
   const variants = {
-    primary: "bg-amber-500 text-zinc-950 font-bold hover:bg-amber-400 shadow-md shadow-amber-500/20",
-    ghost: "bg-transparent text-zinc-300 hover:bg-zinc-800",
-    outline: "border border-zinc-700 text-zinc-300 hover:border-amber-500/60 hover:text-amber-300",
-    danger: "border border-rose-500/50 text-rose-400 hover:bg-rose-500/10",
-    info: "border border-sky-500/50 text-sky-400 hover:bg-sky-500/10"
+    primary:
+      "bg-gradient-to-b from-amber-300 to-amber-500 text-zinc-950 font-bold shadow-lg shadow-amber-500/25 hover:brightness-110 hover:shadow-amber-400/40",
+    ghost: "bg-transparent text-zinc-300 hover:bg-white/[0.06] hover:text-white",
+    outline:
+      "border border-zinc-700/80 bg-white/[0.02] text-zinc-300 hover:border-amber-500/60 hover:text-amber-300 hover:shadow-[0_0_16px_-6px_rgba(245,184,65,0.4)]",
+    danger: "border border-rose-500/50 text-rose-300 hover:bg-rose-500/10",
+    info: "border border-teal-500/50 text-teal-300 hover:bg-teal-500/10"
   };
   return (
     <button
@@ -152,7 +167,7 @@ export function Btn({
       aria-label={ariaLabel}
       title={title}
       className={cn(
-        "inline-flex min-h-[40px] items-center justify-center gap-2 rounded-lg px-3.5 text-sm transition-all",
+        "inline-flex min-h-[40px] items-center justify-center gap-2 rounded-lg px-3.5 transition-all",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400",
         "active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50",
         size === "sm" && "min-h-[32px] px-2.5 text-xs",
@@ -193,14 +208,23 @@ export function Stat({
 }) {
   const tones = {
     default: "text-zinc-100",
-    gold: "text-amber-400",
-    ok: "text-emerald-400",
-    danger: "text-rose-400",
-    warn: "text-amber-400",
-    info: "text-sky-400"
+    gold: "text-amber-300",
+    ok: "text-emerald-300",
+    danger: "text-rose-300",
+    warn: "text-amber-300",
+    info: "text-teal-300"
+  };
+  const bars = {
+    default: "from-white/20 to-transparent",
+    gold: "from-amber-400 to-transparent",
+    ok: "from-emerald-400 to-transparent",
+    danger: "from-rose-400 to-transparent",
+    warn: "from-amber-400 to-transparent",
+    info: "from-teal-400 to-transparent"
   };
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-900/80 px-3 py-2.5">
+    <div className="glass relative overflow-hidden rounded-xl px-3 py-2.5">
+      <span aria-hidden className={cn("absolute inset-x-0 top-0 h-0.5 bg-gradient-to-l", bars[tone])} />
       <div className="truncate text-[11px] font-medium text-zinc-500">{label}</div>
       <div
         dir={mono ? "ltr" : undefined}
@@ -216,7 +240,7 @@ export function Stat({
 // ─── Skeleton ────────────────────────────────────────────────────────────────
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded-lg bg-zinc-800/80", className)} aria-hidden />;
+  return <div className={cn("skeleton-shimmer rounded-lg", className)} aria-hidden />;
 }
 
 export function LoadingPanel({ rows = 3, label }: { rows?: number; label: string }) {
@@ -242,14 +266,14 @@ export function EmptyState({
   nextAction?: string;
 }) {
   return (
-    <div className="flex flex-col items-start gap-1.5 rounded-lg border border-dashed border-zinc-700 bg-zinc-900/40 p-4">
+    <div className="flex flex-col items-start gap-1.5 rounded-xl border border-dashed border-zinc-700 bg-white/[0.02] p-4">
       <div className="flex items-center gap-2 text-sm font-bold text-zinc-300">
         <MinusCircle className="size-4 text-zinc-500" aria-hidden />
         {title}
       </div>
       <p className="text-xs leading-relaxed text-zinc-500">{explanation}</p>
       {nextAction && (
-        <p className="mt-1 flex items-start gap-1.5 text-xs leading-relaxed text-sky-400">
+        <p className="mt-1 flex items-start gap-1.5 text-xs leading-relaxed text-teal-300">
           <HelpCircle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
           {nextAction}
         </p>
@@ -292,8 +316,8 @@ export function ErrorState({
 }) {
   const { headline, hint } = errorExplain(kind);
   return (
-    <div role="alert" className="rounded-lg border border-rose-500/40 bg-rose-500/5 p-4">
-      <div className="flex items-center gap-2 text-sm font-bold text-rose-400">
+    <div role="alert" className="rounded-xl border border-rose-500/40 bg-rose-500/5 p-4">
+      <div className="flex items-center gap-2 text-sm font-bold text-rose-300">
         <XCircle className="size-4" aria-hidden />
         {headline}
       </div>
@@ -348,7 +372,7 @@ export function Panel({
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone={sourceTone} title={`מקור הנתון: ${source}`}>
             {sourceLabel}
-            <span className="hidden font-normal text-zinc-500 sm:inline">{source}</span>
+            <span className="hidden font-mono text-[10px] font-normal text-zinc-500 sm:inline">{source}</span>
           </Badge>
           {lastChecked && (
             <span className="text-[11px] tabular-nums text-zinc-500" aria-label="זמן בדיקה אחרון">
@@ -382,16 +406,21 @@ export function Panel({
 export type CheckRowStatus = "pass" | "warn" | "fail";
 
 export function CheckIcon({ status }: { status: CheckRowStatus }) {
-  if (status === "pass") return <CheckCircle2 className="size-4 shrink-0 text-emerald-400" aria-hidden />;
-  if (status === "warn") return <AlertTriangle className="size-4 shrink-0 text-amber-400" aria-hidden />;
-  return <ShieldAlert className="size-4 shrink-0 text-rose-400" aria-hidden />;
+  if (status === "pass") return <CheckCircle2 className="size-4 shrink-0 text-emerald-300" aria-hidden />;
+  if (status === "warn") return <AlertTriangle className="size-4 shrink-0 text-amber-300" aria-hidden />;
+  return <ShieldAlert className="size-4 shrink-0 text-rose-300" aria-hidden />;
 }
 
 const checkLabel: Record<CheckRowStatus, string> = { pass: "תקין", warn: "אזהרה", fail: "חסום" };
+const checkEdge: Record<CheckRowStatus, string> = {
+  pass: "border-s-emerald-500/50",
+  warn: "border-s-amber-500/50",
+  fail: "border-s-rose-500/60"
+};
 
 export function CheckRow({ status, title, detail }: { status: CheckRowStatus; title: string; detail?: string }) {
   return (
-    <div className="flex items-start gap-2.5 rounded-lg border border-zinc-800 bg-zinc-900/70 p-3">
+    <div className={cn("flex items-start gap-2.5 rounded-xl border border-white/[0.06] border-s-2 bg-white/[0.02] p-3", checkEdge[status])}>
       <CheckIcon status={status} />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
@@ -408,9 +437,9 @@ export function CheckRow({ status, title, detail }: { status: CheckRowStatus; ti
 
 export function MetaRows({ rows }: { rows: { label: string; value: ReactNode; mono?: boolean }[] }) {
   return (
-    <dl className="grid grid-cols-1 gap-x-6 gap-y-1.5 sm:grid-cols-2">
+    <dl className="grid grid-cols-1 gap-x-6 gap-y-0 sm:grid-cols-2">
       {rows.map((r) => (
-        <div key={r.label} className="flex items-baseline justify-between gap-3 border-b border-zinc-800/60 py-1.5">
+        <div key={r.label} className="flex items-baseline justify-between gap-3 border-b border-white/[0.05] py-1.5">
           <dt className="shrink-0 text-[11px] font-medium text-zinc-500">{r.label}</dt>
           <dd className={cn("min-w-0 truncate text-right text-xs font-semibold text-zinc-200", r.mono && "font-mono")} dir={r.mono ? "ltr" : undefined}>
             {r.value}

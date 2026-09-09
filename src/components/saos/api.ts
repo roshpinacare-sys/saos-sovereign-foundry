@@ -221,7 +221,8 @@ export const EP = {
   verifyLive: "/api/saos/verify-live",
   agentBridge: "/api/saos/agent-bridge",
   research: "/api/saos/research",
-  breakthroughDemo: "/api/saos/breakthrough-demo"
+  breakthroughDemo: "/api/saos/breakthrough-demo",
+  treasury: "/api/saos/treasury"
 } as const;
 
 export function lastCheckedText(iso: string | null): string {

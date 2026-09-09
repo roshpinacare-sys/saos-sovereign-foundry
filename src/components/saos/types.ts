@@ -578,3 +578,51 @@ export interface AgentBridgeResponse {
   total?: number;
   fresh?: number;
 }
+
+// ─── Treasury (Task 41) — live cross-chain balances, public data only ───────
+
+export interface TreasuryBalanceRow {
+  label: string;
+  address: string;
+  status: "ok" | "error";
+  error?: string;
+  native?: number;
+  nativeSymbol?: string;
+  usdt?: number;
+  activated?: boolean;
+}
+
+export interface TreasuryGrapheneRow {
+  label: string;
+  chain: string;
+  status: "ok" | "error";
+  error?: string;
+  liquid?: string;
+  liquidNum?: number;
+  debt?: string;
+  vested?: string;
+  created?: string;
+}
+
+export interface TreasuryResponse {
+  ok: boolean;
+  generatedAt: string;
+  cache?: string;
+  degraded?: boolean;
+  error?: string;
+  account: string;
+  summary: {
+    totalTrx: number | null;
+    totalTronUsdt: number | null;
+    totalEth: number | null;
+    totalEthUsdt: number | null;
+    grapheneLiquid: number | null;
+    gapToUsdtSettlement: number | null;
+  };
+  constants: { trxPerUsdtTransfer: number };
+  chains: {
+    tron: { rows: TreasuryBalanceRow[]; explorer: string };
+    evm: { rows: TreasuryBalanceRow[]; explorer: string };
+    graphene: { rows: TreasuryGrapheneRow[] };
+  };
+}
