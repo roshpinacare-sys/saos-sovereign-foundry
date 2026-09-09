@@ -1010,3 +1010,24 @@ Stage Summary:
 - Infrastructure is 100% ready and pushed (steem d277097, foundry 62edaab): master-password ingest, control-screen card, proxy, agent tool, contract doc.
 - The ONE missing piece is the CORRECT owner credential: the pasted one matches no account we control. Owner must paste either the CURRENT active private key (steemitwallet → Permissions → Active → Show private key, 5J/5K…) or the CURRENT master password (only if keys were never rotated) — via the control-screen card or chat; ingestion+pipeline executes immediately after.
 - Keys hygiene held end-to-end: verdicts and public keys only, everywhere; the wrong credential itself was valid key material and was destroyed immediately.
+
+---
+Task ID: 30
+Agent: Z.ai Code (foundry)
+Task: "צריך להתחבר לheadcorner ולמשוך את המפתח זה קריטי" — forensic key recovery + owner backup infrastructure + documentation
+
+Work Log:
+- Verified owner panic unfounded: NOTHING deleted — live envelope intact (sealedAt unchanged through ingest attempts; 11 accounts loaded).
+- Chain forensics (get_account_history, both chains): headcorner owner/active/posting rotated 2026-09-08T21:17:33 (STEEM tx 8313cdcb…, block 109,410,651) + 21:17:42 (HIVE tx 92654439…, block 109,745,168); tov 21:34; ynet 09-04 07:42 (the "ynet incident"). Root cause: saos-dex SETTLE-10 commit 96db4e5 "live key rotation — new seed installed, leaked keys revoked"; new keys = HMAC tree SAOS-ROT1/<acct>/<chain>/<role> from a fresh 64-hex seed held ONLY in the other agent's gitignored .env + the owner's other chat ("operator chat backup").
+- Full key sweep (43 keys × 5 vault copies × 12 accounts × 4 roles × 2 chains, zero secret prints): 9 fleet accounts FULLY controlled on HIVE (owner+active+posting+memo match live) — cashmachine, haran, israelnews, lsa, macrame, siq, wic, wog, woq. headcorner/tov = 0 matches (post-rotation keys absent from every vault incl. the freshest repo seal 05:34).
+- Ruled out: sovereign seed (96-char, EVM/TRON/SOL/BTC only), FACTORY_MASTER (lost, per repo docs), all local .env files, running process environments, other sandboxes' services (separate machines).
+- Built external-signer v2.3.0: SAOS-ROT1 seed ingestion (64-hex → full tree derivation with construction variants → verify-then-write against LIVE authorities incl. OWNER role → envelope re-seal + hot reload), owner slots in /keys/status, POST /keys/backup (AES-256-GCM + scrypt under owner-chosen passphrase, secrets never logged). Restarted live, browser-adjacent tests: fake seed → honest Hebrew refusal, nothing written; backup route → SAOS-KEY-BACKUP-1 file.
+- Owner backup published: backups/key-backup-headcorner-20260909.enc (encrypted; passphrase delivered in chat only) + scripts/decrypt-key-backup.mjs (offline decrypt, --pass-env, 0600 output).
+- Documentation: docs/KEY-RECOVERY.md — full timeline, live authority pubkeys, control matrix, recovery runbook, iron rules §13, ruled-out list.
+- Control screen: seed hint added to the owner-keys card instructions (any field accepts the 64-hex seed).
+- Hygiene: removed all decrypted vault copies from /tmp; sweep/forensic scripts kept out of the repo.
+
+Stage Summary:
+- headcorner reconnects the moment the owner pastes the SAOS-ROT1 seed (or the SETTLE-10 .env WIF lines) into the control-screen card — full tree recovery, verify-then-write, pipeline (powerup 9.682 HIVE + anchors) unblocks immediately after.
+- 9/11 accounts already fully live-controlled on HIVE; ynet requires original FACTORY_MASTER-era material (seed won't derive it).
+- Encrypted owner backup + decrypt tooling + complete forensic documentation pushed to repo (zero secrets).

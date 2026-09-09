@@ -522,6 +522,7 @@ function OwnerKeysCard({
             <li>HIVE: כניסה ל-wallet.hive.blog / peakey.io → Permissions → Active → “Reveal private key” → העתקה.</li>
             <li>המפתח הוא מחרוזת ארוכה (WIF). להדביק כאן למטה בשדה המתאים ולחיצה על “חיבור”.</li>
             <li>מפתח-ה-posting ומפתח-ה-memo נשארים כמו שהם — נדרש רק ה-Active לפעולות ההמרה.</li>
+            <li>יש seed של SAOS-ROT1 (מחרוזת 64-hex מצ'אט הסיבוב)? אפשר להדביק אותו בכל שדה — המערכת תגזור את כל העץ, תאמת מול השרשרת ותחבר את כל החשבונות שנסובבו בבת אחת.</li>
           </ol>
         </details>
 

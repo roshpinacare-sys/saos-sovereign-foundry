@@ -53,7 +53,7 @@
  */
 
 import Bun from "bun";
-import { createDecipheriv, scryptSync, timingSafeEqual, createHash } from "crypto";
+import { createCipheriv, createDecipheriv, randomBytes, scryptSync, timingSafeEqual, createHash } from "crypto";
 import { existsSync, readFileSync, readdirSync, appendFileSync, writeFileSync, mkdirSync, chmodSync } from "fs";
 import path from "path";
 
@@ -166,9 +166,10 @@ function loadState() {
           username: a.username,
           postingWif: a.keys?.posting?.wif ?? null,
           activeWif: a.keys?.active?.wif ?? null,
+          ownerWif: a.keys?.owner?.wif ?? null,
           net: {
-            STEEM: { postingWif: a.keys?.posting?.wifSTEEM ?? null, activeWif: a.keys?.active?.wifSTEEM ?? null },
-            HIVE: { postingWif: a.keys?.posting?.wifHIVE ?? null, activeWif: a.keys?.active?.wifHIVE ?? null }
+            STEEM: { postingWif: a.keys?.posting?.wifSTEEM ?? null, activeWif: a.keys?.active?.wifSTEEM ?? null, ownerWif: a.keys?.owner?.wifSTEEM ?? null },
+            HIVE: { postingWif: a.keys?.posting?.wifHIVE ?? null, activeWif: a.keys?.active?.wifHIVE ?? null, ownerWif: a.keys?.owner?.wifHIVE ?? null }
           }
         }));
     } catch {}
@@ -179,9 +180,10 @@ function loadState() {
         postingWif: envOf.POSTING_WIF,
         activeWif: envOf.ACTIVE_WIF ?? null,
         memoWif: envOf.MEMO_WIF ?? null,
+        ownerWif: envOf.OWNER_WIF ?? null,
         net: {
-          STEEM: { postingWif: envOf.STEEM_POSTING_WIF ?? null, activeWif: envOf.STEEM_ACTIVE_WIF ?? null },
-          HIVE: { postingWif: envOf.HIVE_POSTING_WIF ?? null, activeWif: envOf.HIVE_ACTIVE_WIF ?? null }
+          STEEM: { postingWif: envOf.STEEM_POSTING_WIF ?? null, activeWif: envOf.STEEM_ACTIVE_WIF ?? null, ownerWif: envOf.STEEM_OWNER_WIF ?? null },
+          HIVE: { postingWif: envOf.HIVE_POSTING_WIF ?? null, activeWif: envOf.HIVE_ACTIVE_WIF ?? null, ownerWif: envOf.HIVE_OWNER_WIF ?? null }
         }
       },
       fleet
@@ -315,6 +317,68 @@ async function ingestOwnerPassword(password, networks) {
   return { ok: matches.length > 0, matches, checked };
 }
 
+// ── Task 30: SAOS-ROT1 seed tree recovery (SETTLE-10 scheme) ─────────────────
+// The 2026-09-08 rotation (saos-dex SETTLE-10) set headcorner/wic/tov authorities
+// to keys derived as: fresh 64-hex seed → HMAC-SHA256 tree "SAOS-ROT1/<acct>/<chain>/<role>".
+// Accepting the seed lets the OWNER reconnect every rotated account in one paste.
+// Verify-then-write still applies: only keys that MATCH the live chain authority
+// are ever persisted; owner role is stored too (owner demanded full custody restore).
+
+const B58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+function b58encode(buf) {
+  let n = BigInt("0x" + buf.toString("hex"));
+  let out = "";
+  while (n > 0n) { out = B58_ALPHABET[Number(n % 58n)] + out; n /= 58n; }
+  for (const b of buf) { if (b === 0) out = "1" + out; else break; }
+  return out;
+}
+function wifFromPriv32(priv32, compressed) {
+  const tail = compressed ? Buffer.from([0x01]) : Buffer.alloc(0);
+  const payload = Buffer.concat([Buffer.from([0x80]), priv32, tail]);
+  const checksum = createHash("sha256").update(createHash("sha256").update(payload).digest()).digest().slice(0, 4);
+  return b58encode(Buffer.concat([payload, checksum]));
+}
+
+/**
+ * Derive the SAOS-ROT1 tree for one account and match against LIVE authorities.
+ * Tries construction variants (key=seed/msg=label and inverse, chain case,
+ * compressed/uncompressed WIF) — the exact generator was ephemeral; we match its
+ * OUTPUT on-chain, not its source. Returns matches with the exact verifying WIF.
+ */
+async function saosRot1Match(seedHex, account) {
+  const seedBuf = /^[0-9a-fA-F]{64}$/.test(seedHex) ? Buffer.from(seedHex, "hex") : Buffer.from(seedHex, "utf8");
+  const matches = [];
+  const chainTokens = { STEEM: ["STEEM", "steem"], HIVE: ["HIVE", "hive"] };
+  const roles = ["owner", "active", "posting", "memo"];
+  for (const net of ["STEEM", "HIVE"]) {
+    let auth;
+    try { auth = await chainAuthorities(net, account); } catch { continue; }
+    for (const chainTok of chainTokens[net]) {
+      for (const role of roles) {
+        const label = `SAOS-ROT1/${account}/${chainTok}/${role}`;
+        const variants = [
+          createHmacSha256(seedBuf, Buffer.from(label, "utf8")), // key=seed, msg=label
+          createHmacSha256(Buffer.from(label, "utf8"), seedBuf)  // key=label, msg=seed
+        ];
+        for (const priv32 of variants) {
+          for (const compressed of [true, false]) {
+            const wif = wifFromPriv32(priv32, compressed);
+            let pub = null;
+            try { pub = steem.auth.wifToPublic(wif); } catch { continue; }
+            if (pub && auth[role] === pub) matches.push({ account, network: net, role, wif, derived: pub });
+          }
+        }
+      }
+    }
+  }
+  return matches;
+}
+
+function createHmacSha256(key, msg) {
+  const { createHmac } = require("crypto");
+  return createHmac("sha256", key).update(msg).digest();
+}
+
 /** public-data view of a role slot — never any WIF material */
 async function slotView(net, acct, wif, role) {
   if (!wif) return { loaded: false, role };
@@ -323,7 +387,7 @@ async function slotView(net, acct, wif, role) {
   let expected = null, match = null;
   try {
     const auth = await chainAuthorities(net, acct);
-    expected = role === "active" ? auth.active : auth.posting;
+    expected = role === "active" ? auth.active : role === "owner" ? auth.owner : auth.posting;
     match = derived !== null && derived === expected;
   } catch { match = null; }
   return { loaded: true, role, derived, expected, match };
@@ -369,7 +433,7 @@ async function chainAuthorities(network, account) {
   const accs = await rpcCall(nodeFor(network), "condenser_api.get_accounts", [[account]]);
   const a = accs?.[0];
   if (!a) throw new Error(`account ${account} not found on ${network}`);
-  const out = { at: Date.now(), posting: a.posting.key_auths[0][0], active: a.active.key_auths[0][0], memo: a.memo_key };
+  const out = { at: Date.now(), posting: a.posting.key_auths[0][0], active: a.active.key_auths[0][0], owner: a.owner.key_auths[0][0], memo: a.memo_key };
   authCache.set(k, out);
   return out;
 }
@@ -423,8 +487,8 @@ function keyFor(account, authLevel, network) {
   const net = network === "HIVE" ? "HIVE" : "STEEM";
   const target = isMain ? STATE.main : STATE.fleet.find((f) => f.username === account);
   if (!target) return { target: null, wif: null, targetAccount: account ?? STATE.main.account };
-  const generic = authLevel === "active" ? (target.activeWif ?? null) : (target.postingWif ?? null);
-  const suffixed = target?.net?.[net] ? (authLevel === "active" ? (target.net[net].activeWif ?? null) : (target.net[net].postingWif ?? null)) : null;
+  const generic = authLevel === "active" ? (target.activeWif ?? null) : authLevel === "owner" ? (target.ownerWif ?? null) : (target.postingWif ?? null);
+  const suffixed = target?.net?.[net] ? (authLevel === "active" ? (target.net[net].activeWif ?? null) : authLevel === "owner" ? (target.net[net].ownerWif ?? null) : (target.net[net].postingWif ?? null)) : null;
   const wif = suffixed ?? generic;
   return { target, wif, targetAccount: target.username ?? target.account };
 }
@@ -490,10 +554,10 @@ const server = Bun.serve({
         mainAccount: STATE.main.account,
         fleetAccounts: [STATE.main.account, ...STATE.fleet.map((f) => f.username)].filter((v, i, a) => a.indexOf(v) === i),
         networks: ["STEEM", "HIVE"],
-        capabilities: ["custom_json", "transfer_to_vesting", "transfer", "claim_rewards", "he_market_sell", "he_withdraw", "delegate_vesting_shares", "keys-ingest"],
+        capabilities: ["custom_json", "transfer_to_vesting", "transfer", "claim_rewards", "he_market_sell", "he_withdraw", "delegate_vesting_shares", "keys-ingest", "keys-backup", "rot1-seed-recovery"],
         authorityGate: "verify-before-broadcast (fail-closed)",
         maxOpHive: MAX_OP_HIVE,
-        version: "2.2.0"
+        version: "2.3.0"
       });
     }
 
@@ -504,7 +568,8 @@ const server = Bun.serve({
         for (const net of ["STEEM", "HIVE"]) {
           mainNet[net] = {
             posting: await slotView(net, STATE.main.account, STATE.main.net?.[net]?.postingWif ?? STATE.main.postingWif, "posting"),
-            active: await slotView(net, STATE.main.account, STATE.main.net?.[net]?.activeWif ?? STATE.main.activeWif, "active")
+            active: await slotView(net, STATE.main.account, STATE.main.net?.[net]?.activeWif ?? STATE.main.activeWif, "active"),
+            owner: await slotView(net, STATE.main.account, STATE.main.net?.[net]?.ownerWif ?? STATE.main.ownerWif, "owner")
           };
         }
         const fleet = [];
@@ -515,7 +580,7 @@ const server = Bun.serve({
             active: f.activeWif ? { loaded: true } : { loaded: false }
           });
         }
-        return Response.json({ ok: true, main: { account: STATE.main.account, networks: mainNet }, fleet, sealedAt: STATE.sealedAt, version: "2.2.0" });
+        return Response.json({ ok: true, main: { account: STATE.main.account, networks: mainNet }, fleet, sealedAt: STATE.sealedAt, version: "2.3.0" });
       } catch (e) {
         return Response.json({ ok: false, error: String(e?.message ?? e).slice(0, 200) }, { status: 502 });
       }
@@ -539,6 +604,32 @@ const server = Bun.serve({
         const askedNet = ent?.network === "HIVE" ? "HIVE" : ent?.network === "STEEM" ? "STEEM" : null;
         if (!wif) { refused.push({ network: ent?.network ?? "?", error: "missing wif" }); continue; }
         const isWif = steem.auth.isWif ? steem.auth.isWif(wif) : false;
+        const isRotSeed = /^[0-9a-fA-F]{64}$/.test(wif) || /^SAOS-ROT1:/i.test(wif);
+        if (isRotSeed) {
+          // SAOS-ROT1 master seed — derive the full tree for every candidate account.
+          const seedHex = wif.replace(/^SAOS-ROT1:/i, "").trim();
+          const accounts = [STATE.main.account, ...STATE.fleet.map((f) => f.username), "ynet", "tov"].filter((v, i, a) => a.indexOf(v) === i);
+          const found = [];
+          for (const acct of accounts) {
+            try { found.push(...await saosRot1Match(seedHex, acct)); } catch {}
+          }
+          if (found.length) {
+            try {
+              for (const m of found) {
+                await persist(m.account, m.network, m.wif, m.role);
+                log("INGEST", `network=${m.network} account=${m.account} role=${m.role} MATCH (SAOS-ROT1 tree) — written, envelope re-sealed`);
+                ingested.push({ account: m.account, network: m.network, role: m.role, derived: m.derived, via: "saos-rot1", sealedAt: sealInfo?.sealedAt ?? null });
+              }
+            } catch (e) {
+              log("ERROR", `ingest write failed (rot1 path): ${String(e?.message ?? e).slice(0, 160)}`);
+              refused.push({ error: `verify-ok but write failed (fail-closed): ${String(e?.message ?? e).slice(0, 160)}` });
+            }
+          } else {
+            log("REFUSED", "ingest SAOS-ROT1 seed: no live authority match across the tree (nothing written)");
+            refused.push({ error: "ה-seed לא גוזר אף מפתח שתואם לרשויות-החיות — שום דבר לא נכתב. ודא שזהו ה-seed מ-SETTLE-10 (64-hex)" });
+          }
+          continue;
+        }
         if (isWif) {
           const network = askedNet;
           if (!network) { refused.push({ network: "?", error: "missing network for direct WIF" }); continue; }
@@ -579,6 +670,33 @@ const server = Bun.serve({
       }
       if (ingested.length) loadState(); // hot-reload in-memory keys from the re-sealed envelope
       return Response.json({ ok: ingested.length > 0, ingested, refused, sealedAt: STATE?.sealedAt ?? null });
+    }
+
+    if (url.pathname === "/keys/backup" && req.method === "POST") {
+      // Task 30: encrypted owner backup — AES-256-GCM under a passphrase the OWNER
+      // chooses; the blob is safe to keep anywhere (repo included). The passphrase
+      // and the payload are never logged. Fail-closed on missing STATE.
+      let body;
+      try { body = await req.json(); } catch { return Response.json({ ok: false, error: "bad-json" }, { status: 400 }); }
+      const passphrase = typeof body?.passphrase === "string" ? body.passphrase : "";
+      if (passphrase.length < 10 || passphrase.length > 200) {
+        return Response.json({ ok: false, error: "passphrase must be 10-200 chars" }, { status: 400 });
+      }
+      try {
+        const payload = { exportedAt: new Date().toISOString(), version: "2.3.0", main: { account: STATE.main.account, keys: { generic: { posting: STATE.main.postingWif ?? null, active: STATE.main.activeWif ?? null, memo: STATE.main.memoWif ?? null, owner: STATE.main.ownerWif ?? null }, net: { STEEM: STATE.main.net?.STEEM ?? null, HIVE: STATE.main.net?.HIVE ?? null } } }, fleet: STATE.fleet.map((f) => ({ username: f.username, generic: { posting: f.postingWif ?? null, active: f.activeWif ?? null, owner: f.ownerWif ?? null }, net: { STEEM: f.net?.STEEM ?? null, HIVE: f.net?.HIVE ?? null } })) };
+        const salt = randomBytes(16), iv = randomBytes(12);
+        const key = scryptSync(passphrase, salt, 32);
+        const cipher = createCipheriv("aes-256-gcm", key, iv);
+        const data = Buffer.concat([cipher.update(JSON.stringify(payload), "utf8"), cipher.final()]);
+        const tag = cipher.getAuthTag();
+        const file = JSON.stringify({ v: 1, cipher: "aes-256-gcm", kdf: "scrypt", salt: salt.toString("base64"), iv: iv.toString("base64"), tag: tag.toString("base64"), data: data.toString("base64") });
+        const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+        const filename = `key-backup-${STATE.main.account}-${stamp}.enc`;
+        log("INFO", `backup created: ${filename} (aes-256-gcm/scrypt; passphrase never logged)`);
+        return Response.json({ ok: true, filename, file, format: "SAOS-KEY-BACKUP-1 (scrypt+AES-256-GCM; decrypt: scripts/decrypt-key-backup.mjs)" });
+      } catch (e) {
+        return Response.json({ ok: false, error: String(e?.message ?? e).slice(0, 160) }, { status: 500 });
+      }
     }
 
     if (url.pathname === "/sign" && req.method === "POST") {
