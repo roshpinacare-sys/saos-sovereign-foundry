@@ -88,7 +88,16 @@ export function externalSignerCached(): ExternalSignerHealth {
 }
 
 /** POST a prepared payload to the signer; returns the PUBLIC result (txid) */
-export async function externalSignerExecute(input: { requestId: string; network: "STEEM"; kind: string; payload: string; id?: string; account?: string }): Promise<{ ok: boolean; txid?: string; account?: string; error?: string }> {
+export async function externalSignerExecute(input: {
+  requestId: string;
+  network: "STEEM" | "BLURT" | "HIVE";
+  kind: string;
+  payload: string;
+  id?: string;
+  account?: string;
+  /** custom_json authority level — posting (weave default) or active */
+  authLevel?: "posting" | "active";
+}): Promise<{ ok: boolean; txid?: string; account?: string; error?: string; confirmedBlock?: number | null; nodeTrxId?: string | null }> {
   if (!externalSignerConfigured()) return { ok: false, error: "external-signer-not-configured" };
   const base = (process.env[URL_ENV] ?? "").replace(/\/$/, "");
   const token = (process.env[TOKEN_ENV] ?? "").trim();
@@ -102,7 +111,7 @@ export async function externalSignerExecute(input: { requestId: string; network:
       signal: ctl.signal
     });
     clearTimeout(t);
-    const json = (await res.json()) as { ok: boolean; txid?: string; account?: string; error?: string };
+    const json = (await res.json()) as { ok: boolean; txid?: string; account?: string; error?: string; confirmedBlock?: number | null; nodeTrxId?: string | null };
     return json;
   } catch (e) {
     return { ok: false, error: String((e as Error)?.message ?? e).slice(0, 160) };

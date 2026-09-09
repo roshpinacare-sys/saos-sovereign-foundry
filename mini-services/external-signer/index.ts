@@ -780,7 +780,10 @@ function computeTxId(network, signedTx) {
     const body = { ...signedTx };
     delete body.signatures;
     const buf = (serializer.ops?.transaction ?? serializer.transaction).toBuffer(body);
-    return createHash("sha256").update(buf).digest().subarray(0, 20).toString("hex");
+    // Task 40: FULL sha256 — the chain txid is 64 hex chars; the previous 40-hex
+    // truncation made anchors impossible to verify via condenser get_transaction.
+    // Anchors must be independently verifiable — that is their entire purpose.
+    return createHash("sha256").update(buf).digest().toString("hex");
   } catch {
     return signedTx?.id ?? null; // honest fallback — never invent an id
   }
@@ -810,9 +813,30 @@ async function buildSignBroadcast(network, account, wif, operations) {
       if (cid) steem.config.set("chain_id", prev);
     }
   }
-  const txid = computeTxId(network, signed);
-  const result = await rpcCallNet(network, "condenser_api.broadcast_transaction", [signed]);
-  return { txid, result };
+  const txid = computeTxId(network, signed); // full 64-hex sha256 — canonical, explorer-verifiable
+  // Task 40: synchronous broadcast — the NODE confirms the block it landed in.
+  // The node's id field is a 20-byte prefix of the full sha256 txid: cross-check
+  // it against the locally computed full id (signing/serialization drift would
+  // mismatch here — fail closed). Plain broadcast accepted doomed transactions
+  // silently; synchronous surfaces every rejection verbatim.
+  try {
+    const sync = await rpcCallNet(network, "condenser_api.broadcast_transaction_synchronous", [signed]);
+    log("DEBUG", `sync-broadcast raw: ${JSON.stringify(sync ?? null).slice(0, 300)}`);
+    const nodeTrxId = sync?.id ?? sync?.trx_id ?? null;
+    if (!nodeTrxId) throw new Error("synchronous-broadcast: node returned no trx id");
+    if (txid && !txid.startsWith(nodeTrxId)) {
+      throw new Error(`txid-mismatch: node=${nodeTrxId} local=${txid.slice(0, 20)}… — signing/serialization drift, refusing to record`);
+    }
+    return { txid, result: sync, confirmedBlock: sync?.block_num ?? null, nodeTrxId };
+  } catch (e) {
+    const msg = String(e?.message ?? e);
+    if (/Could not find method|not found|Unknown method/i.test(msg)) {
+      // legacy node without the synchronous variant — plain broadcast + locally computed id
+      const result = await rpcCallNet(network, "condenser_api.broadcast_transaction", [signed]);
+      return { txid, result, confirmedBlock: null, nodeTrxId: null };
+    }
+    throw e; // the chain's own rejection reason — verbatim, never swallowed
+  }
 }
 
 // ── Hive-Engine helpers (read-only balances for bounds/withdraw payload) ─────
@@ -957,8 +981,13 @@ const server = Bun.serve({
             refused.push(res.verdict);
           }
         } else {
-          // master-password path: derive active/posting/memo per candidate account × both networks
-          const networks = askedNet ? [askedNet] : ["STEEM", "HIVE"];
+          // master-password path: derive active/posting/memo per candidate account × all networks
+          // Task 40 fix: BLURT was missing here — the universal paste NEVER derived
+          // BLURT role keys, so the vault's BLURT slots stayed empty (keys/status
+          // silently fell back to the shared STEEM wif) and every BLURT broadcast
+          // was refused by the authority gate. The password DOES derive all four
+          // BLURT authorities live (p-key-connect-test proof).
+          const networks = askedNet ? [askedNet] : ["STEEM", "HIVE", "BLURT"];
           const res = await ingestOwnerPassword(wif, networks);
           if (res.ok && res.matches.length) {
             try {
@@ -1167,9 +1196,9 @@ const server = Bun.serve({
           }
         }
 
-        const { txid } = await buildSignBroadcast(net, targetAccount, wif, operations);
-        log("SIGN", `requestId=${requestId} kind=${kind} network=${net} role=${role} account=${targetAccount} txid=${txid ?? "?"} (${Date.now() - started}ms)`);
-        return Response.json({ ok: true, txid, account: targetAccount, network: net, kind, role });
+        const { txid, confirmedBlock, nodeTrxId } = await buildSignBroadcast(net, targetAccount, wif, operations);
+        log("SIGN", `requestId=${requestId} kind=${kind} network=${net} role=${role} account=${targetAccount} txid=${txid ?? "?"} block=${confirmedBlock ?? "?"} (${Date.now() - started}ms)`);
+        return Response.json({ ok: true, txid, confirmedBlock: confirmedBlock ?? null, nodeTrxId: nodeTrxId ?? null, account: targetAccount, network: net, kind, role });
       } catch (e) {
         log("ERROR", `sign failed requestId=${requestId}: ${String(e?.message ?? e).slice(0, 160)}`);
         return Response.json({ ok: false, error: String(e?.message ?? e).slice(0, 200) }, { status: 502 });
@@ -1180,4 +1209,4 @@ const server = Bun.serve({
   }
 });
 
-log("INFO", `external-signer v2.5.1-task36 listening on :${PORT} (auth=${TOKEN ? "token" : "MISSING-FAIL-CLOSED"}, networks=STEEM+HIVE+BLURT, blurtChainId=cd8d90f2…, blurtSigning=blurtjs(op-enum-12), authorityGate=on(prefix-aware), keys-ingest=verify-then-write, maxOpHive=${MAX_OP_HIVE}, txid=unprefixed-sha256[0:20])`);
+log("INFO", `external-signer v2.5.2-task40 listening on :${PORT} (auth=${TOKEN ? "token" : "MISSING-FAIL-CLOSED"}, networks=STEEM+HIVE+BLURT, blurtChainId=cd8d90f2…, blurtSigning=blurtjs(op-enum-12), authorityGate=on(prefix-aware), keys-ingest=verify-then-write, maxOpHive=${MAX_OP_HIVE}, txid=sha256-full-64hex chain-verifiable)`);
