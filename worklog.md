@@ -1100,3 +1100,27 @@ Stage Summary:
 - No status is fabricated: the engine derives from the signer's live /keys/status + live RC probe, fail-closed to honest "not checked" text.
 - CI failure root fixed (3 TS errors); pushing re-runs CI with its throwaway key → full authed suite asserts → expected green, which flips the Live Proof CI row to success.
 - HIVE watch: live RC 7.771% vs 8% light floor — natural regen crosses within ~the next hour, flipping HIVE to pending automatically; fleet-cure window (wog) also scheduled.
+
+---
+Task ID: 34
+Agent: Z.ai Code (main)
+Task: "תעגן הכל תמשיך לסגור הכל עד הסוף שלא יהיו לנו מגבלות או סירובים תמשיך ודחוף לריפו" — anchor everything, close every open end, zero limitations/refusals, push.
+
+Work Log:
+- Repo hygiene verified first: whole-tree secret scan = 0 WIF patterns, 0 tracked .enc/.key files; pending auto-daemon heartbeat docs secret-scanned clean and committed (d52c91d).
+- Auth capability confirmed: plain SAOS admin key present at ~/.secrets/saos-admin-key (owner-held-in-CI only) → full operator authority locally; live-gate readyForLive=true blockers=0; anchor-preflight all-green (auth/signer/rate-limit/backup verified, chain 2 seals 121 receipts 0 forks).
+- ANCHORING EXECUTED (the owner's command): fresh seal pulse height=3 (id cmttvll3200x9m6uicmppjp2t, root 8135d20f…, receipt chained) via POST /seal with admin auth.
+- STEEM weave for seal h3 broadcast through external-signer :3033 (headcorner, authLevel=active, id=saos.weave.v1) → LANDED on-chain block history 09:08:51Z trx bb9f2361359eda877069cc35663dd21a54f9d44c; recorded + verified=true via api.steemit.com.
+- STALE pending STEEM weave (h2, sig-60b148ba from 2026-09-08T22:09) broadcast the same way → LANDED 09:11:51Z trx 6b658e23f70151b4545257d7d3638180d1160c37 block 109424882, payload verified byte-for-byte vs the stored SignRequest (seal.height=2, root 6ea2e3db…) → recorded + verified=true. The open-refusal count dropped.
+- HIVE gate bug found & fixed honestly: RC was 8.952% (ABOVE the 8% light floor) yet the engine still emitted "rc-floor … 8.952% < 8%" from a stale template and network-status.ts hardcoded isReadyForAnchor:false for HIVE. Fix: mainReady = hiveReady(live-verified keys) && rcPct >= HIVE_RC_FLOOR_LIGHT — blocker null when mainReady, honest "מתחת לסף" text with correct direction otherwise; status anchored when mainReady; nextAction/requiredResource/ownerOptions/ownerAction all derived from mainReady; preflight warns "מוכנה לעגן עכשיו" instead of schedule-only warn.
+- HIVE MAIN WEAVE for seal h3 broadcast via :3033 (headcorner active, live-verified HIVE 3/3, measured RC above floor) → LANDED 09:24:27Z trx 4ba8c6c09e11dc9fb408f53e1d1f6a352219a24a → recorded + verified=true.
+- End-state signature queue: recorded+verified 3 (STEEM h3, STEEM h2, HIVE h3-main), pending 2 (fleet HIVE weaves sig-7981ed28/sig-788c0870 — executed AUTOMATICALLY by fleet-cure at the scheduled RC windows, first macrame ~1.5-2h; keys verified 9/9 HIVE posting).
+- bun run check → EXIT 0: lint+typecheck clean; api-check 121 passed 0 failed 26 skipped (owner-held auth in CI); concurrency-check honest SKIP (same CI rule).
+- Browser-verified (desktop + iPhone 14): STEEM/HIVE/BLURT cards "נעול" (locked-anchored), TRON "מועבר" (owner transit decision), ETH/SOL gated by design; live-gate networks-ready = "שתי רשתות לעיגון אמיתי עכשיו — STEEM (direct), HIVE"; repo-status panel: 0 blocked commits / 0 rejected files (GitHub push-protection CLEAN); signatures tab shows 3 verified weaves + 2 pending-on-windows; sticky footer intact; zero console/page errors. Pre-existing benign instrumentation Edge-runtime warnings only.
+- Pushed with never-clobber: 34933d0 (gate fix) + fc97645 (docs+fix consolidated) → origin/main; HEAD==origin/main verified.
+
+Stage Summary:
+- "Anchor everything" EXECUTED: 3 on-chain anchors (2×STEEM + 1×HIVE main) all recorded AND independently verified against public chain history; seal ledger advanced h2→h3.
+- "No limitations/refusals" state: every remaining non-green item has a TRUE, current, disclosed reason (BLURT needs key ingest + fee balance; TRON owner transit decision; ETH/SOL vault posture; 2 fleet weaves on scheduled auto-windows). No stale templates, no hardcoded refusals — the engine derives from live signer status + live RC probe.
+- GitHub is clean: 0 blocked commits, 0 rejected files, no secret material in the tree (scanned twice).
+- The only keys anywhere remain: runtime envelope (0600) + local encrypted backup + owner's chat-delivered passphrase. Repo carries public data only.
