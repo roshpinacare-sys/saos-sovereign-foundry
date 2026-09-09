@@ -1,72 +1,72 @@
 {
- "updatedAt": "2026-09-09T01:31:02.816Z",
+ "updatedAt": "2026-09-09T01:41:02.857Z",
  "purpose": "Task 26-c fleet RC cure — the pending HIVE weave SignRequest executes automatically at the first fleet RC window (keys verified live 9/9 HIVE posting; executor = external-signer :3033)",
  "opCostRc": 230000000,
  "measuredOpCostRc": 225041204,
  "headcornerNote": "headcorner/tov keys are owner-held (runtime-only). headcorner's 9.682 liquid HIVE power-up runbook: DEX POST /api/dex/convert {account:headcorner, action:powerup} once the owner-held active key is loaded into the runtime envelope (authority gate will verify).",
- "note": "no fleet account at op-cost yet — best woq 186M RC",
+ "note": "no fleet account at op-cost yet — best woq 189M RC",
  "accounts": [
   {
    "account": "cashmachine",
-   "mana": 184050341,
-   "manaPct": 8.7,
-   "etaToWindowMin": 158,
+   "mana": 186973515,
+   "manaPct": 8.9,
+   "etaToWindowMin": 148,
    "state": "waiting"
   },
   {
    "account": "haran",
-   "mana": 22365325,
-   "manaPct": 1,
-   "etaToWindowMin": 660,
+   "mana": 25511556,
+   "manaPct": 1.1,
+   "etaToWindowMin": 650,
    "state": "waiting"
   },
   {
    "account": "israelnews",
-   "mana": 155787971,
-   "manaPct": 7,
-   "etaToWindowMin": 240,
+   "mana": 158880952,
+   "manaPct": 7.1,
+   "etaToWindowMin": 230,
    "state": "waiting"
   },
   {
    "account": "lsa",
-   "mana": 101321222,
-   "manaPct": 2.6,
-   "etaToWindowMin": 239,
+   "mana": 106725234,
+   "manaPct": 2.7,
+   "etaToWindowMin": 229,
    "state": "waiting"
   },
   {
    "account": "macrame",
-   "mana": 93004519,
-   "manaPct": 2.2,
-   "etaToWindowMin": 237,
+   "mana": 98806892,
+   "manaPct": 2.4,
+   "etaToWindowMin": 227,
    "state": "waiting"
   },
   {
    "account": "siq",
-   "mana": 165752608,
-   "manaPct": 7.2,
-   "etaToWindowMin": 203,
+   "mana": 168932529,
+   "manaPct": 7.4,
+   "etaToWindowMin": 193,
    "state": "waiting"
   },
   {
    "account": "wic",
-   "mana": 47818581,
-   "manaPct": 1.5,
-   "etaToWindowMin": 426,
+   "mana": 52104359,
+   "manaPct": 1.7,
+   "etaToWindowMin": 416,
    "state": "waiting"
   },
   {
    "account": "wog",
-   "mana": 37606799,
-   "manaPct": 1.1,
-   "etaToWindowMin": 424,
+   "mana": 42153137,
+   "manaPct": 1.3,
+   "etaToWindowMin": 414,
    "state": "waiting"
   },
   {
    "account": "woq",
-   "mana": 185563581,
-   "manaPct": 8.2,
-   "etaToWindowMin": 141,
+   "mana": 188720808,
+   "manaPct": 8.3,
+   "etaToWindowMin": 131,
    "state": "waiting"
   }
  ],
