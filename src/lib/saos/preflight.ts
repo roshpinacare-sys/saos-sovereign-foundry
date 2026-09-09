@@ -220,7 +220,10 @@ export async function computePreflight(target: SignRequest["network"] | null): P
   const resourceWarns: string[] = [];
   for (const n of chosen) {
     if (n.network === "HIVE") {
-      if (fc.lastTxid) {
+      const mainHiveAboveLight = rcPct >= Number(process.env.HIVE_RC_FLOOR_LIGHT ?? 8);
+      if (mainHiveAboveLight && n.isReadyForAnchor) {
+        resourceWarns.push(`HIVE: מוכנה לעגן עכשיו — RC ראשי מדוד ${rcPct}% ≥ סף-הקל 8% ומפתחות-ראשי מאומתים חי (HIVE ${keys.byNetwork.HIVE?.matched ?? 0}/${keys.byNetwork.HIVE?.total ?? 0}); עוגן-צי אוטומטי נמשך במקביל [${rcSource}]`);
+      } else if (fc.lastTxid) {
         resourceWarns.push(`HIVE: עוגן-צי בוצע — weave txid ${fc.lastTxid.slice(0, 12)}… (fleet-cure, RC מדוד ${rcPct}% מתוך ${rcSource})`);
       } else if (fc.best && fc.best.etaMin <= 24 * 60) {
         resourceWarns.push(

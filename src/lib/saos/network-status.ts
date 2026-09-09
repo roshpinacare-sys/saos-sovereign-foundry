@@ -191,19 +191,25 @@ export function networkStatuses(rcPct: number, tronEnergy: number, keys?: Signer
   // automatically (fleet keys verified 9/9; op-cost 225M RC measured).
   const fleetWindowH = fc.best ? fc.best.etaMin / 60 : null;
   const fleetLanded = Boolean(fc.lastTxid);
+  // Task 34: MAIN-account readiness is LIVE-DERIVED — keys verified against the
+  // chain AND measured RC above the light floor ⇒ the main path genuinely
+  // anchors NOW (op-cost ~225M RC ≈ 0.9% of headcorner's measured max_rc; the
+  // 8% light floor exists precisely to keep cheap ops safe). No stale templates.
+  const mainReady = hiveReady && rcPct >= HIVE_RC_FLOOR_LIGHT;
   const keysNote = hiveReady
     ? `מפתחות-ראשי מאומתים חי (HIVE ${netMatchLabel("HIVE")}) — נתיב-שידור אמיתי דרך החותם פתוח`
     : signerConnected
       ? `סלוטי HIVE בחותם: ${netMatchLabel("HIVE")} תואמים`
       : "אין חותם מחובר";
-  const hiveBlocker = fleetLanded
+  const rcAboveLight = rcPct >= HIVE_RC_FLOOR_LIGHT;
+  const hiveBlocker = fleetLanded || mainReady
     ? null
     : fc.best
-      ? `rc-floor לחשבון-הראשי: נוכחי ${rcPct}% < ${HIVE_RC_FLOOR_LIGHT}% (סף-קל) — אך זה כבר לא חוסם: חלון-עוגן-צי ראשון בעוד ~${fleetWindowH?.toFixed(1)} שע' (${fc.best.account}) מתוזמן אוטומטית; ${keysNote}`
-      : `rc-floor: נוכחי ${rcPct}% < ${HIVE_RC_FLOOR_LIGHT}% (סף-קל) / ${HIVE_RC_FLOOR_HEAVY}% (סף-כבד) — ואין חלון צי פעיל; ${keysNote}`;
+      ? `rc-floor לחשבון-הראשי: נוכחי ${rcPct}% מתחת לסף-הקל ${HIVE_RC_FLOOR_LIGHT}% — אך זה כבר לא חוסם: חלון-עוגן-צי ראשון בעוד ~${fleetWindowH?.toFixed(1)} שע' (${fc.best.account}) מתוזמן אוטומטית; ${keysNote}`
+      : `rc-floor: נוכחי ${rcPct}% מתחת לסף-הקל ${HIVE_RC_FLOOR_LIGHT}% / סף-הכבד ${HIVE_RC_FLOOR_HEAVY}% — ואין חלון צי פעיל; ${keysNote}`;
   const hive: NetworkStatusView = {
     network: "HIVE",
-    status: fleetLanded || rcPct >= HIVE_RC_FLOOR_LIGHT ? "pending" : "gated",
+    status: mainReady ? "anchored" : fleetLanded || rcAboveLight ? "pending" : "gated",
     mode: "advisory",
     chainType: "graphene",
     chainId: null,
@@ -214,13 +220,17 @@ export function networkStatuses(rcPct: number, tronEnergy: number, keys?: Signer
     lastVerifiedAnchor: fleetLanded ? (fc.lastTxid as string) : null,
     nextAction: fleetLanded
       ? `עוגן-צי בוצע (txid ${String(fc.lastTxid).slice(0, 12)}…) — המשך קצב עם backoff לפי חלונות RC`
-      : fc.best
-        ? `fleet-cure מבצע אוטומטית את ה-weave הממתין בחלון הראשון (~${Math.round(fc.best.etaMin)} דק', ${fc.best.account}) — ריצה אוטומטית, ללא פעולת בעלים${hiveReady ? "; נתיב-ראשי (headcorner) פתוח ומאומת לעיגון מיידי ברגע שה-RC מגיע לסף" : ""}`
-        : "המתנה לרגן או power-up; אין פעולה חיה עד לסף",
+      : mainReady
+        ? `הראשי (headcorner) מוכן לעגן עכשיו — RC מדוד ${rcPct}% מעל סף-הקל ${HIVE_RC_FLOOR_LIGHT}% ומפתחות מאומתים חי; ה-weave מוכן לשידור דרך החותם${fc.best ? `; עוגן-צי אוטומטי נמשך בחלון הראשון (~${Math.round(fc.best.etaMin)} דק', ${fc.best.account})` : ""}`
+        : fc.best
+          ? `fleet-cure מבצע אוטומטית את ה-weave הממתין בחלון הראשון (~${Math.round(fc.best.etaMin)} דק', ${fc.best.account}) — ריצה אוטומטית, ללא פעולת בעלים${hiveReady ? "; נתיב-ראשי (headcorner) פתוח ומאומת לעיגון מיידי ברגע שה-RC מגיע לסף" : ""}`
+          : "המתנה לרגן או power-up; אין פעולה חיה עד לסף",
     blocker: hiveBlocker,
     requiredResource: fleetLanded
       ? null
-      : `מנועת-עלות: RC ≥ 225M ל-op (מדוד) — רגן צי אוטומטי; לחשבון הראשי RC ≥ ${HIVE_RC_FLOOR_LIGHT}% (כ-${lightH.toFixed(1)} שע') או power-up 9.682 HIVE${hiveReady ? " (מפתח-ראשי כבר מחובר ומאומת — הנתיב מוכן)" : " (דורש מפתח-בעלים)"}`,
+      : mainReady
+        ? `אין משאב חוסם — RC מדוד ${rcPct}% ≥ סף-הקל ${HIVE_RC_FLOOR_LIGHT}% לחשבון-הראשי (עלות-op ~225M RC ≈ 0.9% מהמקסימום המדוד)`
+        : `מנועת-עלות: RC ≥ 225M ל-op (מדוד) — רגן צי אוטומטי; לחשבון הראשי RC ≥ ${HIVE_RC_FLOOR_LIGHT}% (כ-${lightH.toFixed(1)} שע') או power-up 9.682 HIVE${hiveReady ? " (מפתח-ראשי כבר מחובר ומאומת — הנתיב מוכן)" : " (דורש מפתח-בעלים)"}`,
     unblockPlan: fleetLanded
       ? [
           "1. קצב עיגון-צי קבוע עם backoff כלכלי (כמו relay ה-DEX)",
@@ -235,18 +245,22 @@ export function networkStatuses(rcPct: number, tronEnergy: number, keys?: Signer
             : "3. owner (אופציונלי): טעינת מפתח-בעלים → power-up 9.682 HIVE דרך נתיב ה-DEX (authority-gate מאמת)",
           `4. רגן טבעי: סף-קל 8% בעוד ~${lightH.toFixed(1)} שע'`
         ],
-    isReadyForAnchor: false,
+    isReadyForAnchor: mainReady,
     isDryRunOnly: hiveDryRunOnly,
     ownerOptions: [
-      `אוטומטי (ברירת-מחדל): עיגון-צי בחלון הראשון (~${fleetWindowH !== null ? fleetWindowH.toFixed(1) : "?"} שע')`,
+      mainReady
+        ? `עגינה-ראשית עכשיו — RC מדוד ${rcPct}% ≥ סף-הקל ${HIVE_RC_FLOOR_LIGHT}% והמפתח מאומת חי (ה-weave נשלח דרך החותם, ללא עמלה)`
+        : `אוטומטי (ברירת-מחדל): עיגון-צי בחלון הראשון (~${fleetWindowH !== null ? fleetWindowH.toFixed(1) : "?"} שע')`,
       hiveReady
         ? "power-up 9.682 HIVE של הראשי — המפתח כבר מחובר ומאומת חי (האצה ×~1.6, מוכן לביצוע)"
         : "טעינת מפתח-בעלים למעטפת → power-up 9.682 HIVE של הראשי (האצה ×~1.6)",
       "המתנה לרגן טבעי לסף-הקל (8%)"
     ],
-    ownerAction: hiveReady
-      ? "אין פעולה נדרשת — התור האוטומטי מבצע; נתיב-הראשי מאומת ופתוח (power-up אופציונלי להאצה)"
-      : "אין פעולה נדרשת — התור האוטומטי מבצע; טעינת מפתח-הבעלים (fleet_vault --seal) מהירה את הקצב דרך power-up",
+    ownerAction: mainReady
+      ? "אין פעולה נדרשת — הראשי מוכן לעגן עכשיו (RC מעל סף-הקל, מפתחות מאומתים חי); power-up אופציונלי להאצה"
+      : hiveReady
+        ? "אין פעולה נדרשת — התור האוטומטי מבצע; נתיב-הראשי מאומת ופתוח (power-up אופציונלי להאצה)"
+        : "אין פעולה נדרשת — התור האוטומטי מבצע; טעינת מפתח-הבעלים (fleet_vault --seal) מהירה את הקצב דרך power-up",
     estimatedTime: fleetLanded ? "מיידי (עוגן בוצע)" : `חלון-צי ~${fleetWindowH !== null ? fleetWindowH.toFixed(1) : "?"} שע' · סף-קל 8% ~${lightH.toFixed(1)} שע' · סף-כבד 12% ~${heavyH.toFixed(1)} שע'`,
     estimatedCost: null,
     resourceLiveChecked: true
