@@ -1,18 +1,18 @@
-# בריף ראש-המטה — 2026-09-09T01:23:36.737Z
+# בריף ראש-המטה — 2026-09-09T02:53:38.096Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: c2ed998
+HEAD: 06a95b8
+- 06a95b8 chore(28): fleet-cure status refresh (runtime artifact)
+- e03c440 176148dc-5ee6-4c59-8393-35291a88236a
 - c2ed998 worklog(26-c): resource corner closed with live evidence — fleet HIVE matrix, fleet-cure automation, decisions 0/0/0, key-safety contract
 - 5c02579 fix(26-c): gershayim in caption (lint)
 - e094b3c fix(26-c): escape geresh in networks-tab caption (lint)
-- 066a325 fix(26-c): networks-tab caption — HIVE RC is now live-measured (not env-only)
-- 9f1d271 docs(26-c): rename conversion-rail refs to /api/dex/hive-rail (upstream SETTLE-11 owns /convert)
-guardian: ok=true runs=172 devMode=true tickAlive=true token=true
-briefings אחרונים: BRIEF-2026-09-08T23-30-19.md, BRIEF-2026-09-08T23-53-28.md, BRIEF-2026-09-09T00-23-26.md, BRIEF-2026-09-09T00-53-27.md, BRIEF-2026-09-09T01-01-34.md
+guardian: ok=true runs=234 devMode=true tickAlive=true token=true
+briefings אחרונים: BRIEF-2026-09-09T00-53-27.md, BRIEF-2026-09-09T01-01-34.md, BRIEF-2026-09-09T01-23-36.md, BRIEF-2026-09-09T01-53-32.md, BRIEF-2026-09-09T02-23-33.md
 ── זנב next-steps.md ──
 …
 ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
@@ -48,28 +48,32 @@ briefings אחרונים: BRIEF-2026-09-08T23-30-19.md, BRIEF-2026-09-08T23-53-2
    - STEEM: 0/11 התאמות (כולל הראשי) — עיגון STEEM מוחזק אצל הבעלים.
 2. **עלות-op מדודה בשרשרת**: weave על HIVE = **225,041,204 RC** (דחייה-חיה של cashmachine: "has 166,881,563 RC, needs 225,041,204").
 3. **מינימום-האצלה בשרשרת**: **1,611.18 VESTS** — גדול מכל יתרה-עצמית של חייל (מקס 268) ⇒ ריפוי-בהאצלה בלתי-אפשרי (מדידה, לא הנחה).
-4. **ניסיון power-up אמיתי דרך ה-DEX** (POST /api/dex/convert action=powerup 9.682 HIVE) → נעצר נכון בשער-הסמכות (403 authority-mism
+4. **ניסיון power-up אמיתי דרך ה-DEX** (POST /api/dex/convert action=powerup 9.682 HIVE) → נעצר נכון בשער-הסמכות (403 authority-mismatch) — הראיה שה-rail והבטיחות עובדים; הבלוק הוא מפתח-בעלים, לא תוכנה.
+
+### מה נבנ
 ```
 </details>
 ## מצב רשת
-רשת SAOS פעילה עם מערכת אוטומציה לניהול משאבים (HIVE RC) והמרות ב-DEX. נמצאו 9.682 HIVE נזילים ומערכת fleet-cure פעילה לניהול RC. חלק מהמערכת נעול עקב מחסור ב-RC.
+הרשת פעילה עם HEAD ב-06a95b8, guardian תקין (devMode=true), ומערכת האוטומציה פועלת. נמצאו 9.682 HIVE נזילים על headcorner, ומצב ה-RC ב-HIVE נמוך (0.003%) מה שמגביל פעולות לכל ~25 דקה. מסילת המרה פעילה ומאומתת בין HIVE ל-DEX, עם ביצועים מוצלחים שנמדדו.
 
 ## סיכונים / דברים מדממים
-- HIVE RC נמוך מאוד (0.003%) מגביל את קצב הפעולות לאחת בכ-25 דקות
-- נתוני מפתחות של חשבונות headcorner ו-tov נמצאים אצל הבעלים בלבד (ללא גישה מהסביבה)
-- מערכת ה-power-up נעולה עד שה-RC יגיע לרמה מספקת (ETA ~3.5 שעות)
+- RC נמוך ב-HIVE מגביל קצב פעולות ומעכב פעולות חיוניות
+- תיקון deadlock ב-steem repo דורש הרצה מסיימת על הרנטיים כדי ליישם את ה-powerup
+- מעטפת החתומה תלויה ב-9 מתוך 10 חשבונות-צי, כאשר headcorner ו-tov אינם נכללים (מפתחותיהם אצל הבעלים בלבד)
+- תקרית דליפת DATABASE_URL נתפסה ותוקנה, אך מהווה סיכון פוטנציאלי למערכת
 
-## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימות
-1. [רנטיים] הפעלת `node agent/he_powerup.cjs --amount ALL` כדי לאפשר אוטומציה של power-up עם RC מספיק
-2. [רנטיים] המתנה עד להשלמת withdraw של lsa (0.00248 SWAP.HIVE) דרך מסילת ההמרה הקיימת
-3. [רנטיים] ניטור התקדמות fleet-cure דרך קובץ `docs/evidence/fleet-cure-status.json` עד להגעת ה-RC לרמה מספקת
+## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
+1. [רנטיים] הרצת `node agent/he_powerup.cjs --amount ALL` ליישום תיקון ה-powerup והגדלת RC ב-55%
+2. [fleet-cure] מדידה ראשונית של מנת RC והפעלת אוטומציית ה-weave כאשר RC ≥ 230M
+3. [signer] פענוח ואימות חתימות עבור כל הפעולות המתבצעות דרך external-signer v2
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-- המערכת מוכנה להמשך פעילות עם האוטומציות הקיימות
-- ניתן להמשיך לנהל את ה-RC דרך fleet-cure עד שה-power-up יהיה זמין
-- כל הפעולות חייבות לעבור דרך external-signer v2 עם אימות סמכות
+- אישור הפעלת מסילת המרה המלאה בין HIVE ל-DEX עבור כל החשבונות
+- אישור הפעלת fleet-cure כמערכת אוטונומית לניהול RC
+- קביעת סדר עדיפויות: הרצת he_powerup → הפעלת fleet-cure → פיתוח external-signer v2.1
 
-## נשאר לבעלים בלבד
-- גישה למפתחות של headcorner ו-tov
-- החלטה על פריסת האצת הזיכויים (delegate_vesting_shares) כאשר יהיה HP זמין
-- קבלת החלטה על מימון טרנזיט דרך TRON אם יהיה צורך
+## נשאר לבעלים בלבד (או "כלום")
+- אימוץ מפתחות headcorner ו-tov למעטפת החתומה (כיום אצל הבעלים בלבד)
+- החלטה על מימון TRX עבור staking ו-transit
+- אישור פעולות עם סכומים הגדולים מ-50 HIVE דרך ה-DEX
+- החלטה על שחזור vault או שימוש במטריצת החזקה המאומתת

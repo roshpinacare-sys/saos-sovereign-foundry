@@ -48,6 +48,10 @@ const WATCH = [
   // (ב-DEV_MODE לא מוחק); בפרודקשן הנטרול-הכוחני הוא היעד המתועד (vault+stub).
   { repo: "saos-sovereign-platform", branch: "main", forbidden: ["scripts/anchor-sovereign-mnemonic.ts"], forbiddenPrefix: ["agent/keys/"], forbiddenSuffix: [".enc"] },
   { repo: "anchor-baseline", branch: "main", forbiddenSuffix: [".enc"] },
+  // Task 28: נקודת-עיוור שנסגרה — ה-foundry (saos-sovereign-foundry) לא היה תחת צפייה.
+  // ה-foundry הוא keyless-by-architecture (§13 secret-hygiene): אם מישהו יטמיע בו
+  // חומר-מפתח/סוד גולמי — ה-guardian יתפוס, יגבה ל-vault וידווח (DEV_MODE: בלי מחיקת-כוח).
+  { repo: "saos-sovereign-foundry", branch: "main", forbidden: [".env", ".env.local", ".env.production"], forbiddenSuffix: [".pem", ".p12", ".pfx", ".wif"] },
 ];
 
 /** Task 25-c: דה-דופ ל-DEV_MODE — גיבוי+ALERT רק כשהחתימה (head-sha + hits) משתנה.
