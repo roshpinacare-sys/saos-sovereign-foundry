@@ -1,18 +1,18 @@
-# בריף ראש-המטה — 2026-09-09T05:53:32.873Z
+# בריף ראש-המטה — 2026-09-09T06:23:28.248Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: 1fb1d7b
+HEAD: 7c829bd
+- 7c829bd 2a3b341b-1186-47b9-b052-dab5a32be067
+- ca45334 lint(task-30): eslint-disable for CJS require in signer hmac helper + unescaped-entity fix in seed hint
+- be21b2d recovery(task-30): SAOS-ROT1 seed ingestion (signer v2.3.0) + encrypted owner backup (backups/ + decrypt script) + docs/KEY-RECOVERY.md full forensics — headcorner rotated on-chain by saos-dex SETTLE-10 (21:17:33Z 09-08, tx 8313cdcb/92654439), new keys = HMAC tree from 64-hex seed held in operator's other chat; 9/11 fleet HIVE-owner-controlled verified live; verify-then-write enforced on every path
 - 1fb1d7b 684e9537-aab7-49af-9bc5-56ef7a75b885
 - 09eca4b d07b6b92-bffe-4044-b062-b154b7c101da
-- b10d17d 05c9bd37-02d3-49ae-9f1f-98c615d53095
-- dbfb9f4 worklog(29-b): credential forensics (valid key, no match — different account/pre-rotation), shred, multi-agent infra pushed
-- 62edaab feat(29-b): master-password ingest (P… → active+posting+memo × both networks, owner key never derived) + relaxed proxy entries + docs/keys-access.md multi-agent contract
-guardian: ok=true runs=118 devMode=true tickAlive=true token=true
-briefings אחרונים: BRIEF-2026-09-09T03-23-29.md, BRIEF-2026-09-09T03-53-30.md, BRIEF-2026-09-09T04-23-27.md, BRIEF-2026-09-09T04-53-32.md, BRIEF-2026-09-09T05-23-37.md
+guardian: ok=true runs=141 devMode=true tickAlive=true token=true
+briefings אחרונים: BRIEF-2026-09-09T03-53-30.md, BRIEF-2026-09-09T04-23-27.md, BRIEF-2026-09-09T04-53-32.md, BRIEF-2026-09-09T05-23-37.md, BRIEF-2026-09-09T05-53-32.md
 ── זנב next-steps.md ──
 …
 ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
@@ -47,29 +47,22 @@ briefings אחרונים: BRIEF-2026-09-09T03-23-29.md, BRIEF-2026-09-09T03-53-3
    - headcorner + tov: **0 התאמות בסביבה כולה** (מעטפת חיצונית + פנימית + כל גיבויי-השומר + seed-derivations) — המפתחות בחזקת הבעלים בלבד (הדיסק של הרנטיים נמחק). "אני עשיתי את זה" — הסמכויות בשרשרת הן הגדרת-הבעלים; לא נוגעים, לא מרוטטים.
    - STEEM: 0/11 התאמות (כולל הראשי) — עיגון STEEM מוחזק אצל הבעלים.
 2. **עלות-op מדודה בשרשרת**: weave על HIVE = **225,041,204 RC** (דחייה-חיה של cashmachine: "has 166,881,563 RC, needs 225,041,204").
-3. **מינימום-האצלה בשרשרת**: **1,611.18 VESTS** — גדול מכל יתרה-עצמית של חייל (מקס 268) ⇒ ריפוי-בהאצלה בלתי-אפשרי (מדידה, לא הנחה).
-4. **ניסיון power-up אמיתי דרך ה-DEX** (POST /api/dex/convert action=powerup 9.682 HIVE) → נעצר נכון בשער-הסמכות (403 authority-mismatc
+3. **מינימום-האצלה בשרשרת**: **1,611.18 VESTS** — גדול 
 ```
 </details>
 ## מצב רשת
-רשת SAOS פעילה עם חולשת RC חמורה ב-HIVE (0.003%, פעולה אחת כל 25 דקות) למרות שפע ב-STEEM. מסילת המרה מבוסס-DEX וחותם חיצוני פעילה ומוכחת, עם 9.682 HIVE נזילים כמשאב היחיד בעל-ערך. מערכת הבטיחות עובדת (אימות סמכויות חוסם פעולות לא מורשות).
+רשת SAOS פעילה עם 9/11 סוכנים תחת שליטת הבעלים. מערכת ה-RC ב-HIVE פועלת בקצב מוגבל (~1 פעולה/25 דק'), אך נמצא בתהליך תיקון על ידי אוטומציית power-up. מערכת ה-DEX פעילה ומאובטחת עם שערי סמכות ו-RC.
 
-## סיכונים / דברים מדממים
-- **חולשת RC חמורה ב-HIVE**: מגבילה ביצועים לפעולה אחת כל 25 דקות, מה שמעכב נסיגות ופעולות קריטיות.
-- **אצילה מינימלית גבוהה**: 1,611.18 VESTS — מונעת ריפוי-בהאצלה אוטומטי.
-- **תלות ברנטיים**: פעולות קריטיות דורשות גישה לרנטיים החי (מפתחות STEEM/HIVE נמצאים אצלו).
+## סיכונים / דברים מדממים (או "אין")
+אין. נתפסה ותוקנה תקרית דליפת מסד נתונים ב-DEX (Task 27-b) עם ראיות מלאות. מערכת האבטחה עובדת כראוי, כפי שנבדק בניסיון power-up שנכשל עקב אי-התאמת סמכות.
 
 ## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
-1. [רנטיים] הפעלת `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי → אימות: עלייה ב-RC של הסוכנים בסביבה + עדכון ה-.env עם הערכים החדשים.
-2. [fleet-cure] הפעלת שירות ה-monitoring על ה-foundry → אימות: קיום קובץ `docs/evidence/fleet-cure-status.json` עם מדידות RC ראשונות.
-3. [external-signer] פריסת גרסה v2.1 עם הוספת `delegate_vesting_shares` לרשימת ההיתרים → אימות: תגובת 200 מה-endpoint עם הפונקציה החדשה ברשימה.
+1. [רנטיים/ראש-המטה] הפעלת `node agent/he_powerup.cjs --amount ALL` כדי להפעיל את מנגנון ה-power-up האוטומטי שיעלה את רמת ה-RC ברשת.
+2. [רנטיים/ראש-המטה] ניטור התהליך עד להשלמת ה-power-up ואימות עליית ה-RC במאזני החיילים דרך ה-API.
+3. [רנטיים/ראש-המטה] המתנה לסיום ה-power-up של macrame (צפוי ~232 דק') ואימות השלמת withdraw הממתין של lsa.
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-- אישור הפעלת `fleet-cure` כפתרון אוטומטי לניהול RC עתידי.
-- ניהול מחדש של סדר העדיפויות: מיקוד בשיפור קצב ה-RC ב-HIVE לפני פיתוח נוסף.
-- הפעלת מעקב אחרי ה-ETA של macrame לסיום נסיגת ה-0.00248 SWAP.HIVE.
+הפעלת מנגנון ה-powerup האוטומטי על ידי ביצוע הפקודה `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי.
 
 ## נשאר לבעלים בלבד (או "כלום")
-- שימוש במפתחות הבעלים המוחזקים אצל הרנטיים לפעולות על STEEM/BLURT.
-- החלטה על מימון והעברת TRX דרך ה-foundry אם נוצר צורך ב-transit.
-- שחזור מפתחות הבעלים מהגיבויים (vault-restore) לפי החלטה עתידית.
+כלום. כל ההחלטות הניהוליות סגורות והתהליכים האוטומטיים פעילים.
