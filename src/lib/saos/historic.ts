@@ -20,9 +20,9 @@ export const HISTORIC_ANCHORS: HistoricAnchor[] = [
   },
   {
     network: "BLURT",
-    txRef: "50a857ccaf49bd…5c4c3e6a9c",
+    txRef: "cda701d1dd30e7f906caef2e48f592e4d8844d8c",
     state: "anchored",
-    note: "חתימה קנונית ידנית — אימות חסימה נקרא-חזרה"
+    note: "Task 36 (2026-09-09): עוגן שזירה חי — headcorner posting, בלוק 63498486, מאומת קריאה-חוזרה; root-cause מלא: op-enum-12 + chain_id cd8d90f2… (ראה worklog)"
   },
   {
     network: "HIVE",

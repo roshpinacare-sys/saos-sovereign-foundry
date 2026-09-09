@@ -63,6 +63,14 @@ const LOG = path.join(import.meta.dir, "signer.log");
 const HIVE_CHAIN_ID = "beeab0de00000000000000000000000000000000000000000000000000000000";
 const HIVE_RPC = process.env.HIVE_RPC ?? "https://api.hive.blog";
 const STEEM_RPC = process.env.STEEM_RPC ?? "https://api.steemit.com";
+// Task 36: BLURT joins as a first-class network — chain_id captured LIVE
+// 2026-09-09 (database_api.get_version @ rpc.beblurt.com, blockchain_version 0.9.0);
+// custom_json scope only (asset ops stay STEEM/HIVE — the steem@0.7.10 asset
+// serializer garbage-bug class applies to the BLURT symbol too).
+const BLURT_CHAIN_ID = "cd8d90f29ae273abec3eaa7731e25934c63eb654d55080caff2ebb7f5df6381f";
+const BLURT_RPC = process.env.BLURT_RPC ?? "https://rpc.beblurt.com";
+const BLURT_NODES = [BLURT_RPC, "https://rpc.blurt.world", "https://blurt-rpc.saboin.com"].filter((v, i, a) => a.indexOf(v) === i);
+const NET_PREFIX = { STEEM: "STM", HIVE: "STM", BLURT: "BLT" };
 const MAX_OP_HIVE = Number(process.env.SIGNER_MAX_OP_HIVE ?? 50);
 const AUTH_CACHE_TTL_MS = 10 * 60_000;
 /** token resolution: env → ~/.secrets/external-signer-token (secrets never in trees) */
@@ -169,7 +177,8 @@ function loadState() {
           ownerWif: a.keys?.owner?.wif ?? null,
           net: {
             STEEM: { postingWif: a.keys?.posting?.wifSTEEM ?? null, activeWif: a.keys?.active?.wifSTEEM ?? null, ownerWif: a.keys?.owner?.wifSTEEM ?? null, memoWif: a.keys?.memo?.wifSTEEM ?? null },
-            HIVE: { postingWif: a.keys?.posting?.wifHIVE ?? null, activeWif: a.keys?.active?.wifHIVE ?? null, ownerWif: a.keys?.owner?.wifHIVE ?? null, memoWif: a.keys?.memo?.wifHIVE ?? null }
+            HIVE: { postingWif: a.keys?.posting?.wifHIVE ?? null, activeWif: a.keys?.active?.wifHIVE ?? null, ownerWif: a.keys?.owner?.wifHIVE ?? null, memoWif: a.keys?.memo?.wifHIVE ?? null },
+            BLURT: { postingWif: a.keys?.posting?.wifBLURT ?? null, activeWif: a.keys?.active?.wifBLURT ?? null, ownerWif: a.keys?.owner?.wifBLURT ?? null, memoWif: a.keys?.memo?.wifBLURT ?? null }
           }
         }));
     } catch {}
@@ -183,7 +192,8 @@ function loadState() {
         ownerWif: envOf.OWNER_WIF ?? null,
         net: {
           STEEM: { postingWif: envOf.STEEM_POSTING_WIF ?? null, activeWif: envOf.STEEM_ACTIVE_WIF ?? null, ownerWif: envOf.STEEM_OWNER_WIF ?? null, memoWif: envOf.STEEM_MEMO_WIF ?? null },
-          HIVE: { postingWif: envOf.HIVE_POSTING_WIF ?? null, activeWif: envOf.HIVE_ACTIVE_WIF ?? null, ownerWif: envOf.HIVE_OWNER_WIF ?? null, memoWif: envOf.HIVE_MEMO_WIF ?? null }
+          HIVE: { postingWif: envOf.HIVE_POSTING_WIF ?? null, activeWif: envOf.HIVE_ACTIVE_WIF ?? null, ownerWif: envOf.HIVE_OWNER_WIF ?? null, memoWif: envOf.HIVE_MEMO_WIF ?? null },
+          BLURT: { postingWif: envOf.BLURT_POSTING_WIF ?? null, activeWif: envOf.BLURT_ACTIVE_WIF ?? null, ownerWif: envOf.BLURT_OWNER_WIF ?? null, memoWif: envOf.BLURT_MEMO_WIF ?? null }
         }
       },
       fleet
@@ -264,7 +274,7 @@ async function ingestOwnerKey(network: string | null, wif: string, roleHint?: st
   } catch {
     return { ok: false, verdict: { network: network ?? null, role: roleHint ?? null, derived: null, match: false, error: "wif derivation failed (not a valid private key)" } };
   }
-  const nets = network ? [network] : ["STEEM", "HIVE"];
+  const nets = network ? [network] : ["STEEM", "HIVE", "BLURT"];
   const candidates = [STATE.main.account, ...STATE.fleet.map((f) => f.username), "ynet", "tov"].filter((v, i, a) => a.indexOf(v) === i);
   const roles = roleHint && ["owner", "active", "posting", "memo"].includes(roleHint) ? [roleHint] : ["owner", "active", "posting", "memo"];
   const checked: Array<Record<string, unknown>> = [];
@@ -278,7 +288,8 @@ async function ingestOwnerKey(network: string | null, wif: string, roleHint?: st
         continue;
       }
       for (const role of roles) {
-        if (auth?.[role] && auth[role] === derived) {
+        // Task 36: prefix-aware compare (STM render vs BLT authorities — same payload)
+        if (auth?.[role] && auth[role] === NET_PREFIX[net] + derived.slice(3)) {
           checked.push({ account: acct, network: net, role, match: true });
           return { ok: true, account: acct, network: net, role, derived, checked };
         }
@@ -309,13 +320,13 @@ function parseKeyPayload(text: string) {
   for (const rawLine of String(text ?? "").split(/\r?\n/)) {
     const line = rawLine.trim();
     if (!line || line.startsWith("#") || line.startsWith("//")) continue;
-    const sec = line.match(/^(STEEM|HIVE)\s*:?\s*$/i);
+    const sec = line.match(/^(STEEM|HIVE|BLURT)\s*:?\s*$/i);
     if (sec) { sectionNet = sec[1].toUpperCase(); continue; }
     const kv = line.match(/^([A-Za-z][A-Za-z _-]{0,20}?)\s*[=:]\s*(\S+)\s*$/);
     if (kv) {
       let norm = kv[1].toUpperCase().replace(/[\s_-]+/g, "");
       let net = sectionNet;
-      const netM = norm.match(/^(STEEM|HIVE)(.+)$/);
+      const netM = norm.match(/^(STEEM|HIVE|BLURT)(.+)$/);
       if (netM) { net = netM[1]; norm = netM[2]; }
       const role = roleMap[norm] ?? null;
       const wif = kv[2].trim();
@@ -343,6 +354,7 @@ function parseKeyPayload(text: string) {
  * Returns internal matches (with wif for the write path) + public verdicts.
  */
 async function ingestOwnerPassword(password, networks) {
+  if (typeof networks === "undefined" || networks === null) networks = ["STEEM", "HIVE", "BLURT"];
   const candidates = [STATE.main.account, ...STATE.fleet.map((f) => f.username)].filter((v, i, a) => a.indexOf(v) === i);
   const matches = [], checked = [];
   for (const acct of candidates) {
@@ -365,7 +377,10 @@ async function ingestOwnerPassword(password, networks) {
         let derived;
         try { derived = steem.auth.wifToPublic(keys[role]); } catch { continue; }
         const expected = auth[role];
-        if (derived && expected && derived === expected) {
+        // Task 36: prefix-aware compare — the derivation render is STM-prefixed,
+        // BLURT authorities are BLT-prefixed; the payload decides, not the prefix
+        const rendered = derived ? NET_PREFIX[net] + derived.slice(3) : null;
+        if (rendered && expected && rendered === expected) {
           matches.push({ account: acct, network: net, role, wif: keys[role], derived });
           checked.push({ account: acct, network: net, role, match: true });
         }
@@ -424,6 +439,8 @@ async function saosRot1Match(seedHex, account) {
             let pub = null;
             try { pub = steem.auth.wifToPublic(wif); } catch { continue; }
             if (pub && auth[role] === pub) matches.push({ account, network: net, role, wif, derived: pub });
+            // Task 36: BLURT payload-parity match (BLT render of the same payload)
+            else if (pub && auth[role] === "BLT" + pub.slice(3)) matches.push({ account, network: net, role, wif, derived: "BLT" + pub.slice(3) });
           }
         }
       }
@@ -447,9 +464,11 @@ async function slotView(net, acct, wif, role) {
   try {
     const auth = await chainAuthorities(net, acct);
     expected = role === "active" ? auth.active : role === "owner" ? auth.owner : auth.posting;
-    match = derived !== null && derived === expected;
+    // Task 36: prefix-aware — same payload decides (STM render vs BLT authority)
+    match = derived !== null && expected !== null && derived.slice(3) === expected.slice(3);
   } catch { match = null; }
-  return { loaded: true, role, derived, expected, match };
+  const prefix = NET_PREFIX[net] ?? "STM";
+  return { loaded: true, role, derived: derived ? prefix + derived.slice(3) : null, expected, match };
 }
 
 loadState();
@@ -476,11 +495,23 @@ async function rpcCall(node, method, params) {
   }
 }
 
-function nodeFor(network) {
-  return network === "HIVE" ? HIVE_RPC : STEEM_RPC;
-}
 function chainIdFor(network) {
-  return network === "HIVE" ? HIVE_CHAIN_ID : null; // steem lib default = STEEM chain_id
+  return network === "HIVE" ? HIVE_CHAIN_ID : network === "BLURT" ? BLURT_CHAIN_ID : null; // steem lib default = STEEM chain_id
+}
+function nodesFor(network) {
+  return network === "HIVE" ? [HIVE_RPC] : network === "BLURT" ? BLURT_NODES : [STEEM_RPC];
+}
+/** resilient rpc across a network's node list (BLURT has 3 candidates) */
+async function rpcCallNet(network, method, params) {
+  let lastErr = null;
+  for (const node of nodesFor(network)) {
+    try {
+      return await rpcCall(node, method, params);
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr ?? new Error("no rpc candidate for " + network);
 }
 
 // ── AUTHORITY VERIFICATION GATE (fail-closed, names/pubkeys only) ────────────
@@ -510,7 +541,7 @@ async function verifyLiveAll() {
     ...STATE.fleet.map((f) => ({ account: f.username, net: f.net ?? null, generic: { posting: f.postingWif ?? null, active: f.activeWif ?? null, owner: f.ownerWif ?? null, memo: f.memoWif ?? null } }))
   ];
   for (const t of targets) {
-    for (const net of ["STEEM", "HIVE"]) {
+    for (const net of ["STEEM", "HIVE", "BLURT"]) {
       const slots: Record<string, string | null> = {
         posting: t.net?.[net]?.postingWif ?? t.generic.posting ?? null,
         active: t.net?.[net]?.activeWif ?? t.generic.active ?? null,
@@ -526,7 +557,8 @@ async function verifyLiveAll() {
         const expected = auth?.[role] ?? null;
         const slotKey = `${t.account}|${net}|${role}`;
         const prev = prevMatch.has(slotKey) ? prevMatch.get(slotKey) : null;
-        if (expected && derived && expected === derived) {
+        // Task 36: prefix-aware live verification (payload decides, not the prefix)
+        if (expected && derived && expected.slice(3) === derived.slice(3)) {
           okCount++;
           prevMatch.set(slotKey, true);
         } else if (expected) {
@@ -557,7 +589,7 @@ async function chainAuthorities(network, account) {
   const k = `${network}:${account}`;
   const hit = authCache.get(k);
   if (hit && Date.now() - hit.at < AUTH_CACHE_TTL_MS) return hit;
-  const accs = await rpcCall(nodeFor(network), "condenser_api.get_accounts", [[account]]);
+  const accs = await rpcCallNet(network, "condenser_api.get_accounts", [[account]]);
   const a = accs?.[0];
   if (!a) throw new Error(`account ${account} not found on ${network}`);
   const out = { at: Date.now(), posting: a.posting.key_auths[0][0], active: a.active.key_auths[0][0], owner: a.owner.key_auths[0][0], memo: a.memo_key };
@@ -575,7 +607,8 @@ async function verifyAuthority(network, account, wif, role) {
   }
   const auth = await chainAuthorities(network, account);
   const expected = role === "active" ? auth.active : auth.posting;
-  if (derived !== expected) {
+  // Task 36: prefix-aware — the envelope WIF renders STM…, a BLURT authority is BLT…
+  if (expected && derived.slice(3) !== expected.slice(3)) {
     return {
       ok: false,
       error: `authority-mismatch: ${account} envelope-${role} derives ${derived.slice(0, 11)}… but ${network} ${role} authority is ${expected.slice(0, 11)}… (fail-closed, nothing broadcast)`,
@@ -583,7 +616,7 @@ async function verifyAuthority(network, account, wif, role) {
       expected
     };
   }
-  return { ok: true, derived };
+  return { ok: true, derived: expected ? NET_PREFIX[network] + derived.slice(3) : derived };
 }
 
 // RC feasibility (Task 27): one op costs ~124M RC (measured live via lsa's
@@ -591,7 +624,7 @@ async function verifyAuthority(network, account, wif, role) {
 const RC_OP_COST = 1.5e8;
 async function verifyRcFeasibility(network, account) {
   try {
-    const rc = await rpcCall(nodeFor(network), "rc_api.find_rc_accounts", { accounts: [account] });
+    const rc = await rpcCallNet(network, "rc_api.find_rc_accounts", { accounts: [account] });
     const a = rc.rc_accounts[0];
     const mx = Number(a.max_rc) || 0;
     const stored = Number(a.rc_manabar.current_mana) || 0;
@@ -634,6 +667,21 @@ function hiveJs() {
   return hiveLib;
 }
 
+// Task 36 root-cause (proven by on-chain forensics): BLURT renumbered the
+// operation enum — custom_json is op 12 on Blurt (not 18 like Steem), so the
+// steem@0.7.10 serializer produced bytes the node parsed as a DIFFERENT op →
+// "Missing Posting Authority". @blurtfoundation/blurtjs serializes byte-exact
+// (txid-verified against live blocks 2026-09-09) — BLURT signs through it.
+let blurtLib = null;
+function blurtJs() {
+  if (!blurtLib) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- CJS-only legacy lib (signing only)
+    blurtLib = require("@blurtfoundation/blurtjs");
+    blurtLib.config.set("chain_id", BLURT_CHAIN_ID);
+  }
+  return blurtLib;
+}
+
 // ── build + sign + broadcast (transport 1:1 from he_powerup.cjs — proven) ────
 // Task 35: Graphene trx_id = sha256(serialized-tx-body-without-signatures),
 // truncated to 20 bytes — with NO chain_id prefix on EITHER chain (hived's
@@ -652,8 +700,11 @@ function computeTxId(network, signedTx) {
     const serializer = network === "HIVE"
       // eslint-disable-next-line @typescript-eslint/no-require-imports -- CJS-only legacy lib (signing only)
       ? require("@hiveio/hive-js/lib/auth/serializer")
-      // eslint-disable-next-line @typescript-eslint/no-require-imports -- CJS-only legacy lib (signing only)
-      : require("steem/lib/auth/serializer");
+      : network === "BLURT"
+        // eslint-disable-next-line @typescript-eslint/no-require-imports -- CJS-only legacy lib (signing only)
+        ? require("@blurtfoundation/blurtjs/lib/auth/serializer")
+        // eslint-disable-next-line @typescript-eslint/no-require-imports -- CJS-only legacy lib (signing only)
+        : require("steem/lib/auth/serializer");
     const body = { ...signedTx };
     delete body.signatures;
     const buf = (serializer.ops?.transaction ?? serializer.transaction).toBuffer(body);
@@ -664,7 +715,7 @@ function computeTxId(network, signedTx) {
 }
 
 async function buildSignBroadcast(network, account, wif, operations) {
-  const dgp = await rpcCall(nodeFor(network), "condenser_api.get_dynamic_global_properties", []);
+  const dgp = await rpcCallNet(network, "condenser_api.get_dynamic_global_properties", []);
   const tx = {
     ref_block_num: dgp.head_block_number & 0xffff,
     ref_block_prefix: Buffer.from(dgp.head_block_id, "hex").readUInt32LE(4),
@@ -675,6 +726,8 @@ async function buildSignBroadcast(network, account, wif, operations) {
   let signed;
   if (network === "HIVE") {
     signed = hiveJs().auth.signTransaction(tx, [wif]);
+  } else if (network === "BLURT") {
+    signed = blurtJs().auth.signTransaction(tx, [wif]);
   } else {
     const prev = steem.config.get("chain_id");
     const cid = chainIdFor(network);
@@ -686,7 +739,7 @@ async function buildSignBroadcast(network, account, wif, operations) {
     }
   }
   const txid = computeTxId(network, signed);
-  const result = await rpcCall(nodeFor(network), "condenser_api.broadcast_transaction", [signed]);
+  const result = await rpcCallNet(network, "condenser_api.broadcast_transaction", [signed]);
   return { txid, result };
 }
 
@@ -727,11 +780,11 @@ const server = Bun.serve({
         sealedAt: STATE.sealedAt,
         mainAccount: STATE.main.account,
         fleetAccounts: [STATE.main.account, ...STATE.fleet.map((f) => f.username)].filter((v, i, a) => a.indexOf(v) === i),
-        networks: ["STEEM", "HIVE"],
-        capabilities: ["custom_json", "transfer_to_vesting", "transfer", "claim_rewards", "he_market_sell", "he_withdraw", "delegate_vesting_shares", "keys-ingest", "keys-backup", "rot1-seed-recovery", "universal-paste", "live-drift-monitor"],
+        networks: ["STEEM", "HIVE", "BLURT"],
+        capabilities: ["custom_json", "transfer_to_vesting", "transfer", "claim_rewards", "he_market_sell", "he_withdraw", "delegate_vesting_shares", "keys-ingest", "keys-backup", "rot1-seed-recovery", "universal-paste", "live-drift-monitor", "blurt-weave"],
         authorityGate: "verify-before-broadcast (fail-closed)",
         maxOpHive: MAX_OP_HIVE,
-        version: "2.4.0"
+        version: "2.5.1-task36"
       });
     }
 
@@ -744,7 +797,7 @@ const server = Bun.serve({
     if (url.pathname === "/keys/status" && req.method === "GET") {
       try {
         const mainNet = {};
-        for (const net of ["STEEM", "HIVE"]) {
+        for (const net of ["STEEM", "HIVE", "BLURT"]) {
           mainNet[net] = {
             posting: await slotView(net, STATE.main.account, STATE.main.net?.[net]?.postingWif ?? STATE.main.postingWif, "posting"),
             active: await slotView(net, STATE.main.account, STATE.main.net?.[net]?.activeWif ?? STATE.main.activeWif, "active"),
@@ -786,7 +839,7 @@ const server = Bun.serve({
       };
       for (const ent of entries) {
         const wif = typeof ent?.wif === "string" ? ent.wif.trim() : "";
-        const askedNet = ent?.network === "HIVE" ? "HIVE" : ent?.network === "STEEM" ? "STEEM" : null;
+        const askedNet = ent?.network === "HIVE" ? "HIVE" : ent?.network === "BLURT" ? "BLURT" : ent?.network === "STEEM" ? "STEEM" : null;
         if (!wif) { refused.push({ network: ent?.network ?? "?", error: "missing wif" }); continue; }
         const isWif = steem.auth.isWif ? steem.auth.isWif(wif) : false;
         const isRotSeed = /^[0-9a-fA-F]{64}$/.test(wif) || /^SAOS-ROT1:/i.test(wif);
@@ -888,8 +941,8 @@ const server = Bun.serve({
       try { body = await req.json(); } catch { return Response.json({ ok: false, error: "bad-json" }, { status: 400 }); }
       const { requestId, network, kind, authLevel, payload, id, account, to, amount, memo, symbol, quantity, price } = body ?? {};
       if (!requestId) return Response.json({ ok: false, error: "missing requestId" }, { status: 400 });
-      const net = network === "HIVE" ? "HIVE" : network === "STEEM" ? "STEEM" : null;
-      if (!net) return Response.json({ ok: false, error: "unsupported network (capabilities: STEEM|HIVE)" }, { status: 400 });
+      const net = network === "HIVE" ? "HIVE" : network === "BLURT" ? "BLURT" : network === "STEEM" ? "STEEM" : null;
+      if (!net) return Response.json({ ok: false, error: "unsupported network (capabilities: STEEM|HIVE|BLURT)" }, { status: 400 });
 
       // Task 35 fix: the REQUIRED authority level is a function of the op kind —
       // resolved BEFORE keyFor so the correct network-suffixed slot is selected
@@ -919,6 +972,8 @@ const server = Bun.serve({
           } else {
             operations = [["custom_json", { required_auths: [], required_posting_auths: [targetAccount], id: customId, json: jsonStr }]];
           }
+        } else if (net === "BLURT" && kind !== "custom_json") {
+          return Response.json({ ok: false, error: "BLURT capability scope: custom_json only (weave anchors); asset ops stay STEEM/HIVE (Task 36)" }, { status: 400 });
         } else if (net === "HIVE" && (kind === "transfer_to_vesting" || kind === "transfer")) {
           const amt = Number(amount);
           if (!Number.isFinite(amt) || amt < 0.001) return Response.json({ ok: false, error: "amount must be ≥ 0.001" }, { status: 400 });
@@ -929,7 +984,7 @@ const server = Bun.serve({
           operations = [[kind, { from: targetAccount, to: toAcct, amount: amt.toFixed(3) + " " + asset, ...(memo && kind === "transfer" ? { memo: String(memo).slice(0, 200) } : {}) }]];
         } else if (net === "HIVE" && kind === "claim_rewards") {
           role = "posting";
-          const accs = await rpcCall(nodeFor(net), "condenser_api.get_accounts", [[targetAccount]]);
+          const accs = await rpcCallNet(net, "condenser_api.get_accounts", [[targetAccount]]);
           const a = accs?.[0];
           if (!a) throw new Error("account fetch failed");
           const rh = a.reward_hive_balance, rhb = a.reward_hbd_balance, rv = a.reward_vesting_balance;
@@ -946,7 +1001,7 @@ const server = Bun.serve({
           }
           const vests = Number(amount);
           if (!Number.isFinite(vests) || vests < 0.5) return Response.json({ ok: false, error: "amount (VESTS) must be ≥ 0.5" }, { status: 400 });
-          const accsD = await rpcCall(nodeFor(net), "condenser_api.get_accounts", [[targetAccount]]);
+          const accsD = await rpcCallNet(net, "condenser_api.get_accounts", [[targetAccount]]);
           const aD = accsD?.[0];
           if (!aD) throw new Error("delegator fetch failed");
           const totalV = parseFloat(aD.vesting_shares);
@@ -1008,4 +1063,4 @@ const server = Bun.serve({
   }
 });
 
-log("INFO", `external-signer v2.4.2-task35b listening on :${PORT} (auth=${TOKEN ? "token" : "MISSING-FAIL-CLOSED"}, networks=STEEM+HIVE, authorityGate=on, keys-ingest=verify-then-write, maxOpHive=${MAX_OP_HIVE}, hiveSigning=hive-js, txid=unprefixed-sha256[0:20])`);
+log("INFO", `external-signer v2.5.1-task36 listening on :${PORT} (auth=${TOKEN ? "token" : "MISSING-FAIL-CLOSED"}, networks=STEEM+HIVE+BLURT, blurtChainId=cd8d90f2…, blurtSigning=blurtjs(op-enum-12), authorityGate=on(prefix-aware), keys-ingest=verify-then-write, maxOpHive=${MAX_OP_HIVE}, txid=unprefixed-sha256[0:20])`);

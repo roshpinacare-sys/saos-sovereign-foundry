@@ -46,3 +46,8 @@ Caddyfile
 # fleet-cure runtime files (Task 26-c)
 mini-services/fleet-cure/cure-state.json
 mini-services/fleet-cure/*.pid
+
+# Task 36 — uploaded key material & local secret store (never commit)
+*.evm
+.secrets/
+scripts/sync-push.log
