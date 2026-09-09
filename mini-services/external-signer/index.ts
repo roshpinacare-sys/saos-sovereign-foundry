@@ -635,6 +635,31 @@ function hiveJs() {
 }
 
 // ── build + sign + broadcast (transport 1:1 from he_powerup.cjs — proven) ────
+// Task 35: Graphene trx_id = sha256(serialized-tx-body-without-signatures),
+// truncated to 20 bytes — with NO chain_id prefix on EITHER chain (hived's
+// signed_transaction::id() packs the base transaction only; chain_id feeds the
+// SIGNATURE digest, not the id). Proven on-chain twice: STEEM task-35a canary,
+// HIVE task-35b canary trx ec08f7ab05fed4f29388d4cf6d21e2fb0fe43760 —
+// sha256(body)[0:20] == on-chain trx_id, while the earlier beeab0de…-prefix
+// hypothesis produced e05b26b6… ≠ chain id (disproven by live canary, removed).
+// Both legacy libs return txid:null from signTransaction, which left every
+// /sign response with a null id (and fleet-cure recording txids by polling
+// account history). Compute it here so EVERY response carries the real id.
+function computeTxId(network, signedTx) {
+  try {
+    const { createHash } = require("crypto");
+    const serializer = network === "HIVE"
+      ? require("@hiveio/hive-js/lib/auth/serializer")
+      : require("steem/lib/auth/serializer");
+    const body = { ...signedTx };
+    delete body.signatures;
+    const buf = (serializer.ops?.transaction ?? serializer.transaction).toBuffer(body);
+    return createHash("sha256").update(buf).digest().subarray(0, 20).toString("hex");
+  } catch {
+    return signedTx?.id ?? null; // honest fallback — never invent an id
+  }
+}
+
 async function buildSignBroadcast(network, account, wif, operations) {
   const dgp = await rpcCall(nodeFor(network), "condenser_api.get_dynamic_global_properties", []);
   const tx = {
@@ -657,8 +682,9 @@ async function buildSignBroadcast(network, account, wif, operations) {
       if (cid) steem.config.set("chain_id", prev);
     }
   }
+  const txid = computeTxId(network, signed);
   const result = await rpcCall(nodeFor(network), "condenser_api.broadcast_transaction", [signed]);
-  return { txid: signed?.id ?? null, result };
+  return { txid, result };
 }
 
 // ── Hive-Engine helpers (read-only balances for bounds/withdraw payload) ─────
@@ -979,4 +1005,4 @@ const server = Bun.serve({
   }
 });
 
-log("INFO", `external-signer v2.4.1-task35 listening on :${PORT} (auth=${TOKEN ? "token" : "MISSING-FAIL-CLOSED"}, networks=STEEM+HIVE, authorityGate=on, keys-ingest=verify-then-write, maxOpHive=${MAX_OP_HIVE}, hiveSigning=hive-js)`);
+log("INFO", `external-signer v2.4.2-task35b listening on :${PORT} (auth=${TOKEN ? "token" : "MISSING-FAIL-CLOSED"}, networks=STEEM+HIVE, authorityGate=on, keys-ingest=verify-then-write, maxOpHive=${MAX_OP_HIVE}, hiveSigning=hive-js, txid=unprefixed-sha256[0:20])`);

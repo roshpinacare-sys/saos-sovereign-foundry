@@ -1,0 +1,24 @@
+{
+  "task": "35b",
+  "date": "2026-09-09",
+  "claim": "Graphene trx_id = sha256(serialized tx body WITHOUT signatures)[0:20] — UNPREFIXED on both STEEM and HIVE (chain_id feeds the signature digest only, never the id).",
+  "signer": ":3033 external-signer, network=HIVE, kind=custom_json, id=saos.weave.v1, account=headcorner, role=posting",
+  "canary1_prefix_hypothesis": {
+    "time": "2026-09-09T16:06:03Z",
+    "hypothesis": "HIVE trx_id = sha256(chain_id beeab0de… || body)[0:20]",
+    "responseTxid": "e05b26b6ac5e80bf77cea2e991cb020336edbf6c",
+    "onChainTrxId": "ec08f7ab05fed4f29388d4cf6d21e2fb0fe43760",
+    "match": false,
+    "decisiveMath": "Re-serialized the on-chain tx (block 109767680, ref_block_num=60414, ref_block_prefix=817947572, expiration=2026-09-09T16:06:57, 1× custom_json, 98 bytes) with @hiveio/hive-js serializer (ops.transaction): sha256(body)[0:20]=ec08f7ab… == on-chain id; sha256(cid||body)[0:20]=e05b26b6… == signer response only. Prefix hypothesis DISPROVEN."
+  },
+  "fix": "computeTxId no longer prepends any chain_id (STEEM and HIVE both unprefixed); signer hot-reloaded to v2.4.2-task35b.",
+  "canary2_post_fix": {
+    "time": "2026-09-09T16:15:48Z",
+    "requestIdPrefix": "task35-hive-txid-canary2-",
+    "responseTxid": "42abfe075eb7004600f73adc7fd405a41b2175dd",
+    "onChainTrxId": "42abfe075eb7004600f73adc7fd405a41b2175dd",
+    "match": true
+  },
+  "steemReference": "task-35a STEEM canary already proven the unprefixed rule for steemd.",
+  "publicDataOnly": true
+}

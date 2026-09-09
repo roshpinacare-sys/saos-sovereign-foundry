@@ -1,18 +1,18 @@
-# בריף ראש-המטה — 2026-09-09T15:23:37.979Z
+# בריף ראש-המטה — 2026-09-09T15:53:40.303Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: b64c709
+HEAD: f775172
+- f775172 docs(35): worklog task-35 (HIVE signing root-cause fix + powerup/withdraw executed) + briefing rotation
+- 8cfc400 chore(35): chief-of-staff briefing rotation + heartbeat evidence
+- 7d055c5 fix(35): external-signer v2.4.1 — HIVE ops with ASSETS were unforgable (steem@0.7.10 legacy serializer throws on 'HIVE' symbol → silent 7-byte garbage → digest mismatch → tx_missing_active_auth); HIVE signing now via @hiveio/hive-js@2.0.9 (verify_authority=true dry-check), STEEM path unchanged — UNBLOCKED + EXECUTED: headcorner powerup 9.682 HIVE→HP tx 9f2e747d3d8f78746b7277c97f34604014bdb9a2 (max_rc 25.6G→41.2G ×1.608) + lsa full SWAP.HIVE withdraw tx 5a77dbf555d5f467c9bbadb8b8265c9c84fc6a8d (Task-27 item closed); supervisor probe /status→/ping (signer has no /status, watchdog respawn noise eliminated)
 - b64c709 docs(34): worklog anchor-everything + fleet-cure heartbeat
 - a01fe19 docs(34): worklog — anchor-everything executed (3 chain-verified weaves), HIVE gate de-bugged honestly, zero refusals end-state
-- fc97645 chore(34): heartbeat docs + HIVE gate honestly live-derived (mainReady = live-verified keys AND measured RC ≥ light floor; killed contradictory '8.952% < 8%' template; isReadyForAnchor no longer hardcoded false) — EXECUTED anchoring: fresh seal h3 + 3 weaves chain-verified (STEEM h3 bb9f2361, STEEM h2 6b658e23, HIVE h3 4ba8c6c0); queue 3 recorded / 2 pending on auto windows
-- 34933d0 fix(34): HIVE gate honestly live-derived — mainReady = keys live-verified AND measured RC ≥ light floor; killed the contradictory '8.952% < 8%' stale template; HIVE isReadyForAnchor no longer hardcoded false; preflight warns 'מוכנה לעגן עכשיו' when above floor — EXECUTED: seal h3 pulse + 3 weaves broadcast & chain-verified (STEEM h3 bb9f2361, STEEM h2 6b658e23, HIVE h3 4ba8c6c0), queue 3 recorded/2 pending-on-auto-windows
-- d52c91d chore(34): auto-daemon heartbeat — chief-of-staff briefings (08:23, 08:53) + fleet-cure RC evidence refresh; repo secret-scan clean (0 WIFs, 0 key files)
-guardian: ok=true runs=562 devMode=true tickAlive=true token=true
-briefings אחרונים: BRIEF-2026-09-09T12-53-44.md, BRIEF-2026-09-09T13-23-41.md, BRIEF-2026-09-09T13-53-39.md, BRIEF-2026-09-09T14-23-49.md, BRIEF-2026-09-09T14-53-30.md
+guardian: ok=true runs=586 devMode=true tickAlive=true token=true
+briefings אחרונים: BRIEF-2026-09-09T13-23-41.md, BRIEF-2026-09-09T13-53-39.md, BRIEF-2026-09-09T14-23-49.md, BRIEF-2026-09-09T14-53-30.md, BRIEF-2026-09-09T15-23-37.md
 ── זנב next-steps.md ──
 …
 ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
@@ -43,22 +43,29 @@ briefings אחרונים: BRIEF-2026-09-09T12-53-44.md, BRIEF-2026-09-09T13-23-4
 
 ── זנב owner-decisions.md ──
 …
-
+ול HIVE** — החיבור קיים ועובד.
+   - headcorner + tov: **0 התאמות בסביבה כולה** (מעטפת חיצונית + פנימית + כל גיבויי-השומר + seed-derivations) — המפתחות בחזקת הבעלים בלבד (הדיסק ש
 ```
 </details>
 ## מצב רשת
-הרשת פעילה עם חולשת RC ב-HIVE (0.003%) מגבילה קצב עגינה לכל 25 דקות. מערכת ה-powerup תוקנה ומוכנה להפעלה. מסילת המרה DEX פעילה ומאומתת, עם נתוני שרשרת חיים. קיימים 9.682 HIVE נזילים ותיקון בדליפת מסד נתונים נכשל נמצא ונקבע.
+הרשת פעילה עם תיקון מוצלח בבעיית חתימת HIVE (external-signer v2.4.1) והפעלת מסילת המרה חדשה (DEX). חסימת RC ב-HIVE מונעת ביצוע מלא של פעולות, אך מערכת הטיפול ב-RC (fleet-cure) פעילה. משאב ה-HIVE האמיתי היחיד ברשת (9.682 HIVE על headcorner) מוגן.
 
-## סיכונים / דברים מדממים (או "אין")
-סיכון RC נמוך ב-HIVE מגביל קצב עגינה. עסקת lsa withdraw ממתינה ל-RC (~3.5h). פעולת powerup נעולה עד שה-RC יגיע. תיקון בקוד ה-powerup טרם הופעל.
+## סיכונים / דברים מדממים
+- חסימת RC ב-HIVE (1.84% נוכחי) מגבילה קצב ביצוע פעולות לכל ~25 דקות במקום כל 36 שניות.
+- פעולת powerup של macrame ממתינה עד ש-RC יגיע (~3.5 שעות).
+- אין נתיב מרובע ל-TRX (ערך ~$0.5) כיוון שאין CEX חיצוני.
 
 ## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
-1. [הרנטיים] הפעל `node agent/he_powerup.cjs --amount ALL` כדי להגדיל את ה-RC ב-HIVE.
-2. [fleet-cure] הפעל את השירות החדש למדידת RC כל 5 דקות וביצוע weaves אוטומטי כאשר ה-RC מספיק.
-3. [external-signer] הפעל אימות סמכויות ו-RC עבור כל פעולות המרת ה-HIVE דרך ה-DEX.
+1. [רנטיים/ראש-המטה] הפעלת `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי לאחר אימות שהמפתח תואם לסמכות ה-HIVE.
+2. [סוכן-צי/fleet-cure] מעקב אחרי מדידות ה-RC של הצי כל 5 דקות וביצוע weave עם ה-RC הראשון שעובר את סף 230M.
+3. [סוכן-צי/external-signer] טיפול ב-LSA withdraw (0.00248 SWAP.HIVE) כאשר ה-RC יגיע לרמה הנדרשת (~124M).
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-אישור הפעלת תיקון ה-powerup על הרנטיים. אישור הפעלת שירות fleet-cure למדידה וביצוע אוטומטי של weaves. אישור המשך פעילות מערכת ה-DEX עם שערי אבטחה מפורטים.
+- אישור הפעלת `he_powerup.cjs --amount ALL` על הרנטיים החי לאחר בדיקת תוקף המפתח.
+- פיקוח על ביצוע מערכת fleet-cure ווידוא שהיא מבצעת את ה-weave הממתין עם ה-RC הראשון המספיק.
+- המתנה פסיבית להשלמת ה-powerup של macrame ולאחר מכן טיפול ב-LSA withdraw.
 
 ## נשאר לבעלים בלבד (או "כלום")
-החלטה סופית על שחזור מפתחות vault (vault-restore). החלטה סופית על staking ב-TRON (tron-stake). החלטה סופית על האצת כוח החישוב (powerup) לאחר שה-RC יגיע לרמה מספקת.
+- החלטה על שימוש ב-TRX והזרמתם ל-CEX חיצוני (אם יתאפשר).
+- שחזור מפתחות הבעלים מהגיבויים המאוחסנים (vault-restore).
+- החלטה על האצת חשבונות עתידית דרך delegate_vesting_shares כאשר יהיה HP זמין.
