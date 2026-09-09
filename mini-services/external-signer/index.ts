@@ -375,6 +375,7 @@ async function saosRot1Match(seedHex, account) {
 }
 
 function createHmacSha256(key, msg) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- CJS-only legacy lib (steem-js parity)
   const { createHmac } = require("crypto");
   return createHmac("sha256", key).update(msg).digest();
 }
