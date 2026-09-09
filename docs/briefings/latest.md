@@ -1,18 +1,18 @@
-# בריף ראש-המטה — 2026-09-09T05:23:37.434Z
+# בריף ראש-המטה — 2026-09-09T05:53:32.873Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: 09eca4b
+HEAD: 1fb1d7b
+- 1fb1d7b 684e9537-aab7-49af-9bc5-56ef7a75b885
 - 09eca4b d07b6b92-bffe-4044-b062-b154b7c101da
 - b10d17d 05c9bd37-02d3-49ae-9f1f-98c615d53095
 - dbfb9f4 worklog(29-b): credential forensics (valid key, no match — different account/pre-rotation), shred, multi-agent infra pushed
 - 62edaab feat(29-b): master-password ingest (P… → active+posting+memo × both networks, owner key never derived) + relaxed proxy entries + docs/keys-access.md multi-agent contract
-- 45cba2e f4434059-c8ed-4b45-ba52-1dda41493b93
-guardian: ok=true runs=94 devMode=true tickAlive=true token=true
-briefings אחרונים: BRIEF-2026-09-09T02-53-38.md, BRIEF-2026-09-09T03-23-29.md, BRIEF-2026-09-09T03-53-30.md, BRIEF-2026-09-09T04-23-27.md, BRIEF-2026-09-09T04-53-32.md
+guardian: ok=true runs=118 devMode=true tickAlive=true token=true
+briefings אחרונים: BRIEF-2026-09-09T03-23-29.md, BRIEF-2026-09-09T03-53-30.md, BRIEF-2026-09-09T04-23-27.md, BRIEF-2026-09-09T04-53-32.md, BRIEF-2026-09-09T05-23-37.md
 ── זנב next-steps.md ──
 …
 ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
@@ -48,22 +48,28 @@ briefings אחרונים: BRIEF-2026-09-09T02-53-38.md, BRIEF-2026-09-09T03-23-2
    - STEEM: 0/11 התאמות (כולל הראשי) — עיגון STEEM מוחזק אצל הבעלים.
 2. **עלות-op מדודה בשרשרת**: weave על HIVE = **225,041,204 RC** (דחייה-חיה של cashmachine: "has 166,881,563 RC, needs 225,041,204").
 3. **מינימום-האצלה בשרשרת**: **1,611.18 VESTS** — גדול מכל יתרה-עצמית של חייל (מקס 268) ⇒ ריפוי-בהאצלה בלתי-אפשרי (מדידה, לא הנחה).
-4. **ניסיון power-up אמיתי דרך ה-DEX** (POST /api/dex/convert action=powerup 9.682 HIVE) → נעצר נכון בשער-הסמכות (403 authority-mismatch
+4. **ניסיון power-up אמיתי דרך ה-DEX** (POST /api/dex/convert action=powerup 9.682 HIVE) → נעצר נכון בשער-הסמכות (403 authority-mismatc
 ```
 </details>
 ## מצב רשת
-הרשת פעילה עם חסימת RC חמורה ב-HIVE (0.003% בלבד) המאפשרת פעולה אחת כל ~25 דקות. מסילת המרה HIVE-DEX-SWAP.HIVE פעילה ומוכחת, עם 9.682 HIVE נזילים על headcorner. פתרון deadlock ב-powerup טמון בהסרת חסימת RC מוקדמת.
+רשת SAOS פעילה עם חולשת RC חמורה ב-HIVE (0.003%, פעולה אחת כל 25 דקות) למרות שפע ב-STEEM. מסילת המרה מבוסס-DEX וחותם חיצוני פעילה ומוכחת, עם 9.682 HIVE נזילים כמשאב היחיד בעל-ערך. מערכת הבטיחות עובדת (אימות סמכויות חוסם פעולות לא מורשות).
 
 ## סיכונים / דברים מדממים
-הסיכון העיקרי הוא חוסר היכולת לבצע power-up ב-HIVE בקצב מספיק לפי דרישות המערכת (RC נמוך מדי). המערכת נמצאת במצב שבו היא יכולה לבצע פעולה אחת בלבד כל 25 דקות, מה שמגביל את יכולת השימוש במשאבים ואת קצב המרת הטוקנים.
+- **חולשת RC חמורה ב-HIVE**: מגבילה ביצועים לפעולה אחת כל 25 דקות, מה שמעכב נסיגות ופעולות קריטיות.
+- **אצילה מינימלית גבוהה**: 1,611.18 VESTS — מונעת ריפוי-בהאצלה אוטומטי.
+- **תלות ברנטיים**: פעולות קריטיות דורשות גישה לרנטיים החי (מפתחות STEEM/HIVE נמצאים אצלו).
 
-## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימות
-1. [רנטיים] הפעלת `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי לאחר אימות שהמעטפת מאפשרת פעולות על חשבון ה-HIVE.
-2. [רנטיים] הפעלת `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי לאחר אימות שהמעטפת מאפשרת פעולות על חשבון ה-HIVE.
-3. [רנטיים] הפעלת `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי לאחר אימות שהמעטפת מאפשרת פעולות על חשבון ה-HIVE.
+## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
+1. [רנטיים] הפעלת `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי → אימות: עלייה ב-RC של הסוכנים בסביבה + עדכון ה-.env עם הערכים החדשים.
+2. [fleet-cure] הפעלת שירות ה-monitoring על ה-foundry → אימות: קיום קובץ `docs/evidence/fleet-cure-status.json` עם מדידות RC ראשונות.
+3. [external-signer] פריסת גרסה v2.1 עם הוספת `delegate_vesting_shares` לרשימת ההיתרים → אימות: תגובת 200 מה-endpoint עם הפונקציה החדשה ברשימה.
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-המערכת מוכנה לפעולה. אני מאשר להפעיל את ה-powerup על הרנטיים החי עם `--amount ALL` כדי לפתור את חסימת ה-RC ולאפשר פעולות סדירות יותר ברשת HIVE. כל השערים והאימותים מוכנים ופועלים כראוי.
+- אישור הפעלת `fleet-cure` כפתרון אוטומטי לניהול RC עתידי.
+- ניהול מחדש של סדר העדיפויות: מיקוד בשיפור קצב ה-RC ב-HIVE לפני פיתוח נוסף.
+- הפעלת מעקב אחרי ה-ETA של macrame לסיום נסיגת ה-0.00248 SWAP.HIVE.
 
 ## נשאר לבעלים בלבד (או "כלום")
-המפתחות של headcorner ו-tov נמצאים בחזקת הבעלים בלבד, ללא התאמות בסביבה. כל ההחלטות על שחזור וולט (vault-restore) וסטייקינג ב-TRON (tron-stake) נותרו פתוחות להחלטת הבעלים בלבד.
+- שימוש במפתחות הבעלים המוחזקים אצל הרנטיים לפעולות על STEEM/BLURT.
+- החלטה על מימון והעברת TRX דרך ה-foundry אם נוצר צורך ב-transit.
+- שחזור מפתחות הבעלים מהגיבויים (vault-restore) לפי החלטה עתידית.
