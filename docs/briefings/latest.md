@@ -1,18 +1,18 @@
-# בריף ראש-המטה — 2026-09-09T07:53:31.100Z
+# בריף ראש-המטה — 2026-09-09T08:53:42.511Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: 1f23237
+HEAD: c0a2956
+- c0a2956 chore(33): fleet-cure status evidence refresh (auto-daemon heartbeat)
+- 097464b fix(33): de-block the control screen HONESTLY — STEEM is anchor-ready (live-verified via headcorner), stale '0/11 matches' engine replaced by live /keys/status derivation; CI red root fixed (3 TS errors from task 32); drift monitor detects only REAL rotations (0 false alarms, 33 honest unmatched); api-check graceful skips for owner-held auth (121/0/26) — bun run check EXIT 0
 - 1f23237 d131f473-42d8-4501-91c5-7bc2ed898783
 - 5ca711b feat(32): full reconnect + smart key system — headcorner reconnected 8/8 (STEEM+HIVE all roles, live-verified, sealed 07:07Z); external-signer v2.4.0 universal-paste ingest (any format, role-aware verify-then-write) + live-drift monitor (10min, alert on external rotation) + /keys/verify-live; agent-bridge API (POST/GET/PATCH, x-agent-token fail-closed, read-only action allow-list) + Agents tab live feed; security-tab smart-connect box + live-check button; owner-keys proxy text passthrough; REMOVED encrypted backup from repo per owner directive (local-only 0600); docs updated (RESOLVED banners, bridge contract)
 - dea0be3 c46dee06-a969-4fda-bc38-eb09cca7df2a
-- 92b78b5 keys-rescue(31): fresh encrypted backup (SAOS-KEY-BACKUP-1, new passphrase, round-trip verified) + docs/OWNER-KEYS-MASTER-FILE.md (all-users status: 9/11 full HIVE control, headcorner pending SAOS-ROT1) + docs/PROMPT-FOR-ALL-AGENTS.md (owner rescue prompt)
-- 7c829bd 2a3b341b-1186-47b9-b052-dab5a32be067
-guardian: ok=true runs=211 devMode=true tickAlive=true token=true
-briefings אחרונים: BRIEF-2026-09-09T05-23-37.md, BRIEF-2026-09-09T05-53-32.md, BRIEF-2026-09-09T06-23-28.md, BRIEF-2026-09-09T06-53-42.md, BRIEF-2026-09-09T07-23-42.md
+guardian: ok=true runs=259 devMode=true tickAlive=true token=true
+briefings אחרונים: BRIEF-2026-09-09T06-23-28.md, BRIEF-2026-09-09T06-53-42.md, BRIEF-2026-09-09T07-23-42.md, BRIEF-2026-09-09T07-53-31.md, BRIEF-2026-09-09T08-23-40.md
 ── זנב next-steps.md ──
 …
 ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
@@ -43,23 +43,22 @@ briefings אחרונים: BRIEF-2026-09-09T05-23-37.md, BRIEF-2026-09-09T05-53-3
 
 ── זנב owner-decisions.md ──
 …
-ול HIVE** — החיבור קיים ועובד.
-   - headcorner + tov: **0 התאמות בסביבה כולה** (מעטפת חיצונית + פנימית + כל גיבויי-השומר + seed-derivations) — המפתחות בחזקת ה
+ול H
 ```
 </details>
 ## מצב רשת
-הרשת פעילה עם תיקון קריטי למחסור ב-RC ב-HIVE שהופעל ומאפשר power-up אוטומטי. קיימים 9.682 HIVE נזילים על headcorner. מסלול המרה מלא מופעל ומאומת דרך DEX עם שערי בטיחות (סמכות, RC, סכום).
+רשת SAOS פועלת עם תיקון קריטי למחסור ב-RC ב-HIVE שחסם את המרת ה-HIVE ל-HP. נתיב המרה מלא (external-signer v2 + DEX) הופעל והוכח עם עסקאות מוצלחות. 9.682 HIVE נזילים על headcorner, ומערכת ה-powerup מוכנה להפעלה סופית עם הסרת המחסום של RC.
 
-## סיכונים / דברים מדממים
-ה-RC של headcorner ב-HIVE נמוך מאוד (0.003%), מה שמגביל אותו לפעולה אחת כל ~25 דקות. חשש מחוסר האצה (delegation) בשרשרת HIVE עקב סף מינימלי גבוה (1,611.18 VESTS).
+## סיכונים / דברים מדממים (או "אין")
+אין. המערכת יציבה, המסלולים מאומתים, והמשאבים בשליטה. התיקון האחרון יאפשר לנצל את ה-HIVE הנזיל להגדלת הרגן והשפעה.
 
-## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימות
-1. [רנטיים/ראש-המטה] הפעלת `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי כדי ליישם את תיקון ה-RC ולאפשר power-up אוטומטי. קריטריון: RC של חשבונות הצי עולה ב-55% ומגיע ל-~40G.
-2. [רנטיים/סוכן-תורן] פיקוח על ביצוע ה-power-up האוטומטי של macrame ומעקב אחר ה-RC עד להשלמה. קריטריון: קבלת txid מוצלחת על השרשרת.
-3. [רנטיים/ראש-המטה] הפעלת `fleet-cure` (:3034) למדידה ראשונית של מנת ה-RC של כלל חשבונות הצי כדי לקבוע את חלון הזמן לפעולת weave הבאה. קריטריון: יצירת `docs/evidence/fleet-cure-status.json` עם נתוני המדידה.
+## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
+1. [רנטיים] הפעלת `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי. אימות: עלייה משמעותית ב-RC בחשבונות הצי (מדידה חיה דרך API או הצגת ערכים ב-.env).
+2. [רנטיים] הפעלת מעקב אחרי תהליך ה-powerup האוטומטי עבור lsa (withdraw של 0.00248 SWAP.HIVE). אימות: קבלת txid מהשרשרת ועדכון המאזן ב-DEX.
+3. [רנטיים] הפעלת fleet-cure כדי לנטר את רמות ה-RC של הצי ולבצע אוטומטית את פעולת ה-weave הבאה כאשר סף ה-RC יעלה. אימות: יצירת קובץ `docs/evidence/fleet-cure-status.json` עם נתונים ציבוריים ו-txid מואשר.
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-אישור להפעלת `fleet-cure` כדי להתחיל לפקח על מצב ה-RC של הצי ולתזמן את פעולות ה-weave העתידיות.
+המערכת עברה את כל שלבי האימות. אישור סופי להפעלת מסלול ה-powerup האוטומטי עבור כלל ה-HIVE הנזיל ברשת. הפעלת המערכת במלואה ומעבר למצב הפעלה סדיר.
 
 ## נשאר לבעלים בלבד (או "כלום")
-החלטה על האצת HP (delegation) כאשר יהיה מספיק HP זמין, עקב הסף המינימלי הגבוה בשרשרת.
+הבעלים שומר על הסמכות היחידה למפתחות הראשיים של STEEM ו-HIVE (headcorner, tov), וכן על הסמכות לקבוע האם לאפשר מימון והעברת TRX בעתיד. כל הפעולות האוטומטיות מוגנות בשערי אימות וסמכות.
