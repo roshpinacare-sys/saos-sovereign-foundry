@@ -69,7 +69,9 @@ const STEEM_RPC = process.env.STEEM_RPC ?? "https://api.steemit.com";
 // serializer garbage-bug class applies to the BLURT symbol too).
 const BLURT_CHAIN_ID = "cd8d90f29ae273abec3eaa7731e25934c63eb654d55080caff2ebb7f5df6381f";
 const BLURT_RPC = process.env.BLURT_RPC ?? "https://rpc.beblurt.com";
-const BLURT_NODES = [BLURT_RPC, "https://rpc.blurt.world", "https://blurt-rpc.saboin.com"].filter((v, i, a) => a.indexOf(v) === i);
+// Task 39: order rotated live-first (2026-09-09 probes: beblurt + saboin alive,
+// rpc.blurt.world / btsd.io / coruscant.io dead — kept as last-resort fallbacks)
+const BLURT_NODES = [BLURT_RPC, "https://blurt-rpc.saboin.com", "https://rpc.blurt.world"].filter((v, i, a) => a.indexOf(v) === i);
 const NET_PREFIX = { STEEM: "STM", HIVE: "STM", BLURT: "BLT" };
 const MAX_OP_HIVE = Number(process.env.SIGNER_MAX_OP_HIVE ?? 50);
 const AUTH_CACHE_TTL_MS = 10 * 60_000;

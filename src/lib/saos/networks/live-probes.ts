@@ -45,10 +45,14 @@ export interface LiveProbeResult {
   reason: string;
 }
 
-/** well-known KEYLESS public read endpoints — verified from this environment 2026-09-08 */
+/** well-known KEYLESS public read endpoints — re-verified live 2026-09-09 (Task 39):
+ *  BLURT: beblurt + saboin alive (fresh head blocks); world/btsd/coruscant DEAD
+ *  (kept as trailing fallbacks — reached only if both live endpoints fail) */
 const GRAPHENE_ENDPOINTS: Record<"STEEM" | "BLURT" | "HIVE", string[]> = {
   STEEM: ["https://api.steemit.com"],
   BLURT: [
+    "https://rpc.beblurt.com",
+    "https://blurt-rpc.saboin.com",
     "https://rpc.blurt.world",
     "https://rpc.blurt.btsd.io",
     "https://blurt-rpc.coruscant.io"

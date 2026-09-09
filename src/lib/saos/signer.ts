@@ -354,8 +354,29 @@ export async function verifyTxidPublic(network: SignRequest["network"], txid: st
       return verifyCondenser("https://api.steemit.com", "STEEM", txid);
     case "HIVE":
       return verifyCondenser("https://api.hive.blog", "HIVE", txid);
-    case "BLURT":
-      return verifyCondenser("https://rpc.blurt.world", "BLURT", txid);
+    case "BLURT": {
+      // Task 39: BLURT RPC rotation — beblurt + saboin verified LIVE 2026-09-09;
+      // rpc.blurt.world is dead (kept last in case it revives). Transport failure
+      // ("לא נגיש/פסק-זמן") advances to the next candidate; a definitive answer
+      // (verified OR endpoint-answered-but-unknown-txid) returns immediately.
+      const blurtCandidates = [
+        "https://rpc.beblurt.com",
+        "https://blurt-rpc.saboin.com",
+        "https://rpc.blurt.world"
+      ];
+      let last: TxidVerification = {
+        verified: false,
+        source: null,
+        reason: "אימות BLURT: אף נקודת-קצה ציבורית לא נבדקה"
+      };
+      for (const url of blurtCandidates) {
+        last = await verifyCondenser(url, "BLURT", txid);
+        if (last.verified) return last;
+        if (last.reason.includes("לא נגיש") || last.reason.includes("פסק-זמן")) continue;
+        return last; // הנקודה ענתה והחזירה תשובה סופית (txid לא מוכר)
+      }
+      return last;
+    }
     case "TRON":
       return verifyTron(txid);
     case "ETHEREUM":
