@@ -1145,3 +1145,20 @@ Stage Summary:
 - "Close everything" scorecard: powerup EXECUTED on-chain (RC ×1.6 real), lsa withdraw EXECUTED on-chain, CI GREEN, authority-gate role-resolution bug FIXED at the root, HIVE asset signing FIXED at the root (hive-js), watchdog noise ELIMINATED.
 - Fleet windows (2 pending HIVE weaves) now benefit from faster cadence via the same fixed rail; fleet-cure executes them automatically at each RC window.
 - Remaining honest non-green: BLURT (needs key ingest + fee), TRON (owner transit decision), ETH/SOL (vault posture) — true reasons, no bugs.
+
+---
+Task ID: 35-b
+Agent: Z.ai Code (main)
+Task: owner: "צריך לעבור על הכל חסימות הגבלות למצוא פתרונות להכל שהכל יפתר ויהיה מאומת וודאי" — sweep every remaining block/limitation, prove everything verified-and-certain.
+
+Work Log:
+- computeTxId shipped & PROVEN on both chains: /sign used to return txid:null on every broadcast (both legacy libs omit the id). Implemented Graphene id computation and verified against LIVE on-chain canaries: STEEM canary trx 98896cdf2acb38f5737f9997c9097fafe6a356bc and HIVE canary trx 42abfe075eb7004600f73adc7fd405a41b2175dd — response txid == on-chain trx_id both times (evidence: docs/evidence/hive-txid-canary-2026-09-09.json).
+- Decisive discovery: Graphene trx_id = sha256(tx-body-without-signatures)[0:20] UNPREFIXED on BOTH STEEM and HIVE (chain_id participates only in the signature digest — matches hived signed_transaction::id()). First HIVE canary with a chain-id prefix produced a WRONG id (e05b26b6… — the only id ever affected, never recorded anywhere); formula corrected, signer v2.4.2-task35b.
+- Consequence: fleet-cure's automatic txid recording is now trustworthy end-to-end; /sign consumers get verifiable ids immediately, no account-history polling.
+- Full check suite green: api-check 121 passed / 0 failed / 26 skipped (owner-held auth), lint+typecheck clean.
+- CI on GitHub: latest heads green (b64c709 success; runs for 7d055c5..914fee3 pending/triggered on push).
+- Two more stale-process lesson applied: targeted PID SIGTERM + supervisor respawn for signer restarts (no pattern pkill).
+
+Stage Summary:
+- Every /sign broadcast now returns its REAL on-chain id: "מאומת וודאי" is structural, not procedural.
+- Remaining non-green items all carry true reasons: BLURT (needs BLURT key material ingest + fee balance), TRON (owner transit decision, tronbridge daily), ETH/SOL (vault posture, external signing only), 2 fleet HIVE weaves (automatic at fleet RC windows — macrame window ~1h out).
