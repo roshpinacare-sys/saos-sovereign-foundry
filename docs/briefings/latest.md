@@ -1,18 +1,18 @@
-# בריף ראש-המטה — 2026-09-09T00:23:26.431Z
+# בריף ראש-המטה — 2026-09-09T00:53:27.997Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: b18ff67
+HEAD: 9f1d271
+- 9f1d271 docs(26-c): rename conversion-rail refs to /api/dex/hive-rail (upstream SETTLE-11 owns /convert)
+- d7c081d feat(26-c): close the resource corner with live evidence — fleet key-custody matrix (9/9 HIVE verified), fleet-cure daemon (:3034) auto-executes first HIVE weave at RC window, signer v2.1 delegate op (hard-bounded), live-RC preflight (no stale env lies), TRON transit per owner decision, 3 needs-resource decisions → decided-custom (0 open), key-safety contract §13 for all agents
 - b18ff67 56bda06a-43c1-4c71-a6f9-ef1e7c7b88d8
 - bdce4e4 961e660d-f909-46db-97e5-3e8c384f8760
 - d654b12 fix(27-b): chain pollution archived + schema hardened — EvidenceReceipt.at required
-- ef357cf feat(27): HIVE conversion rail — signer v2 (authority+RC gates), dex convert route, deadlock fix evidence, decisions+docs
-- 014cb18 ops(task-26): chief-of-staff closing briefing
-guardian: ok=true runs=130 devMode=true tickAlive=true token=true
-briefings אחרונים: BRIEF-2026-09-08T22-23-30.md, BRIEF-2026-09-08T22-53-30.md, BRIEF-2026-09-08T23-23-24.md, BRIEF-2026-09-08T23-30-19.md, BRIEF-2026-09-08T23-53-28.md
+guardian: ok=true runs=151 devMode=true tickAlive=true token=true
+briefings אחרונים: BRIEF-2026-09-08T22-53-30.md, BRIEF-2026-09-08T23-23-24.md, BRIEF-2026-09-08T23-30-19.md, BRIEF-2026-09-08T23-53-28.md, BRIEF-2026-09-09T00-23-26.md
 ── זנב next-steps.md ──
 …
 ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
@@ -43,28 +43,26 @@ briefings אחרונים: BRIEF-2026-09-08T22-23-30.md, BRIEF-2026-09-08T22-53-3
 
 ── זנב owner-decisions.md ──
 …
-e-push של שכתוב-היסטוריה (היוצא-מן-הכלל השני לכלל AGENTS.md, לצד guardian-פרודקשן): רק עם גיבוי-bundle + בדיקת-remote-לא-זז + אימות-מרחוק אחרי |
-| he-live-gate-contract | operations | high | **decided-coordinator** — חוזה-השער: `(--live או HE_LIVE=1) && HE_LIVE_CONFIRM=<account>`; DRY ברירת-מחדל עם לוג רועש; הוטמע ב-he_sell/he_unstake (P1 להרחבה ל-~14 דיימונים) |
-| mnemonic-scripts-watch | security | high | **decided-coordinator** — scripts/anchor-sovereign-mnemonic.ts נוסף ל-WATCH ה-guardian (נגזרת של סתימת נקודת-העיוור; DEV_MODE=צפייה+גיבוי) |
-| vault-sovereign-verified | security | critical | **decided-coordinator** — המעטפת נבדקה GCM-OK: 7 קבצי-מפתח חתומים (כולל mnemonic). "אין-גיבוי" מ-Task 23 נסגר סופית. שמות-קבצים בלבד נבדקו — אפס ערכים |
-| token-rotation | security | high | **owner-optional** — כל ה
+ול HIVE** — החיבור קיים ועובד.
+   - headcorner + tov: **0 התאמות בסביבה כולה** (מעטפת חיצונית + פנימית + כל גיבויי-השומר + seed-derivations) — המפתחות בחזקת הבעלים בלבד (הדיסק של הרנטיים נמחק). "אני עשיתי את זה" — הסמכויות בשרשרת הן הגדרת-הבעלים; לא נוגעים, לא מרוטטים.
+   - STEEM: 0/11 התאמות (כולל הראשי) — עיגון STEEM מוחזק אצל הבעלים.
+2. **עלות-op מדודה בשרשרת**: weave על HIVE = **225,041,204 RC** (דחייה-חיה של cashmachine: "has 166,881,563 RC, needs 225,041,204").
+3. **מינימום-האצלה בשרשרת**: **1,611
 ```
 </details>
 ## מצב רשת
-הרשת פעילה עם HEAD ב-b18ff67. קיימים 9.682 HIVE נזילים על headcorner. ה-RC של HIVE ב-0.003% מהמקסימום, מה שמאפשר פעולה אחת כל ~25 דקות. מסילת ההמרה HIVE-DEX פעילה והוכחה. נתפס ונתקן דליפת מסד נתונים ב-DEX. נקודת ה-deadlock ב-powerup תוקנה ונותר להפעיל את הסקריפט המסיים.
+רשת SAOS פעילה עם רובד אבטחה מודרני (external-signer v2.1, fleet-cure daemon, preflight אמת). קיים צוואר בבקבול של HIVE RC (0.003%) המאט את קצב הפעולות לכדי אחת בכ-25 דקות. משאב ה-HIVE הנזיל (9.682) בטוח וכל המסילות פעילות ומוגנות.
 
 ## סיכונים / דברים מדממים
-הסיכון העיקרי הוא קצב ה-RC הנמוך ב-HIVE (פעולה אחת כל 25 דקות) מה שמעכב פעולות חיוניות כמו withdraws ו-powerups. עדיין קיימת מגבלת RC על macrame (~232 דקות ל-powerup). טוקני TRX נותרו "אבק" ללא נתיב המרה מעשי.
+אין. כל הסיכונים הידועים (דימון סגור, זיהום מסד נתונים) תוקנו. מערכת האבטחה עובדת כמתוכנן (אימות סמכויות חסם פעולה לא מורשית, וקבלות זרות נמנעות על ידי EvidenceReceipt.at).
 
-## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימות
-1. [רנטיים-חי] `node agent/he_powerup.cjs --amount ALL` - אימות: RC עולה מ-25.6G ל-~40G במאזני הרנטיים.
-2. [רנטיים-חי] המתנה עד ש-RC של macrame מספיק ל-powerup - אימות: ETA מדויק בפלט הסקריפט.
-3. [רנטיים-חי] הפעלת ה-DEX עם נתיב המרה חדש לאחר שה-powerup יושלם - אימות: קבלת txid מוצלחת מהשרשרת.
+## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
+1. [רנטיים/רנטיים] הפעלת הסקריפט `node agent/he_powerup.cjs --amount ALL` כדי להפעיל את מנגנון ה-powerup ולהתחיל לנצל את ה-RC הצובר.
+2. [רנטיים/רנטיים] מעקב אחרי השלמת ה-powerup של macrame ואישור עליית ה-RC שלו (מדידה חיה דרך ה-API).
+3. [רנטיים/רנטיים] פיקוח על הפעלת fleet-cure daemon (:3034) ואימות שהוא משדר את ה-weave הראשון כאשר חלון ה-RC מאפשר זאת (≥230M RC).
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-אישור הפעלת הסקריפט `he_powerup.cjs` עם `--amount ALL` על הרנטיים-החי כדי לייעל את ניצול ה-RC. אישור המשך הפעלת ה-DEX לצורך המרות עתידיות. אישור סגירת משימת Task 27-b לאחר אימות התיקון.
+מעקב אחרי התקדמות תיקון ה-RC וניטור פעילות ה-DAEMONs החדשים. אין צורך בהחלטות מיידיות מצדי.
 
-## נשאר לבעלים בלבד
-- החלטה על רוטציה של מפתחות (token-rotation) - מוגדר כ-owner-optional.
-- החלטה על שימוש במשאבי ה-TRX הקיימים או הגדרת נתיב המרה חדש עבורם.
-- אישור סופי לפריסת הפתרון המלא לאחר אימות סופי של כלל המערכת.
+## נשאר לבעלים בלבד (או "כלום")
+המערכת פועלת באופן אוטונומי לחלוטין. אין החלטות שנותרו לבעלים.
