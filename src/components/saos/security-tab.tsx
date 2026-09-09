@@ -89,9 +89,14 @@ function AuthCard({
     setBusy(true);
     try {
       const res = await fetch(EP.auth, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key }) });
-      const body = (await res.json()) as { ok: boolean; error?: string };
+      const body = (await res.json()) as { ok: boolean; error?: string; actor?: string; via?: string };
       if (body.ok) {
-        toast.success("התחברות הצליחה — פעולות רגישות מאושרות ל-12 שעות");
+        toast.success(
+          body.via
+            ? `התחברות הצליחה עם מפתח הבעלים (${body.via}) — פעולות רגישות מאושרות`
+            : "התחברות הצליחה — פעולות רגישות מאושרות",
+          { duration: 6000 }
+        );
         setKey("");
         onChanged();
       } else {
@@ -131,7 +136,14 @@ function AuthCard({
       ) : state.authenticated ? (
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm font-semibold text-emerald-400">
-            <CheckCircle2 className="size-4" aria-hidden /> מחובר כ-actor: <Mono>{state.actor}</Mono>
+            <CheckCircle2 className="size-4" aria-hidden />{" "}
+            {state.actor.startsWith("owner:") ? (
+              <>מחובר כבעלים: <Mono>{state.actor.slice("owner:".length)}</Mono></>
+            ) : state.actor === "dev-managed-session" ? (
+              <>מחובר — סשן מנוהל ומאובטח (TTL לפי השרת)</>
+            ) : (
+              <>מחובר — סשן פעיל ומאובטח</>
+            )}
           </div>
           <p className="text-[11px] leading-relaxed text-zinc-500">
             session cookie חתום HMAC (HttpOnly, SameSite=Strict, TTL ארוך-טווח לפי הגדרת השרת SAOS_SESSION_TTL_H). השרת מחזיק hash בלבד — מפתח הגלם לעולם לא נשמר במערכת.
@@ -151,10 +163,11 @@ function AuthCard({
         >
           <p className="text-[11px] leading-relaxed text-zinc-400">
             פעולות רגישות (יצירת בקשות חתימה, רישום תוצאות, עדכון החלטות, יומן ביקורת) דורשות התחברות.
-            המפתח נשלח פעם אחת לאימות sha256 — אינו נשמר בדפדפן או בשרת.
+            אפשר להתחבר <strong className="font-semibold text-zinc-200">עם מפתח הבעלים הראשי</strong> (owner/active — STEEM/HIVE/BLURT) או עם מפתח-אופרטור.
+            המפתח נשלח פעם אחת לאימות (hash בלבד, בתוך החותם-החיצוני) — לעולם לא נשמר בדפדפן או בשרת.
           </p>
           <label className="block">
-            <span className="text-xs font-semibold text-zinc-300">מפתח אופרטור</span>
+            <span className="text-xs font-semibold text-zinc-300">מפתח אופרטור / מפתח הבעלים</span>
             <input
               type="password"
               dir="ltr"
@@ -162,7 +175,7 @@ function AuthCard({
               onChange={(e) => setKey(e.target.value)}
               autoComplete="current-password"
               className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 font-mono text-sm text-zinc-100 focus-visible:outline-2 focus-visible:outline-amber-400"
-              placeholder="admin key"
+              placeholder="מפתח ראשי (STEEM/HIVE/BLURT) או admin key"
               required
             />
           </label>

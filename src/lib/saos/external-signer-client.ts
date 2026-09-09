@@ -219,6 +219,51 @@ export function externalSignerKeyMatchesCached(): SignerKeyMatches {
   return keysCache?.value ?? emptyKeys();
 }
 
+// ── Task 38: owner-key operator login verification ───────────────────────────
+// The owner logs into the foundry with THEIR OWN master key (owner/active of
+// STEEM/HIVE/BLURT). Verification is delegated to the signer process, where
+// the vault keys live in memory: sha256(presented) vs sha256(vault keys),
+// timing-safe, plaintext never leaves the signer, never logged. Fail-closed:
+// any transport/config error ⇒ match=false.
+export interface OwnerLoginVerify {
+  configured: boolean;
+  match: boolean;
+  network?: string;
+  role?: string;
+  account?: string;
+  error?: string;
+}
+
+export async function verifyOwnerLoginKey(key: string): Promise<OwnerLoginVerify> {
+  if (!externalSignerConfigured()) {
+    return { configured: false, match: false, error: "external-signer-not-configured" };
+  }
+  const base = (process.env[URL_ENV] ?? "").replace(/\/$/, "");
+  const token = (process.env[TOKEN_ENV] ?? "").trim();
+  try {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 4_000);
+    const res = await fetch(`${base}/auth/verify-owner`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({ key }),
+      signal: ctl.signal
+    });
+    clearTimeout(t);
+    const json = (await res.json()) as { ok?: boolean; match?: boolean; network?: string; role?: string; account?: string; error?: string };
+    return {
+      configured: true,
+      match: Boolean(json.ok && json.match),
+      network: json.network,
+      role: json.role,
+      account: json.account,
+      error: json.error
+    };
+  } catch (e) {
+    return { configured: true, match: false, error: String((e as Error)?.message ?? e).slice(0, 120) };
+  }
+}
+
 // warm both caches on module load (fire-and-forget; sync readers see them shortly after boot)
 void refreshExternalSignerHealth().catch(() => {});
 void refreshExternalSignerKeyMatches().catch(() => {});

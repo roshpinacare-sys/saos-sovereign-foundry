@@ -854,7 +854,7 @@ const server = Bun.serve({
         capabilities: ["custom_json", "transfer_to_vesting", "transfer", "claim_rewards", "he_market_sell", "he_withdraw", "delegate_vesting_shares", "keys-ingest", "keys-backup", "rot1-seed-recovery", "universal-paste", "live-drift-monitor", "blurt-weave"],
         authorityGate: "verify-before-broadcast (fail-closed)",
         maxOpHive: MAX_OP_HIVE,
-        version: "2.5.1-task36"
+        version: "2.5.2-task38"
       });
     }
 
@@ -1004,6 +1004,51 @@ const server = Bun.serve({
       } catch (e) {
         return Response.json({ ok: false, error: String(e?.message ?? e).slice(0, 160) }, { status: 500 });
       }
+    }
+
+    // ── Task 38: owner-key operator login (owner directive: "אני עדיין לא מצליח להתחבר") ──
+    // The foundry's login form accepts the OWNER'S OWN master keys (owner/active,
+    // STEEM/HIVE/BLURT) in addition to the admin key. Verification happens HERE,
+    // inside the signer: sha256(presented) is compared timing-safe against the
+    // sha256 of every in-memory vault key. The plaintext NEVER leaves this
+    // process, is never logged, never stored — only a boolean + coarse slot
+    // label (network/role/account) is returned. Fail-closed: no STATE ⇒ no match.
+    if (url.pathname === "/auth/verify-owner" && req.method === "POST") {
+      let body;
+      try { body = await req.json(); } catch { return Response.json({ ok: false, match: false, error: "bad-json" }, { status: 400 }); }
+      const key = typeof body?.key === "string" ? body.key.trim() : "";
+      if (!key || key.length > 4096) return Response.json({ ok: false, match: false, error: "missing key" }, { status: 400 });
+      if (!STATE) return Response.json({ ok: true, match: false, reason: "seal-unavailable" });
+      const presented = createHash("sha256").update(key, "utf8").digest("hex");
+      // P-convention normalization (Blurt wallet writes "P"+WIF; STEEM/HIVE are bare):
+      // the owner may paste either variant of the SAME key — try all three forms.
+      const alt1 = key.startsWith("P") ? createHash("sha256").update(key.slice(1), "utf8").digest("hex") : null;
+      const alt2 = key.startsWith("P") ? null : createHash("sha256").update("P" + key, "utf8").digest("hex");
+      const candidates = [];
+      const pushSlot = (network, role, wif) => {
+        if (typeof wif === "string" && wif.trim().length >= 50) {
+          candidates.push({ network, role, hash: createHash("sha256").update(wif.trim(), "utf8").digest("hex") });
+        }
+      };
+      const main = STATE.main;
+      for (const net of ["STEEM", "HIVE", "BLURT"]) {
+        pushSlot(net, "owner", main.net?.[net]?.ownerWif ?? main.ownerWif);
+        pushSlot(net, "active", main.net?.[net]?.activeWif ?? main.activeWif);
+      }
+      for (const c of candidates) {
+        for (const ph of [presented, alt1, alt2]) {
+          if (!ph) continue;
+          try {
+            const a = Buffer.from(ph, "hex");
+            const b = Buffer.from(c.hash, "hex");
+            if (a.length === b.length && timingSafeEqual(a, b)) {
+              log("AUTH", `owner-key login verified: ${c.network}/${c.role} (${main.account}) — hash-only compare, plaintext never logged`);
+              return Response.json({ ok: true, match: true, network: c.network, role: c.role, account: main.account });
+            }
+          } catch {}
+        }
+      }
+      return Response.json({ ok: true, match: false });
     }
 
     if (url.pathname === "/sign" && req.method === "POST") {

@@ -8,6 +8,7 @@ import {
   requireAuth,
   verifyLoginKey
 } from "@/lib/saos/auth";
+import { verifyOwnerLoginKey } from "@/lib/saos/external-signer-client";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -55,23 +56,44 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "auth-required: חסר key" }, { status: 401 });
   }
 
-  if (!verifyLoginKey(key)) {
-    // key material is never logged — only the coarse ip fingerprint
-    await audit({ kind: "auth-login-failed", actor: "anonymous", action: "POST /auth", allowed: false, req, detail: "key mismatch" });
-    return NextResponse.json({ ok: false, error: "auth-denied: מפתח שגוי" }, { status: 401 });
+  if (verifyLoginKey(key)) {
+    const session = await issueSession();
+    await audit({ kind: "auth-login", actor: "cookie", action: "POST /auth", allowed: true, req });
+    const res = NextResponse.json({ ok: true, authenticated: true, actor: "cookie", sessionTtlSec: session.maxAgeSec });
+    res.cookies.set(SESSION_COOKIE, session.value, {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: false, // sandbox serves plain HTTP; set true behind HTTPS in real deployment (docs/deployment.md)
+      path: "/",
+      maxAge: session.maxAgeSec
+    });
+    return res;
   }
 
-  const session = await issueSession();
-  await audit({ kind: "auth-login", actor: "cookie", action: "POST /auth", allowed: true, req });
-  const res = NextResponse.json({ ok: true, authenticated: true, sessionTtlSec: session.maxAgeSec });
-  res.cookies.set(SESSION_COOKIE, session.value, {
-    httpOnly: true,
-    sameSite: "strict",
-    secure: false, // sandbox serves plain HTTP; set true behind HTTPS in real deployment (docs/deployment.md)
-    path: "/",
-    maxAge: session.maxAgeSec
-  });
-  return res;
+  // Task 38 (owner directive: "אני עדיין לא מצליח להתחבר עם הסטים הראשי"): the
+  // operator login ALSO accepts the owner's own master keys (owner/active —
+  // STEEM/HIVE/BLURT). Verification is delegated to the external signer where
+  // the vault lives; the plaintext key is compared there (timing-safe, hash-only)
+  // and never logged, never stored, never echoed. Fail-closed on any error.
+  const owner = await verifyOwnerLoginKey(key);
+  if (owner.match) {
+    const session = await issueSession();
+    const ownerActor = `owner:${owner.account ?? "main"}`;
+    await audit({ kind: "auth-login", actor: ownerActor, action: `POST /auth owner-key (${owner.network}/${owner.role})`, allowed: true, req });
+    const res = NextResponse.json({ ok: true, authenticated: true, actor: ownerActor, via: `${owner.network}/${owner.role}`, sessionTtlSec: session.maxAgeSec });
+    res.cookies.set(SESSION_COOKIE, session.value, {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: false,
+      path: "/",
+      maxAge: session.maxAgeSec
+    });
+    return res;
+  }
+
+  // key material is never logged — only the coarse ip fingerprint
+  await audit({ kind: "auth-login-failed", actor: "anonymous", action: "POST /auth", allowed: false, req, detail: "key mismatch" });
+  return NextResponse.json({ ok: false, error: "auth-denied: מפתח שגוי" }, { status: 401 });
 }
 
 export async function GET(req: Request) {
