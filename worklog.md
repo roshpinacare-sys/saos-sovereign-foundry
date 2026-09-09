@@ -990,3 +990,23 @@ Stage Summary:
 - The moment the owner's key is accepted: signer gate goes green → powerup 9.682 HIVE→HP (DEX rail, RC-gated) → BEE sell → STEEM anchors → resource corner closes. That pipeline is pre-verified and one command away per op.
 - Pending owner action (only owner-custody lever left): paste the real active key(s). Fallback: paste in chat → I ingest via the same verify-then-write path with identical hygiene.
 - Pushed: foundry (signer v2.2.0, owner-keys API, security-tab card, rate-limit rule, types).
+
+---
+Task ID: 29-b
+Agent: Z.ai Code (Z-Lo)
+Task: Owner pasted a credential via upload (הדקו.txt) + directives: make it work, build smart multi-agent key infrastructure, keep owner connected safely, shred the file after, push to repo.
+
+Work Log:
+- Safe intake: file shape-inspected WITHOUT printing content (1 line, 52 chars, 'P' prefix = Steem/Hive MASTER-PASSWORD format, not a WIF). upload/ confirmed gitignored.
+- Signer upgraded in-place (v2.2.0, hot reload): /keys/ingest now auto-detects WIF vs master-password. Password path derives active+posting+memo per candidate account × BOTH networks (steem.auth.getPrivateKeys), matches against LIVE chain authorities (owner key deliberately NEVER derived/stored), writes ALL matches via verify-then-write (STEEM_ACTIVE_WIF / HIVE_POSTING_WIF … suffixed vars + vault.json wifNET), re-seals envelope, hot-reloads STATE. chainAuthorities extended with memo_key.
+- Ingestion attempt of the owner's credential: REFUSED — no live authority match anywhere. Deep forensics (verdicts only, zero secret printing): tried raw-as-WIF, minus-P WIF (valid key material!), sha256(password), master-password derivation across ALL 11 envelope accounts × STEEM+HIVE × owner/active/posting/memo → ZERO matches. History scan (HIVE 10k+6k ops; STEEM node returned none): derived pubkey does NOT appear in headcorner/tov history → it is NOT even an old rotated key of ours. Conclusion: the string belongs to a different account / pre-rotation signup password.
+- SHREDDED per owner directive: upload file overwritten ×3 + deleted; 4 temp probe scripts destroyed; upload/ empty; nothing ever committed.
+- Multi-agent infrastructure (owner directive) built & pushed:
+  - steem repo: agent/lib/keys-access.cjs — ANY agent in ANY chat/folder: status (live-match verdicts, public data only), health, sign '<json>' (the ONLY path to keys — via signer gates). Iron rules embedded in the tool. Tested live: status output correct.
+  - foundry: docs/keys-access.md — the multi-agent contract (structure diagram, agent usage, 5 iron rules, current state).
+  - foundry: src/app/api/saos/owner-keys/route.ts relaxed to allow network-less entries (password path checks both networks).
+
+Stage Summary:
+- Infrastructure is 100% ready and pushed (steem d277097, foundry 62edaab): master-password ingest, control-screen card, proxy, agent tool, contract doc.
+- The ONE missing piece is the CORRECT owner credential: the pasted one matches no account we control. Owner must paste either the CURRENT active private key (steemitwallet → Permissions → Active → Show private key, 5J/5K…) or the CURRENT master password (only if keys were never rotated) — via the control-screen card or chat; ingestion+pipeline executes immediately after.
+- Keys hygiene held end-to-end: verdicts and public keys only, everywhere; the wrong credential itself was valid key material and was destroyed immediately.
