@@ -1345,3 +1345,19 @@ Work Log:
 Stage Summary:
 - הבעלים יכול להתחבר שוב עם הסיסמה שלו (BLURT/active מאומת-חי); STEEM/HIVE ממתינים להדבקה אוניברסלית אחת של הבעלים במסך-האבטחה.
 - כל הסודות מקומיים ולא הודפסו; המעטפת מחוץ לעץ (0700); ה-UI מציג את מצב-הסלוטים האמיתי.
+
+---
+Task ID: 42-v4
+Agent: Z.ai Code (main)
+Task: "תעשה עיצוב חדש, לא שיפור קומטי" — SOVEREIGN v4 Aurora Console
+
+Work Log:
+- מערכת-עיצוב חדשה מ-0 ב-globals.css: רקע aurora-mesh נע (conic ribbons + סריג הנדסי), שכבות-זכוכית עמוקות עם gradient-hairline (mask composite), צבעוניות זהב↔אמרלד, פוקוס אמרלד. חוזי-המחלקות (.glass/.pulse-dot/.skeleton-shimmer/.scroll-slim/.animate-rise/.text-gradient-gold) נשמרו — כל 10 הטאבים עובדים ללא שינוי.
+- טיפוגרפיה: next/font — Heebo (עברית) + Space Grotesk (display/ספרות, .font-display).
+- מסגרת חדשה ב-command-center: rail-צדדידי דביק (248px, ימין ב-RTL) עם מותג + ניווט אייקונים + שבב-מצב + שעון-חי; topbar הקשרי (כותרת-טאב + שעון + פעולות); ניווט-גלילה אופקי במובייל; פוטר דביק נשמר. תיקון מבני: Toaster+skip-link הועברו מחוץ-לגריד (sonner section פגע בהצבה-אוטומטית).
+- kit.tsx: כרטיסים overflow-hidden עם כותרת-גרדיאנט, אייקוני-כותרת אמרלד, כפתור primary עם sheen נע, Stat עם פס-צד + ספרות display + hover-lift.
+- אימות דפדפן: דסקטופ 1440 (rail ימין, גריד 248/1fr מדוד ב-DOM), מובייל 390 (ניווט גלילה), טאב-קופה עם נתונים חיים, 0 שגיאות קונסולה; lint נקי.
+
+Stage Summary:
+- v4 = מהפך ויזואלי מלא (מסגרת-צד + aurora + טיפוגרפיה חדשה) בלי לגעת בלוגיקה וב-APIs.
+- באותו סבב: תיקון lint בחותם (fallback הלוגין — גזירה אחת במקום לולאת רשתות).

@@ -1089,23 +1089,24 @@ const server = Bun.serve({
       // only ever produce honest no-match). Hash-only discipline intact:
       // plaintext never stored, logged or echoed.
       {
-        for (const net of ["STEEM", "HIVE", "BLURT"] as const) {
-          let derived: Record<string, string> | null = null;
-          try { derived = steem.auth.getPrivateKeys(main.account, key, ["active", "posting"]); } catch { continue; }
-          for (const role of ["active", "posting"] as const) {
-            const dw = derived?.[role];
-            if (typeof dw !== "string" || dw.trim().length < 50) continue;
-            const dh = createHash("sha256").update(dw.trim(), "utf8").digest("hex");
-            for (const c of candidates) {
-              try {
-                const a = Buffer.from(dh, "hex");
-                const b = Buffer.from(c.hash, "hex");
-                if (a.length === b.length && timingSafeEqual(a, b)) {
-                  log("AUTH", `owner-key login verified via master-password derivation: ${c.network}/${c.role} (${main.account}) — hash-only compare`);
-                  return Response.json({ ok: true, match: true, network: c.network, role: c.role, account: main.account, via: "master-password" });
-                }
-              } catch {}
-            }
+        // derivation is account-scoped (STEEM-family kdf) — one pass, then the
+        // derived WIF hashes are compared against EVERY loaded slot regardless
+        // of which network slot actually holds them.
+        let derived: Record<string, string> | null = null;
+        try { derived = steem.auth.getPrivateKeys(main.account, key, ["active", "posting"]); } catch { derived = null; }
+        for (const role of ["active", "posting"] as const) {
+          const dw = derived?.[role];
+          if (typeof dw !== "string" || dw.trim().length < 50) continue;
+          const dh = createHash("sha256").update(dw.trim(), "utf8").digest("hex");
+          for (const c of candidates) {
+            try {
+              const a = Buffer.from(dh, "hex");
+              const b = Buffer.from(c.hash, "hex");
+              if (a.length === b.length && timingSafeEqual(a, b)) {
+                log("AUTH", `owner-key login verified via master-password derivation: ${c.network}/${c.role} (${main.account}) — hash-only compare`);
+                return Response.json({ ok: true, match: true, network: c.network, role: c.role, account: main.account, via: "master-password" });
+              }
+            } catch {}
           }
         }
       }

@@ -1,13 +1,22 @@
 @import "tailwindcss";
 
-/* ─── SOVEREIGN v3 — design tokens ─────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════════════
+   SOVEREIGN v4 — AURORA CONSOLE
+   Full redesign (2026-09-09): aurora mesh, console rail, display typography.
+   CONTRACT: every class name below is consumed by the tab components — keep the
+   names, evolve the look. No logic changes anywhere.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
 :root {
   --gold: #f5b841;
   --gold-bright: #ffd479;
-  --gold-deep: #b97f16;
   --emerald: #34d399;
-  --ink: #07070a;
-  --hairline: rgba(255, 255, 255, 0.08);
+  --aurora-a: rgba(52, 211, 153, 0.14);
+  --aurora-b: rgba(245, 184, 65, 0.12);
+  --aurora-c: rgba(45, 212, 191, 0.10);
+  --ink: #09090b;
+  --panel: rgba(255, 255, 255, 0.038);
+  --hairline: rgba(255, 255, 255, 0.09);
 }
 
 html {
@@ -15,61 +24,102 @@ html {
 }
 
 body {
-  font-family:
-    "Rubik", "Heebo", "Segoe UI", "Arial Hebrew", "Noto Sans Hebrew", system-ui,
-    -apple-system, sans-serif;
+  font-family: var(--font-heebo), "Heebo", "Segoe UI", "Arial Hebrew", system-ui, sans-serif;
   background:
-    radial-gradient(1400px 700px at 88% -12%, rgba(245, 184, 65, 0.1), transparent 55%),
-    radial-gradient(1000px 620px at 4% 6%, rgba(52, 211, 153, 0.06), transparent 55%),
-    radial-gradient(1200px 800px at 50% 125%, rgba(245, 184, 65, 0.05), transparent 60%),
-    #07070a;
+    radial-gradient(1100px 520px at 85% -8%, var(--aurora-b), transparent 60%),
+    radial-gradient(900px 500px at 8% 0%, var(--aurora-a), transparent 55%),
+    radial-gradient(1000px 640px at 50% 118%, var(--aurora-c), transparent 62%),
+    #09090b;
   min-height: 100vh;
-  /* numeric/hash-heavy operations UI: keep tabular digits everywhere */
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
 }
 
-/* blueprint grid — technical command-surface texture, fades toward the fold */
+/* drifting aurora ribbons — the signature of v4 (CSS-only, GPU-cheap) */
 body::before {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  z-index: -2;
+  background:
+    conic-gradient(from 120deg at 30% 20%, transparent 0deg, rgba(52, 211, 153, 0.05) 60deg, transparent 130deg),
+    conic-gradient(from 300deg at 75% 70%, transparent 0deg, rgba(245, 184, 65, 0.05) 70deg, transparent 140deg);
+  filter: blur(60px);
+  animation: aurora-drift 26s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes aurora-drift {
+  from { transform: rotate(0deg) scale(1); }
+  to { transform: rotate(9deg) scale(1.07); }
+}
+
+/* fine engineering grid — fades out below the fold */
+body::after {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.024) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.024) 1px, transparent 1px);
-  background-size: 44px 44px;
-  mask-image: radial-gradient(ellipse 95% 75% at 50% 0%, black 25%, transparent 78%);
-  -webkit-mask-image: radial-gradient(ellipse 95% 75% at 50% 0%, black 25%, transparent 78%);
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: 52px 52px;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 20%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 20%, transparent 75%);
   pointer-events: none;
 }
 
-/* ─── glass surfaces ───────────────────────────────────────────────────────── */
+/* ─── glass surfaces (v4: deeper, softer, gradient hairline) ───────────────── */
 .glass {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  position: relative;
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.016) 55%);
   border: 1px solid var(--hairline);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  border-radius: 1rem;
+  backdrop-filter: blur(14px) saturate(1.25);
+  -webkit-backdrop-filter: blur(14px) saturate(1.25);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.06) inset,
-    0 12px 32px -12px rgba(0, 0, 0, 0.6);
+    0 1px 0 rgba(255, 255, 255, 0.07) inset,
+    0 18px 44px -18px rgba(0, 0, 0, 0.72);
+}
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.14), transparent 30%, transparent 70%, rgba(255, 255, 255, 0.05));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
 .glass-hover {
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
 }
 .glass-hover:hover {
-  border-color: rgba(245, 184, 65, 0.35);
+  transform: translateY(-2px);
+  border-color: rgba(52, 211, 153, 0.35);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.06) inset,
-    0 16px 40px -12px rgba(0, 0, 0, 0.7),
-    0 0 24px -8px rgba(245, 184, 65, 0.18);
+    0 1px 0 rgba(255, 255, 255, 0.07) inset,
+    0 24px 54px -18px rgba(0, 0, 0, 0.8),
+    0 0 30px -10px rgba(52, 211, 153, 0.22);
 }
 
 /* ─── typography accents ───────────────────────────────────────────────────── */
 .text-gradient-gold {
-  background: linear-gradient(100deg, #ffffff 5%, var(--gold-bright) 45%, var(--gold) 85%);
+  background: linear-gradient(105deg, #ffffff 0%, var(--gold-bright) 42%, var(--gold) 78%, #d69a25 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+.text-aurora {
+  background: linear-gradient(100deg, var(--emerald) 0%, #7ee7c7 35%, var(--gold-bright) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.font-display {
+  font-family: var(--font-grotesk), "Space Grotesk", var(--font-heebo), monospace;
+  letter-spacing: 0.02em;
 }
 
 /* ─── live indicators ──────────────────────────────────────────────────────── */
@@ -84,7 +134,7 @@ body::before {
   border-radius: 9999px;
   border: 1px solid currentColor;
   opacity: 0.5;
-  animation: pulse-ring 2.2s ease-out infinite;
+  animation: pulse-ring 2.4s ease-out infinite;
 }
 @keyframes pulse-ring {
   0% { transform: scale(0.55); opacity: 0.7; }
@@ -92,13 +142,13 @@ body::before {
   100% { transform: scale(1.5); opacity: 0; }
 }
 
-/* ─── shimmer skeletons (replaces flat pulse) ──────────────────────────────── */
+/* ─── shimmer skeletons ────────────────────────────────────────────────────── */
 @keyframes shimmer {
   0% { background-position: -400px 0; }
   100% { background-position: 400px 0; }
 }
 .skeleton-shimmer {
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.09) 37%, rgba(255, 255, 255, 0.04) 63%);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.1) 37%, rgba(255, 255, 255, 0.04) 63%);
   background-size: 800px 100%;
   animation: shimmer 1.6s linear infinite;
 }
@@ -109,43 +159,38 @@ body::before {
   height: 8px;
 }
 .scroll-slim::-webkit-scrollbar-track {
-  background: rgba(63, 63, 70, 0.3);
+  background: rgba(63, 63, 70, 0.25);
   border-radius: 8px;
 }
 .scroll-slim::-webkit-scrollbar-thumb {
-  background: rgba(245, 184, 65, 0.35);
+  background: linear-gradient(180deg, rgba(52, 211, 153, 0.4), rgba(245, 184, 65, 0.4));
   border-radius: 8px;
 }
 .scroll-slim::-webkit-scrollbar-thumb:hover {
-  background: rgba(245, 184, 65, 0.55);
+  background: linear-gradient(180deg, rgba(52, 211, 153, 0.6), rgba(245, 184, 65, 0.6));
 }
 
 /* global focus visibility — keyboard operators are first-class */
 :focus-visible {
-  outline: 2px solid var(--gold);
+  outline: 2px solid var(--emerald);
   outline-offset: 2px;
 }
 
 /* subtle motion only — no attention-grabbing animation in an ops center */
 @keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 .animate-rise {
-  animation: rise 0.3s ease-out both;
+  animation: rise 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-rise,
   .animate-pulse,
   .skeleton-shimmer,
-  .pulse-dot::after {
+  .pulse-dot::after,
+  body::before {
     animation: none;
   }
   * {

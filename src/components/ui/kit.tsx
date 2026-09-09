@@ -48,7 +48,7 @@ export function Card({ className, children }: { className?: string; children: Re
   return (
     <section
       className={clsx(
-        "glass glass-hover rounded-2xl",
+        "glass glass-hover overflow-hidden",
         className
       )}
     >
@@ -61,7 +61,7 @@ export function CardHeader({ className, children }: { className?: string; childr
   return (
     <div
       className={clsx(
-        "flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 pb-3 pt-4 sm:px-5",
+        "flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] bg-gradient-to-l from-white/[0.03] to-transparent px-4 pb-3 pt-4 sm:px-5",
         className
       )}
     >
@@ -74,7 +74,7 @@ export function CardTitle({ className, children, icon }: { className?: string; c
   return (
     <h3 className={clsx("flex items-center gap-2.5 text-sm font-bold tracking-wide text-zinc-100", className)}>
       {icon && (
-        <span className="grid size-7 shrink-0 place-items-center rounded-lg border border-amber-400/25 bg-amber-400/10 text-amber-300 shadow-[0_0_12px_-4px_rgba(245,184,65,0.4)]">
+        <span className="grid size-7 shrink-0 place-items-center rounded-[10px] border border-emerald-400/25 bg-gradient-to-br from-emerald-400/15 to-amber-400/10 text-emerald-300 shadow-[0_0_14px_-4px_rgba(52,211,153,0.5)]">
           {icon}
         </span>
       )}
@@ -152,10 +152,10 @@ export function Btn({
 }) {
   const variants = {
     primary:
-      "bg-gradient-to-b from-amber-300 to-amber-500 text-zinc-950 font-bold shadow-lg shadow-amber-500/25 hover:brightness-110 hover:shadow-amber-400/40",
+      "bg-gradient-to-l from-amber-400 via-amber-300 to-amber-400 bg-[length:200%_100%] text-zinc-950 font-bold shadow-lg shadow-amber-500/25 hover:bg-[position:100%_0] hover:shadow-amber-400/40 hover:brightness-105",
     ghost: "bg-transparent text-zinc-300 hover:bg-white/[0.06] hover:text-white",
     outline:
-      "border border-zinc-700/80 bg-white/[0.02] text-zinc-300 hover:border-amber-500/60 hover:text-amber-300 hover:shadow-[0_0_16px_-6px_rgba(245,184,65,0.4)]",
+      "border border-zinc-700/80 bg-white/[0.02] text-zinc-300 hover:border-emerald-400/50 hover:text-emerald-300 hover:shadow-[0_0_18px_-6px_rgba(52,211,153,0.45)]",
     danger: "border border-rose-500/50 text-rose-300 hover:bg-rose-500/10",
     info: "border border-teal-500/50 text-teal-300 hover:bg-teal-500/10"
   };
@@ -167,10 +167,10 @@ export function Btn({
       aria-label={ariaLabel}
       title={title}
       className={cn(
-        "inline-flex min-h-[40px] items-center justify-center gap-2 rounded-lg px-3.5 transition-all",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400",
-        "active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50",
-        size === "sm" && "min-h-[32px] px-2.5 text-xs",
+        "inline-flex min-h-[40px] items-center justify-center gap-2 rounded-xl px-3.5 transition-all duration-200",
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400",
+        "active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50",
+        size === "sm" && "min-h-[32px] rounded-lg px-2.5 text-xs",
         variants[variant],
         className
       )}
@@ -215,7 +215,7 @@ export function Stat({
     info: "text-teal-300"
   };
   const bars = {
-    default: "from-white/20 to-transparent",
+    default: "from-white/25 to-transparent",
     gold: "from-amber-400 to-transparent",
     ok: "from-emerald-400 to-transparent",
     danger: "from-rose-400 to-transparent",
@@ -223,12 +223,12 @@ export function Stat({
     info: "from-teal-400 to-transparent"
   };
   return (
-    <div className="glass relative overflow-hidden rounded-xl px-3 py-2.5">
-      <span aria-hidden className={cn("absolute inset-x-0 top-0 h-0.5 bg-gradient-to-l", bars[tone])} />
-      <div className="truncate text-[11px] font-medium text-zinc-500">{label}</div>
+    <div className="glass relative overflow-hidden rounded-xl px-3 py-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_34px_-16px_rgba(0,0,0,0.8)]">
+      <span aria-hidden className={cn("absolute inset-y-0 right-0 w-0.5 bg-gradient-to-b", bars[tone])} />
+      <div className="truncate text-[10px] font-semibold uppercase tracking-wider text-zinc-500">{label}</div>
       <div
         dir={mono ? "ltr" : undefined}
-        className={cn("text-lg font-bold tabular-nums", mono && "font-mono text-base", tones[tone])}
+        className={cn("font-display text-lg font-bold tabular-nums", mono && "font-mono text-base", tones[tone])}
       >
         {value}
       </div>
