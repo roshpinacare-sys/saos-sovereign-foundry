@@ -41,8 +41,17 @@ const LOG_PATH = path.join(import.meta.dir, "guardian.log");
 const API = "https://api.github.com";
 
 /** רשימת-הריפואים והנתיבים האסורים המפורשים (מדויק, לא רחב-מדי) */
-const WATCH = [
-  { repo: "steem", branch: "main", forbidden: ["agent/fleet_keys.enc", "agent/fleet_keys.meta.json"] },
+type WatchEntry = {
+  repo: string;
+  branch: string;
+  forbidden?: string[];
+  forbiddenPrefix?: string[];
+  forbiddenSuffix?: string[];
+  /** Task 28: קבצים-חובה — חסר ב-HEAD = מחיקת-snapshot → ALERT (ללא-פעולה-כוחנית מכאן) */
+  required?: string[];
+};
+const WATCH: WatchEntry[] = [
+  { repo: "steem", branch: "main", forbidden: ["agent/fleet_keys.enc", "agent/fleet_keys.meta.json"], required: ["agent/lib/live_gate.cjs", "agent/lib/APPLY-LIVE-GATE.sh"] },
   // Task 25-c: סתימת נקודת-העיוור — קובץ-העיגון תחת scripts/ לא נתפס ברשימה הישנה (מבוססת-נתיב צרה).
   // הקובץ נבדק ובטוח (הצירוף מ-env), אבל אם מישהו יטמיע בו צירוף-אמת — ה-guardian יתפוס, יגבה וידווח
   // (ב-DEV_MODE לא מוחק); בפרודקשן הנטרול-הכוחני הוא היעד המתועד (vault+stub).
@@ -240,6 +249,16 @@ async function cycle(onlyRepo?: string) {
         const { json: head, status } = await headOf(w.repo, w.branch);
         if (status !== 200) { log("ERROR", `${w.repo}: head fetch HTTP ${status}`); continue; }
         const paths = (await treeOf(w.repo, head.sha)).filter((t) => t.type === "blob").map((t) => t.path);
+        // Task 28: קבצים-חובה — ה-gitkeeper החיצוני מצלם את הדיסק שלו על origin כל ~30 דק
+        // ושני-פעמים מחק את שערי ה-LIVE-GATE (Task 25-d + 38c4ec1). חסר = ALERT מיידי
+        // עם פקודת-הריפוי. ללא דחיפה/מחיקה מכאן (DEV-MODE וגם פרודקשן — זו התראה בלבד).
+        if (w.required) {
+          const missing = w.required.filter((p) => !paths.includes(p));
+          if (missing.length) {
+            log("ALERT", `${w.repo}: ${missing.length} required path(s) MISSING from head ${head.sha.slice(0, 10)}: ${missing.join(", ")} — LIVE-GATE likely wiped by runtime snapshot; re-assert: sh agent/lib/APPLY-LIVE-GATE.sh`);
+            actions.push({ at: new Date().toISOString(), repo: w.repo, missing: missing.length, result: "required-missing-alert" });
+          }
+        }
         const hits = forbiddenIn(w, paths);
         if (!hits.length) { log("OK", `${w.repo}: clean (${paths.length} files, head ${head.sha.slice(0, 10)})`); delete lastHitSig[w.repo]; continue; }
         if (DEV_MODE) {
