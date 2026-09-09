@@ -168,8 +168,8 @@ function loadState() {
           activeWif: a.keys?.active?.wif ?? null,
           ownerWif: a.keys?.owner?.wif ?? null,
           net: {
-            STEEM: { postingWif: a.keys?.posting?.wifSTEEM ?? null, activeWif: a.keys?.active?.wifSTEEM ?? null, ownerWif: a.keys?.owner?.wifSTEEM ?? null },
-            HIVE: { postingWif: a.keys?.posting?.wifHIVE ?? null, activeWif: a.keys?.active?.wifHIVE ?? null, ownerWif: a.keys?.owner?.wifHIVE ?? null }
+            STEEM: { postingWif: a.keys?.posting?.wifSTEEM ?? null, activeWif: a.keys?.active?.wifSTEEM ?? null, ownerWif: a.keys?.owner?.wifSTEEM ?? null, memoWif: a.keys?.memo?.wifSTEEM ?? null },
+            HIVE: { postingWif: a.keys?.posting?.wifHIVE ?? null, activeWif: a.keys?.active?.wifHIVE ?? null, ownerWif: a.keys?.owner?.wifHIVE ?? null, memoWif: a.keys?.memo?.wifHIVE ?? null }
           }
         }));
     } catch {}
@@ -182,8 +182,8 @@ function loadState() {
         memoWif: envOf.MEMO_WIF ?? null,
         ownerWif: envOf.OWNER_WIF ?? null,
         net: {
-          STEEM: { postingWif: envOf.STEEM_POSTING_WIF ?? null, activeWif: envOf.STEEM_ACTIVE_WIF ?? null, ownerWif: envOf.STEEM_OWNER_WIF ?? null },
-          HIVE: { postingWif: envOf.HIVE_POSTING_WIF ?? null, activeWif: envOf.HIVE_ACTIVE_WIF ?? null, ownerWif: envOf.HIVE_OWNER_WIF ?? null }
+          STEEM: { postingWif: envOf.STEEM_POSTING_WIF ?? null, activeWif: envOf.STEEM_ACTIVE_WIF ?? null, ownerWif: envOf.STEEM_OWNER_WIF ?? null, memoWif: envOf.STEEM_MEMO_WIF ?? null },
+          HIVE: { postingWif: envOf.HIVE_POSTING_WIF ?? null, activeWif: envOf.HIVE_ACTIVE_WIF ?? null, ownerWif: envOf.HIVE_OWNER_WIF ?? null, memoWif: envOf.HIVE_MEMO_WIF ?? null }
         }
       },
       fleet
@@ -250,31 +250,89 @@ function writeIngestedKey(dir, account, network, wif, role) {
 }
 
 /**
- * Owner-key ingest core: verify against the LIVE chain authority of the fleet
- * accounts BEFORE anything is written. A key that matches no live authority is
- * refused with honest verdicts — only the true owner's key can ever land.
+ * Owner-key ingest core (v2.4.0): verify against the LIVE chain authority of
+ * the candidate accounts BEFORE anything is written. Checks ALL roles
+ * (owner/active/posting/memo) × both networks when needed — the first live
+ * match wins and the EXACT role+network are returned so the key lands in its
+ * true slot (the role/network fields are only hints; the chain decides).
+ * A key that matches no live authority is refused with honest verdicts.
  */
-async function ingestOwnerKey(network, wif) {
-  const net = network === "HIVE" ? "HIVE" : "STEEM";
-  let derived;
+async function ingestOwnerKey(network: string | null, wif: string, roleHint?: string | null) {
+  let derived: string | null = null;
   try {
     derived = steem.auth.wifToPublic(wif);
   } catch {
-    return { ok: false, verdict: { network: net, role: "active", derived: null, match: false, error: "wif derivation failed (not a valid private key)" } };
+    return { ok: false, verdict: { network: network ?? null, role: roleHint ?? null, derived: null, match: false, error: "wif derivation failed (not a valid private key)" } };
   }
-  const candidates = [STATE.main.account, ...STATE.fleet.map((f) => f.username)].filter((v, i, a) => a.indexOf(v) === i);
-  const checked = [];
-  for (const acct of candidates) {
-    try {
-      const auth = await chainAuthorities(net, acct);
-      const match = auth.active === derived;
-      checked.push({ account: acct, match });
-      if (match) return { ok: true, account: acct, derived };
-    } catch (e) {
-      checked.push({ account: acct, match: false, error: String(e?.message ?? e).slice(0, 120) });
+  const nets = network ? [network] : ["STEEM", "HIVE"];
+  const candidates = [STATE.main.account, ...STATE.fleet.map((f) => f.username), "ynet", "tov"].filter((v, i, a) => a.indexOf(v) === i);
+  const roles = roleHint && ["owner", "active", "posting", "memo"].includes(roleHint) ? [roleHint] : ["owner", "active", "posting", "memo"];
+  const checked: Array<Record<string, unknown>> = [];
+  for (const net of nets) {
+    for (const acct of candidates) {
+      let auth: Record<string, string | null> | null = null;
+      try {
+        auth = await chainAuthorities(net, acct);
+      } catch (e) {
+        checked.push({ account: acct, network: net, error: String(e?.message ?? e).slice(0, 100) });
+        continue;
+      }
+      for (const role of roles) {
+        if (auth?.[role] && auth[role] === derived) {
+          checked.push({ account: acct, network: net, role, match: true });
+          return { ok: true, account: acct, network: net, role, derived, checked };
+        }
+      }
+      checked.push({ account: acct, network: net, match: false });
     }
   }
-  return { ok: false, verdict: { network: net, role: "active", derived, match: false, checked, error: `no live ${net} active authority matches the derived public key (nothing written)` } };
+  return { ok: false, verdict: { network: network ?? null, role: roleHint ?? null, derived, match: false, checked: checked.slice(0, 16), error: `no live authority match across ${nets.join("/")} × ${candidates.length} accounts × ${roles.join("/")} (nothing written)` } };
+}
+
+/**
+ * v2.4.0 — UNIVERSAL key-payload parser ("חיבור חכם לכל מפתח"):
+ * the owner can paste ANY of these formats and the signer figures it out:
+ *   - a multi-line key file: "OWNER = 5K…", "ACTIVE: 5J…", section headers STEEM/HIVE
+ *   - a single WIF (5…/K…/L…), a master password (P…), or a 64-hex SAOS-ROT1 seed
+ * Returns entries for /keys/ingest (network/role are HINTS — the live-chain
+ * verify step always has the final word, so a wrong hint can never poison a slot).
+ */
+function parseKeyPayload(text: string) {
+  const roleMap: Record<string, string> = {
+    OWNER: "owner", OWNERKEY: "owner",
+    ACTIVE: "active", ACTIVEKEY: "active",
+    POSTING: "posting", POSTINGKEY: "posting",
+    MEMO: "memo", MEMOKEY: "memo"
+  };
+  const entries: Array<{ network: string | null; role: string | null; wif: string }> = [];
+  let sectionNet: string | null = null;
+  for (const rawLine of String(text ?? "").split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#") || line.startsWith("//")) continue;
+    const sec = line.match(/^(STEEM|HIVE)\s*:?\s*$/i);
+    if (sec) { sectionNet = sec[1].toUpperCase(); continue; }
+    const kv = line.match(/^([A-Za-z][A-Za-z _-]{0,20}?)\s*[=:]\s*(\S+)\s*$/);
+    if (kv) {
+      let norm = kv[1].toUpperCase().replace(/[\s_-]+/g, "");
+      let net = sectionNet;
+      const netM = norm.match(/^(STEEM|HIVE)(.+)$/);
+      if (netM) { net = netM[1]; norm = netM[2]; }
+      const role = roleMap[norm] ?? null;
+      const wif = kv[2].trim();
+      if (wif.length >= 40 && wif.length <= 120) entries.push({ network: net, role, wif });
+      continue;
+    }
+    const spaced = line.match(/^([A-Za-z]{4,8})\s+([5-9KMP][1-9A-HJ-NP-Za-km-z]{48,})$/);
+    if (spaced) {
+      const role = roleMap[spaced[1].toUpperCase()] ?? null;
+      entries.push({ network: sectionNet, role, wif: spaced[2] });
+      continue;
+    }
+    const bare = line.replace(/\s+/g, "");
+    const looksKey = /^[5-9KM][1-9A-HJ-NP-Za-km-z]{48,52}$/.test(bare) || /^[0-9a-fA-F]{64}$/.test(bare) || /^P[5-9KM][1-9A-HJ-NP-Za-km-z]{48,52}$/.test(bare);
+    if (looksKey) entries.push({ network: sectionNet, role: null, wif: bare });
+  }
+  return entries.slice(0, 16);
 }
 
 /**
@@ -427,6 +485,57 @@ function chainIdFor(network) {
 
 // ── AUTHORITY VERIFICATION GATE (fail-closed, names/pubkeys only) ────────────
 const authCache = new Map(); // `${network}:${account}` → { at, posting, active }
+// ── v2.4.0: LIVE-DRIFT MONITOR — "ודא שזה לא יקרה שוב" ─────────────────────
+// Every 10 minutes (plus on demand via /keys/verify-live) EVERY loaded key slot
+// is re-derived and compared against the CURRENT on-chain authority. If a key
+// that used to match no longer matches (i.e. someone rotated the authorities
+// on-chain — the SETTLE-10 incident), it is recorded as drift + logged ALERT:
+// detection within minutes instead of weeks.
+type DriftRow = { account: string; network: string; role: string; expected: string; derived: string; at: string };
+const driftState: { lastCheck: string | null; lastSummary: Record<string, unknown> | null; drifts: DriftRow[]; running: boolean } = { lastCheck: null, lastSummary: null, drifts: [], running: false };
+
+async function verifyLiveAll() {
+  if (driftState.running || !STATE) return { skipped: true, reason: "check already running or seal unavailable" };
+  driftState.running = true;
+  const rows: DriftRow[] = [];
+  let okCount = 0, errCount = 0;
+  const targets: Array<{ account: string; net: Record<string, Record<string, string | null>> | null; generic: Record<string, string | null> }> = [
+    { account: STATE.main.account, net: STATE.main.net ?? null, generic: { posting: STATE.main.postingWif ?? null, active: STATE.main.activeWif ?? null, owner: STATE.main.ownerWif ?? null, memo: STATE.main.memoWif ?? null } },
+    ...STATE.fleet.map((f) => ({ account: f.username, net: f.net ?? null, generic: { posting: f.postingWif ?? null, active: f.activeWif ?? null, owner: f.ownerWif ?? null, memo: f.memoWif ?? null } }))
+  ];
+  for (const t of targets) {
+    for (const net of ["STEEM", "HIVE"]) {
+      const slots: Record<string, string | null> = {
+        posting: t.net?.[net]?.postingWif ?? t.generic.posting ?? null,
+        active: t.net?.[net]?.activeWif ?? t.generic.active ?? null,
+        owner: t.net?.[net]?.ownerWif ?? t.generic.owner ?? null,
+        memo: t.net?.[net]?.memoWif ?? t.generic.memo ?? null
+      };
+      let auth: Record<string, string | null> | null = null;
+      try { auth = await chainAuthorities(net, t.account); } catch { errCount++; continue; }
+      for (const [role, wif] of Object.entries(slots)) {
+        if (!wif) continue;
+        let derived: string | null = null;
+        try { derived = steem.auth.wifToPublic(wif); } catch { errCount++; continue; }
+        const expected = auth?.[role] ?? null;
+        if (expected && derived && expected === derived) okCount++;
+        else if (expected) rows.push({ account: t.account, network: net, role, expected, derived: derived ?? "derivation-failed", at: new Date().toISOString() });
+      }
+    }
+  }
+  const prevCount = driftState.drifts.length;
+  driftState.drifts = rows;
+  driftState.lastCheck = new Date().toISOString();
+  driftState.lastSummary = { ok: okCount, drift: rows.length, errors: errCount };
+  driftState.running = false;
+  if (rows.length > prevCount) log("ALERT", `live-drift: ${rows.length} key slot(s) no longer match on-chain authorities — possible external rotation! Accounts: ${[...new Set(rows.map((r) => r.account))].join(",")}`);
+  else if (rows.length) log("WARN", `live-drift still present: ${rows.length} slot(s) unmatched (keys pending re-ingest)`);
+  else log("INFO", `live-drift check clean: ${okCount} slot(s) verified against the live chain`);
+  return { ok: okCount, drift: rows.length, errors: errCount, checkedAt: driftState.lastCheck, drifts: rows.slice(0, 12) };
+}
+setInterval(() => { void verifyLiveAll().catch(() => {}); }, 10 * 60 * 1000);
+setTimeout(() => { void verifyLiveAll().catch(() => {}); }, 20 * 1000);
+
 async function chainAuthorities(network, account) {
   const k = `${network}:${account}`;
   const hit = authCache.get(k);
@@ -555,11 +664,16 @@ const server = Bun.serve({
         mainAccount: STATE.main.account,
         fleetAccounts: [STATE.main.account, ...STATE.fleet.map((f) => f.username)].filter((v, i, a) => a.indexOf(v) === i),
         networks: ["STEEM", "HIVE"],
-        capabilities: ["custom_json", "transfer_to_vesting", "transfer", "claim_rewards", "he_market_sell", "he_withdraw", "delegate_vesting_shares", "keys-ingest", "keys-backup", "rot1-seed-recovery"],
+        capabilities: ["custom_json", "transfer_to_vesting", "transfer", "claim_rewards", "he_market_sell", "he_withdraw", "delegate_vesting_shares", "keys-ingest", "keys-backup", "rot1-seed-recovery", "universal-paste", "live-drift-monitor"],
         authorityGate: "verify-before-broadcast (fail-closed)",
         maxOpHive: MAX_OP_HIVE,
-        version: "2.3.0"
+        version: "2.4.0"
       });
+    }
+
+    if (url.pathname === "/keys/verify-live" && (req.method === "GET" || req.method === "POST")) {
+      const r = await verifyLiveAll();
+      return Response.json({ ok: true, summary: { slots: r.ok, drift: r.drift, errors: r.errors }, checkedAt: r.checkedAt, drifts: r.drifts, skipped: r.skipped ?? false, reason: r.reason ?? null });
     }
 
     // ── Task 29: owner key entry point (self-protecting: only a live authority match is ever written) ──
@@ -581,7 +695,7 @@ const server = Bun.serve({
             active: f.activeWif ? { loaded: true } : { loaded: false }
           });
         }
-        return Response.json({ ok: true, main: { account: STATE.main.account, networks: mainNet }, fleet, sealedAt: STATE.sealedAt, version: "2.3.0" });
+        return Response.json({ ok: true, main: { account: STATE.main.account, networks: mainNet }, fleet, sealedAt: STATE.sealedAt, drift: { lastCheck: driftState.lastCheck, openDrifts: driftState.drifts.length, summary: driftState.lastSummary }, version: "2.4.0" });
       } catch (e) {
         return Response.json({ ok: false, error: String(e?.message ?? e).slice(0, 200) }, { status: 502 });
       }
@@ -592,9 +706,15 @@ const server = Bun.serve({
       try { body = await req.json(); } catch { return Response.json({ ok: false, error: "bad-json" }, { status: 400 }); }
       const raw = JSON.stringify(body ?? {});
       if (raw.length > 8192) return Response.json({ ok: false, error: "payload too large" }, { status: 413 });
-      const entries = Array.isArray(body?.entries) ? body.entries.slice(0, 4)
-        : (body?.wif ? [{ network: body.network, wif: body.wif }] : []);
-      if (!entries.length) return Response.json({ ok: false, error: "missing entries [{network, wif}]" }, { status: 400 });
+      const rawText = typeof body?.text === "string" && body.text.trim().length > 0 && body.text.length <= 8192 ? body.text : null;
+      const entries = rawText
+        ? parseKeyPayload(rawText)
+        : Array.isArray(body?.entries)
+          ? body.entries.slice(0, 16)
+          : body?.wif
+            ? [{ network: body.network, wif: body.wif }]
+            : [];
+      if (!entries.length) return Response.json({ ok: false, error: "missing entries [{network, wif, role?}] or text (universal paste)" }, { status: 400 });
       const ingested = [], refused = [];
       let sealInfo = null;
       const persist = (account, network, wif, role) => {
@@ -632,20 +752,19 @@ const server = Bun.serve({
           continue;
         }
         if (isWif) {
-          const network = askedNet;
-          if (!network) { refused.push({ network: "?", error: "missing network for direct WIF" }); continue; }
-          const res = await ingestOwnerKey(network, wif);
+          // v2.4.0: role-aware — the chain decides the true account/network/role
+          const res = await ingestOwnerKey(askedNet, wif, typeof ent?.role === "string" ? ent.role.toLowerCase() : null);
           if (res.ok) {
             try {
-              await persist(res.account, network, wif, "active");
-              log("INGEST", `network=${network} account=${res.account} role=active MATCH — written to runtime layout, envelope re-sealed`);
-              ingested.push({ account: res.account, network, role: "active", derived: res.derived, sealedAt: sealInfo.sealedAt });
+              await persist(res.account, res.network, wif, res.role);
+              log("INGEST", `network=${res.network} account=${res.account} role=${res.role} MATCH — written to its true slot, envelope re-sealed`);
+              ingested.push({ account: res.account, network: res.network, role: res.role, derived: res.derived, sealedAt: sealInfo?.sealedAt ?? null });
             } catch (e) {
-              log("ERROR", `ingest write failed network=${network}: ${String(e?.message ?? e).slice(0, 160)}`);
-              refused.push({ network, error: `verify-ok but write failed (fail-closed): ${String(e?.message ?? e).slice(0, 160)}` });
+              log("ERROR", `ingest write failed network=${res.network}: ${String(e?.message ?? e).slice(0, 160)}`);
+              refused.push({ network: res.network, error: `verify-ok but write failed (fail-closed): ${String(e?.message ?? e).slice(0, 160)}` });
             }
           } else {
-            log("REFUSED", `ingest network=${network}: ${res.verdict?.error ?? "no match"}`);
+            log("REFUSED", `ingest network=${ent?.network ?? "?"}: ${res.verdict?.error ?? "no match"}`);
             refused.push(res.verdict);
           }
         } else {
@@ -684,7 +803,7 @@ const server = Bun.serve({
         return Response.json({ ok: false, error: "passphrase must be 10-200 chars" }, { status: 400 });
       }
       try {
-        const payload = { exportedAt: new Date().toISOString(), version: "2.3.0", main: { account: STATE.main.account, keys: { generic: { posting: STATE.main.postingWif ?? null, active: STATE.main.activeWif ?? null, memo: STATE.main.memoWif ?? null, owner: STATE.main.ownerWif ?? null }, net: { STEEM: STATE.main.net?.STEEM ?? null, HIVE: STATE.main.net?.HIVE ?? null } } }, fleet: STATE.fleet.map((f) => ({ username: f.username, generic: { posting: f.postingWif ?? null, active: f.activeWif ?? null, owner: f.ownerWif ?? null }, net: { STEEM: f.net?.STEEM ?? null, HIVE: f.net?.HIVE ?? null } })) };
+        const payload = { exportedAt: new Date().toISOString(), version: "2.4.0", main: { account: STATE.main.account, keys: { generic: { posting: STATE.main.postingWif ?? null, active: STATE.main.activeWif ?? null, memo: STATE.main.memoWif ?? null, owner: STATE.main.ownerWif ?? null }, net: { STEEM: STATE.main.net?.STEEM ?? null, HIVE: STATE.main.net?.HIVE ?? null } } }, fleet: STATE.fleet.map((f) => ({ username: f.username, generic: { posting: f.postingWif ?? null, active: f.activeWif ?? null, owner: f.ownerWif ?? null }, net: { STEEM: f.net?.STEEM ?? null, HIVE: f.net?.HIVE ?? null } })) };
         const salt = randomBytes(16), iv = randomBytes(12);
         const key = scryptSync(passphrase, salt, 32);
         const cipher = createCipheriv("aes-256-gcm", key, iv);
@@ -816,4 +935,4 @@ const server = Bun.serve({
   }
 });
 
-log("INFO", `external-signer v2.2 listening on :${PORT} (auth=${TOKEN ? "token" : "MISSING-FAIL-CLOSED"}, networks=STEEM+HIVE, authorityGate=on, keys-ingest=verify-then-write, maxOpHive=${MAX_OP_HIVE})`);
+log("INFO", `external-signer v2.4.0 listening on :${PORT} (auth=${TOKEN ? "token" : "MISSING-FAIL-CLOSED"}, networks=STEEM+HIVE, authorityGate=on, keys-ingest=verify-then-write, maxOpHive=${MAX_OP_HIVE})`);

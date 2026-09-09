@@ -2,6 +2,7 @@
 
 import {
   Activity,
+  Bot,
   FileClock,
   KeyRound,
   ListChecks,
@@ -28,6 +29,7 @@ import { SignaturesTab } from "./signatures-tab";
 import { NetworksTab } from "./networks-tab";
 import { DecisionsTab } from "./decisions-tab";
 import { SecurityTab } from "./security-tab";
+import { AgentsTab } from "./agents-tab";
 import { AuditTab } from "./audit-tab";
 
 const TABS = [
@@ -38,6 +40,7 @@ const TABS = [
   { value: "networks", label: "רשתות ומשאבים", short: "רשתות", icon: Network },
   { value: "decisions", label: "החלטות בעלים", short: "החלטות", icon: KeyRound },
   { value: "security", label: "אבטחה ומאגר", short: "אבטחה", icon: ShieldCheck },
+  { value: "agents", label: "סוכנים", short: "סוכנים", icon: Bot },
   { value: "audit", label: "יומן ובדיקות", short: "יומן", icon: ScrollText }
 ] as const;
 
@@ -149,6 +152,7 @@ export function CommandCenter() {
             {t.value === "networks" && <NetworksTab />}
             {t.value === "decisions" && <DecisionsTab />}
             {t.value === "security" && <SecurityTab />}
+            {t.value === "agents" && <AgentsTab />}
             {t.value === "audit" && <AuditTab />}
           </Tabs.Content>
         ))}

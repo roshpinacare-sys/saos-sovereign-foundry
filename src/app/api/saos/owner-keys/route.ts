@@ -72,15 +72,37 @@ export async function POST(req: Request) {
     );
   }
 
-  let body: { entries?: Array<{ network?: string; wif?: string }>; network?: string; wif?: string } = {};
+  let body: { entries?: Array<{ network?: string; wif?: string; role?: string }>; network?: string; wif?: string; text?: string } = {};
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ ok: false, error: "bad-json" }, { status: 400 });
   }
 
+  // v2.4.0 universal paste: the owner may paste ANY format — a multi-line key
+  // file ("OWNER = 5K…"), a single WIF, a master password or a 64-hex seed.
+  // The signer parses + verifies everything against the live chain.
+  const text = typeof body?.text === "string" && body.text.trim().length > 0 ? body.text.slice(0, 8000) : null;
+  if (text) {
+    try {
+      const res = await signerFetch("/keys/ingest", { method: "POST", body: JSON.stringify({ text }) });
+      const verdict = await res.json().catch(() => ({ ok: false, error: "signer returned non-JSON" }));
+      await audit({
+        kind: "owner-keys-ingest",
+        actor: "owner-panel",
+        action: "POST /owner-keys (universal-paste)",
+        allowed: Boolean((verdict as { ok?: boolean })?.ok),
+        req,
+        detail: JSON.stringify({ ingested: (verdict as { ingested?: unknown[] })?.ingested ?? [], refusedCount: ((verdict as { refused?: unknown[] })?.refused ?? []).length }).slice(0, 400)
+      });
+      return NextResponse.json(verdict);
+    } catch (e) {
+      return NextResponse.json({ ok: false, error: `signer-unreachable: ${String((e as Error)?.message ?? e).slice(0, 120)}` }, { status: 502 });
+    }
+  }
+
   const rawEntries = Array.isArray(body.entries)
-    ? body.entries.slice(0, 4)
+    ? body.entries.slice(0, 16)
     : body.wif
       ? [{ network: body.network, wif: body.wif }]
       : [];

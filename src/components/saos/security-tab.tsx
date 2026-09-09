@@ -16,7 +16,7 @@ import {
   fmtDateTime
 } from "@/components/ui/kit";
 import { EP, errText, refreshKey, useSaos } from "./api";
-import type { AuthStateResponse, LiveGateResponse, OwnerKeysIngestResponse, OwnerKeysStatusResponse, RepoStatusResponse, RevokeAllResponse } from "./types";
+import type { AuthStateResponse, LiveGateResponse, OwnerKeysIngestResponse, OwnerKeysStatusResponse, RepoStatusResponse, RevokeAllResponse, VerifyLiveResponse } from "./types";
 
 export function SecurityTab() {
   const repoQ = useSaos<RepoStatusResponse>("repo-status", () => fetch(EP.repoStatus).then((r) => r.json() as Promise<RepoStatusResponse>));
@@ -438,8 +438,11 @@ function OwnerKeysCard({
 }) {
   const [steemKey, setSteemKey] = useState("");
   const [hiveKey, setHiveKey] = useState("");
+  const [pasteText, setPasteText] = useState("");
   const [busy, setBusy] = useState(false);
   const [verdict, setVerdict] = useState<OwnerKeysIngestResponse | null>(null);
+  const [liveCheck, setLiveCheck] = useState<VerifyLiveResponse | null>(null);
+  const [liveBusy, setLiveBusy] = useState(false);
 
   const status = statusQ.state === "ready" ? statusQ.data : null;
   const netRow = (net: "STEEM" | "HIVE") => {
@@ -492,6 +495,49 @@ function OwnerKeysCard({
     }
   }
 
+  // v2.4.0 — חיבור חכם: כל פורמט שהוא — קובץ מפתחות מלא, מפתח בודד, סיסמת-אב או seed
+  async function submitUniversal() {
+    const text = pasteText.trim();
+    if (!text) {
+      toast.error("הדבק קודם את חומר-המפתח בתיבה");
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await fetch(EP.ownerKeys, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
+      const body = (await res.json()) as OwnerKeysIngestResponse;
+      setVerdict(body);
+      if (body.ok) {
+        toast.success(`חובר! ${(body.ingested ?? []).length} מפתח/ות אומתו מול השרשרת ונכתבו לתפקידיהם`);
+        setPasteText("");
+        onIngested();
+      } else {
+        toast.error(body.error ?? "לא נמצאה התאמה — שום דבר לא נכתב");
+      }
+    } catch {
+      toast.error("שגיאת רשת — לא נשלח");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function checkLive() {
+    setLiveBusy(true);
+    try {
+      const res = await fetch(EP.verifyLive, { method: "POST" });
+      const body = (await res.json()) as VerifyLiveResponse;
+      setLiveCheck(body);
+      const s = body.summary;
+      if (s && (s.drift ?? 0) === 0 && (s.errors ?? 0) === 0) toast.success(`הכל מחובר — ${s.slots ?? 0} סלוטים מאומתים-חי מול השרשרת`);
+      else if (s) toast.warning(`${s.slots ?? 0} מחוברים · ${s.drift ?? 0} לא-תואמים (מפתחות ישנים) — ראה הפירוט למטה`);
+      onIngested();
+    } catch {
+      toast.error("שגיאת רשת בבדיקת-החיבור");
+    } finally {
+      setLiveBusy(false);
+    }
+  }
+
   return (
     <Panel
       title="מפתח-בעלים — נקודת חיבור (STEEM / HIVE)"
@@ -505,12 +551,65 @@ function OwnerKeysCard({
         <p className="text-[11px] leading-relaxed text-zinc-400">
           זו הכתובת שבה מחברים את המפתח. המפתח עובר מכאן <strong className="text-zinc-200">ישירות לחותם-החיצוני בתוך הסביבה</strong> —
           לעולם לא נשמר בשיחה, בלוג, בדפדפן או בריפו. לפני קבלה הוא נגזר למפתח-ציבורי ונבדק מול{" "}
-          <strong className="text-zinc-200">רשות-ה-active החיה על השרשרת</strong> — מפתח שגוי או זר נדחה ושום דבר לא נכתב.
+          <strong className="text-zinc-200">הרשויות-החיות על השרשרת</strong> — מפתח שגוי או זר נדחה ושום דבר לא נכתב.
         </p>
 
         <div className="space-y-1.5">
           {netRow("STEEM")}
           {netRow("HIVE")}
+        </div>
+
+        {/* ── חיבור חכם: כל פורמט ── */}
+        <div className="rounded-lg border border-emerald-900/60 bg-emerald-950/20 p-3">
+          <p className="text-xs font-bold text-emerald-300">חיבור חכם — הדבק כל פורמט שהוא</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-zinc-400">
+            קובץ מפתחות מלא (<Mono>OWNER = 5K…</Mono>), מפתח בודד, סיסמת-אב (<Mono>P…</Mono>) או seed של SAOS-ROT1 (64-hex) —
+            המערכת מזהה לבד, מאמתת מול השרשרת וכותבת כל מפתח לתפקידו האמיתי (owner/active/posting/memo × STEEM/HIVE).
+          </p>
+          <textarea
+            dir="ltr"
+            value={pasteText}
+            onChange={(e) => setPasteText(e.target.value)}
+            rows={4}
+            autoComplete="off"
+            spellCheck={false}
+            className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 font-mono text-xs text-zinc-100 focus-visible:outline-2 focus-visible:outline-emerald-400"
+            placeholder={"STEEM\nOWNER = 5K…\nACTIVE = 5J…\nPOSTING = 5J…\nMEMO = 5J…\nHIVE\nOWNER = 5K…\n..."}
+          />
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Btn onClick={() => void submitUniversal()} loading={busy} ariaLabel="חיבור חכם של כל פורמט מפתח">
+              <Fingerprint className="size-3.5" aria-hidden />
+              חיבור חכם
+            </Btn>
+            <Btn variant="ghost" onClick={() => void checkLive()} loading={liveBusy} ariaLabel="בדיקת חיבור חי לכל הסלוטים">
+              <ShieldCheck className="size-3.5" aria-hidden />
+              בדיקת חיבור-חי (הכל מחובר?)
+            </Btn>
+          </div>
+          {liveCheck && (
+            <div className="mt-2 space-y-1 rounded-lg border border-zinc-800 bg-zinc-950/60 p-2.5">
+              {liveCheck.skipped ? (
+                <p className="text-[11px] text-amber-400">הבדיקה דולגה — {liveCheck.reason ?? "נסה שוב"}</p>
+              ) : (
+                <>
+                  <p className="text-[11px] font-semibold text-emerald-400">
+                    ✓ מחוברים-חי: {liveCheck.summary?.slots ?? 0} סלוטים · לא-תואמים: {liveCheck.summary?.drift ?? 0} · שגיאות: {liveCheck.summary?.errors ?? 0} ({fmtDateTime(liveCheck.checkedAt ?? "")})
+                  </p>
+                  {(liveCheck.drifts ?? []).slice(0, 8).map((d, i) => (
+                    <p key={`d-${i}`} className="text-[10px] text-zinc-500">
+                      <Mono>{d.account}</Mono> {d.network}/{d.role} — מפתח-ישן (סובב בשרשרת); מצופה {d.expected.slice(0, 14)}…
+                    </p>
+                  ))}
+                  {(liveCheck.drifts?.length ?? 0) > 8 && <p className="text-[10px] text-zinc-600">…ועוד {(liveCheck.drifts?.length ?? 0) - 8} סלוטים ישנים</p>}
+                </>
+              )}
+            </div>
+          )}
+          {status?.drift?.lastCheck && (
+            <p className="mt-1.5 text-[10px] text-zinc-500">
+              מוניטור-סטייה רץ אוטומטית כל 10 דקות · בדיקה אחרונה: {fmtDateTime(status.drift.lastCheck)} · סטיות פתוחות: {status.drift.openDrifts}
+            </p>
+          )}
         </div>
 
         <details className="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2">

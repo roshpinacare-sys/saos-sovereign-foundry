@@ -165,6 +165,28 @@ model DecisionRecord {
   @@index([status])
 }
 
+// ─── Agent bridge (גשר-סוכנים — Task 32) ────────────────────────────────────
+// External agents (in the owner's other chats) attach via API with a shared
+// capability token (x-agent-token; stored only in ~/.secrets, 0600) and can:
+//   - post messages into the owner's feed (kind=message)
+//   - request whitelisted READ-ONLY actions (kind=action → executed live)
+// Nothing here ever holds key material — messages are plain text, actions are
+// allow-listed status queries only.
+
+model AgentMessage {
+  id        String   @id @default(cuid())
+  agent     String // self-declared agent name (e.g. "saos-dex")
+  kind      String   @default("message") // message | action
+  content   String // the message text / action request
+  status    String   @default("new") // new | executed | refused | ack
+  result    String? // public result of an executed action (verdicts only)
+  meta      String? // optional JSON extras (chat id, trace, task id)
+  createdAt DateTime @default(now())
+
+  @@index([status, createdAt])
+  @@index([agent, createdAt])
+}
+
 // ─── Session revocation control (בקרת ביטול-סשנים — Task 11) ──────────────────
 // Sessions are stateless HMAC cookies. Global revocation = rotating the session
 // epoch: the HMAC secret is derived as sha256("saos-session:"+hash+":"+epoch),

@@ -1,18 +1,18 @@
-# בריף ראש-המטה — 2026-09-09T06:23:28.248Z
+# בריף ראש-המטה — 2026-09-09T07:23:42.026Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: 7c829bd
+HEAD: dea0be3
+- dea0be3 c46dee06-a969-4fda-bc38-eb09cca7df2a
+- 92b78b5 keys-rescue(31): fresh encrypted backup (SAOS-KEY-BACKUP-1, new passphrase, round-trip verified) + docs/OWNER-KEYS-MASTER-FILE.md (all-users status: 9/11 full HIVE control, headcorner pending SAOS-ROT1) + docs/PROMPT-FOR-ALL-AGENTS.md (owner rescue prompt)
 - 7c829bd 2a3b341b-1186-47b9-b052-dab5a32be067
 - ca45334 lint(task-30): eslint-disable for CJS require in signer hmac helper + unescaped-entity fix in seed hint
 - be21b2d recovery(task-30): SAOS-ROT1 seed ingestion (signer v2.3.0) + encrypted owner backup (backups/ + decrypt script) + docs/KEY-RECOVERY.md full forensics — headcorner rotated on-chain by saos-dex SETTLE-10 (21:17:33Z 09-08, tx 8313cdcb/92654439), new keys = HMAC tree from 64-hex seed held in operator's other chat; 9/11 fleet HIVE-owner-controlled verified live; verify-then-write enforced on every path
-- 1fb1d7b 684e9537-aab7-49af-9bc5-56ef7a75b885
-- 09eca4b d07b6b92-bffe-4044-b062-b154b7c101da
-guardian: ok=true runs=141 devMode=true tickAlive=true token=true
-briefings אחרונים: BRIEF-2026-09-09T03-53-30.md, BRIEF-2026-09-09T04-23-27.md, BRIEF-2026-09-09T04-53-32.md, BRIEF-2026-09-09T05-23-37.md, BRIEF-2026-09-09T05-53-32.md
+guardian: ok=true runs=187 devMode=true tickAlive=true token=true
+briefings אחרונים: BRIEF-2026-09-09T04-53-32.md, BRIEF-2026-09-09T05-23-37.md, BRIEF-2026-09-09T05-53-32.md, BRIEF-2026-09-09T06-23-28.md, BRIEF-2026-09-09T06-53-42.md
 ── זנב next-steps.md ──
 …
 ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
@@ -45,24 +45,33 @@ briefings אחרונים: BRIEF-2026-09-09T03-53-30.md, BRIEF-2026-09-09T04-23-2
 …
 ול HIVE** — החיבור קיים ועובד.
    - headcorner + tov: **0 התאמות בסביבה כולה** (מעטפת חיצונית + פנימית + כל גיבויי-השומר + seed-derivations) — המפתחות בחזקת הבעלים בלבד (הדיסק של הרנטיים נמחק). "אני עשיתי את זה" — הסמכויות בשרשרת הן הגדרת-הבעלים; לא נוגעים, לא מרוטטים.
-   - STEEM: 0/11 התאמות (כולל הראשי) — עיגון STEEM מוחזק אצל הבעלים.
-2. **עלות-op מדודה בשרשרת**: weave על HIVE = **225,041,204 RC** (דחייה-חיה של cashmachine: "has 166,881,563 RC, needs 225,041,204").
-3. **מינימום-האצלה בשרשרת**: **1,611.18 VESTS** — גדול 
+   - STEEM: 0/11 התאמות (כולל הראשי) 
 ```
 </details>
 ## מצב רשת
-רשת SAOS פעילה עם 9/11 סוכנים תחת שליטת הבעלים. מערכת ה-RC ב-HIVE פועלת בקצב מוגבל (~1 פעולה/25 דק'), אך נמצא בתהליך תיקון על ידי אוטומציית power-up. מערכת ה-DEX פעילה ומאובטחת עם שערי סמכות ו-RC.
+הרשת פעילה עם 9/11 חשבונות HIVE בשליטת הצי. מצב ה-RC ב-HIVE נמוך (0.003%) מגביל פעילות לכדי פעולה אחת כל ~25 דקות. מסילת המרה פעילה בין HIVE לטוקנים ב-DEX, עם תיקון שחרור RC חדש שמאפשר האצת רגן ובקרת משאבים משופרת. 9.682 HIVE נזילים על headcorner.
 
-## סיכונים / דברים מדממים (או "אין")
-אין. נתפסה ותוקנה תקרית דליפת מסד נתונים ב-DEX (Task 27-b) עם ראיות מלאות. מערכת האבטחה עובדת כראוי, כפי שנבדק בניסיון power-up שנכשל עקב אי-התאמת סמכות.
+## סיכונים / דברים מדממים
+1. מגבלת RC חמורה ב-HIVE מגבילה את קצב הפעולות לפעולה אחת כל 25 דקות, מה שמעכב משימות קריטיות כמו powerup ו-withdraw.
+2. תקרית דליפת מפתחות מסד נתונים ב-DEX שתוקנה, אך מהווה סיכון אבטחה שנתפס.
 
 ## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
-1. [רנטיים/ראש-המטה] הפעלת `node agent/he_powerup.cjs --amount ALL` כדי להפעיל את מנגנון ה-power-up האוטומטי שיעלה את רמת ה-RC ברשת.
-2. [רנטיים/ראש-המטה] ניטור התהליך עד להשלמת ה-power-up ואימות עליית ה-RC במאזני החיילים דרך ה-API.
-3. [רנטיים/ראש-המטה] המתנה לסיום ה-power-up של macrame (צפוי ~232 דק') ואימות השלמת withdraw הממתין של lsa.
+1. [רנטיים/רנטיים] הפעל `node agent/he_powerup.cjs --amount ALL` כדי ליישם את תיקון שחרור RC ולהגדיל את קצב הרגן הצי.
+   *קריטריון אימת*: דיווח על עלייה של 55% ב-RC והפחתת זמן ההמתנה בין פעולות ל-~15 דקות.
+
+2. [רנטיים/רנטיים] המתן להשלמת תהליך ה-powerup ולאחר מכן הפעל את תהליך ה-withdraw של lsa (0.00248 SWAP.HIVE) דרך מסילת המרה.
+   *קריטריון אימת*: קבלת אישור על עסקת withdraw מוצלחת ב-DEX והגעת הכסף לחשבון.
+
+3. [רנטיים/רנטיים] הפעל את השירות החדש fleet-cure (:3034) כדי לנטר את רמות ה-RC של הצי ולבצע אוטומטית את ה-weave הממתין כאשר RC מספיק.
+   *קריטריון אימת*: קובץ docs/evidence/fleet-cure-status.json מעודכן עם נתוני RC מדידים ו-txid של עסקת weave מוצלחת.
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-הפעלת מנגנון ה-powerup האוטומטי על ידי ביצוע הפקודה `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי.
+1. אישור הפעלת תיקון שחרור RC על ידי הרצת `he_powerup.cjs --amount ALL` כדי להתגבר על מגבלת ה-RC.
+2. הפעלת fleet-cure לניטור אוטומטי וביצוע פעולות RC כאשר המשאבים זמינים.
+3. עדכון הפרוטוקולים לכלול אימות סמכות ובדיקת RC לפני כל פעולה, עם דיווח ETA במקרה של מחסור ב-RC.
 
 ## נשאר לבעלים בלבד (או "כלום")
-כלום. כל ההחלטות הניהוליות סגורות והתהליכים האוטומטיים פעילים.
+1. החלטות על ניצול משאבי STEEM (מפתחות בשליטת בעלים בלבד).
+2. החלטות על תזרים מזומנים והון חיצוני (TRX, מימון vault-restore).
+3. אישור סופי לשימוש במפתחות הבעלים לפעולות חד-פעמיות על השרשרת.
+4. הכרעות אסטרטגיות על נתיבי המרה והשקעות ארוכות טווח.

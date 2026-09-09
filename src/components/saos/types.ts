@@ -532,11 +532,16 @@ export interface OwnerKeysStatusResponse {
   error?: string;
   main?: {
     account: string;
-    networks: Record<string, { posting: OwnerKeySlot; active: OwnerKeySlot }>;
+    networks: Record<string, { posting: OwnerKeySlot; active: OwnerKeySlot; owner?: OwnerKeySlot }>;
   };
   fleet?: Array<{ username: string; posting: { loaded: boolean }; active: { loaded: boolean } }>;
   sealedAt?: string | null;
   version?: string;
+  drift?: {
+    lastCheck: string | null;
+    openDrifts: number;
+    summary?: { ok?: number; drift?: number; errors?: number } | null;
+  };
 }
 
 export interface OwnerKeysIngestResponse {
@@ -545,4 +550,31 @@ export interface OwnerKeysIngestResponse {
   ingested?: Array<{ account: string; network: string; role: string; derived: string; sealedAt: string }>;
   refused?: Array<{ network?: string; account?: string; match?: boolean; derived?: string | null; error?: string; checked?: Array<{ account: string; match: boolean }> }>;
   sealedAt?: string | null;
+}
+
+export interface VerifyLiveResponse {
+  ok: boolean;
+  error?: string;
+  summary?: { slots?: number; drift?: number; errors?: number };
+  checkedAt?: string | null;
+  skipped?: boolean;
+  reason?: string | null;
+  drifts?: Array<{ account: string; network: string; role: string; expected: string; derived: string; at: string }>;
+}
+
+export interface AgentBridgeResponse {
+  ok: boolean;
+  error?: string;
+  messages?: Array<{
+    id: string;
+    agent: string;
+    kind: string;
+    content: string;
+    status: string;
+    result?: string | null;
+    meta?: string | null;
+    createdAt: string;
+  }>;
+  total?: number;
+  fresh?: number;
 }

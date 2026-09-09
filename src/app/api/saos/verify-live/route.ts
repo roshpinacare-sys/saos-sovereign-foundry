@@ -1,0 +1,62 @@
+import { NextResponse } from "next/server";
+import { readFileSync } from "fs";
+import path from "path";
+
+import { audit } from "@/lib/saos/auth";
+import { enforceRateLimit } from "@/lib/saos/rate-limit";
+
+export const dynamic = "force-dynamic";
+
+/**
+ * POST /api/saos/verify-live — Task 32: on-demand FULL live-connection check.
+ *
+ * Asks the external signer (:3033) to re-derive EVERY loaded key slot and
+ * compare it against the CURRENT on-chain authority (STEEM+HIVE ×
+ * owner/active/posting/memo). This is the "הכל מחובר?" button — the same
+ * check the drift monitor runs automatically every 10 minutes.
+ *
+ * Public data only: counts + public keys; no key material ever returned.
+ */
+
+const SIGNER_URL = process.env.SAOS_SIGNER_URL ?? "http://127.0.0.1:3033";
+
+function signerToken(): string {
+  try {
+    return readFileSync(path.join(process.env.HOME ?? "/home/z", ".secrets", "external-signer-token"), "utf8").trim();
+  } catch {
+    return "";
+  }
+}
+
+export async function POST(req: Request) {
+  const rl = enforceRateLimit("verify-live", req);
+  if (!rl.allowed) {
+    return NextResponse.json({ ok: false, error: "rate-limited: המתן רגע", retryAfterSec: rl.retryAfterSec }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } });
+  }
+  const token = signerToken();
+  if (!token) return NextResponse.json({ ok: false, error: "signer-token-unavailable (fail-closed)" }, { status: 503 });
+
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), 90_000);
+  try {
+    const res = await fetch(`${SIGNER_URL}/keys/verify-live`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+      signal: ctl.signal
+    });
+    const body = await res.json().catch(() => ({ ok: false, error: "signer returned non-JSON" }));
+    await audit({
+      kind: "verify-live",
+      actor: "owner-panel",
+      action: "POST /verify-live",
+      allowed: Boolean((body as { ok?: boolean })?.ok),
+      req,
+      detail: JSON.stringify({ okSlots: (body as { ok?: number })?.ok, drift: (body as { drift?: number })?.drift }).slice(0, 200)
+    });
+    return NextResponse.json(body, { status: res.ok ? 200 : 502 });
+  } catch (e) {
+    return NextResponse.json({ ok: false, error: `signer-unreachable: ${String((e as Error)?.message ?? e).slice(0, 120)}` }, { status: 502 });
+  } finally {
+    clearTimeout(t);
+  }
+}
