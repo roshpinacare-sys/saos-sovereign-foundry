@@ -1,18 +1,18 @@
-# בריף ראש-המטה — 2026-09-09T09:23:42.978Z
+# בריף ראש-המטה — 2026-09-09T15:23:37.979Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: d52c91d
+HEAD: b64c709
+- b64c709 docs(34): worklog anchor-everything + fleet-cure heartbeat
+- a01fe19 docs(34): worklog — anchor-everything executed (3 chain-verified weaves), HIVE gate de-bugged honestly, zero refusals end-state
+- fc97645 chore(34): heartbeat docs + HIVE gate honestly live-derived (mainReady = live-verified keys AND measured RC ≥ light floor; killed contradictory '8.952% < 8%' template; isReadyForAnchor no longer hardcoded false) — EXECUTED anchoring: fresh seal h3 + 3 weaves chain-verified (STEEM h3 bb9f2361, STEEM h2 6b658e23, HIVE h3 4ba8c6c0); queue 3 recorded / 2 pending on auto windows
+- 34933d0 fix(34): HIVE gate honestly live-derived — mainReady = keys live-verified AND measured RC ≥ light floor; killed the contradictory '8.952% < 8%' stale template; HIVE isReadyForAnchor no longer hardcoded false; preflight warns 'מוכנה לעגן עכשיו' when above floor — EXECUTED: seal h3 pulse + 3 weaves broadcast & chain-verified (STEEM h3 bb9f2361, STEEM h2 6b658e23, HIVE h3 4ba8c6c0), queue 3 recorded/2 pending-on-auto-windows
 - d52c91d chore(34): auto-daemon heartbeat — chief-of-staff briefings (08:23, 08:53) + fleet-cure RC evidence refresh; repo secret-scan clean (0 WIFs, 0 key files)
-- c0a2956 chore(33): fleet-cure status evidence refresh (auto-daemon heartbeat)
-- 097464b fix(33): de-block the control screen HONESTLY — STEEM is anchor-ready (live-verified via headcorner), stale '0/11 matches' engine replaced by live /keys/status derivation; CI red root fixed (3 TS errors from task 32); drift monitor detects only REAL rotations (0 false alarms, 33 honest unmatched); api-check graceful skips for owner-held auth (121/0/26) — bun run check EXIT 0
-- 1f23237 d131f473-42d8-4501-91c5-7bc2ed898783
-- 5ca711b feat(32): full reconnect + smart key system — headcorner reconnected 8/8 (STEEM+HIVE all roles, live-verified, sealed 07:07Z); external-signer v2.4.0 universal-paste ingest (any format, role-aware verify-then-write) + live-drift monitor (10min, alert on external rotation) + /keys/verify-live; agent-bridge API (POST/GET/PATCH, x-agent-token fail-closed, read-only action allow-list) + Agents tab live feed; security-tab smart-connect box + live-check button; owner-keys proxy text passthrough; REMOVED encrypted backup from repo per owner directive (local-only 0600); docs updated (RESOLVED banners, bridge contract)
-guardian: ok=true runs=280 devMode=true tickAlive=true token=true
-briefings אחרונים: BRIEF-2026-09-09T06-53-42.md, BRIEF-2026-09-09T07-23-42.md, BRIEF-2026-09-09T07-53-31.md, BRIEF-2026-09-09T08-23-40.md, BRIEF-2026-09-09T08-53-42.md
+guardian: ok=true runs=562 devMode=true tickAlive=true token=true
+briefings אחרונים: BRIEF-2026-09-09T12-53-44.md, BRIEF-2026-09-09T13-23-41.md, BRIEF-2026-09-09T13-53-39.md, BRIEF-2026-09-09T14-23-49.md, BRIEF-2026-09-09T14-53-30.md
 ── זנב next-steps.md ──
 …
 ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
@@ -38,22 +38,27 @@ briefings אחרונים: BRIEF-2026-09-09T06-53-42.md, BRIEF-2026-09-09T07-23-4
 
 ### פתוח מ-Task 27
 - **הרצה-מסיימת על-הרנטיים** (בעלים/רנטיים): `node agent/he_powerup.cjs --amount ALL` → אחריה ה-UI יראה RC עולה (מדידה חיה ב-.env תעודכן), ושער-המשאבים נסגר מקצה-לקצה.
-- ה-runtime מוחק קבצים שאין-לו (last-writer-wins snapshot) — DAEMONS.md/תיקוני-קוד יישמרו בהיסטוריה וב-clone-טרי; הערוץ-העמיד הוא ה-foundry-repo + הבעלי
+- ה-runtime מוחק קבצים שאין-לו (last-writer-wins snapshot) — DAEMONS.md/תיקוני-קוד יישמרו בהיסטוריה וב-clone-טרי; הערוץ-העמיד הוא ה-foundry-repo + הבעלים.
+- lsa withdraw (0.00248 SWAP.HIVE) ממתין ל-RC (~3.5h) — יושלם דרך אותה-מסילה.
+
+── זנב owner-decisions.md ──
+…
+
 ```
 </details>
 ## מצב רשת
-הרשת פעילה עם HEAD: d52c91d, מערכת ה-external-signer v2.4 פועלת, ה-DEX פעיל ומוגן, ומערכת fleet-cure מנטרת את רמות ה-RC. חובת ה-powerup על הרנטיים מוכנה לביצוע ותגדיל את קצב הרגן ב-55%. קיימים 9.682 HIVE נזילים על headcorner.
+הרשת פעילה עם חולשת RC ב-HIVE (0.003%) מגבילה קצב עגינה לכל 25 דקות. מערכת ה-powerup תוקנה ומוכנה להפעלה. מסילת המרה DEX פעילה ומאומתת, עם נתוני שרשרת חיים. קיימים 9.682 HIVE נזילים ותיקון בדליפת מסד נתונים נכשל נמצא ונקבע.
 
 ## סיכונים / דברים מדממים (או "אין")
-אין סיכונים דחופים. כל המערכות פועלות כמתוכנן עם בקרות בטיחות מספקות (שערי סמכות, בדיקות RC, ואימותי גזירת מפתחות). תקרית DEX קודמת טופלה ונארזה כראיה.
+סיכון RC נמוך ב-HIVE מגביל קצב עגינה. עסקת lsa withdraw ממתינה ל-RC (~3.5h). פעולת powerup נעולה עד שה-RC יגיע. תיקון בקוד ה-powerup טרם הופעל.
 
 ## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
-1. [רנטיים] הפעלת `node agent/he_powerup.cjs --amount ALL` כדי ליישם את תיקון ה-RC ולהפעיל את מנגנון ה-powerup האוטומטי. אימות: עלייה ב-RC מקסימלי של headcorner לכ-40G והפחתת ה-ETA ל-powerup.
-2. [רנטיים] המתנה פסיבית להשלמת תהליך ה-powerup של macrame על ידי המערכת, עם ניטור דרך fleet-cure. אימות: קבלת txid מוצלח ל-powerup ב-HIVE ועדכון המאזנים.
-3. [רנטיים] המשך ניטור ובדיקת פעולת ה-DEX וה-external-signer כדי לוודא את יציבות המסילה החדשה. אימות: דיווח חי של שערי ה-RC והצלחת עסקאות חדשות ללא שגיאות.
+1. [הרנטיים] הפעל `node agent/he_powerup.cjs --amount ALL` כדי להגדיל את ה-RC ב-HIVE.
+2. [fleet-cure] הפעל את השירות החדש למדידת RC כל 5 דקות וביצוע weaves אוטומטי כאשר ה-RC מספיק.
+3. [external-signer] הפעל אימות סמכויות ו-RC עבור כל פעולות המרת ה-HIVE דרך ה-DEX.
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-המערכת מוכנה להמשך פעילות רגילה. אישור הפעלת תיקון ה-powerup על הרנטיים. הפעלת משמרת הצי (fleet-cure) לניטור רציף של רמות ה-RC וביצוע פעולות weave כאשר הן נדרשות.
+אישור הפעלת תיקון ה-powerup על הרנטיים. אישור הפעלת שירות fleet-cure למדידה וביצוע אוטומטי של weaves. אישור המשך פעילות מערכת ה-DEX עם שערי אבטחה מפורטים.
 
 ## נשאר לבעלים בלבד (או "כלום")
-הגישה למפתחות ה-HIVE וה-STEEM (headcorner, tov) וכל החלטות האסטרטגיה העליונות.
+החלטה סופית על שחזור מפתחות vault (vault-restore). החלטה סופית על staking ב-TRON (tron-stake). החלטה סופית על האצת כוח החישוב (powerup) לאחר שה-RC יגיע לרמה מספקת.
