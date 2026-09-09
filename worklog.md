@@ -1124,3 +1124,24 @@ Stage Summary:
 - "No limitations/refusals" state: every remaining non-green item has a TRUE, current, disclosed reason (BLURT needs key ingest + fee balance; TRON owner transit decision; ETH/SOL vault posture; 2 fleet weaves on scheduled auto-windows). No stale templates, no hardcoded refusals — the engine derives from live signer status + live RC probe.
 - GitHub is clean: 0 blocked commits, 0 rejected files, no secret material in the tree (scanned twice).
 - The only keys anywhere remain: runtime envelope (0600) + local encrypted backup + owner's chat-delivered passphrase. Repo carries public data only.
+
+---
+Task ID: 35
+Agent: Z.ai Code (main)
+Task: "תמשיך יש עוד הרבה דברים אני רואה שצריך לטפל בהם.. ודחוף לריפו.. וודא שאתה על הקומיט האחרון" — keep closing every open item, push, stay on latest commit.
+
+Work Log:
+- Verified HEAD==origin/main (b64c709) before starting.
+- Attempted the owner-directive powerup (headcorner 9.682 liquid HIVE → HP): external-signer authority gate REFUSED (fail-closed) — envelope-active derived the HIVE-posting pubkey. Root cause 1 (fixed): /sign resolved keyFor with authLevel default "posting" while transfer_to_vesting requires ACTIVE — roleForKind now resolves the required role by kind BEFORE keyFor (also fixes he_withdraw/he_market_sell/delegate which demand required_auths=active).
+- Root cause 2 (the deep one): after the gate passed, the chain itself rejected the signed tx (tx_missing_active_auth). Node forensics: get_required_signatures returned our own key = signature never credited = digest mismatch. Proven cause: steem@0.7.10's serializer knows only STEEM/TESTS/SBD/TBD/VESTS — it silently wrote legacy 7-byte garbage for the "HIVE" symbol; custom_json weaves worked because they carry no asset. Fix: HIVE signing via @hiveio/hive-js@2.0.9 (chain_id beeab0de…, real HIVE assets); STEEM keeps the legacy path. Dry-check condenser_api.verify_authority → true before broadcasting.
+- Third blocker: bun --hot had silently stopped hot-swapping the long-lived signer process (served pre-fix code); stale port-holder SIGTERMed, supervisor respawned with v2.4.1-task35.
+- EXECUTED (owner standing directive + chief-of-staff final approval): headcorner transfer_to_vesting 9.682 HIVE → self; tx 9f2e747d3d8f78746b7277c97f34604014bdb9a2, block 109766789, 15:21:27Z; balance 9.682→0.000 HIVE, VESTS 17511.8→33110.5 (transfer_to_vesting_completed exact); max_rc 25,641,553,538 → 41,240,204,792 (×1.608, exactly the predicted ~×1.6) — the hive-rc-floor corner is CLOSED end-to-end.
+- EXECUTED: lsa full SWAP.HIVE withdraw via hivepegged (Task-27 open item): trx 5a77dbf555d5f467c9bbadb8b8265c9c84fc6a8d, block 109766863, 15:25:12Z, quantity 0.00248765 (full balance), required_auths=[lsa], role=active resolved by kind.
+- CI on GitHub: latest heads all GREEN (b64c709 success, fc97645 success, c0a2956 success) — the live-gate security-open "needs a green CI run" item is satisfied.
+- Supervisor probe mismatch fixed (instrumentation.ts): watchdog probed /status on :3033 but the signer serves /ping + /health only → 60s spawn-attempt noise eliminated.
+- Old steem-js HIVE-signing bug class is now structural history: every HIVE asset op goes through hive-js.
+
+Stage Summary:
+- "Close everything" scorecard: powerup EXECUTED on-chain (RC ×1.6 real), lsa withdraw EXECUTED on-chain, CI GREEN, authority-gate role-resolution bug FIXED at the root, HIVE asset signing FIXED at the root (hive-js), watchdog noise ELIMINATED.
+- Fleet windows (2 pending HIVE weaves) now benefit from faster cadence via the same fixed rail; fleet-cure executes them automatically at each RC window.
+- Remaining honest non-green: BLURT (needs key ingest + fee), TRON (owner transit decision), ETH/SOL (vault posture) — true reasons, no bugs.
