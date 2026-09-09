@@ -307,7 +307,10 @@ function writeIngestedKey(dir, account, network, wif, role) {
     const i = lines.findIndex((l) => l.startsWith(name + "="));
     if (i >= 0) lines[i] = `${name}=${val}`; else lines.push(`${name}=${val}`);
   };
-  const netTag = network === "HIVE" ? "HIVE" : "STEEM";
+  // Task 41-recovery fix: BLURT must write its OWN suffixed slots — the old
+  // ternary collapsed BLURT into "STEEM", so BLURT-derived WIFs corrupted the
+  // STEEM_* slots (live authority gates then refused every STEEM broadcast).
+  const netTag = network === "HIVE" ? "HIVE" : network === "BLURT" ? "BLURT" : "STEEM";
   setVar(`${netTag}_${role.toUpperCase()}_WIF`, wif);
   writeFileSync(envPath, lines.join("\n") + "\n");
   chmodSync(envPath, 0o600);
@@ -323,7 +326,7 @@ function writeIngestedKey(dir, account, network, wif, role) {
   if (!acc) { acc = { username: account, keys: {} }; vault.accounts.push(acc); }
   if (!acc.keys || typeof acc.keys !== "object") acc.keys = {};
   if (!acc.keys[role] || typeof acc.keys[role] !== "object") acc.keys[role] = {};
-  acc.keys[role][network === "HIVE" ? "wifHIVE" : "wifSTEEM"] = wif;
+  acc.keys[role][network === "HIVE" ? "wifHIVE" : network === "BLURT" ? "wifBLURT" : "wifSTEEM"] = wif;
   writeFileSync(vPath, JSON.stringify(vault, null, 2));
   chmodSync(vPath, 0o600);
   const seal = runVault(dir, "--seal");
@@ -1077,6 +1080,33 @@ const server = Bun.serve({
               return Response.json({ ok: true, match: true, network: c.network, role: c.role, account: main.account });
             }
           } catch {}
+        }
+      }
+      // Task 41-recovery: master-password login fallback — the owner's P-password
+      // is the thing he actually HAS (BLURT wallets render passwords in P-form,
+      // indistinguishable from a P+WIF by shape alone — so we ALWAYS try the
+      // derivation after the direct hash-compare; a wrong/foreign string can
+      // only ever produce honest no-match). Hash-only discipline intact:
+      // plaintext never stored, logged or echoed.
+      {
+        for (const net of ["STEEM", "HIVE", "BLURT"] as const) {
+          let derived: Record<string, string> | null = null;
+          try { derived = steem.auth.getPrivateKeys(main.account, key, ["active", "posting"]); } catch { continue; }
+          for (const role of ["active", "posting"] as const) {
+            const dw = derived?.[role];
+            if (typeof dw !== "string" || dw.trim().length < 50) continue;
+            const dh = createHash("sha256").update(dw.trim(), "utf8").digest("hex");
+            for (const c of candidates) {
+              try {
+                const a = Buffer.from(dh, "hex");
+                const b = Buffer.from(c.hash, "hex");
+                if (a.length === b.length && timingSafeEqual(a, b)) {
+                  log("AUTH", `owner-key login verified via master-password derivation: ${c.network}/${c.role} (${main.account}) — hash-only compare`);
+                  return Response.json({ ok: true, match: true, network: c.network, role: c.role, account: main.account, via: "master-password" });
+                }
+              } catch {}
+            }
+          }
         }
       }
       return Response.json({ ok: true, match: false });

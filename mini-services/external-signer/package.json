@@ -9,6 +9,8 @@
   "dependencies": {
     "@blurtfoundation/blurtjs": "^1.0.0",
     "@hiveio/hive-js": "^2.0.9",
+    "@scure/base": "^2.4.0",
+    "@scure/bip39": "^2.4.0",
     "steem": "0.7.10"
   }
 }

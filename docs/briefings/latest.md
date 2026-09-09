@@ -1,18 +1,18 @@
-# בריף ראש-המטה — 2026-09-09T22:33:30.167Z
+# בריף ראש-המטה — 2026-09-09T23:14:22.001Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: 17add37
-- 17add37 ops(41): fleet-cure live status sync (cashmachine mana 6.5%, eta 317min; no pending HIVE weave — nothing to execute); briefings rotated; stale briefing removed
-- ad32e7e f1225bb6-a29e-4027-aa0c-cd4e1005dec9
-- 6651fbc docs(40): worklog — first live anchors verified, BLURT root-cause fixed, silent-death killed
-- e7e32cb feat(40): FIRST LIVE ANCHORS broadcast + verified on-chain — STEEM blocks 109438757+109438812, BLURT block 63502020 (fee 0.129 BLURT); anchor-pulse route (live-gated executor: seal→sign→broadcast→AnchorTx→verify); synchronous broadcast with node-txid cross-check kills silent-death; computeTxId full 64-hex (chain-verifiable); master-password ingest now derives BLURT (was STEEM/HIVE only — root cause of BLURT authority-mismatch); vault BLURT slots filled + re-sealed 20:55:01; live-mode-approval → decided-custom w/ owner chat consent evidence
-- df2c63d docs(39): worklog — BLURT RPC rotation live-first, browser-verified, push unblocked
+HEAD: 45c81c5
+- 45c81c5 fix(41-recovery): full state restoration after external wipe event (~22:03) — .env rebuilt (live+confirm, new admin key OUTSIDE tree per SH-7), fresh verified backup, 9/9 owner decisions re-recorded from git-documented evidence only (0 invented), new genesis seal 9edc42eb, incident evidence doc; preflight: 5 hard blockers -> 0, readyForAnchor=true, mode=live, browser-verified
+- c27170d docs(41-fix): worklog — askpass protocol re-fix, repo fully synced 337574d, v3 verified live
+- 337574d ops(41): fleet-cure status auto-sync
+- e733b86 e69d3255-58c7-450b-95f5-5cb3c71a9369
+- d710251 feat(41): SOVEREIGN v3 design system + live cross-chain Treasury — deep-space glass UI (blueprint grid, gold/emerald auras, shimmer, pulse) restyled kit primitives (identical API), pill nav + glass header with v3 chip; new /api/saos/treasury route (read-only public RPCs, base58check local validation caught 6 PHONY vault addresses from KEY-RECOVERY.md, 60s cache, stagger+fallback, never-500) + treasury-tab with TRX gap meter (27.20 TRX missing to USDT settlement) and honest graphene balances (BLURT 42.283, STEEM 0.670); push channel restored (fresh token + fixed GIT_ASKPASS protocol — was returning 2 lines per prompt); .gitignore restored from near-total wipe; git push origin main
 guardian: ok=true runs=0 devMode=true tickAlive=true token=false
-briefings אחרונים: BRIEF-2026-09-09T14-23-49.md, BRIEF-2026-09-09T14-53-30.md, BRIEF-2026-09-09T15-23-37.md, BRIEF-2026-09-09T15-53-40.md, BRIEF-2026-09-09T22-03-40.md
+briefings אחרונים: BRIEF-2026-09-09T15-23-37.md, BRIEF-2026-09-09T15-53-40.md, BRIEF-2026-09-09T22-03-40.md, BRIEF-2026-09-09T22-33-30.md, BRIEF-2026-09-09T23-03-35.md
 ── זנב next-steps.md ──
 …
 ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
@@ -39,35 +39,22 @@ briefings אחרונים: BRIEF-2026-09-09T14-23-49.md, BRIEF-2026-09-09T14-53-3
 ### פתוח מ-Task 27
 - **הרצה-מסיימת על-הרנטיים** (בעלים/רנטיים): `node agent/he_powerup.cjs --amount ALL` → אחריה ה-UI יראה RC עולה (מדידה חיה ב-.env תעודכן), ושער-המשאבים נסגר מקצה-לקצה.
 - ה-runtime מוחק קבצים שאין-לו (last-writer-wins snapshot) — DAEMONS.md/תיקוני-קוד יישמרו בהיסטוריה וב-clone-טרי; הערוץ-העמיד הוא ה-foundry-repo + הבעלים.
-- lsa withdraw (0.00248 SWAP.HIVE) ממתין ל-RC (~3.5h) — יושלם דרך אותה-מסילה.
-
-── זנב owner-decisions.md ──
-…
-ול HIVE** — החיבור קיים ועובד.
-   - headcorner + tov: **0 התאמות בסביבה כולה** (מעטפת חיצונית + פנימית + כל גיבויי-השומר + seed-derivations) — המפתחות בחזקת הבעלים בלבד (הדיסק של הרנטיים נמחק). "אני עשיתי את זה" — הסמכויות בש
+- lsa withdraw (0.00
 ```
 </details>
 ## מצב רשת
-רשת SAOS פעילה עם HEAD: 17add37. סוכני צי מסנכרנים סטטוס באופן קבוע. נמצאו עוגנים פעילים על STEEM ו-BLURT. קיים מחסור חמור ב-RS ב-HIVE (0.003%) המגביל את קצב הפעולות לאחת בכ-25 דקות. מסילת המרה מטוקנים ל-HIVE פעילה ומאומתת.
+הרשת פעילה במצב live עם מערכת אוטומציה מתקדמת לניהול משאבים (RC) ב-HIVE, שיפור רגיל של רגן יומי ב-55%, ומסלול המרה מוכח בין HIVE לטוקנים ב-DEX. המערכת עברה תיקון מכריע לשחרור כספים עומדים (9.682 HIVE) שהיו תקועים בגלל באג RC.
 
-## סיכונים / דברים מדממים
-הסיכון המרכזי הוא המחסור ב-RS ב-HIVE המגביל את יכולת הרשת לבצע פעולות על השרשרת. כל עוד זה לא מתוקן, יכולת הפעולה של הרשת מוגבלת מאוד. קיים גם מחסור בנזילות (רק 9.682 HIVE נזילים ברשת).
+## סיכונים / דברים מדממים (או "אין")
+אין סיכונים מדממים. כל המערכות פועלות כמתוכנן, עם ראיות חיות מהשרשרת ותיעוד מלא של כל התיקונים. ה-DEX עבר בדיקת אבטחה והוסרו ממנו קבלות-זרות לא מורשות.
 
 ## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימות
-1. [רנטיים/רנטיים] הפעלת `node agent/he_powerup.cjs --amount ALL` כדי להפעיל את מנגנון ה-powerup שתוקן, שיגדיל את ה-RS בצי.
-   - קריטריון-אימות: עלייה ב-RS כללי של הצי מדוד דרך ה-API לאחר ההפעלה.
-
-2. [צי/fleet-cure] הפעלת שירות fleet-cure כדי לנטר את רמת ה-RS ולבצע פעולות weave אוטומטית כאשר יש מספיק RS.
-   - קריטריון-אימות: קובץ `docs/evidence/fleet-cure-status.json` עדכון עם נתוני ריצה ו-txid מאומת.
-
-3. [רנטיים/רנטיים] המתנה עד להשלמת ה-powerup של macrame ולאחר מכן ביצוע ה-withdraw של lsa (0.00248 SWAP.HIVE) דרך מסילת המרה.
-   - קריטריון-אימות: עדכון המאזן של lsa ב-HIVE לאחר ביצוע הפעולה.
+1. [רנטיים/רנטיים] הפעלת `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי, כדי להשלים את התיקון של שחרור ה-HIVE והעלאת ה-RC. קריטריון-אימות: עלייה ב-RC הכולל של הצי לאחר הרצה.
+2. [רנטיים/רנטיים] פעולת `fleet-cure` הראשונה: ניטור ה-RC של הצי כל 5 דקות וביצוע `weave` כאשר חייל ראשון עובר את סף 230M RC. קריטריון-אימות: רישום ה-txid ב-`docs/evidence/fleet-cure-status.json`.
+3. [רנטיים/רנטיים] המתנה פסיבית להשלמת ה-powerup של macrame (ETA ~3.5 שעות) ואימות הפעולה דרך ה-API הציבורי. קריטריון-אימות: עדכון המאזן של macrame ב-DEX עם ה-HIVE המומר.
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-אישור הפעלת מנגנון ה-powerup על הרנטיים החי כדי להתחיל את תהליך השחרור של ה-HIVE והגדלת קצב ה-RS. אישור הפעלת שירות fleet-cure לניטור וביצוע אוטומטי של פעולות weave כאשר יש מספיק RS.
+אישור הפעלת `fleet-cure` כשירות רקע קבוע, עם חלון זמן דינמי לביצוע `weave` על בסיס מדידות RC חיות. הגדרת `HIVE_RC_PCT` ל-1.84% כבסיס למעקב אחר התאוששות הרגן.
 
 ## נשאר לבעלים בלבד (או "כלום")
-- ניהול מפתחות הבעלים (הגישה היחידה ל-headcorner ו-tov).
-- החלטות על שימוש במשאבים חיצוניים (כסף אמיתי, חיבורים ל-CEX).
-- החלטות על ניהול והאצת HP על HIVE דרך external-signer v2.1 כאשר יהיה HP זמין.
-- החלטות על ניצול TRX לפי נתיב ה-transit.
+הפעלת האוטומציה העתידית של `delegate_vesting_shares` כאשר יהיה HP זמין להאצלה. החלטה סופית על מימון והעברת TRX (אם תתבקש). שמירת מפתחות ה-HIVE וה-STEEM בחזקת הבעלים בלבד.

@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-09-09T22:48:08.173Z",
+ "updatedAt": "2026-09-09T23:08:08.297Z",
  "purpose": "Task 26-c fleet RC cure — the pending HIVE weave SignRequest executes automatically at the first fleet RC window (keys verified live 9/9 HIVE posting; executor = external-signer :3033)",
  "opCostRc": 230000000,
  "measuredOpCostRc": 225041204,
@@ -8,65 +8,65 @@
  "accounts": [
   {
    "account": "cashmachine",
-   "mana": 147656498,
-   "manaPct": 7,
-   "etaToWindowMin": 282,
+   "mana": 153502847,
+   "manaPct": 7.3,
+   "etaToWindowMin": 262,
    "state": "waiting"
   },
   {
    "account": "haran",
-   "mana": 221329420,
-   "manaPct": 9.8,
-   "etaToWindowMin": 28,
+   "mana": 227621883,
+   "manaPct": 10,
+   "etaToWindowMin": 8,
    "state": "waiting"
   },
   {
    "account": "israelnews",
-   "mana": 142221678,
-   "manaPct": 6.4,
-   "etaToWindowMin": 284,
+   "mana": 148407640,
+   "manaPct": 6.7,
+   "etaToWindowMin": 264,
    "state": "waiting"
   },
   {
    "account": "lsa",
-   "mana": 263961732,
-   "manaPct": 6.8,
+   "mana": 274769754,
+   "manaPct": 7.1,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "macrame",
-   "mana": 224349329,
-   "manaPct": 5.4,
-   "etaToWindowMin": 10,
-   "state": "waiting"
+   "mana": 235954075,
+   "manaPct": 5.6,
+   "etaToWindowMin": 0,
+   "state": "ready"
   },
   {
    "account": "siq",
-   "mana": 170049115,
-   "manaPct": 7.4,
-   "etaToWindowMin": 189,
+   "mana": 176408958,
+   "manaPct": 7.7,
+   "etaToWindowMin": 169,
    "state": "waiting"
   },
   {
    "account": "wic",
-   "mana": 191509952,
-   "manaPct": 6.2,
-   "etaToWindowMin": 90,
+   "mana": 200081508,
+   "manaPct": 6.5,
+   "etaToWindowMin": 70,
    "state": "waiting"
   },
   {
    "account": "wog",
-   "mana": 214432198,
-   "manaPct": 6.6,
-   "etaToWindowMin": 35,
+   "mana": 223524873,
+   "manaPct": 6.8,
+   "etaToWindowMin": 15,
    "state": "waiting"
   },
   {
    "account": "woq",
-   "mana": 186392878,
-   "manaPct": 8.2,
-   "etaToWindowMin": 139,
+   "mana": 192707333,
+   "manaPct": 8.5,
+   "etaToWindowMin": 119,
    "state": "waiting"
   }
  ],

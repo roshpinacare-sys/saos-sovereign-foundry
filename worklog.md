@@ -1327,3 +1327,21 @@ Stage Summary:
 - כל 5 החסימות חזרו למצבן שלפני-האירוע (0 קשים) — בשחזור כנה מתיעוד, בלי להמציא החלטות-בעלים.
 - המערכת: live, מאומתת, מגובה, חתומה; ה-UI מציג את המצב האמיתי המלא.
 - מניעה מתועדת: לבדוק .env/.gitignore/db/upload בכל כניסה (דפוס wipe חוזר של גורם-חוץ); מפתח מחוץ-לעץ עמיד ל-wipe עתידי.
+
+---
+Task ID: 42-login
+Agent: Z.ai Code (main)
+Task: "אני עדיין לא יכול להתחבר עם המפתח שלי" — שחזור ערוץ ההתחברות-בעלים אחרי אירוע-המחיקה
+
+Work Log:
+- שורש: ה-wipe הרג גם את ~/.secrets (טוקן-חותם + מעטפת-צי עם המפתחות) → החותם עלה fail-closed ("no fleet envelope", auth=MISSING) → כל לוגין-בעלים נכשל.
+- טוקן-חותם חדש הונפק (~/.secrets/external-signer-token, 600) + SAOS_EXTERNAL_SIGNER_URL/TOKEN חזרו ל-.env (הלקוח בצד-האפליקציה דורש אותם ב-env, לא בקובץ).
+- המעטפת נבנתה מחדש מאפס (פורמט SAOS-FLEET-VAULT-1: scrypt+AES-256-GCM, tag|ct — תוקן אחרי שיבוש סדר): AGENT_ACCOUNT=headcorner + שלד 11 חשבונות-צי (רשימה ציבורית מ-fleet-cure-status.json המגובה בגיט).
+- שחזור-חומר: mnemonic הופק מחדש מהתמונה (VLM, checksum תקף, 600, לא הודפס); מועמדי ROT1-seed (entropy/sha256/bip39) נבדקו מול השרשרת — 0 התאמות: ה-STEEM/HIVE נשארים בחזקת-הבעלים כנה.
+- הסיסמה מ-upload/בלורט.evm נגזרה מקומית ואומתה חי: BLURT posting+active+memo של headcorner — 3 סלוטים אמיתיים חזרו לכספת (LOADED+MATCH); STEEM/HIVE מוצגים mismatch/empty בכנות.
+- 3 תיקוני-קוד בחותם: netTag BLURT (היה כותב לסלוטי STEEM — שיתוק STEEM), refresh-STATE אחרי ingest, fallback לוגין-סיסמה (גזירה בתוך-החותם, hash-only — סיסמה בפורמט-P נראית כ-WIF ולכן השער-הצורני היה מדלג עליה).
+- E2E מאומת: POST /api/saos/auth {סיסמה} → 200, actor=owner:headcorner, via=BLURT/active, סשן 30 יום + cookie. סיסמה שגויה → 401 כנה.
+
+Stage Summary:
+- הבעלים יכול להתחבר שוב עם הסיסמה שלו (BLURT/active מאומת-חי); STEEM/HIVE ממתינים להדבקה אוניברסלית אחת של הבעלים במסך-האבטחה.
+- כל הסודות מקומיים ולא הודפסו; המעטפת מחוץ לעץ (0700); ה-UI מציג את מצב-הסלוטים האמיתי.
