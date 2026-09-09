@@ -206,7 +206,77 @@ function loadState() {
 }
 
 // ── Task 29: owner key ingestion (verify-then-write, self-protecting) ────────
+// Task 37: the vault helper is EMBEDDED — any envelope dir (runtime or a
+// recovery copy restored by resolveEnvelopeDir) always knows how to open/seal
+// itself, even after a sandbox rollback wiped the helper (the exact failure
+// that blocked ingest on 2026-09-09: "fleet_vault.cjs missing").
+// Source of truth for the template: scripts/fleet-vault-template.cjs (repo).
+const FLEET_VAULT_SCRIPT = String.raw`#!/usr/bin/env node
+/* fleet_vault.cjs - SAOS-FLEET-VAULT-1 open/seal helper (embedded template, Task 37).
+ * fleet_keys.enc = MAGIC + hex(salt|iv|tag|ct); key=scrypt(meta.pass,salt,32); AES-256-GCM.
+ * bundle = { files: { ".env", "keys/vault.json" }, sealedAt }. Contains NO secret material. */
+"use strict";
+const fs = require("fs"), path = require("path"), crypto = require("crypto");
+const MAGIC = "SAOS-FLEET-VAULT-1";
+const dir = __dirname;
+const encP = path.join(dir, "fleet_keys.enc"), metaP = path.join(dir, "fleet_keys.meta.json");
+function openBundle() {
+  const raw = fs.readFileSync(encP, "utf8");
+  if (!raw.startsWith(MAGIC)) throw new Error("unknown seal format");
+  const meta = JSON.parse(fs.readFileSync(metaP, "utf8"));
+  const payload = Buffer.from(raw.slice(MAGIC.length).replace(/\s+/g, ""), "hex");
+  const key = crypto.scryptSync(meta.pass, payload.subarray(0, 16), 32);
+  const d = crypto.createDecipheriv("aes-256-gcm", key, payload.subarray(16, 28));
+  d.setAuthTag(payload.subarray(28, 44));
+  return JSON.parse(Buffer.concat([d.update(payload.subarray(44)), d.final()]).toString("utf8"));
+}
+function sealBundle(bundle) {
+  const meta = JSON.parse(fs.readFileSync(metaP, "utf8"));
+  if (!meta || typeof meta.pass !== "string" || !meta.pass.length) throw new Error("meta.pass missing");
+  const salt = crypto.randomBytes(16), iv = crypto.randomBytes(12);
+  const key = crypto.scryptSync(meta.pass, salt, 32);
+  const c = crypto.createCipheriv("aes-256-gcm", key, iv);
+  const ct = Buffer.concat([c.update(JSON.stringify(bundle), "utf8"), c.final()]);
+  const encText = MAGIC + Buffer.concat([salt, iv, c.getAuthTag(), ct]).toString("hex").replace(/(.{64})/g, "$1\n");
+  fs.writeFileSync(encP, encText, { mode: 0o600 });
+  fs.writeFileSync(metaP, JSON.stringify({ ...meta, sealedAt: bundle.sealedAt, generator: "fleet_vault.cjs (embedded template)" }, null, 1), { mode: 0o600 });
+}
+const arg = process.argv[2];
+if (arg === "--open") {
+  const bundle = openBundle();
+  fs.mkdirSync(path.join(dir, "keys"), { recursive: true });
+  fs.writeFileSync(path.join(dir, ".env"), bundle.files[".env"] ?? "", { mode: 0o600 });
+  fs.writeFileSync(path.join(dir, "keys", "vault.json"), bundle.files["keys/vault.json"] ?? "{}", { mode: 0o600 });
+  console.log("OPENED sealedAt=" + (bundle.sealedAt ?? "?"));
+  process.exit(0);
+}
+if (arg === "--seal") {
+  const envText = fs.readFileSync(path.join(dir, ".env"), "utf8");
+  const vaultText = fs.readFileSync(path.join(dir, "keys", "vault.json"), "utf8");
+  JSON.parse(vaultText);
+  const bundle = { files: { ".env": envText, "keys/vault.json": vaultText }, sealedAt: new Date().toISOString() };
+  sealBundle(bundle);
+  console.log("SEALED sealedAt=" + bundle.sealedAt);
+  process.exit(0);
+}
+console.error("usage: fleet_vault.cjs --open|--seal");
+process.exit(2);
+`;
+
+function ensureVaultScript(dir: string): void {
+  try {
+    const p = path.join(dir, "fleet_vault.cjs");
+    if (!existsSync(p)) {
+      writeFileSync(p, FLEET_VAULT_SCRIPT, { mode: 0o600 });
+      log("INFO", `fleet_vault.cjs materialized from embedded template in ${dir} (self-heal)`);
+    }
+  } catch (e) {
+    log("ERROR", `ensureVaultScript failed: ${String(e?.message ?? e).slice(0, 120)}`);
+  }
+}
+
 function runVault(dir, arg) {
+  ensureVaultScript(dir);
   const script = path.join(dir, "fleet_vault.cjs");
   if (!existsSync(script)) return { ok: false, out: `fleet_vault.cjs missing in ${dir}` };
   try {

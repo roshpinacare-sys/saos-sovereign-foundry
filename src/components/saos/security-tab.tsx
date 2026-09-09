@@ -134,7 +134,7 @@ function AuthCard({
             <CheckCircle2 className="size-4" aria-hidden /> מחובר כ-actor: <Mono>{state.actor}</Mono>
           </div>
           <p className="text-[11px] leading-relaxed text-zinc-500">
-            session cookie חתום HMAC (HttpOnly, SameSite=Strict, 12h). השרת מחזיק hash בלבד — מפתח הגלם לעולם לא נשמר במערכת.
+            session cookie חתום HMAC (HttpOnly, SameSite=Strict, TTL ארוך-טווח לפי הגדרת השרת SAOS_SESSION_TTL_H). השרת מחזיק hash בלבד — מפתח הגלם לעולם לא נשמר במערכת.
           </p>
           <Btn variant="danger" size="sm" onClick={logout} loading={busy} ariaLabel="התנתקות מהסשן">
             <LogOut className="size-3.5" aria-hidden />
