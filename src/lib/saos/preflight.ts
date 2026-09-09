@@ -36,6 +36,8 @@ import { networkStatuses, type NetworkStatusView } from "@/lib/saos/network-stat
 import { signerRegistry, effectiveStatus, type SignRequest } from "@/lib/saos/signer";
 import { OWNER_DECISIONS } from "@/lib/saos/owner-decisions";
 import { externalSignerHealth } from "@/lib/saos/external-signer-client";
+import { hiveRcLive } from "@/lib/saos/hive-rc-live";
+import { fleetCureStatus } from "@/lib/saos/fleet-cure";
 
 export type CheckStatus = "pass" | "warn" | "fail";
 export interface PreflightCheck {
@@ -79,7 +81,7 @@ function firstAnchorReadiness(
   const recommended = historicReady[0] ?? resourceReady[0] ?? null;
   const recommendedReason = recommended
     ? `${recommended.network}: אין חוסם-משאב ייחודי (סטטוס anchored)${recommended.lastVerifiedAnchor ? " וקיים עוגן היסטורי מאומת" : ""} — החסם היחיד הוא חיבור כספת חתימה חיצונית`
-    : "אין רשת ללא חוסם-משאב — יש להשלים משאבים (HIVE RC / TRON energy) לפני בחירה";
+    : "אין רשת עם סטטוס anchored — HIVE מתוזמן אוטומטית דרך עיגון-הצי (fleet-cure); האצה: טעינת מפתח-בעלים → power-up 9.682 HIVE";
 
   const status: "not-ready" | "partial" | "conditional" =
     hardBlockers.length > 0 ? "not-ready" : !externalSignerConnected || openCriticalDecisions > 0 ? "partial" : "conditional";
@@ -91,7 +93,7 @@ function firstAnchorReadiness(
     blockers: hardBlockers,
     requiredResource: recommended
       ? "כספת חתימה חיצונית (מפתח רשת משוחזר מחוץ למערכת) — המערכת מקבלת רק את התוצאה הציבורית"
-      : "משאבי רשת (HIVE RC ≥ 8% או TRON stake) + כספת חתימה חיצונית",
+      : "פעולת-בעלים אופציונלית: טעינת מפתח-הבעלים למעטפת (fleet_vault --seal) → power-up 9.682 HIVE + עיגון STEEM; עד אז התור האוטומטי מבצע את עיגון ה-HIVE",
     ownerAction:
       "לאשר את רשת-היעד, לשחזר את הכספת מחוץ למערכת (docs/external-signer.md), לסגור החלטות קריטיות פתוחות, ולאשר live רק אחרי שהשער ירוק — הליך מלא: docs/first-anchor-runbook.md",
     openCriticalDecisions,
@@ -184,8 +186,20 @@ export async function computePreflight(target: SignRequest["network"] | null): P
   );
 
   // 6. target network with clear status + 7. resources
-  const rcPct = Number(process.env.HIVE_RC_PCT ?? 0.6);
+  // Task 26-c: recorded decisions are needed HERE (TRON transit posture is a
+  // decided-custom owner resolution — disclosed as warn, not an open blocker).
+  const recordedDecisionsEarly = await db.decisionRecord.findMany();
+  const statusOfEarly = (key: string) => recordedDecisionsEarly.find((r) => r.key === key)?.status ?? "open";
+
+  // Task 26-c: HIVE RC is now MEASURED LIVE (public rc_api probe, 10min cache)
+  // with the env value kept as fail-closed fallback. The fleet-cure daemon
+  // (mini-services/fleet-cure :3034) auto-executes the pending HIVE weave at
+  // the first fleet RC window — a scheduled, keyless-for-the-foundry path.
+  const rcLive = await hiveRcLive();
+  const rcPct = rcLive?.rcPct ?? Number(process.env.HIVE_RC_PCT ?? 0.6);
+  const rcSource = rcLive ? `live ${rcLive.account} @ ${rcLive.at}` : "env fallback";
   const tronEnergy = Number(process.env.TRON_ENERGY ?? 0);
+  const fc = fleetCureStatus();
   const networks: NetworkStatusView[] = networkStatuses(rcPct, tronEnergy);
   const chosen = target ? networks.filter((n) => n.network === target) : networks;
   const statusClear = chosen.length > 0 && chosen.every((n) => ["anchored", "pending", "gated", "transit"].includes(n.status));
@@ -200,10 +214,26 @@ export async function computePreflight(target: SignRequest["network"] | null): P
   const resourceFails: string[] = [];
   const resourceWarns: string[] = [];
   for (const n of chosen) {
-    if (n.network === "HIVE" && rcPct < 8) resourceFails.push(`HIVE RC ${rcPct}% < 8% (סף-קל)`);
-    if (n.network === "TRON" && tronEnergy <= 0) resourceFails.push("TRON energy=0 (נדרש הימור או שריפה)");
+    if (n.network === "HIVE") {
+      if (fc.lastTxid) {
+        resourceWarns.push(`HIVE: עוגן-צי בוצע — weave txid ${fc.lastTxid.slice(0, 12)}… (fleet-cure, RC מדוד ${rcPct}% מתוך ${rcSource})`);
+      } else if (fc.best && fc.best.etaMin <= 24 * 60) {
+        resourceWarns.push(
+          `HIVE: עוגן-צי ראשון מתוזמן אוטומטית בעוד ~${Math.round(fc.best.etaMin)} דק' (${fc.best.account}, מנה ${Math.round(fc.best.mana / 1e6)}M/230M RC) — מפתחות צי מאומתים 9/9 HIVE-posting; RC ראשי מדוד ${rcPct}% (סף-קל 8% ברגן) [${rcSource}]`
+        );
+      } else {
+        resourceFails.push(`HIVE RC ${rcPct}% < 8% (סף-קל) ואין חלון-צי בטווח 24 שע' [${rcSource}]`);
+      }
+    }
+    if (n.network === "TRON") {
+      if (statusOfEarly("tron-stake") === "decided-custom") {
+        resourceWarns.push("TRON: במסלול transit לפי החלטת בעלים (decided-custom) — tronbridge יומית נמשכת; עיגון-ישיר דורש מימון TRX (owner, אופציונלי)");
+      } else if (tronEnergy <= 0) {
+        resourceFails.push("TRON energy=0 (נדרש הימור או שריפה)");
+      }
+    }
     if (n.network === "STEEM" || n.network === "BLURT") {
-      resourceWarns.push(`${n.network}: בדיקת-קריאה חיה זמינה ב-/api/saos/live-proof; הרשאות-שידור (state/permissions) מאומתות רק סמוך לעוגן אמיתי (advisory)`);
+      resourceWarns.push(`${n.network}: מפתחות בחזקת הבעלים (0/11 התאמות-סמכות בסביבה, אומת 2026-09-09); הרשאות-שידור מאומתות סמוך לעוגן אמיתי (advisory)`);
     }
     // Task 12: Ethereum/Solana — not-configured is a WARN-state, never a fail:
     // missing RPC is the expected dry-run posture, not a broken gate.
@@ -285,8 +315,7 @@ export async function computePreflight(target: SignRequest["network"] | null): P
   const warnings: PreflightBlocker[] = checks.filter((c) => c.status === "warn").map((c) => ({ id: c.id, detail: c.detail }));
 
   // open CRITICAL owner decisions (registry is doc-compiled; recorded status lives in DB)
-  const recordedDecisions = await db.decisionRecord.findMany();
-  const statusOf = (key: string) => recordedDecisions.find((r) => r.key === key)?.status ?? "open";
+  const statusOf = statusOfEarly;
   const openCriticalDecisions = OWNER_DECISIONS.filter((d) => d.critical && statusOf(d.key) === "open").length;
   const openCriticalDecisionKeys = OWNER_DECISIONS.filter((d) => d.critical && statusOf(d.key) === "open").map((d) => d.key);
   const needsResourceDecisionKeys = OWNER_DECISIONS.filter((d) => statusOf(d.key) === "needs-resource").map((d) => d.key);

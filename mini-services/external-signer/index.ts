@@ -23,6 +23,12 @@
  *     id ssc-mainnet-hive, active authority), posting custom_json (weave);
  *   - hard amount bound (default ≤ 50 HIVE/op, env SIGNER_MAX_OP_HIVE).
  *
+ * Task 26-c addition (fleet RC cure): delegate_vesting_shares — fleet accounts
+ * delegate owned VESTS to the main account (headcorner) to raise its max_rc and
+ * RC-regeneration rate. Hard bounds: delegatee MUST be the main account; amount
+ * ≤ 80% of the delegator's OWNED vests (vesting_shares − delegated_vesting_shares);
+ * authority + RC gates apply like every active op. Reversible by design.
+ *
  * Iron rules mirrored from AGENTS.md: zero secret values in logs/responses;
  * fail-closed when the envelope or token is missing; loud audit lines with
  * public data only (requestId/network/txid/account-name).
@@ -308,10 +314,10 @@ const server = Bun.serve({
         mainAccount: STATE.main.account,
         fleetAccounts: [STATE.main.account, ...STATE.fleet.map((f) => f.username)].filter((v, i, a) => a.indexOf(v) === i),
         networks: ["STEEM", "HIVE"],
-        capabilities: ["custom_json", "transfer_to_vesting", "transfer", "claim_rewards", "he_market_sell", "he_withdraw"],
+        capabilities: ["custom_json", "transfer_to_vesting", "transfer", "claim_rewards", "he_market_sell", "he_withdraw", "delegate_vesting_shares"],
         authorityGate: "verify-before-broadcast (fail-closed)",
         maxOpHive: MAX_OP_HIVE,
-        version: "2.0.0"
+        version: "2.1.0"
       });
     }
 
@@ -360,6 +366,26 @@ const server = Bun.serve({
             return Response.json({ ok: false, error: "no pending rewards" }, { status: 400 });
           }
           operations = [["claim_reward_balance", { account: targetAccount, reward_hive: rh, reward_hbd: rhb, reward_vesting: rv }]];
+        } else if (net === "HIVE" && kind === "delegate_vesting_shares") {
+          role = "active";
+          // Task 26-c fleet cure — hard bounds (fail-closed):
+          const deleg = String(to ?? "").toLowerCase();
+          if (deleg !== String(STATE.main.account).toLowerCase()) {
+            return Response.json({ ok: false, error: `delegatee ${deleg} not allowed — fleet cure delegates only to the main account` }, { status: 400 });
+          }
+          const vests = Number(amount);
+          if (!Number.isFinite(vests) || vests < 0.5) return Response.json({ ok: false, error: "amount (VESTS) must be ≥ 0.5" }, { status: 400 });
+          const accsD = await rpcCall(nodeFor(net), "condenser_api.get_accounts", [[targetAccount]]);
+          const aD = accsD?.[0];
+          if (!aD) throw new Error("delegator fetch failed");
+          const totalV = parseFloat(aD.vesting_shares);
+          const outV = parseFloat(aD.delegated_vesting_shares);
+          const owned = Math.max(0, totalV - outV);
+          const allowed = Math.floor(owned * 0.8 * 1e6) / 1e6;
+          if (vests > allowed + 1e-9) {
+            return Response.json({ ok: false, error: `amount ${vests} VESTS > 80% of owned vests (${allowed.toFixed(6)} of ${totalV.toFixed(6)}, delegated-out ${outV.toFixed(6)}) — fail-closed bound` }, { status: 400 });
+          }
+          operations = [["delegate_vesting_shares", { delegator: targetAccount, delegatee: deleg, vesting_shares: vests.toFixed(6) + " VESTS" }]];
         } else if (net === "HIVE" && kind === "he_market_sell") {
           role = "active";
           if (!/^[A-Z0-9]{2,10}$/.test(String(symbol ?? ""))) return Response.json({ ok: false, error: "bad symbol" }, { status: 400 });
@@ -380,7 +406,7 @@ const server = Bun.serve({
           j.required_auths = [targetAccount];
           operations = [["custom_json", j]];
         } else {
-          return Response.json({ ok: false, error: `unsupported kind ${kind ?? "?"} for ${net} (allowlist: custom_json, transfer_to_vesting, transfer, claim_rewards, he_market_sell, he_withdraw)` }, { status: 400 });
+          return Response.json({ ok: false, error: `unsupported kind ${kind ?? "?"} for ${net} (allowlist: custom_json, transfer_to_vesting, transfer, claim_rewards, he_market_sell, he_withdraw, delegate_vesting_shares)` }, { status: 400 });
         }
 
         // AUTHORITY VERIFICATION GATE — nothing broadcasts without a live match
@@ -411,4 +437,4 @@ const server = Bun.serve({
   }
 });
 
-log("INFO", `external-signer v2 listening on :${PORT} (auth=${TOKEN ? "token" : "MISSING-FAIL-CLOSED"}, networks=STEEM+HIVE, authorityGate=on, maxOpHive=${MAX_OP_HIVE})`);
+log("INFO", `external-signer v2.1 listening on :${PORT} (auth=${TOKEN ? "token" : "MISSING-FAIL-CLOSED"}, networks=STEEM+HIVE, authorityGate=on, maxOpHive=${MAX_OP_HIVE})`);

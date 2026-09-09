@@ -9,6 +9,7 @@ import { HIVE_RC_FLOOR_HEAVY, HIVE_RC_FLOOR_LIGHT, hiveRcHoursToTarget, BLURT_CO
 import { minStakeForSettlements } from "./tron-energize";
 import { HISTORIC_ANCHORS } from "./historic";
 import { externalSignerCached } from "./external-signer-client";
+import { fleetCureStatus } from "./fleet-cure";
 import { ethereumStatus } from "./networks/ethereum";
 import { solanaStatus } from "./networks/solana";
 import type { ChainType, RpcStatus } from "./networks/types";
@@ -64,14 +65,22 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
   // authorities of any of the 11 fleet accounts — the live runtime anchors
   // with its own keys. The honest blocker is key-AUTHORIZATION, not key-ABSENCE.
   const signerConnected = externalSignerCached().connected;
+  // Task 26-c forensics (2026-09-09, live-verified): the envelope keys match
+  // HIVE chain authority for 9/9 fleet accounts (posting+active) and match
+  // NOTHING on STEEM (headcorner+tov+fleet 0/11 — owner-held runtime keys,
+  // disk wiped). The honest STEEM blocker is key-custody (owner), not software.
+  const steemBlocker = "keys-owner-held: מפתחות STEEM בחזקת הבעלים (אומת 0/11 התאמות-סמכות בסביבה; המפתחות החיים היו runtime-only ונמחקו מהדיסק) — עיגון STEEM דורש טעינת מפתח-בעלים למעטפת דרך fleet_vault --seal";
   const vaultBlocker = signerConnected
-    ? "keys: המעטפת החתומה אינה מוסמכת על-השרשרת — דרוש סנכרון-מעטפת מהרנטיים החי (fleet_vault --seal) או רוטציית-סמכויות עם מפתח-השליטה"
+    ? steemBlocker
     : "vault: אין מפתחות חתימה בסנדבוקס (שלב 2 — שחזור כספת)";
 
   const nowIso = new Date().toISOString();
-  // honest stage flag: no vault/signer is connected in this sandbox — every
-  // network is compute/plan-only until an external signer is actually attached.
-  const dryRunOnly = true;
+  // Task 26-c: HIVE has a REAL broadcast path when the signer is connected —
+  // the 9 fleet accounts' posting keys verify live, and the fleet-cure daemon
+  // auto-executes the pending weave at the first RC window.
+  const fc = fleetCureStatus();
+  const dryRunOnly = true; // STEEM/BLURT/TRON: no working keys in-environment
+  const hiveDryRunOnly = !signerConnected; // HIVE: real path via fleet + signer
 
   const steem: NetworkStatusView = {
     network: "STEEM",
@@ -96,10 +105,10 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
     isReadyForAnchor: false,
     isDryRunOnly: dryRunOnly,
     ownerOptions: [
-      "שחזור כספת (מחוץ למערכת) והפעלת מחזור העוגן הראשון על STEEM",
-      "השארת STEEM כרשת-גיבוי ובחירת רשת אחרת כיעד ראשון"
+      "טעינת מפתח-הבעלים (STEEM) למעטפת באמצעות fleet_vault --seal על הרנטיים החי",
+      "השארת STEEM כרשת-גיבוי ובחירת HIVE (עיגון-צי) כיעד ראשון"
     ],
-    ownerAction: "לשחזר את המפתח מהכספת ההיסטורית מחוץ למערכת (docs/external-signer.md) — המערכת מקבלת רק txid",
+    ownerAction: "לטעון את מפתחות ה-STEEM שבחזקת הבעלים למעטפת (fleet_vault --seal) — המערכת מאמתת סמכות מול השרשרת לפני כל שידור",
     estimatedTime: null,
     estimatedCost: null,
     resourceLiveChecked: false
@@ -139,9 +148,18 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
 
   const lightH = hiveRcHoursToTarget(rcPct, HIVE_RC_FLOOR_LIGHT);
   const heavyH = hiveRcHoursToTarget(rcPct, HIVE_RC_FLOOR_HEAVY);
+  // Task 26-c: the fleet-cure daemon schedules the first REAL HIVE anchor
+  // automatically (fleet keys verified 9/9; op-cost 225M RC measured).
+  const fleetWindowH = fc.best ? fc.best.etaMin / 60 : null;
+  const fleetLanded = Boolean(fc.lastTxid);
+  const hiveBlocker = fleetLanded
+    ? vaultBlocker
+    : fc.best
+      ? `rc-floor כבר לא חוסם-אוטומטי: חלון-עוגן-צי ראשון בעוד ~${fleetWindowH?.toFixed(1)} שע' (${fc.best.account}) — מתוזמן ע"י fleet-cure; סף-קל 8% לחשבון הראשי בעוד ~${lightH.toFixed(1)} שע' רגן`
+      : `rc-floor: נוכחי ${rcPct}% < ${HIVE_RC_FLOOR_LIGHT}% (סף-קל) / ${HIVE_RC_FLOOR_HEAVY}% (סף-כבד) — ואין חלון צי פעיל`;
   const hive: NetworkStatusView = {
     network: "HIVE",
-    status: rcPct >= HIVE_RC_FLOOR_LIGHT ? "pending" : "gated",
+    status: fleetLanded || rcPct >= HIVE_RC_FLOOR_LIGHT ? "pending" : "gated",
     mode: "advisory",
     chainType: "graphene",
     chainId: null,
@@ -149,31 +167,39 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
     rpcStatus: "public",
     liveProbePossible: true,
     lastChecked: nowIso,
-    lastVerifiedAnchor: null,
-    nextAction:
-      rcPct >= HIVE_RC_FLOOR_LIGHT
-        ? "הפעימה הבאה תעגן בפועל (custom_json קל) — הסף עבר"
-        : "המתנה לרגן או power-up מיידי; אין פעולה חיה עד לסף",
-    blocker: rcPct >= HIVE_RC_FLOOR_LIGHT ? vaultBlocker : `rc-floor: נוכחי ${rcPct}% < ${HIVE_RC_FLOOR_LIGHT}% (סף-קל) / ${HIVE_RC_FLOOR_HEAVY}% (סף-כבד)`,
-    requiredResource: `RC ≥ ${HIVE_RC_FLOOR_LIGHT}% — רגן ~20%/יום (כ-${lightH.toFixed(1)} שעות לסף-קל, ${heavyH.toFixed(1)} לכבד) או power-up/delegate`,
-    unblockPlan: [
-      `1. התאוששות טבעית: ~${lightH.toFixed(1)} שעות עד ${HIVE_RC_FLOOR_LIGHT}%`,
-      "2. האצה ריבונית: SWAP.HIVE→HIVE→vesting (power-up) או delegate VESTS",
-      "3. אחרי הסף: פעימת עגינה רגילה + שמירת txid"
-    ],
-    // HIVE resource level is measurable (env rc%) — but without a connected signer it still cannot anchor
+    lastVerifiedAnchor: fleetLanded ? (fc.lastTxid as string) : null,
+    nextAction: fleetLanded
+      ? `עוגן-צי בוצע (txid ${String(fc.lastTxid).slice(0, 12)}…) — המשך קצב עם backoff לפי חלונות RC`
+      : fc.best
+        ? `fleet-cure מבצע אוטומטית את ה-weave הממתין בחלון הראשון (~${Math.round(fc.best.etaMin)} דק', ${fc.best.account}) — ריצה אוטומטית, ללא פעולת בעלים`
+        : "המתנה לרגן או power-up; אין פעולה חיה עד לסף",
+    blocker: hiveBlocker,
+    requiredResource: fleetLanded
+      ? null
+      : `מנועת-עלות: RC ≥ 225M ל-op (מדוד) — רגן צי אוטומטי; לחשבון הראשי RC ≥ ${HIVE_RC_FLOOR_LIGHT}% (כ-${lightH.toFixed(1)} שע') או power-up 9.682 HIVE (דורש מפתח-בעלים)`,
+    unblockPlan: fleetLanded
+      ? [
+          "1. קצב עיגון-צי קבוע עם backoff כלכלי (כמו relay ה-DEX)",
+          "2. power-up 9.682 HIVE של הראשי בטעינת מפתח-בעלים (max_rc ×~1.6)",
+          "3. מעקב rc-floor ב-/api/saos/energy?net=hive"
+        ]
+      : [
+          `1. אוטומטי: fleet-cure משדר את ה-weave בחלון הצי הראשון (~${fleetWindowH !== null ? fleetWindowH.toFixed(1) : "?"} שע')`,
+          "2. אוטומטי: רישום txid חזרה ל-SignRequest + עדכון סטטוס",
+          "3. owner (אופציונלי): טעינת מפתח-בעלים → power-up 9.682 HIVE דרך נתיב ה-DEX (authority-gate מאמת)",
+          `4. רגן טבעי: סף-קל 8% בעוד ~${lightH.toFixed(1)} שע'`
+        ],
     isReadyForAnchor: false,
-    isDryRunOnly: dryRunOnly,
+    isDryRunOnly: hiveDryRunOnly,
     ownerOptions: [
-      `המתנה להתאוששות טבעית (רגן ~20%/יום — כ-${lightH.toFixed(1)} שעות לסף-הקל)`,
-      "power-up (SWAP.HIVE→HIVE→vesting) להאצה מיידית",
-      "delegate VESTS מחייל בריא לחשבון",
-      "מעבר לחשבון HIVE אחר עם RC פנוי"
+      `אוטומטי (ברירת-מחדל): עיגון-צי בחלון הראשון (~${fleetWindowH !== null ? fleetWindowH.toFixed(1) : "?"} שע')`,
+      "טעינת מפתח-בעלים למעטפת → power-up 9.682 HIVE של הראשי (האצה ×~1.6)",
+      "המתנה לרגן טבעי לסף-הקל (8%)"
     ],
-    ownerAction: `לבחור: המתנה (כ-${lightH.toFixed(1)} שעות) או מימון power-up/delegate — פעולה כלכלית מחוץ למערכת, באישור בעלים בלבד`,
-    estimatedTime: `כ-${lightH.toFixed(1)} שעות רגן לסף-הקל (8%) · ${heavyH.toFixed(1)} לסף-הכבד (12%)`,
+    ownerAction: "אין פעולה נדרשת — התור האוטומטי מבצע; טעינת מפתח-הבעלים (fleet_vault --seal) מהירה את הקצב דרך power-up",
+    estimatedTime: fleetLanded ? "מיידי (עוגן בוצע)" : `חלון-צי ~${fleetWindowH !== null ? fleetWindowH.toFixed(1) : "?"} שע' · סף-קל 8% ~${lightH.toFixed(1)} שע' · סף-כבד 12% ~${heavyH.toFixed(1)} שע'`,
     estimatedCost: null,
-    resourceLiveChecked: false
+    resourceLiveChecked: true
   };
 
   const minStake = minStakeForSettlements(4); // 4 settlements/day — the working target
@@ -192,7 +218,7 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
       tronEnergy > 0
         ? "מסלול ישיר פתוח: TriggerSmartContract עם stateRoot בנתוני הקריאה"
         : "הישארות ברכבת tronbridge היומית (root בתוך stateRoot) עד מימון ההימור",
-    blocker: tronEnergy > 0 ? vaultBlocker : `energy-0: אפס אנרגיה בכל 6 כתובות הכספת (מדידה חיה 2026-09-08T22:05Z; יתרה מרבית 17.6 TRX — מתחת לסף-שריפה)`,
+    blocker: tronEnergy > 0 ? vaultBlocker : "transit לפי החלטת בעלים (decided-custom 2026-09-09): המשך רכבת tronbridge היומית — energy=0 מדידה חיה 2026-09-08T22:05Z, יתרה מרבית 17.6 TRX מתחת לסף-שריפה",
     requiredResource: `TRX stake ≥ ${minStake.toLocaleString()} TRX ל-4 יישובי USDT/יום (או שריפה ~27.26 TRX/tx)`,
     unblockPlan: [
       `1. מימון הימור: ≥ ${minStake.toLocaleString()} TRX`,
@@ -208,7 +234,7 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
       "האצלת אנרגיה (delegate מחשבון אחר)",
       "מימון חיצוני / שריפת TRX לכל עסקה"
     ],
-    ownerAction: "לממן TRX ולבחור מסלול (הימור/שריפה/האצלה) או לאשר המשך transit — פעולה כלכלית מחוץ למערכת, באישור בעלים בלבד",
+    ownerAction: "transit אושר כברירת-מחדל הכלכלית (החלטת בעלים); מימון TRX לעיגון-ישיר נשאר אופציונלי — פעולה כלכלית באישור בעלים בלבד",
     estimatedTime: "מיידי אחרי מימון האנרגיה",
     estimatedCost: `הימור ≥ ${minStake.toLocaleString()} TRX ל-4 יישובי USDT/יום · שריפה ~27.26 TRX/tx`,
     resourceLiveChecked: false

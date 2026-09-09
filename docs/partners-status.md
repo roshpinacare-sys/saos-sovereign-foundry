@@ -47,3 +47,25 @@
 **התיקון למסקנת Task 26**: המעטפת אינה "מיושנת" — היא **קבוצת-מפתחות-ה-HIVE של הצי** (ה-STEEM סובב/הוחלף, ה-HIVE נשאר). החותם-החיצוני v2 מאמת-סמכות מול-השרשרת לפני-כל-שידור ומפעיל את מסילת-ההמרה (sell → withdraw → powerup) עבור 9 החשבונות — הוכחה-חיה: מכירות WEED/STEM נחתו עם txids במאזנים, withdraw שודר, שער-RC מדווח ETA במקום שידור-אסון.
 
 **מדידת-רעב חיה** (rc_manabar last_update): פעולת-HIVE אחת עולה ~124M RC → headcorner מורעב לפעולה/25-דק (במקום 36 שניות); הצי (max_rc 2-8G) מורעב לפעולה/שעות. הפתרון-הכלכלי: power-up ה-9.682 ל-headcorner (runbook ב-DAEMONS.md) + דלגציות-עתידיות לצי.
+
+---
+
+## תוספת Task 26-c (2026-09-09) — מטריצת-חזקה סופית (אומת-חי, derive→chain)
+
+| חשבון | HIVE posting | HIVE active | STEEM posting/active | הערות |
+|---|---|---|---|---|
+| headcorner (ראשי) | בחזקת הבעלים | בחזקת הבעלים (STM8c9vp3hU…) | בחזקת הבעלים | 9.682 HIVE נזיל + BEE/CENT/VKBT — כולם נעולים למפתח-בעלים; rail המרה מוכן (DEX convert) |
+| tov | בחזקת הבעלים | בחזקת הבעלים (STM4wCC3Qq2H…) | בחזקת הבעלים | RC 6.1% — הבריא בשדה; אין נזיל |
+| cashmachine | ✓ מאומת | ✓ מאומת | ✗ | RC ~8% — החלון הראשון-כמעט |
+| haran | ✓ | ✓ | ✗ | RC 0.06% |
+| israelnews | ✓ | ✓ | ✗ | RC 6.1% |
+| lsa | ✓ | ✓ | ✗ | מכר WEED→SWAP.HIVE (Task 27) |
+| macrame | ✓ | ✓ | ✗ | מכר STEM + withdraw (Task 27) |
+| siq | ✓ | ✓ | ✗ | RC 6.3% |
+| wic | ✓ | ✓ | ✗ | RC 0.6% |
+| wog | ✓ | ✓ | ✗ | RC 0.2% |
+| woq | ✓ | ✓ | ✗ | RC ~8% — חלון-ראשון (fleet-cure) |
+
+- מקור המפתחות המאומתים: המעטפת החתומה (fleet_keys.enc → keys/vault.json), GCM-אמיתית; האימות בוצע בזיכרון (derive → השוואה מול `condenser_api.get_accounts`) בלי להדפיס אף ערך.
+- **משמעות מבצעית**: הצי מחובר ל-HIVE ומסוגל לעגן (weave) בחלונות RC; headcorner/tov/STEEM = חזקת-בעלים (לא נוגעים — "לא להרוס").
+- fleet-cure (:3034) מבצע את העוגן הראשון אוטומטית; סטטוס חי: `docs/evidence/fleet-cure-status.json`.

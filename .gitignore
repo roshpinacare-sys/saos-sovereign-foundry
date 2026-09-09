@@ -42,3 +42,7 @@ backups/
 # sandbox platform infra (not part of the repo)
 .zscripts/
 Caddyfile
+
+# fleet-cure runtime files (Task 26-c)
+mini-services/fleet-cure/cure-state.json
+mini-services/fleet-cure/*.pid

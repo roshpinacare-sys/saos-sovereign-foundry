@@ -1,0 +1,9 @@
+{
+  "name": "fleet-cure",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SAOS fleet-cure (:3034) — Task 26-c: watches fleet-account HIVE RC mana and executes the pending HIVE weave SignRequest through the external signer when a broadcast window opens (mana >= op-cost + buffer). No keys held — the signer (:3033) keeps the envelope; this service only orchestrates public data + authorized calls. Status: docs/evidence/fleet-cure-status.json (public data only).",
+  "scripts": {
+    "dev": "bun --hot index.ts"
+  }
+}

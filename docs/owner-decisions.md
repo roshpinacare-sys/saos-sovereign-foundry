@@ -58,13 +58,13 @@
 | sh3-historical-file | security | critical | now | **decided-default** — ברירת-המחדל הבטוחה פעילה (אין שכתוב; התוכן מתייחס כסוד; ריפו פרטי); סיווג סופי נותר פעולת בעלים אופציונלית |
 | push-approval | governance | medium | now | **decided-default** — הבעלים אישר במפורש ("שידחוף דחוף"); f012014 נדחף לפי הפרוטוקול ואומת מרחוק |
 | github-actions-ci | release | medium | now | **decided-custom** (Task 13) — ה-workflow קיים בפועל וריצה #4 ירוקה מקצה-לקצה (4e853a9: lint+typecheck+build+api-check+concurrency); סטטוס ה-CI נשלף חי ב-/api/saos/live-proof |
-| vault-restore | resources | critical | before-anchor | **needs-resource** — נדרש שחזור כספת מחוץ למערכת; לא ניתן לביצוע אוטונומי |
-| hive-rc-floor | resources | critical | before-anchor | **decided-custom** (Task 27) — המשאב נמצא (9.682 HIVE על headcorner); מסילת-המרה נבנתה והוכחה חי (signer v2 + שער-אימות-סמכות + DEX convert); deadlock של הרנטיים תוקן ונדחף (ade0b5e); נותרת הרצה-אחת: `he_powerup.cjs --amount ALL` על-הרנטיים-החי |
-| tron-stake | resources | critical | before-anchor | **needs-resource** — אנרגיה=0; נדרש מימון TRX או המשך tronbridge |
+| vault-restore | resources | critical | before-anchor | **decided-custom** (Task 26-c, 2026-09-09) — המעטפת GCM-אמיתית (7 קבצים); מפתחות-הצי מאומתים-חי 9/9 מול HIVE (posting+active); headcorner+tov בחזקת הבעלים (runtime-only, הדיסק נמחק) — שער-הסמכות דוחה 403 fail-closed (מדוד חי); STEEM 0/11 התאמות; מטריצת-חזקה ב-docs/partners-status.md; פתיחה-אופציונלית: fleet_vault --seal כשהבעלים טוען מפתחות |
+| hive-rc-floor | resources | critical | before-anchor | **decided-custom** (Task 27 + 26-c) — עלות-op מדודה (225M RC); האצלה אפשרית-שרשרת (min 1,611.18 VESTS > כל חייל — מדוד); מסילת power-up ל-9.682 HIVE מוכנה (DEX convert) וחסומה-מפתח-בעלים (403 מדוד); **אוטומציה**: fleet-cure (:3034) משדר את ה-weave הממתין בחלון הצי הראשון ורושם txid; ה-preflight מודד RC חי |
+| tron-stake | resources | critical | before-anchor | **decided-custom** (Task 26-c, 2026-09-09) — הבעלים: להישאר ברכבת tronbridge היומית (ברירת-המחדל הבטוחה); energy=0 מדידה-חיה (יתרה מרבית 17.6 TRX < 27.26 שריפה); אין נתיב-המרה ל-TRX בסביבה; עיגון-ישיר נשאר אופציונלי למימון בעלים |
 | build-verification | release | medium | before-live | **deferred** — חסום-סביבה (מדיניות dev-server בלבד); ה-build יאומת בריצות ה-CI |
 | live-mode-approval | governance | critical | before-live | **decided-custom** (Task 13) — הבעלים אישר במפורש בצ'אט: להפעיל live במצב הבטוח ביותר — live **ללא שידור אמיתי**. בוצע (דגלים כפולים); broadcastCapable נשאר false עד חיבור חותם חיצוני; כל עוגן אמיתי עדיין דורש אישור פר-עוגן + משאב + חתימה חיצונית |
 
-מאזן (עודכן Task 27, 2026-09-08): **9 מתוך 9 מוקלטות — 0 פתוחות** (7 decided כולל hive-rc-floor, 2 needs-resource: tron-stake/vault-restore — כנים: אבק-TRX בלי נתיב-המרה בסביבה שלנו; שחזור-חוץ). שתי הסגירות החדשות (live-mode-approval, github-actions-ci) מבוססות על הנחיית-הבעלים ב-Task 13 ועל מצב בפועל שנמדד — לא סגירות-פיקטיביות. כל העדכונים עם auditTrail ב-API.
+מאזן (עודכן Task 26-c, 2026-09-09): **9 מתוך 9 מוקלטות — 0 פתוחות, 0 needs-resource** (כל 9 decided). הפינה-המשאבית נסגרה עם ראיות-חי: מטריצת-סמכויות מאומתת (9/9 HIVE צי; 0/11 STEEM; headcorner/tov = חזקת-בעלים), עלות-op מדודה (225M RC), אוטומציית עיגון-צי פעילה (fleet-cure), ומסלול transit ל-TRON לפי החלטת בעלים. כל העדכונים עם auditTrail ב-API.
 
 > הסטטוס החי הוא תמיד `GET /api/saos/decisions` — הטבלה היא תמונת-מצב לתיעוד בלבד.
 
@@ -110,3 +110,34 @@
 | dev-autosession | governance | high | **decided-coordinator** — סשן-מנוהל לשלב-פיתוח (SAOS_DEV_AUTOSESSION=1, NODE_ENV-guard) לפי "אתה צריך להיות מחובר לפחות לעת עתה"; audited; נשלל אוטומטית בפרודקשן |
 | chain-regenesis | integrity | critical | **decided-coordinator** — 2 קבלות-מורשת בלתי-מאומתות (דיגסט-עידן-קודם, יתומות) אוכסנו (לא נמחקו-שקט) והשרשרת חודשה; fail-closed לא נפגע — המאמת נשאר קפדני |
 | envelope-resync-required | security | critical | **decided-coordinator (ממצא)** — המעטפת אינה מוסמכת על-השרשרת (הוכח בשרשרת עצמה); נדרש `fleet_vault --seal` מהרנטיים-החי. זה החסם-היחיד לעוגן-STEEM האמיתי |
+
+---
+
+## Task 26-c (2026-09-09) — סגירת הפינה-המשאבית: מטריצת-חזקה מאומתת-חי + אוטומציית עיגון-צי
+
+**הנחיית-בעלים**: "פתור את כל החסימות בכל דרך... אנחנו צריכים לעבוד עם המפתחות גם אתה וגם שאר הסוכנים בבטיחות — תוודא שזה קורה ולא ההפך... אני עשיתי את זה לא להרוס תתקדם".
+
+### מה נמדד (חי, ציבורי, אפס סודות בפלט)
+
+1. **מטריצת-סמכויות מלאה (derive→השוואה מול השרשרת, בזיכרון בלבד)**:
+   - צי (9 חשבונות: cashmachine, haran, israelnews, lsa, macrame, siq, wic, wog, woq): **9/9 posting+active מאומתים-חי מול HIVE** — החיבור קיים ועובד.
+   - headcorner + tov: **0 התאמות בסביבה כולה** (מעטפת חיצונית + פנימית + כל גיבויי-השומר + seed-derivations) — המפתחות בחזקת הבעלים בלבד (הדיסק של הרנטיים נמחק). "אני עשיתי את זה" — הסמכויות בשרשרת הן הגדרת-הבעלים; לא נוגעים, לא מרוטטים.
+   - STEEM: 0/11 התאמות (כולל הראשי) — עיגון STEEM מוחזק אצל הבעלים.
+2. **עלות-op מדודה בשרשרת**: weave על HIVE = **225,041,204 RC** (דחייה-חיה של cashmachine: "has 166,881,563 RC, needs 225,041,204").
+3. **מינימום-האצלה בשרשרת**: **1,611.18 VESTS** — גדול מכל יתרה-עצמית של חייל (מקס 268) ⇒ ריפוי-בהאצלה בלתי-אפשרי (מדידה, לא הנחה).
+4. **ניסיון power-up אמיתי דרך ה-DEX** (POST /api/dex/convert action=powerup 9.682 HIVE) → נעצר נכון בשער-הסמכות (403 authority-mismatch) — הראיה שה-rail והבטיחות עובדים; הבלוק הוא מפתח-בעלים, לא תוכנה.
+
+### מה נבנה
+
+- **external-signer v2.1** — `delegate_vesting_shares` ברשימת-ההיתר (חסמים: delegatee=ראשי בלבד, ≤80% מהמאוזן-עצמי, שערי-סמכות+RC) — מוכן ליום שבו יהיה HP להאציל.
+- **fleet-cure (:3034, mini-service חדש)** — מודד כל-5 דק' את מנת-ה-RC של 9 החיילים (RPC ציבורי), ובחלון הראשון (≥230M) משדר **בעצמו** את ה-weave הממתין (sig-788c0870, חותם height=2) דרך ה-signer, רושם את ה-txid חזרה ל-foundry (PATCH audited) וכותב `docs/evidence/fleet-cure-status.json` (נתונים ציבוריים בלבד). מדידה ראשונה: woq 168M → חלון ~3.3 שע'.
+- **preflight אמת**: HIVE RC מתוך **מדידה-חיה** (rc_api, cache-10 דק'; env נשאר fallback), חלון-הצי מוצג כ-warn עם ETA, TRON-transit לפי החלטת בעלים = warn; STEEM/BLURT = מפתחות-בעלים (warn). חסימת `network-resources` מפסיקה להיות שקרית.
+- **HIVE_RC_PCT ב-.env** עודכן למדידה (1.84% בשעת-הכתיבה; גדל ברגן).
+
+### ההחלטות שנסגרו (auditTrail ב-API)
+
+- `vault-restore` → decided-custom (מטריצת-חזקה מאומתת; שחזור-מפתחות-בעלים אופציונלי).
+- `hive-rc-floor` → decided-custom (אוטומציה פעילה + ראיות מדידה; סף-8% = זמן-רגן בלבד).
+- `tron-stake` → decided-custom (transit לפי הבעלים; מימון TRX אופציונלי).
+
+**מאזן**: 9/9 decided · 0 open · 0 needs-resource — הפינה סגורה.

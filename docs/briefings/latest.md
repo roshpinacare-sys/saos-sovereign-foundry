@@ -1,18 +1,18 @@
-# בריף ראש-המטה — 2026-09-08T23:53:28.855Z
+# בריף ראש-המטה — 2026-09-09T00:23:26.431Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: bdce4e4
+HEAD: b18ff67
+- b18ff67 56bda06a-43c1-4c71-a6f9-ef1e7c7b88d8
 - bdce4e4 961e660d-f909-46db-97e5-3e8c384f8760
 - d654b12 fix(27-b): chain pollution archived + schema hardened — EvidenceReceipt.at required
 - ef357cf feat(27): HIVE conversion rail — signer v2 (authority+RC gates), dex convert route, deadlock fix evidence, decisions+docs
 - 014cb18 ops(task-26): chief-of-staff closing briefing
-- 3bd1f1c ops(task-26): 'connect and execute' — system CONNECTED live: external signer service (:3033, supervisor-watched, envelope-in-memory, txid-only contract) · mode=live broadcastCapable · blockers 5→1 (verified backup, seal h2, chain REGENESSED with legacy-receipt archival, live-measured HIVE RC 0%/TRON energy=0 kept honest) · 'מחובר' rendered via dev-managed audited session · REAL anchor attempt hit honest root finding: envelope keys NOT the on-chain authorities (0/99 backups match; live fleet anchors with its own keys — partners-status.md) · remaining unblock = one fleet_vault --seal sync on live runtime
-guardian: ok=true runs=111 devMode=true tickAlive=true token=true
-briefings אחרונים: BRIEF-2026-09-08T22-21-57.md, BRIEF-2026-09-08T22-23-30.md, BRIEF-2026-09-08T22-53-30.md, BRIEF-2026-09-08T23-23-24.md, BRIEF-2026-09-08T23-30-19.md
+guardian: ok=true runs=130 devMode=true tickAlive=true token=true
+briefings אחרונים: BRIEF-2026-09-08T22-23-30.md, BRIEF-2026-09-08T22-53-30.md, BRIEF-2026-09-08T23-23-24.md, BRIEF-2026-09-08T23-30-19.md, BRIEF-2026-09-08T23-53-28.md
 ── זנב next-steps.md ──
 …
 ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
@@ -44,28 +44,27 @@ briefings אחרונים: BRIEF-2026-09-08T22-21-57.md, BRIEF-2026-09-08T22-23-3
 ── זנב owner-decisions.md ──
 …
 e-push של שכתוב-היסטוריה (היוצא-מן-הכלל השני לכלל AGENTS.md, לצד guardian-פרודקשן): רק עם גיבוי-bundle + בדיקת-remote-לא-זז + אימות-מרחוק אחרי |
-| he-live-gate-contract | operations | high | **decided-coordinator** — חוזה-השער: `(--live או HE_LI
+| he-live-gate-contract | operations | high | **decided-coordinator** — חוזה-השער: `(--live או HE_LIVE=1) && HE_LIVE_CONFIRM=<account>`; DRY ברירת-מחדל עם לוג רועש; הוטמע ב-he_sell/he_unstake (P1 להרחבה ל-~14 דיימונים) |
+| mnemonic-scripts-watch | security | high | **decided-coordinator** — scripts/anchor-sovereign-mnemonic.ts נוסף ל-WATCH ה-guardian (נגזרת של סתימת נקודת-העיוור; DEV_MODE=צפייה+גיבוי) |
+| vault-sovereign-verified | security | critical | **decided-coordinator** — המעטפת נבדקה GCM-OK: 7 קבצי-מפתח חתומים (כולל mnemonic). "אין-גיבוי" מ-Task 23 נסגר סופית. שמות-קבצים בלבד נבדקו — אפס ערכים |
+| token-rotation | security | high | **owner-optional** — כל ה
 ```
 </details>
 ## מצב רשת
-הרשת מחוברת ופעילה עם חתימה חיצונית מוגנת, מסילת המרה HIVE-DEX פעילה ומאומתת. נמצאו ותוקנו תקלות קריטיות ב-RC ובאבטחת מסד הנתונים. נותר חסם אחד לעוגן STEEM.
+הרשת פעילה עם HEAD ב-b18ff67. קיימים 9.682 HIVE נזילים על headcorner. ה-RC של HIVE ב-0.003% מהמקסימום, מה שמאפשר פעולה אחת כל ~25 דקות. מסילת ההמרה HIVE-DEX פעילה והוכחה. נתפס ונתקן דליפת מסד נתונים ב-DEX. נקודת ה-deadlock ב-powerup תוקנה ונותר להפעיל את הסקריפט המסיים.
 
 ## סיכונים / דברים מדממים
-- רגישות RC נמוכה ב-HIVE (0.003%) מגבילה קצב עיבוד לפעולה אחת כל 25 דקות
-- חסם עוגן STEEM (fleet_vault --seal) עדיין לא פתוח
-- מפתחות הרנטיים מוחזקים על-ידי רשת חיצונית ולא על-השרשרת עצמה
+הסיכון העיקרי הוא קצב ה-RC הנמוך ב-HIVE (פעולה אחת כל 25 דקות) מה שמעכב פעולות חיוניות כמו withdraws ו-powerups. עדיין קיימת מגבלת RC על macrame (~232 דקות ל-powerup). טוקני TRX נותרו "אבק" ללא נתיב המרה מעשי.
 
 ## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימות
-1. [רנטיים/ראש-המטה] הפעלת `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי להגדלת RC + פתיחת שער משאבים
-2. [ראש-המטה] פיקוח על סיום תהליך ה-powerup ואימות עליית RC ב-HIVE (מדידת קצב הרגן/יום)
-3. [רנטיים/ראש-המטה] הפעלת `fleet_vault --seal` על הרנטיים החי לפתיחת עוגן STEEM האמיתי
+1. [רנטיים-חי] `node agent/he_powerup.cjs --amount ALL` - אימות: RC עולה מ-25.6G ל-~40G במאזני הרנטיים.
+2. [רנטיים-חי] המתנה עד ש-RC של macrame מספיק ל-powerup - אימות: ETA מדויק בפלט הסקריפט.
+3. [רנטיים-חי] הפעלת ה-DEX עם נתיב המרה חדש לאחר שה-powerup יושלם - אימות: קבלת txid מוצלחת מהשרשרת.
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-- אישור המשך פעולת ה-DEX עם מסד הנתונים המבודד ומוגן
-- קביעת סדר עדיפויות לפעולות הבאות: הגדלת RC קודם, אחר כך פתיחת עוגן STEEM
-- פיקוח על תהליך ה-powerup עד להשלמתו ואימות התוצאות
+אישור הפעלת הסקריפט `he_powerup.cjs` עם `--amount ALL` על הרנטיים-החי כדי לייעל את ניצול ה-RC. אישור המשך הפעלת ה-DEX לצורך המרות עתידיות. אישור סגירת משימת Task 27-b לאחר אימות התיקון.
 
-## נשאר לבעלים בלבד (או "כלום")
-- החלטות סופיות בנוגע למפתחות הריבוניים ולאימות הסופי של העוגן
-- אישור סופי לשחרור המערכת מתלות בבעלים
-- אישור לשימוש במשאבים הנוזליים המוגבלים (9.682 HIVE)
+## נשאר לבעלים בלבד
+- החלטה על רוטציה של מפתחות (token-rotation) - מוגדר כ-owner-optional.
+- החלטה על שימוש במשאבי ה-TRX הקיימים או הגדרת נתיב המרה חדש עבורם.
+- אישור סופי לפריסת הפתרון המלא לאחר אימות סופי של כלל המערכת.
