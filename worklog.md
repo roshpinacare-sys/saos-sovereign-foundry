@@ -1292,3 +1292,18 @@ Stage Summary:
 - העיצוב: SOVEREIGN v3 מוכח בדפדפן — הטאב "קופה חיה" עונה קבוע על "מה עם ה-TRX וכל הכספים".
 - אמת כספים: הארנק החדש 0.05 TRX; 6 "כתובות כספת" מהתיעוד פיקטיביות (יש לתקן את KEY-RECOVERY.md מהאפליקציה עצמה); הנזיל האמיתי 42.28 BLURT + 0.67 STEEM; לישוב USDT חסרים 27.20 TRX.
 - קבצים: globals.css, kit.tsx, command-center.tsx, overview-tab.tsx, treasury-tab.tsx (חדש), api/saos/treasury/route.ts (חדש), types.ts, api.ts, rate-limit.ts.
+
+---
+Task ID: 41-fix
+Agent: Z.ai Code (main)
+Task: "אני רואה ui ישן תבדוק כמה קומיטים אחורה מה היה סגרנו הכל כבר" — diagnose stale-UI report, restore push, sync repo.
+
+Work Log:
+- אבחון: ה-askpass ששוחזר מהסיכום היה הפטרן הישן-השבור (2 שורות לכל פרומפט → git שלח "Username=git" כסיסמה → "Invalid username or token").
+- תיקון: askpass מבוסס case על סוג הפרומפט (Username→git, אחרת→cat הטוקן); fetch עבר נקי.
+- מצב ריפו נמדד: origin/main = d710251 (העיצוב כבר דחוף); חסר רק קומיט-בריפינג e733b86 + fleet-cure-status.json מוזז → נדחפו כ-337574d.
+- אימות דפדפן: הדף החי = SOVEREIGN v3 (צ'יפ זהב, glass), טאב "קופה חיה" מציג חי: TRX 0.05 / פער 27.20 / headcorner 42.95, אפס שגיאות קונסולה.
+
+Stage Summary:
+- הריפו מסונכרן לגמרי: local main == origin/main == 337574d; אין ahead/behind.
+- "UI ישן" שהבעלים רואה = cache תצוגה מקומי/צפייה בריפו לפני הדחיפה של אתמול 22:33 — הקוד והריפו מציגים v3.
