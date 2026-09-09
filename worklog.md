@@ -1051,3 +1051,29 @@ Stage Summary:
 - docs/OWNER-KEYS-MASTER-FILE.md is the single authoritative all-users file; docs/PROMPT-FOR-ALL-AGENTS.md is the prompt he asked to send to every agent.
 - The saos-dex vault (fleet_keys.enc 00:08) lives in the OTHER sandbox — the prompt is the bridge: that agent will extract/verify/backup/push + optionally ingest the SAOS-ROT1 seed, which unblocks headcorner end-to-end.
 - Commit: 92b78b5 "keys-rescue(31)".
+
+---
+Task ID: 32
+Agent: Z.ai Code (foundry)
+Task: "תתחבר להכל תבנה חיבור חכם... מקום להתחבר עם המפתחות... לצרף סוכנים דרך API... מחק כל מפתחות מהריפו לאחר ווידא שאתה מחובר" + uploaded file הדקור.txt
+
+Work Log:
+- Shape-inspected upload (never printing content): title line + 8× "ROLE = KEY" entries (OWNER/ACTIVE/POSTING/MEMO × 2 sections) + separator.
+- Live-chain verification: all 8 keys derive to pubkeys matching headcorner's CURRENT authorities 8/8 (STEEM+HIVE × 4 roles) — the owner supplied the post-rotation key set.
+- external-signer upgraded to v2.4.0: ingestOwnerKey role-aware (owner/active/posting/memo × both nets, chain decides the true slot — previously hardcoded active); parseKeyPayload universal parser (key-file "ROLE = KEY" + section headers + bare WIF + P-password + 64-hex seed); /keys/ingest accepts {text} (8KB) or entries[{network,wif,role}]; loadState now reads STEEM_/HIVE_ MEMO_WIF net slots.
+- Ingested all 8 keys via the universal path: INGESTED headcorner STEEM/HIVE × owner/active/posting/memo — envelope re-sealed 07:07:51Z; hot-reloaded.
+- NEW /keys/verify-live + LIVE-DRIFT MONITOR: every 10 min (+startup 20s, +on-demand) every loaded slot re-derived vs current on-chain authority; drift recorded + ALERT logged; /keys/status exposes drift{lastCheck,openDrifts}. First run: 35 slots OK (headcorner 8/8 + 9 fleet × 3 HIVE), 33 honest drifts (fleet STEEM + tov — rotated in SETTLE-10, need fresh material), 0 errors.
+- Agent bridge (owner directive "לצרף סוכנים כמוך דרך API"): Prisma AgentMessage model + db:push; /api/saos/agent-bridge GET (feed) / POST (x-agent-token fail-closed vs ~/.secrets/agent-bridge-token 0600; kind=message → live feed; kind=action → read-only allow-list keys-status|verify-live|health, executed+recorded; anything else refused+audited) / PATCH (ack); rate-limit rules agent-bridge 30/min, verify-live 10/min; new Agents tab in control screen (feed + attach how-to + token rotation warning).
+- Security tab: "חיבור חכם" universal paste box (any format → /api/saos/owner-keys {text} → signer) + "בדיקת חיבור-חי" button (POST /api/saos/verify-live) + drift status line; owner-keys proxy text passthrough.
+- Final encrypted backup regenerated (now includes headcorner's 12 live slots + 10 fleet accounts; AES-256-GCM/scrypt, SAME passphrase delivered in chat), round-trip decrypt verified; upload file shredded ×3 + deleted.
+- Repo cleaned per owner directive AFTER full verification: git rm --cached backups/key-backup-headcorner-20260909.enc (file retained on disk 0600, gitignored; history untouched per no-rewrite policy — file is passphrase-encrypted); repo-wide scan for key material: only public STM keys + code false-positives, zero private WIFs.
+- Browser-verified: security tab smart-connect + live check render honest verdicts (35/33/0); agents tab feed shows posted messages; mobile iPhone-14 renders; sticky footer intact; zero console/page errors. Lint clean.
+- Pushed 92b78b5..5ca711b; verified origin/main HEAD match, backups/ empty on origin, new routes present.
+
+Stage Summary:
+- headcorner: FULLY RECONNECTED (8/8 live-verified, sealed). Fleet: 9/11 full HIVE control. STEEM fleet + tov: pending fresh material from the relevant agents (bridge/prompt sent).
+- "Smart connection" shipped: ANY key format pasted in ONE box → parsed, chain-verified, written to true roles; live-check one click.
+- "It won't happen again" shipped: drift monitor detects external rotation within minutes + alerts.
+- "Attach agents via API" shipped: agent-bridge with capability token (delivered to owner in chat once), live feed in new Agents tab.
+- "Delete keys from repo" executed: backups/ empty on GitHub; local encrypted backup + passphrase retained by owner.
+- Bridge token + backup passphrase: chat-only (never in files/repo).
