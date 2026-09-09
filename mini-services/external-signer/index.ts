@@ -21,6 +21,21 @@
  *   - allowlisted ops only: transfer_to_vesting (power-up), transfer,
  *     claim_rewards, HE market-sell / hivepegged-withdraw (custom_json on
  *     id ssc-mainnet-hive, active authority), posting custom_json (weave);
+ *
+ * Task 29 additions (owner directive 2026-09-09: "אין לי איפה לחבר את המפתח"):
+ *   - POST /keys/ingest (Bearer) — the OWNER pastes their STEEM/HIVE active
+ *     key INTO THE CONTROL SCREEN (never through chat/logs); the signer is the
+ *     single verifier: derives the pubkey, checks it against the LIVE chain
+ *     authority of the fleet accounts, and accepts ONLY a live match (a wrong
+ *     or foreign key can never be written — self-protecting by construction);
+ *   - accepted keys land in the runtime layout (.env suffixed vars +
+ *     keys/vault.json), the envelope is re-sealed (fleet_vault --seal) and
+ *     STATE hot-reloads — no process restart, no secret ever echoed/logged;
+ *   - GET /keys/status (Bearer) — public data only: loaded booleans, derived
+ *     pubkeys (on-chain public), live-match verdicts. Never any WIF;
+ *   - network-aware main keys: STEEM_ACTIVE_WIF / HIVE_ACTIVE_WIF (suffixed)
+ *     are preferred over the legacy generic ACTIVE_WIF — two chains, usually
+ *     two different keys (the Task-27 403 root cause, fixed at the source).
  *   - hard amount bound (default ≤ 50 HIVE/op, env SIGNER_MAX_OP_HIVE).
  *
  * Task 26-c addition (fleet RC cure): delegate_vesting_shares — fleet accounts
@@ -39,7 +54,7 @@
 
 import Bun from "bun";
 import { createDecipheriv, scryptSync, timingSafeEqual, createHash } from "crypto";
-import { existsSync, readFileSync, readdirSync, appendFileSync } from "fs";
+import { existsSync, readFileSync, readdirSync, appendFileSync, writeFileSync, mkdirSync, chmodSync } from "fs";
 import path from "path";
 
 const PORT = Number(process.env.SIGNER_PORT ?? 3033);
@@ -146,15 +161,132 @@ function loadState() {
     try {
       const vault = JSON.parse(bundle.files["keys/vault.json"]);
       fleet = (vault.accounts ?? [])
-        .filter((a) => a?.username && a?.keys?.posting?.wif)
-        .map((a) => ({ username: a.username, postingWif: a.keys.posting.wif, activeWif: a.keys?.active?.wif ?? null }));
+        .filter((a) => a?.username && (a?.keys?.posting?.wif || a?.keys?.active?.wif))
+        .map((a) => ({
+          username: a.username,
+          postingWif: a.keys?.posting?.wif ?? null,
+          activeWif: a.keys?.active?.wif ?? null,
+          net: {
+            STEEM: { postingWif: a.keys?.posting?.wifSTEEM ?? null, activeWif: a.keys?.active?.wifSTEEM ?? null },
+            HIVE: { postingWif: a.keys?.posting?.wifHIVE ?? null, activeWif: a.keys?.active?.wifHIVE ?? null }
+          }
+        }));
     } catch {}
-    STATE = { sealedAt: bundle.sealedAt ?? null, main: { account, postingWif: envOf.POSTING_WIF, activeWif: envOf.ACTIVE_WIF ?? null, memoWif: envOf.MEMO_WIF ?? null }, fleet };
+    STATE = {
+      sealedAt: bundle.sealedAt ?? null,
+      main: {
+        account,
+        postingWif: envOf.POSTING_WIF,
+        activeWif: envOf.ACTIVE_WIF ?? null,
+        memoWif: envOf.MEMO_WIF ?? null,
+        net: {
+          STEEM: { postingWif: envOf.STEEM_POSTING_WIF ?? null, activeWif: envOf.STEEM_ACTIVE_WIF ?? null },
+          HIVE: { postingWif: envOf.HIVE_POSTING_WIF ?? null, activeWif: envOf.HIVE_ACTIVE_WIF ?? null }
+        }
+      },
+      fleet
+    };
     log("INFO", `envelope open: sealedAt=${STATE.sealedAt ?? "?"} main=${account} fleet=${fleet.length} accounts (values in-memory only, dir=${dir})`);
   } catch (e) {
     log("ERROR", `envelope open failed: ${String(e?.message ?? e).slice(0, 120)} — fail-closed`);
     STATE = null;
   }
+}
+
+// ── Task 29: owner key ingestion (verify-then-write, self-protecting) ────────
+function runVault(dir, arg) {
+  const script = path.join(dir, "fleet_vault.cjs");
+  if (!existsSync(script)) return { ok: false, out: `fleet_vault.cjs missing in ${dir}` };
+  try {
+    const p = Bun.spawnSync([process.execPath, script, arg], { cwd: dir, stdout: "pipe", stderr: "pipe" });
+    const out = `${p.stdout?.toString() ?? ""}${p.stderr?.toString() ?? ""}`.trim().slice(0, 300);
+    return { ok: p.exitCode === 0, out };
+  } catch (e) {
+    return { ok: false, out: String(e?.message ?? e).slice(0, 200) };
+  }
+}
+
+/**
+ * Write the ingested key into the runtime layout, then re-seal the envelope.
+ * Network-suffixed vars only (STEEM_ACTIVE_WIF / HIVE_ACTIVE_WIF) — the legacy
+ * generic ACTIVE_WIF is left untouched (non-destructive toward the owner's
+ * envelope content); key resolution prefers suffixed vars, so a stale generic
+ * value can never shadow a live-matched key again.
+ */
+function writeIngestedKey(dir, account, network, wif, role) {
+  const open = runVault(dir, "--open");
+  if (!open.ok) throw new Error(`vault open failed: ${open.out}`);
+  const envPath = path.join(dir, ".env");
+  if (!existsSync(envPath)) throw new Error("runtime .env missing after vault open (fail-closed)");
+  const lines = readFileSync(envPath, "utf8").split(/\r?\n/).filter((l) => l.trim().length > 0);
+  const setVar = (name, val) => {
+    const i = lines.findIndex((l) => l.startsWith(name + "="));
+    if (i >= 0) lines[i] = `${name}=${val}`; else lines.push(`${name}=${val}`);
+  };
+  const netTag = network === "HIVE" ? "HIVE" : "STEEM";
+  setVar(`${netTag}_${role === "active" ? "ACTIVE" : "POSTING"}_WIF`, wif);
+  writeFileSync(envPath, lines.join("\n") + "\n");
+  chmodSync(envPath, 0o600);
+  const keysDir = path.join(dir, "keys");
+  mkdirSync(keysDir, { recursive: true });
+  const vPath = path.join(keysDir, "vault.json");
+  let vault = { accounts: [] };
+  try {
+    const parsed = JSON.parse(readFileSync(vPath, "utf8"));
+    if (parsed && Array.isArray(parsed.accounts)) vault = parsed;
+  } catch {}
+  let acc = vault.accounts.find((a) => a?.username === account);
+  if (!acc) { acc = { username: account, keys: {} }; vault.accounts.push(acc); }
+  if (!acc.keys || typeof acc.keys !== "object") acc.keys = {};
+  if (!acc.keys[role] || typeof acc.keys[role] !== "object") acc.keys[role] = {};
+  acc.keys[role][network === "HIVE" ? "wifHIVE" : "wifSTEEM"] = wif;
+  writeFileSync(vPath, JSON.stringify(vault, null, 2));
+  chmodSync(vPath, 0o600);
+  const seal = runVault(dir, "--seal");
+  if (!seal.ok) throw new Error(`vault seal failed: ${seal.out}`);
+  return { sealedAt: new Date().toISOString(), sealOut: seal.out };
+}
+
+/**
+ * Owner-key ingest core: verify against the LIVE chain authority of the fleet
+ * accounts BEFORE anything is written. A key that matches no live authority is
+ * refused with honest verdicts — only the true owner's key can ever land.
+ */
+async function ingestOwnerKey(network, wif) {
+  const net = network === "HIVE" ? "HIVE" : "STEEM";
+  let derived;
+  try {
+    derived = steem.auth.wifToPublic(wif);
+  } catch {
+    return { ok: false, verdict: { network: net, role: "active", derived: null, match: false, error: "wif derivation failed (not a valid private key)" } };
+  }
+  const candidates = [STATE.main.account, ...STATE.fleet.map((f) => f.username)].filter((v, i, a) => a.indexOf(v) === i);
+  const checked = [];
+  for (const acct of candidates) {
+    try {
+      const auth = await chainAuthorities(net, acct);
+      const match = auth.active === derived;
+      checked.push({ account: acct, match });
+      if (match) return { ok: true, account: acct, derived };
+    } catch (e) {
+      checked.push({ account: acct, match: false, error: String(e?.message ?? e).slice(0, 120) });
+    }
+  }
+  return { ok: false, verdict: { network: net, role: "active", derived, match: false, checked, error: `no live ${net} active authority matches the derived public key (nothing written)` } };
+}
+
+/** public-data view of a role slot — never any WIF material */
+async function slotView(net, acct, wif, role) {
+  if (!wif) return { loaded: false, role };
+  let derived = null;
+  try { derived = steem.auth.wifToPublic(wif); } catch {}
+  let expected = null, match = null;
+  try {
+    const auth = await chainAuthorities(net, acct);
+    expected = role === "active" ? auth.active : auth.posting;
+    match = derived !== null && derived === expected;
+  } catch { match = null; }
+  return { loaded: true, role, derived, expected, match };
 }
 
 loadState();
@@ -244,12 +376,16 @@ async function verifyRcFeasibility(network, account) {
   }
 }
 
-/** which envelope key serves this request (account + authLevel) */
-function keyFor(account, authLevel) {
+/** which envelope key serves this request (account + authLevel + network);
+ *  network-suffixed keys (Task 29) win over the legacy generic slot */
+function keyFor(account, authLevel, network) {
   const isMain = !account || account === STATE.main.account;
+  const net = network === "HIVE" ? "HIVE" : "STEEM";
   const target = isMain ? STATE.main : STATE.fleet.find((f) => f.username === account);
   if (!target) return { target: null, wif: null, targetAccount: account ?? STATE.main.account };
-  const wif = authLevel === "active" ? (target.activeWif ?? null) : (target.postingWif ?? null);
+  const generic = authLevel === "active" ? (target.activeWif ?? null) : (target.postingWif ?? null);
+  const suffixed = target?.net?.[net] ? (authLevel === "active" ? (target.net[net].activeWif ?? null) : (target.net[net].postingWif ?? null)) : null;
+  const wif = suffixed ?? generic;
   return { target, wif, targetAccount: target.username ?? target.account };
 }
 
@@ -314,11 +450,68 @@ const server = Bun.serve({
         mainAccount: STATE.main.account,
         fleetAccounts: [STATE.main.account, ...STATE.fleet.map((f) => f.username)].filter((v, i, a) => a.indexOf(v) === i),
         networks: ["STEEM", "HIVE"],
-        capabilities: ["custom_json", "transfer_to_vesting", "transfer", "claim_rewards", "he_market_sell", "he_withdraw", "delegate_vesting_shares"],
+        capabilities: ["custom_json", "transfer_to_vesting", "transfer", "claim_rewards", "he_market_sell", "he_withdraw", "delegate_vesting_shares", "keys-ingest"],
         authorityGate: "verify-before-broadcast (fail-closed)",
         maxOpHive: MAX_OP_HIVE,
-        version: "2.1.0"
+        version: "2.2.0"
       });
+    }
+
+    // ── Task 29: owner key entry point (self-protecting: only a live authority match is ever written) ──
+    if (url.pathname === "/keys/status" && req.method === "GET") {
+      try {
+        const mainNet = {};
+        for (const net of ["STEEM", "HIVE"]) {
+          mainNet[net] = {
+            posting: await slotView(net, STATE.main.account, STATE.main.net?.[net]?.postingWif ?? STATE.main.postingWif, "posting"),
+            active: await slotView(net, STATE.main.account, STATE.main.net?.[net]?.activeWif ?? STATE.main.activeWif, "active")
+          };
+        }
+        const fleet = [];
+        for (const f of STATE.fleet) {
+          fleet.push({
+            username: f.username,
+            posting: f.postingWif ? { loaded: true } : { loaded: false },
+            active: f.activeWif ? { loaded: true } : { loaded: false }
+          });
+        }
+        return Response.json({ ok: true, main: { account: STATE.main.account, networks: mainNet }, fleet, sealedAt: STATE.sealedAt, version: "2.2.0" });
+      } catch (e) {
+        return Response.json({ ok: false, error: String(e?.message ?? e).slice(0, 200) }, { status: 502 });
+      }
+    }
+
+    if (url.pathname === "/keys/ingest" && req.method === "POST") {
+      let body;
+      try { body = await req.json(); } catch { return Response.json({ ok: false, error: "bad-json" }, { status: 400 }); }
+      const raw = JSON.stringify(body ?? {});
+      if (raw.length > 8192) return Response.json({ ok: false, error: "payload too large" }, { status: 413 });
+      const entries = Array.isArray(body?.entries) ? body.entries.slice(0, 4)
+        : (body?.wif ? [{ network: body.network, wif: body.wif }] : []);
+      if (!entries.length) return Response.json({ ok: false, error: "missing entries [{network, wif}]" }, { status: 400 });
+      const ingested = [], refused = [];
+      for (const ent of entries) {
+        const network = ent?.network === "HIVE" ? "HIVE" : ent?.network === "STEEM" ? "STEEM" : null;
+        const wif = typeof ent?.wif === "string" ? ent.wif.trim() : "";
+        if (!network || !wif) { refused.push({ network: ent?.network ?? "?", error: "missing network or wif" }); continue; }
+        const res = await ingestOwnerKey(network, wif);
+        if (res.ok) {
+          try {
+            const dir = resolveEnvelopeDir();
+            const sealInfo = writeIngestedKey(dir, res.account, network, wif, "active");
+            loadState(); // hot-reload in-memory keys from the re-sealed envelope
+            log("INGEST", `network=${network} account=${res.account} role=active MATCH — written to runtime layout, envelope re-sealed (${sealInfo.sealOut || "ok"})`);
+            ingested.push({ account: res.account, network, role: "active", derived: res.derived, sealedAt: sealInfo.sealedAt });
+          } catch (e) {
+            log("ERROR", `ingest write failed network=${network}: ${String(e?.message ?? e).slice(0, 160)}`);
+            refused.push({ network, error: `verify-ok but write failed (fail-closed): ${String(e?.message ?? e).slice(0, 160)}` });
+          }
+        } else {
+          log("REFUSED", `ingest network=${network}: ${res.verdict?.error ?? "no match"}`);
+          refused.push(res.verdict);
+        }
+      }
+      return Response.json({ ok: ingested.length > 0, ingested, refused, sealedAt: STATE?.sealedAt ?? null });
     }
 
     if (url.pathname === "/sign" && req.method === "POST") {
@@ -329,7 +522,7 @@ const server = Bun.serve({
       const net = network === "HIVE" ? "HIVE" : network === "STEEM" ? "STEEM" : null;
       if (!net) return Response.json({ ok: false, error: "unsupported network (capabilities: STEEM|HIVE)" }, { status: 400 });
 
-      const { target, wif, targetAccount } = keyFor(account, authLevel === "active" ? "active" : "posting");
+      const { target, wif, targetAccount } = keyFor(account, authLevel === "active" ? "active" : "posting", net);
       if (!target) return Response.json({ ok: false, error: `unknown account ${account ?? "(main)"}` }, { status: 400 });
 
       const started = Date.now();
@@ -437,4 +630,4 @@ const server = Bun.serve({
   }
 });
 
-log("INFO", `external-signer v2.1 listening on :${PORT} (auth=${TOKEN ? "token" : "MISSING-FAIL-CLOSED"}, networks=STEEM+HIVE, authorityGate=on, maxOpHive=${MAX_OP_HIVE})`);
+log("INFO", `external-signer v2.2 listening on :${PORT} (auth=${TOKEN ? "token" : "MISSING-FAIL-CLOSED"}, networks=STEEM+HIVE, authorityGate=on, keys-ingest=verify-then-write, maxOpHive=${MAX_OP_HIVE})`);

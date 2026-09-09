@@ -56,7 +56,8 @@ export const RATE_RULES = {
   "repo-status": { name: "repo-status", perMinute: envLimit("repo-status", 30) },
   decisions: { name: "decisions", perMinute: envLimit("decisions", 30) },
   "live-proof": { name: "live-proof", perMinute: envLimit("live-proof", 6) },
-  "breakthrough-demo": { name: "breakthrough-demo", perMinute: envLimit("breakthrough-demo", 10) }
+  "breakthrough-demo": { name: "breakthrough-demo", perMinute: envLimit("breakthrough-demo", 10) },
+  "owner-keys": { name: "owner-keys", perMinute: envLimit("owner-keys", 6) }
 } as const satisfies Record<string, RateLimitRule>;
 
 export type RateRuleName = keyof typeof RATE_RULES;

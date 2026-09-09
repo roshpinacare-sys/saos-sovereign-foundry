@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, FileLock2, Fingerprint, GitBranch, KeyRound, LogOut, ShieldCheck, Unlink, XCircle } from "lucide-react";
+import { CheckCircle2, FileLock2, Fingerprint, GitBranch, KeyRound, Link2, LogOut, RefreshCw, ShieldCheck, Unlink, XCircle } from "lucide-react";
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { toast } from "sonner";
@@ -16,12 +16,13 @@ import {
   fmtDateTime
 } from "@/components/ui/kit";
 import { EP, errText, refreshKey, useSaos } from "./api";
-import type { AuthStateResponse, LiveGateResponse, RepoStatusResponse, RevokeAllResponse } from "./types";
+import type { AuthStateResponse, LiveGateResponse, OwnerKeysIngestResponse, OwnerKeysStatusResponse, RepoStatusResponse, RevokeAllResponse } from "./types";
 
 export function SecurityTab() {
   const repoQ = useSaos<RepoStatusResponse>("repo-status", () => fetch(EP.repoStatus).then((r) => r.json() as Promise<RepoStatusResponse>));
   const gateQ = useSaos<LiveGateResponse>("live-gate", () => fetch(EP.liveGate).then((r) => r.json() as Promise<LiveGateResponse>));
   const authQ = useSaos<AuthStateResponse>("auth", () => fetch(EP.auth).then((r) => r.json() as Promise<AuthStateResponse>));
+  const ownerKeysQ = useSaos<OwnerKeysStatusResponse>("owner-keys", () => fetch(EP.ownerKeys).then((r) => r.json() as Promise<OwnerKeysStatusResponse>));
 
   if (repoQ.state === "error" && gateQ.state === "error") {
     const e = repoQ;
@@ -34,6 +35,14 @@ export function SecurityTab() {
         <h2 className="text-base font-bold text-zinc-100">אבטחה ומאגר — Security &amp; Repo</h2>
         <p className="text-xs text-zinc-500">סודות, הרשאות, מצב ריפו ודחיפה, גיבויים ושער ה-live — ממקורות קריאה-בלבד, ללא ערכי סוד.</p>
       </div>
+
+      <OwnerKeysCard
+        statusQ={ownerKeysQ}
+        onIngested={() => {
+          void refreshKey("owner-keys", () => fetch(EP.ownerKeys).then((r) => r.json()));
+          void refreshKey("signer", () => fetch(EP.signer).then((r) => r.json()));
+        }}
+      />
 
       <AuthCard
         state={authQ.state === "ready" ? authQ.data : null}
@@ -415,6 +424,172 @@ export function BackupsPanel() {
           { label: "הרשאות .env", value: repoQ.data.secrets.envFilePerms ?? "—", mono: true }
         ]}
       />
+    </Panel>
+  );
+}
+
+// ── Task 29: owner key entry point — the ONLY place the owner's key is connected ──
+function OwnerKeysCard({
+  statusQ,
+  onIngested
+}: {
+  statusQ: ReturnType<typeof useSaos<OwnerKeysStatusResponse>>;
+  onIngested: () => void;
+}) {
+  const [steemKey, setSteemKey] = useState("");
+  const [hiveKey, setHiveKey] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [verdict, setVerdict] = useState<OwnerKeysIngestResponse | null>(null);
+
+  const status = statusQ.state === "ready" ? statusQ.data : null;
+  const netRow = (net: "STEEM" | "HIVE") => {
+    const slot = status?.main?.networks?.[net]?.active;
+    const ok = slot?.loaded === true && slot?.match === true;
+    const loaded = slot?.loaded === true;
+    return (
+      <div key={net} className="flex items-center justify-between gap-2 rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+        <span className="flex items-center gap-2 text-xs font-semibold text-zinc-200">
+          <Mono>{net}</Mono>
+          <span className="text-[10px] font-normal text-zinc-500">מפתח-פעיל</span>
+        </span>
+        {ok ? (
+          <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-400"><CheckCircle2 className="size-3.5" aria-hidden /> חובר ותואם לרשות-חיה</span>
+        ) : loaded ? (
+          <span className="flex items-center gap-1 text-[11px] font-semibold text-amber-400"><XCircle className="size-3.5" aria-hidden /> קיים אך לא תואם (חסר מפתח-הבעלים)</span>
+        ) : (
+          <span className="flex items-center gap-1 text-[11px] font-semibold text-zinc-500"><XCircle className="size-3.5" aria-hidden /> חסר</span>
+        )}
+      </div>
+    );
+  };
+
+  async function submit() {
+    const entries = [
+      steemKey.trim() ? { network: "STEEM", wif: steemKey.trim() } : null,
+      hiveKey.trim() ? { network: "HIVE", wif: hiveKey.trim() } : null
+    ].filter((e): e is { network: string; wif: string } => e !== null);
+    if (!entries.length) {
+      toast.error("הדבק מפתח-פעיל אחד לפחות (STEEM או HIVE)");
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await fetch(EP.ownerKeys, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ entries }) });
+      const body = (await res.json()) as OwnerKeysIngestResponse;
+      setVerdict(body);
+      if (body.ok) {
+        toast.success(`המפתח חובר, אומת מול השרשרת ונאטם בכספת (${(body.ingested ?? []).map((i) => `${i.network}→${i.account}`).join(", ")})`);
+        setSteemKey("");
+        setHiveKey("");
+        onIngested();
+      } else {
+        toast.error(body.error ?? "המפתח לא תואם לרשות-חיה — לא נכתב דבר");
+      }
+    } catch {
+      toast.error("שגיאת רשת — המפתח לא נשלח");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Panel
+      title="מפתח-בעלים — נקודת חיבור (STEEM / HIVE)"
+      icon={<KeyRound className="size-4 text-emerald-400" aria-hidden />}
+      source="/api/saos/owner-keys"
+      lastChecked={statusQ.state === "ready" ? statusQ.lastChecked : null}
+      onRefresh={statusQ.refresh}
+      refreshing={statusQ.refreshing}
+    >
+      <div className="space-y-3">
+        <p className="text-[11px] leading-relaxed text-zinc-400">
+          זו הכתובת שבה מחברים את המפתח. המפתח עובר מכאן <strong className="text-zinc-200">ישירות לחותם-החיצוני בתוך הסביבה</strong> —
+          לעולם לא נשמר בשיחה, בלוג, בדפדפן או בריפו. לפני קבלה הוא נגזר למפתח-ציבורי ונבדק מול{" "}
+          <strong className="text-zinc-200">רשות-ה-active החיה על השרשרת</strong> — מפתח שגוי או זר נדחה ושום דבר לא נכתב.
+        </p>
+
+        <div className="space-y-1.5">
+          {netRow("STEEM")}
+          {netRow("HIVE")}
+        </div>
+
+        <details className="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+          <summary className="flex cursor-pointer items-center gap-1.5 text-[11px] font-semibold text-zinc-300">
+            <Link2 className="size-3.5" aria-hidden /> איפה מוצאים את המפתח? (לחץ להצגה)
+          </summary>
+          <ol className="mt-2 list-inside list-decimal space-y-1 text-[11px] leading-relaxed text-zinc-400">
+            <li>STEEM: כניסה ל-steemitwallet.com → Permissions → לצד Active לחיצה על “Show private key” → העתקה.</li>
+            <li>HIVE: כניסה ל-wallet.hive.blog / peakey.io → Permissions → Active → “Reveal private key” → העתקה.</li>
+            <li>המפתח הוא מחרוזת ארוכה (WIF). להדביק כאן למטה בשדה המתאים ולחיצה על “חיבור”.</li>
+            <li>מפתח-ה-posting ומפתח-ה-memo נשארים כמו שהם — נדרש רק ה-Active לפעולות ההמרה.</li>
+          </ol>
+        </details>
+
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+          <label className="block">
+            <span className="text-xs font-semibold text-zinc-300">מפתח-פעיל STEEM</span>
+            <input
+              type="password"
+              dir="ltr"
+              value={steemKey}
+              onChange={(e) => setSteemKey(e.target.value)}
+              autoComplete="off"
+              className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 font-mono text-sm text-zinc-100 focus-visible:outline-2 focus-visible:outline-emerald-400"
+              placeholder="STEEM active WIF"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-semibold text-zinc-300">מפתח-פעיל HIVE</span>
+            <input
+              type="password"
+              dir="ltr"
+              value={hiveKey}
+              onChange={(e) => setHiveKey(e.target.value)}
+              autoComplete="off"
+              className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 font-mono text-sm text-zinc-100 focus-visible:outline-2 focus-visible:outline-emerald-400"
+              placeholder="HIVE active WIF"
+            />
+          </label>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Btn onClick={() => void submit()} loading={busy} ariaLabel="חיבור מפתח הבעלים">
+            <RefreshCw className="size-3.5" aria-hidden />
+            חיבור המפתח
+          </Btn>
+          {status?.sealedAt ? (
+            <span className="text-[10px] text-zinc-500">כספת נאטמה: {fmtDateTime(status.sealedAt)} · חותם v{status.version ?? "?"}</span>
+          ) : statusQ.state === "error" ? (
+            <span className="text-[10px] text-amber-400">החותם לא נגיש — {errText(statusQ.err)}</span>
+          ) : null}
+        </div>
+
+        {verdict && (
+          <div className="space-y-1 rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
+            {(verdict.ingested ?? []).map((i) => (
+              <div key={`${i.network}-${i.account}`} className="flex items-center gap-2 text-[11px] font-semibold text-emerald-400">
+                <CheckCircle2 className="size-3.5 shrink-0" aria-hidden />
+                <span>
+                  <Mono>{i.network}</Mono> — הותאם לחשבון <Mono>{i.account}</Mono> ונכתב לכספת המוצפנת ({fmtDateTime(i.sealedAt)})
+                </span>
+              </div>
+            ))}
+            {(verdict.refused ?? []).map((r, idx) => (
+              <div key={`r-${idx}`} className="flex items-start gap-2 text-[11px] font-semibold text-rose-400">
+                <XCircle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+                <span>
+                  <Mono>{r.network ?? "?"}</Mono> — {r.error ?? "לא תואם לרשות-חיה (שום דבר לא נכתב)"}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <p className="text-[10px] leading-relaxed text-zinc-500">
+          לאחר חיבור מוצלח: המסילה (DEX → חותם) מאומתת אוטומטית, ופעולות ההמרה — power-up של 9.682 HIVE ל-HP, מכירת BEE
+          והעיגונים — ירוצו דרך השערים הקיימים. הגבלה: 6 ניסיונות/דקה.
+        </p>
+      </div>
     </Panel>
   );
 }

@@ -515,3 +515,34 @@ export interface BreakthroughDemoResponse {
   note: string;
   generatedBy: string;
 }
+
+// ── Task 29: owner key entry point (signer /keys/status + /keys/ingest) ──────
+
+export interface OwnerKeySlot {
+  loaded: boolean;
+  role?: string;
+  derived?: string | null;
+  expected?: string | null;
+  match?: boolean | null;
+  error?: string;
+}
+
+export interface OwnerKeysStatusResponse {
+  ok: boolean;
+  error?: string;
+  main?: {
+    account: string;
+    networks: Record<string, { posting: OwnerKeySlot; active: OwnerKeySlot }>;
+  };
+  fleet?: Array<{ username: string; posting: { loaded: boolean }; active: { loaded: boolean } }>;
+  sealedAt?: string | null;
+  version?: string;
+}
+
+export interface OwnerKeysIngestResponse {
+  ok: boolean;
+  error?: string;
+  ingested?: Array<{ account: string; network: string; role: string; derived: string; sealedAt: string }>;
+  refused?: Array<{ network?: string; account?: string; match?: boolean; derived?: string | null; error?: string; checked?: Array<{ account: string; match: boolean }> }>;
+  sealedAt?: string | null;
+}

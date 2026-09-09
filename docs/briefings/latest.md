@@ -1,18 +1,18 @@
-# בריף ראש-המטה — 2026-09-09T03:23:29.248Z
+# בריף ראש-המטה — 2026-09-09T03:53:30.539Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: 1bfc349
+HEAD: 4f33e18
+- 4f33e18 chore(28): fleet-cure status refresh (runtime artifact)
+- 78f6748 b146e076-0a09-4a3d-b617-eb5b78432282
 - 1bfc349 worklog(28)+guardian: incident addendum — gitkeeper wiped gates (38c4ec1), restored on origin (4dd033c) with self-heal (APPLY-LIVE-GATE.sh + in-repo patch); guardian required-files WATCH for live_gate module
 - f3b60bc worklog(28): push connectivity restored for all agents (global askPass), LIVE-GATE full rollout (66 daemons, origin 13cb741), guardian foundry WATCH, fence violation fixed (a80ed5b), decisions ledger annotated; browser-verified מחובר/0-blockers
 - 06a95b8 chore(28): fleet-cure status refresh (runtime artifact)
-- e03c440 176148dc-5ee6-4c59-8393-35291a88236a
-- c2ed998 worklog(26-c): resource corner closed with live evidence — fleet HIVE matrix, fleet-cure automation, decisions 0/0/0, key-safety contract
-guardian: ok=true runs=1 devMode=true tickAlive=true token=true
-briefings אחרונים: BRIEF-2026-09-09T01-01-34.md, BRIEF-2026-09-09T01-23-36.md, BRIEF-2026-09-09T01-53-32.md, BRIEF-2026-09-09T02-23-33.md, BRIEF-2026-09-09T02-53-38.md
+guardian: ok=true runs=23 devMode=true tickAlive=true token=true
+briefings אחרונים: BRIEF-2026-09-09T01-23-36.md, BRIEF-2026-09-09T01-53-32.md, BRIEF-2026-09-09T02-23-33.md, BRIEF-2026-09-09T02-53-38.md, BRIEF-2026-09-09T03-23-29.md
 ── זנב next-steps.md ──
 …
 ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
@@ -46,22 +46,29 @@ briefings אחרונים: BRIEF-2026-09-09T01-01-34.md, BRIEF-2026-09-09T01-23-3
 ול HIVE** — החיבור קיים ועובד.
    - headcorner + tov: **0 התאמות בסביבה כולה** (מעטפת חיצונית + פנימית + כל גיבויי-השומר + seed-derivations) — המפתחות בחזקת הבעלים בלבד (הדיסק של הרנטיים נמחק). "אני עשיתי את זה" — הסמכויות בשרשרת הן הגדרת-הבעלים; לא נוגעים, לא מרוטטים.
    - STEEM: 0/11 התאמות (כולל הראשי) — עיגון STEEM מוחזק אצל הבעלים.
-2. **עלות-op מדודה בשרשרת**: weave על HIVE = **225,041,204 RC** (דחייה-חיה של cashmachine: "has 166,881,563 RC, needs 225,0
+2. **עלות-op מדודה בשרשרת**: weave על HIVE = **225,041,204 RC** (דחייה-חיה של cashmachine: "has 166,881,563 RC, needs 225,041,204").
+3. **מינימום-האצלה בשרשרת**: **1,611.18 VESTS** — גדול מכל יתרה-עצמית ש
 ```
 </details>
 ## מצב רשת
-הרשת יציבה עם חיבור מלא לסוכנים, המערכת האוטומטית לטיפול ב-RC ב-HIVE פעילה, ה-DEX פועל ונתיב המרה מוכח. 9.682 HIVE נזילים מופעלים דרך מערכת הסמכות והשמירה על משאבים.
+הרשת פעילה עם מצב יציב. מערכת ה-RC של HIVE חסרה עקב תקלה ב-FSM שחסמה את תהליך ה-powerup, אך התיקון יושם וממתין להפעלה סופית. מסילת ההמרה ל-HIVE פעילה ומוכחת, עם גילוי ותיקון נקודת תורפה ב-DEX שגרמה לכתיבת נתונים זרים לשרשרת.
 
 ## סיכונים / דברים מדממים
-אין. כל הסיכונים הידועים תוקנו: פגיעה ב-DEX נתפסה ותוקנה, מחסור ב-RC טופל עם אוטומציה, ונתיבי המרה מאובטחים עם שערי סמכות ו-RC.
+- חוסר RC ב-HIVE מגביל את קצב הפעולות לכל ~25 דקות במקום כל 36 שניות.
+- פעולת ה-powerup נעולה עד שה-RC יתאושש (צפוי ~3.5 שעות).
+- נתוני ה-foundry נחשפו לזמן קצר אך תוקנו.
 
 ## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
-1. [רנטיים/ראש-המטה] הפעל את `node agent/he_powerup.cjs --amount ALL` כדי להפעיל את תהליך ה-powerup עם כל ה-HIVE הזמין, עם אימות הגדלת RC מעל 25G בתוך 5 דקות.
-2. [רנטיים/מערכת] עקוב אחרי ביצוע ה-powerup וה-withdraw של lsa (0.00248 SWAP.HIVE) דרך מערכת fleet-cure, עם אימות הגעת הכסף לארנק לאחר תהליך ה-powerup.
-3. [רנטיים/מערכת] הפעל את fleet-cure כדי להתחיל למדוד את קצב ה-RC של הצי כל 5 דקות, עם אימת כתיבת הנתונים ל-`docs/evidence/fleet-cure-status.json`.
+1. [רנטיים/ראש-מטה] הפעלת `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי, ואימות שה-RC עולה במאזנים לאחר הרצה.
+2. [רנטיים/ראש-מטה] מעקב אחרי השלמת withdraw של lsa (0.00248 SWAP.HIVE) ואימות קבלת הכסף בפועל על השרשרת.
+3. [רנטיים/ראש-מטה] פיקוח על פעילות fleet-cure (:3034) ואימות שהמערכת משדרת את ה-weave הממתין כאשר חלון ה-RC הראשון פתוח (≥230M).
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-אישור להמשיך ולהפעיל את מערכת fleet-cure באופן מלא, כאשר היא תטפל אוטומטית בכל פעולות ה-weave ב-HIVE כאשר יש RC מספיק. אישור להמשיך להשתמש ב-external-signer v2 עם השערים הקיימים לכל פעולות המערכת.
+- אישור להפעלת תיקון ה-RC ב-HIVE על ידי הפעלת הסוכן he_powerup עם כל הכסף הזמין.
+- הפעלת מעקב פעיל אחרי קצב ה-RC הכולל של הצי דרך fleet-cure כדי לנצל את החלונות הפעילים.
+- המשך פיקוח על מסילת ההמרה הפעילה ואימות כל העסקאות דרך external-signer v2.
 
-## נשאר לבעלים בלבד
-שמירת המפתחות של headcorner ו-tov, וכל החלטות האסטרטגיה לגבי מימון והאצלה עתידית של VESTS.
+## נשאר לבעלים בלבד (או "כלום")
+- שימוש במפתחות האישיים לעסקאות STEEM/BLURT.
+- החלטה על שימוש ב-TRX לצורך staking או כל פעולה אחרת ברשת TRON.
+- שחזור מפתחות ה-vault (אם יידרש בעתיד).

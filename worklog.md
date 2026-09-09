@@ -967,3 +967,26 @@ Stage Summary:
 - **למה זה קורה:** ה-gitkeeper מצלם את הדיסק של ה-runtime החיצוני על origin כל ~30 דק; הדיסק ההוא לא נושא את השערים. דחיפה חוזרת בלבד = מלחמת-מראות אינסופית.
 - **ריפוי בר-קיימא (4dd033c על origin, origin==HEAD אומת):** (1) שערים שוחזרו מ-patch `git diff 9c7a56e 13cb741` ב-3-way, קונפליקטי מצב-ריצה (fleet_keys.enc/meta, wrapped_*, chaintalk_pending, he_fleet_*, microdex_state, oracle106_result, weave_*) נפתרו לטובת origin — שום-דבר של ה-runtime לא נדרס; (2) ה-patch עצמו נשמר בתוך הריפו (`agent/lib/live-gate-28b.patch`, 6039 שורות) + סקריפט `agent/lib/APPLY-LIVE-GATE.sh` — פקודה אחת להצהרה-מחדש; (3) `node --check` על כל ה-.cjs המשוחזרים PASS, 66 דימונים מפנים ל-live_gate אומת על ה-tip.
 - **ראייה-עתידית:** guardian קיבל מנגנון `required` (קבצים-חובה ב-HEAD) — אם ה-gitkeeper ימחק שוב, ALERT מיידי ב-guardian.log עם פקודת-הריפוי. הריפוי האמיתי והעמיד: להריץ את אותו patch על ה-clone של ה-runtime עצמו (מחוץ לסביבה — בידי הבעלים/117n); הסקריפט מוכן בריפו, פקודה אחת.
+
+---
+Task ID: 29
+Agent: Z.ai Code (Z-Lo)
+Task: "איפה אני מחבר את המפתח steem שלי כדי שתוכל לעבוד איתו אין לי איפה ואז תבצע את הכל הכי טוב" — build the owner a real place to connect their STEEM/HIVE key, then execute everything.
+
+Work Log:
+- Root insight: the owner has NO terminal/place for the key — so the environment must PROVIDE one. Built the missing entry point end-to-end (signer → API → control screen).
+- external-signer v2.1 → v2.2.0 (bun --hot reload, zero downtime):
+  - POST /keys/ingest (Bearer): verify-then-write. Derives WIF→pubkey (steem.auth.wifToPublic), checks LIVE active authority of every fleet account (condenser_api.get_accounts, 10-min cache); ONLY a live match is ever written — a foreign/wrong key is refused with honest verdicts, self-protecting by construction (an attacker with the URL can only harvest "no-match").
+  - Accepted key lands in the runtime layout: .env gets NETWORK-SUFFIXED vars (STEEM_ACTIVE_WIF/HIVE_ACTIVE_WIF — the Task-27 root cause fixed at the source: two chains, two keys) + keys/vault.json gets per-account keys.active.wifSTEEM/wifHIVE; fleet_vault.cjs --open → patch → --seal; loadState() hot-reloads — no process restart.
+  - GET /keys/status (Bearer): public data only — loaded booleans, derived/expected pubkeys (on-chain public), live-match verdicts. Never any WIF.
+  - keyFor(account, role, network) now prefers suffixed vars over the legacy generic ACTIVE_WIF (stale generic can never shadow a live key).
+- Next.js API /api/saos/owner-keys (GET status proxy + POST ingest proxy): reads signer token from ~/.secrets/external-signer-token at request time; body NEVER logged/audited (audit carries verdicts only); hard rate-limit 6/min (SAOS_RL_OWNER_KEYS_PER_MIN).
+- Control screen Security tab: new top card "מפתח-בעלים — נקודת חיבור (STEEM / HIVE)" — password fields per network, live per-network status rows (חסר / קיים אך לא תואם / חובר ותואם), "where to find the key" collapsible (steemitwallet Permissions → Show private key; hive wallet → Reveal), verdict panel (✓ matched+sealed / ✗ refused honest reason), vault seal timestamp.
+- Browser-verified (agent-browser): card renders on the security screen, status rows honest (both nets: "קיים אך לא תואם — חסר מפתח-הבעלים"), UI submission of a dummy WIF → signer REFUSED "wif derivation failed", verdict panel renders, zero page errors, zero console errors.
+- Cross-check: curl POST with a public testnet genesis WIF → refused, nothing written, envelope sealAt unchanged. GET /keys/status via proxy == direct signer response.
+
+Stage Summary:
+- The owner now has exactly ONE answer to "איפה אני מחבר את המפתח": the control screen → Security tab → top card → paste → connect. Key transits inside the environment only (browser → Next server → signer, all in-sandbox), verified against the live chain before acceptance, sealed into the SAOS-FLEET-VAULT-1 envelope, never echoed.
+- The moment the owner's key is accepted: signer gate goes green → powerup 9.682 HIVE→HP (DEX rail, RC-gated) → BEE sell → STEEM anchors → resource corner closes. That pipeline is pre-verified and one command away per op.
+- Pending owner action (only owner-custody lever left): paste the real active key(s). Fallback: paste in chat → I ingest via the same verify-then-write path with identical hygiene.
+- Pushed: foundry (signer v2.2.0, owner-keys API, security-tab card, rate-limit rule, types).
