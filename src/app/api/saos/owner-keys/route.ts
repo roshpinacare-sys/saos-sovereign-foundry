@@ -86,7 +86,7 @@ export async function POST(req: Request) {
       : [];
   const entries = rawEntries
     .map((e) => ({ network: NETWORKS.has(String(e?.network)) ? String(e.network) : null, wif: typeof e?.wif === "string" ? e.wif.trim() : "" }))
-    .filter((e): e is { network: string; wif: string } => Boolean(e.network) && e.wif.length >= 40 && e.wif.length <= 120);
+    .filter((e): e is { network: string | null; wif: string } => e.wif.length >= 40 && e.wif.length <= 120);
   if (!entries.length) {
     return NextResponse.json({ ok: false, error: "אין מפתח תקין בבקשה — נדרש מפתח-פעיל (WIF) עבור STEEM או HIVE" }, { status: 400 });
   }

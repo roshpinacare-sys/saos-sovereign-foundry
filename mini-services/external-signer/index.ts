@@ -224,7 +224,7 @@ function writeIngestedKey(dir, account, network, wif, role) {
     if (i >= 0) lines[i] = `${name}=${val}`; else lines.push(`${name}=${val}`);
   };
   const netTag = network === "HIVE" ? "HIVE" : "STEEM";
-  setVar(`${netTag}_${role === "active" ? "ACTIVE" : "POSTING"}_WIF`, wif);
+  setVar(`${netTag}_${role.toUpperCase()}_WIF`, wif);
   writeFileSync(envPath, lines.join("\n") + "\n");
   chmodSync(envPath, 0o600);
   const keysDir = path.join(dir, "keys");
@@ -273,6 +273,46 @@ async function ingestOwnerKey(network, wif) {
     }
   }
   return { ok: false, verdict: { network: net, role: "active", derived, match: false, checked, error: `no live ${net} active authority matches the derived public key (nothing written)` } };
+}
+
+/**
+ * Task 29-b: MASTER-PASSWORD ingest — the owner's P-prefixed login string
+ * ("מקשר להכל"). Derives ONLY active/posting/memo (owner key is NEVER derived
+ * or stored — owner-level custody stays with the owner), for EVERY candidate
+ * account × BOTH networks, and accepts only live-authority matches.
+ * Returns internal matches (with wif for the write path) + public verdicts.
+ */
+async function ingestOwnerPassword(password, networks) {
+  const candidates = [STATE.main.account, ...STATE.fleet.map((f) => f.username)].filter((v, i, a) => a.indexOf(v) === i);
+  const matches = [], checked = [];
+  for (const acct of candidates) {
+    let keys;
+    try {
+      keys = steem.auth.getPrivateKeys(acct, password, ["active", "posting", "memo"]);
+    } catch {
+      checked.push({ account: acct, error: "password derivation failed" });
+      continue;
+    }
+    for (const net of networks) {
+      let auth;
+      try {
+        auth = await chainAuthorities(net, acct);
+      } catch (e) {
+        checked.push({ account: acct, network: net, error: String(e?.message ?? e).slice(0, 120) });
+        continue;
+      }
+      for (const role of ["active", "posting", "memo"]) {
+        let derived;
+        try { derived = steem.auth.wifToPublic(keys[role]); } catch { continue; }
+        const expected = auth[role];
+        if (derived && expected && derived === expected) {
+          matches.push({ account: acct, network: net, role, wif: keys[role], derived });
+          checked.push({ account: acct, network: net, role, match: true });
+        }
+      }
+    }
+  }
+  return { ok: matches.length > 0, matches, checked };
 }
 
 /** public-data view of a role slot — never any WIF material */
@@ -329,7 +369,7 @@ async function chainAuthorities(network, account) {
   const accs = await rpcCall(nodeFor(network), "condenser_api.get_accounts", [[account]]);
   const a = accs?.[0];
   if (!a) throw new Error(`account ${account} not found on ${network}`);
-  const out = { at: Date.now(), posting: a.posting.key_auths[0][0], active: a.active.key_auths[0][0] };
+  const out = { at: Date.now(), posting: a.posting.key_auths[0][0], active: a.active.key_auths[0][0], memo: a.memo_key };
   authCache.set(k, out);
   return out;
 }
@@ -490,27 +530,54 @@ const server = Bun.serve({
         : (body?.wif ? [{ network: body.network, wif: body.wif }] : []);
       if (!entries.length) return Response.json({ ok: false, error: "missing entries [{network, wif}]" }, { status: 400 });
       const ingested = [], refused = [];
+      let sealInfo = null;
+      const persist = (account, network, wif, role) => {
+        sealInfo = writeIngestedKey(resolveEnvelopeDir(), account, network, wif, role);
+      };
       for (const ent of entries) {
-        const network = ent?.network === "HIVE" ? "HIVE" : ent?.network === "STEEM" ? "STEEM" : null;
         const wif = typeof ent?.wif === "string" ? ent.wif.trim() : "";
-        if (!network || !wif) { refused.push({ network: ent?.network ?? "?", error: "missing network or wif" }); continue; }
-        const res = await ingestOwnerKey(network, wif);
-        if (res.ok) {
-          try {
-            const dir = resolveEnvelopeDir();
-            const sealInfo = writeIngestedKey(dir, res.account, network, wif, "active");
-            loadState(); // hot-reload in-memory keys from the re-sealed envelope
-            log("INGEST", `network=${network} account=${res.account} role=active MATCH — written to runtime layout, envelope re-sealed (${sealInfo.sealOut || "ok"})`);
-            ingested.push({ account: res.account, network, role: "active", derived: res.derived, sealedAt: sealInfo.sealedAt });
-          } catch (e) {
-            log("ERROR", `ingest write failed network=${network}: ${String(e?.message ?? e).slice(0, 160)}`);
-            refused.push({ network, error: `verify-ok but write failed (fail-closed): ${String(e?.message ?? e).slice(0, 160)}` });
+        const askedNet = ent?.network === "HIVE" ? "HIVE" : ent?.network === "STEEM" ? "STEEM" : null;
+        if (!wif) { refused.push({ network: ent?.network ?? "?", error: "missing wif" }); continue; }
+        const isWif = steem.auth.isWif ? steem.auth.isWif(wif) : false;
+        if (isWif) {
+          const network = askedNet;
+          if (!network) { refused.push({ network: "?", error: "missing network for direct WIF" }); continue; }
+          const res = await ingestOwnerKey(network, wif);
+          if (res.ok) {
+            try {
+              await persist(res.account, network, wif, "active");
+              log("INGEST", `network=${network} account=${res.account} role=active MATCH — written to runtime layout, envelope re-sealed`);
+              ingested.push({ account: res.account, network, role: "active", derived: res.derived, sealedAt: sealInfo.sealedAt });
+            } catch (e) {
+              log("ERROR", `ingest write failed network=${network}: ${String(e?.message ?? e).slice(0, 160)}`);
+              refused.push({ network, error: `verify-ok but write failed (fail-closed): ${String(e?.message ?? e).slice(0, 160)}` });
+            }
+          } else {
+            log("REFUSED", `ingest network=${network}: ${res.verdict?.error ?? "no match"}`);
+            refused.push(res.verdict);
           }
         } else {
-          log("REFUSED", `ingest network=${network}: ${res.verdict?.error ?? "no match"}`);
-          refused.push(res.verdict);
+          // master-password path: derive active/posting/memo per candidate account × both networks
+          const networks = askedNet ? [askedNet] : ["STEEM", "HIVE"];
+          const res = await ingestOwnerPassword(wif, networks);
+          if (res.ok && res.matches.length) {
+            try {
+              for (const m of res.matches) {
+                await persist(m.account, m.network, m.wif, m.role);
+                log("INGEST", `network=${m.network} account=${m.account} role=${m.role} MATCH (master-password derived) — written, envelope re-sealed`);
+                ingested.push({ account: m.account, network: m.network, role: m.role, derived: m.derived, sealedAt: sealInfo.sealedAt });
+              }
+            } catch (e) {
+              log("ERROR", `ingest write failed (password path): ${String(e?.message ?? e).slice(0, 160)}`);
+              refused.push({ error: `verify-ok but write failed (fail-closed): ${String(e?.message ?? e).slice(0, 160)}` });
+            }
+          } else {
+            log("REFUSED", `ingest master-password: no live authority match across ${networks.join("/")} (nothing written)`);
+            refused.push({ error: `לא נמצאה התאמה לרשויות-החיות (${networks.join("/")}) — שום דבר לא נכתב`, checked: res.checked.slice(0, 12) });
+          }
         }
       }
+      if (ingested.length) loadState(); // hot-reload in-memory keys from the re-sealed envelope
       return Response.json({ ok: ingested.length > 0, ingested, refused, sealedAt: STATE?.sealedAt ?? null });
     }
 
