@@ -647,9 +647,12 @@ function hiveJs() {
 // account history). Compute it here so EVERY response carries the real id.
 function computeTxId(network, signedTx) {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- node builtin; CJS legacy-lib parity (signing only)
     const { createHash } = require("crypto");
     const serializer = network === "HIVE"
+      // eslint-disable-next-line @typescript-eslint/no-require-imports -- CJS-only legacy lib (signing only)
       ? require("@hiveio/hive-js/lib/auth/serializer")
+      // eslint-disable-next-line @typescript-eslint/no-require-imports -- CJS-only legacy lib (signing only)
       : require("steem/lib/auth/serializer");
     const body = { ...signedTx };
     delete body.signatures;
