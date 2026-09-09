@@ -132,7 +132,7 @@ export async function POST(req: Request) {
   }
   const provided = String(req.headers.get("x-agent-token") ?? "").trim();
   if (provided !== expected) {
-    await audit({ kind: "agent-bridge-denied", actor: "agent", action: "POST /agent-bridge (bad token)", allowed: false, req, detail: null });
+    await audit({ kind: "agent-bridge-denied", actor: "agent", action: "POST /agent-bridge (bad token)", allowed: false, req });
     return NextResponse.json({ ok: false, error: "unauthorized: חסר או שגוי x-agent-token (בקש מהבעלים)" }, { status: 401 });
   }
 
@@ -164,7 +164,7 @@ export async function POST(req: Request) {
     const row = await db.agentMessage.create({
       data: { agent, kind, content: action, status: exec.ok ? "executed" : "refused", result: resultJson, meta }
     });
-    await audit({ kind: "agent-bridge-action", actor: `agent:${agent.slice(0, 24)}`, action: `POST /agent-bridge ${action}`, allowed: exec.ok, req, detail: null });
+    await audit({ kind: "agent-bridge-action", actor: `agent:${agent.slice(0, 24)}`, action: `POST /agent-bridge ${action}`, allowed: exec.ok, req });
     return NextResponse.json({ ok: exec.ok, id: row.id, status: row.status, result: exec.result });
   }
 

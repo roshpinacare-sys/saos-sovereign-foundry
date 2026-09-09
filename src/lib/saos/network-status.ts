@@ -1,14 +1,20 @@
 /**
- * Network status view (מצב רשתות חוץ) — computed, honest, zero live calls.
+ * Network status view (מצב רשתות חוץ) — computed, honest, LIVE-DERIVED.
+ * Task 33: the STEEM/HIVE/BLURT blockers are no longer hardcoded snapshots
+ * (the "0/11 matches" text went stale the moment Task 32 re-ingested and
+ * live-verified the owner's keys). They now derive from the signer's
+ * /keys/status snapshot — public derived-pubkey match booleans vs the CURRENT
+ * on-chain authorities (60s cache, fail-closed). No snapshot ⇒ honest
+ * "not yet checked" text, never a fake ready.
  * Iron rule for this stage: read-only computation only — no broadcast, no
  * signing, no wallet use. Every field is either a documented constant,
- * a measured historic fact, or derived from the provided (env) resource level.
+ * a measured historic fact, or derived from live public state.
  */
 
 import { HIVE_RC_FLOOR_HEAVY, HIVE_RC_FLOOR_LIGHT, hiveRcHoursToTarget, BLURT_COOLDOWN_MIN, BLURT_FEE_FORMULA } from "./anchor-gates";
 import { minStakeForSettlements } from "./tron-energize";
 import { HISTORIC_ANCHORS } from "./historic";
-import { externalSignerCached } from "./external-signer-client";
+import { externalSignerKeyMatchesCached, type SignerKeyMatches } from "./external-signer-client";
 import { fleetCureStatus } from "./fleet-cure";
 import { ethereumStatus } from "./networks/ethereum";
 import { solanaStatus } from "./networks/solana";
@@ -57,21 +63,28 @@ export interface NetworkStatusView {
   liveProbePossible?: boolean;
 }
 
-export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatusView[] {
+export function networkStatuses(rcPct: number, tronEnergy: number, keys?: SignerKeyMatches | null): NetworkStatusView[] {
   const historicOf = (n: NetworkName) => HISTORIC_ANCHORS.find((h) => h.network === n);
   // Task 26 (live forensics 2026-09-08): the external signer IS connected
   // (mini-services/external-signer :3033, envelope GCM-genuine), but the sealed
   // envelope's STEEM keys derive to pubkeys that are NOT the on-chain
   // authorities of any of the 11 fleet accounts — the live runtime anchors
   // with its own keys. The honest blocker is key-AUTHORIZATION, not key-ABSENCE.
-  const signerConnected = externalSignerCached().connected;
+  const signer = keys ?? externalSignerKeyMatchesCached();
+  const signerConnected = signer.connected;
+  // Task 33: per-network live match summary from the signer (main account).
+  const netMatch = (net: string) => signer.byNetwork[net] ?? null;
+  const netReady = (net: string) => Boolean(signerConnected && netMatch(net)?.allMatched);
+  const netMatchLabel = (net: string) => {
+    const m = netMatch(net);
+    return m ? `${m.matched}/${m.total}` : "0/0";
+  };
   // Task 26-c forensics (2026-09-09, live-verified): the envelope keys match
-  // HIVE chain authority for 9/9 fleet accounts (posting+active) and match
-  // NOTHING on STEEM (headcorner+tov+fleet 0/11 — owner-held runtime keys,
-  // disk wiped). The honest STEEM blocker is key-custody (owner), not software.
-  const steemBlocker = "keys-owner-held: מפתחות STEEM בחזקת הבעלים (אומת 0/11 התאמות-סמכות בסביבה; המפתחות החיים היו runtime-only ונמחקו מהדיסק) — עיגון STEEM דורש טעינת מפתח-בעלים למעטפת דרך fleet_vault --seal";
-  const vaultBlocker = signerConnected
-    ? steemBlocker
+  // HIVE chain authority for 9/9 fleet accounts (posting+active). The honest
+  // blocker is key-custody (owner), not software — UNTIL the keys are loaded
+  // AND verified live, after which the network reports READY (Task 33).
+  const keysPendingBlocker = signerConnected
+    ? "keys-owner-held: מפתחות בחזקת הבעלים; החותם-החיצוני מחובר אך אין סלוטים מאומתים לרשת זו — נדרש ingest (verify-then-write) דרך /keys/ingest"
     : "vault: אין מפתחות חתימה בסנדבוקס (שלב 2 — שחזור כספת)";
 
   const nowIso = new Date().toISOString();
@@ -79,13 +92,16 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
   // the 9 fleet accounts' posting keys verify live, and the fleet-cure daemon
   // auto-executes the pending weave at the first RC window.
   const fc = fleetCureStatus();
-  const dryRunOnly = true; // STEEM/BLURT/TRON: no working keys in-environment
-  const hiveDryRunOnly = !signerConnected; // HIVE: real path via fleet + signer
+  const steemReady = netReady("STEEM");
+  const hiveReady = netReady("HIVE");
+  const blurtReady = netReady("BLURT");
+  const dryRunOnly = !steemReady; // Task 33: STEEM has a REAL broadcast path once its slots verify live
+  const hiveDryRunOnly = !hiveReady; // HIVE: real path via main slots + fleet + signer
 
   const steem: NetworkStatusView = {
     network: "STEEM",
     status: "anchored",
-    mode: "advisory",
+    mode: steemReady ? "direct" : "advisory",
     chainType: "graphene",
     chainId: null,
     anchorTypes: ["custom_json op (saos.weave.v1)"],
@@ -93,31 +109,42 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
     liveProbePossible: true,
     lastChecked: nowIso,
     lastVerifiedAnchor: historicOf("STEEM")?.txRef ?? null,
-    nextAction: "בפעימת live הבאה: שידור custom_json saos.weave.v1 + שמירת txid מלא ב-AnchorTx; בדיקת-קריאה חיה זמינה ב-/api/saos/live-proof",
-    blocker: vaultBlocker,
-    requiredResource: "posting key (active למבצעים מורחבים) — שחזור כספת",
-    unblockPlan: [
-      "1. שחזור מפתח מהכספת ההיסטורית (מחוץ לסנדבוקס)",
-      "2. SAOS_MODE=live + SAOS_LIVE_CONFIRM=YES",
-      "3. פעימה: custom_json id=saos.weave.v1 עם ה-root",
-      "4. עדכון AnchorTx: status=anchored, txid מלא"
-    ],
-    isReadyForAnchor: false,
+    nextAction: steemReady
+      ? `מוכנה לעגן עכשיו — ${signer.mainAccount ?? "החשבון-הראשי"} מאומת חי מול השרשרת (סלוטים STEEM ${netMatchLabel("STEEM")}); הפעימה הבאה משדרת custom_json saos.weave.v1 דרך החותם-החיצוני ורושמת txid מלא`
+      : "בפעימת live הבאה: שידור custom_json saos.weave.v1 + שמירת txid מלא ב-AnchorTx; בדיקת-קריאה חיה זמינה ב-/api/saos/live-proof",
+    blocker: steemReady ? null : keysPendingBlocker,
+    requiredResource: steemReady ? null : "posting key (active למבצעים מורחבים) — שחזור כספת",
+    unblockPlan: steemReady
+      ? []
+      : [
+          "1. שחזור מפתח מהכספת ההיסטורית (מחוץ לסנדבוקס)",
+          "2. SAOS_MODE=live + SAOS_LIVE_CONFIRM=YES",
+          "3. פעימה: custom_json id=saos.weave.v1 עם ה-root",
+          "4. עדכון AnchorTx: status=anchored, txid מלא"
+        ],
+    isReadyForAnchor: steemReady,
     isDryRunOnly: dryRunOnly,
-    ownerOptions: [
-      "טעינת מפתח-הבעלים (STEEM) למעטפת באמצעות fleet_vault --seal על הרנטיים החי",
-      "השארת STEEM כרשת-גיבוי ובחירת HIVE (עיגון-צי) כיעד ראשון"
-    ],
-    ownerAction: "לטעון את מפתחות ה-STEEM שבחזקת הבעלים למעטפת (fleet_vault --seal) — המערכת מאמתת סמכות מול השרשרת לפני כל שידור",
+    ownerOptions: steemReady
+      ? [
+          "עיגן STEEM דרך הפעימה הרגילה — אין מניעה טכנית (סלוטים מאומתים חי)",
+          "שמירת STEEM כרשת-עוגן ראשית לצד HIVE (עיגון-צי)"
+        ]
+      : [
+          "טעינת מפתח-הבעלים (STEEM) למעטפת באמצעות fleet_vault --seal על הרנטיים החי",
+          "השארת STEEM כרשת-גיבוי ובחירת HIVE (עיגון-צי) כיעד ראשון"
+        ],
+    ownerAction: steemReady
+      ? "אין פעולה נדרשת — המפתחות מחוברים ומאומתים מול השרשרת (חותם-חיצוני, authority-gate פעיל לפני כל שידור)"
+      : "לטעון את מפתחות ה-STEEM שבחזקת הבעלים למעטפת (fleet_vault --seal) — המערכת מאמתת סמכות מול השרשרת לפני כל שידור",
     estimatedTime: null,
     estimatedCost: null,
-    resourceLiveChecked: false
+    resourceLiveChecked: steemReady
   };
 
   const blurt: NetworkStatusView = {
     network: "BLURT",
     status: "anchored",
-    mode: "advisory",
+    mode: blurtReady ? "direct" : "advisory",
     chainType: "graphene",
     chainId: null,
     anchorTypes: ["custom_json op (canonical low-s)"],
@@ -125,25 +152,37 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
     liveProbePossible: true,
     lastChecked: nowIso,
     lastVerifiedAnchor: historicOf("BLURT")?.txRef ?? null,
-    nextAction: `בפעימת live הבאה: חתימה קנונית (low-s loop), עמלה ${BLURT_FEE_FORMULA}, שמירת cooldown ${BLURT_COOLDOWN_MIN} דק'`,
-    blocker: vaultBlocker,
-    requiredResource: "active key + יתרת BLURT לעמלה",
-    unblockPlan: [
-      "1. שחזור מפתח מהכספת",
-      "2. בדיקת יתרה לכיסוי 0.05 + 0.2 × KB",
-      "3. פעימה + קריאת-חזרה של הבלוק לאימות",
-      "4. עדכון AnchorTx"
-    ],
-    isReadyForAnchor: false,
-    isDryRunOnly: dryRunOnly,
-    ownerOptions: [
-      "שחזור כספת (מחוץ למערכת) + בדיקת יתרה לכיסוי העמלה",
-      "השארת BLURT כרשת-גיבוי"
-    ],
-    ownerAction: "לשחזר את המפתח מהכספת מחוץ למערכת ולוודא יתרה לכיסוי העמלה — המערכת מקבלת רק txid",
+    nextAction: blurtReady
+      ? `מוכנה לעגן עכשיו — סלוטים BLURT מאומתים חי (${netMatchLabel("BLURT")}); חתימה קנונית (low-s loop) בפעימה הבאה`
+      : `בפעימת live הבאה: חתימה קנונית (low-s loop), עמלה ${BLURT_FEE_FORMULA}, שמירת cooldown ${BLURT_COOLDOWN_MIN} דק'`,
+    blocker: blurtReady
+      ? null
+      : signerConnected
+        ? `keys-missing-blurt: לחותם-החיצוני אין סלוטי BLURT מאומתים (רשתות-חותם פעילות: ${signer.networks.join(", ") || "—"}) — עיגון BLURT דורש ingest מפתח-active + יתרת עמלה`
+        : keysPendingBlocker,
+    requiredResource: blurtReady ? null : "active key + יתרת BLURT לעמלה",
+    unblockPlan: blurtReady
+      ? []
+      : [
+          "1. שחזור מפתח מהכספת",
+          "2. בדיקת יתרה לכיסוי 0.05 + 0.2 × KB",
+          "3. פעימה + קריאת-חזרה של הבלוק לאימות",
+          "4. עדכון AnchorTx"
+        ],
+    isReadyForAnchor: blurtReady,
+    isDryRunOnly: !blurtReady,
+    ownerOptions: blurtReady
+      ? ["עיגון BLURT דרך הפעימה הרגילה — אין מניעה טכנית"]
+      : [
+          "שחזור כספת (מחוץ למערכת) + בדיקת יתרה לכיסוי העמלה",
+          "השארת BLURT כרשת-גיבוי"
+        ],
+    ownerAction: blurtReady
+      ? "אין פעולה נדרשת — המפתחות מחוברים ומאומתים מול השרשרת"
+      : "לשחזר את המפתח מהכספת מחוץ למערכת ולוודא יתרה לכיסוי העמלה — המערכת מקבלת רק txid",
     estimatedTime: null,
     estimatedCost: null,
-    resourceLiveChecked: false
+    resourceLiveChecked: blurtReady
   };
 
   const lightH = hiveRcHoursToTarget(rcPct, HIVE_RC_FLOOR_LIGHT);
@@ -152,11 +191,16 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
   // automatically (fleet keys verified 9/9; op-cost 225M RC measured).
   const fleetWindowH = fc.best ? fc.best.etaMin / 60 : null;
   const fleetLanded = Boolean(fc.lastTxid);
+  const keysNote = hiveReady
+    ? `מפתחות-ראשי מאומתים חי (HIVE ${netMatchLabel("HIVE")}) — נתיב-שידור אמיתי דרך החותם פתוח`
+    : signerConnected
+      ? `סלוטי HIVE בחותם: ${netMatchLabel("HIVE")} תואמים`
+      : "אין חותם מחובר";
   const hiveBlocker = fleetLanded
-    ? vaultBlocker
+    ? null
     : fc.best
-      ? `rc-floor כבר לא חוסם-אוטומטי: חלון-עוגן-צי ראשון בעוד ~${fleetWindowH?.toFixed(1)} שע' (${fc.best.account}) — מתוזמן ע"י fleet-cure; סף-קל 8% לחשבון הראשי בעוד ~${lightH.toFixed(1)} שע' רגן`
-      : `rc-floor: נוכחי ${rcPct}% < ${HIVE_RC_FLOOR_LIGHT}% (סף-קל) / ${HIVE_RC_FLOOR_HEAVY}% (סף-כבד) — ואין חלון צי פעיל`;
+      ? `rc-floor לחשבון-הראשי: נוכחי ${rcPct}% < ${HIVE_RC_FLOOR_LIGHT}% (סף-קל) — אך זה כבר לא חוסם: חלון-עוגן-צי ראשון בעוד ~${fleetWindowH?.toFixed(1)} שע' (${fc.best.account}) מתוזמן אוטומטית; ${keysNote}`
+      : `rc-floor: נוכחי ${rcPct}% < ${HIVE_RC_FLOOR_LIGHT}% (סף-קל) / ${HIVE_RC_FLOOR_HEAVY}% (סף-כבד) — ואין חלון צי פעיל; ${keysNote}`;
   const hive: NetworkStatusView = {
     network: "HIVE",
     status: fleetLanded || rcPct >= HIVE_RC_FLOOR_LIGHT ? "pending" : "gated",
@@ -171,12 +215,12 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
     nextAction: fleetLanded
       ? `עוגן-צי בוצע (txid ${String(fc.lastTxid).slice(0, 12)}…) — המשך קצב עם backoff לפי חלונות RC`
       : fc.best
-        ? `fleet-cure מבצע אוטומטית את ה-weave הממתין בחלון הראשון (~${Math.round(fc.best.etaMin)} דק', ${fc.best.account}) — ריצה אוטומטית, ללא פעולת בעלים`
+        ? `fleet-cure מבצע אוטומטית את ה-weave הממתין בחלון הראשון (~${Math.round(fc.best.etaMin)} דק', ${fc.best.account}) — ריצה אוטומטית, ללא פעולת בעלים${hiveReady ? "; נתיב-ראשי (headcorner) פתוח ומאומת לעיגון מיידי ברגע שה-RC מגיע לסף" : ""}`
         : "המתנה לרגן או power-up; אין פעולה חיה עד לסף",
     blocker: hiveBlocker,
     requiredResource: fleetLanded
       ? null
-      : `מנועת-עלות: RC ≥ 225M ל-op (מדוד) — רגן צי אוטומטי; לחשבון הראשי RC ≥ ${HIVE_RC_FLOOR_LIGHT}% (כ-${lightH.toFixed(1)} שע') או power-up 9.682 HIVE (דורש מפתח-בעלים)`,
+      : `מנועת-עלות: RC ≥ 225M ל-op (מדוד) — רגן צי אוטומטי; לחשבון הראשי RC ≥ ${HIVE_RC_FLOOR_LIGHT}% (כ-${lightH.toFixed(1)} שע') או power-up 9.682 HIVE${hiveReady ? " (מפתח-ראשי כבר מחובר ומאומת — הנתיב מוכן)" : " (דורש מפתח-בעלים)"}`,
     unblockPlan: fleetLanded
       ? [
           "1. קצב עיגון-צי קבוע עם backoff כלכלי (כמו relay ה-DEX)",
@@ -186,17 +230,23 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
       : [
           `1. אוטומטי: fleet-cure משדר את ה-weave בחלון הצי הראשון (~${fleetWindowH !== null ? fleetWindowH.toFixed(1) : "?"} שע')`,
           "2. אוטומטי: רישום txid חזרה ל-SignRequest + עדכון סטטוס",
-          "3. owner (אופציונלי): טעינת מפתח-בעלים → power-up 9.682 HIVE דרך נתיב ה-DEX (authority-gate מאמת)",
+          hiveReady
+            ? "3. owner (אופציונלי): power-up 9.682 HIVE — המפתח-ראשי כבר מחובר ומאומת (נתיב ה-DEX, authority-gate מאמת)"
+            : "3. owner (אופציונלי): טעינת מפתח-בעלים → power-up 9.682 HIVE דרך נתיב ה-DEX (authority-gate מאמת)",
           `4. רגן טבעי: סף-קל 8% בעוד ~${lightH.toFixed(1)} שע'`
         ],
     isReadyForAnchor: false,
     isDryRunOnly: hiveDryRunOnly,
     ownerOptions: [
       `אוטומטי (ברירת-מחדל): עיגון-צי בחלון הראשון (~${fleetWindowH !== null ? fleetWindowH.toFixed(1) : "?"} שע')`,
-      "טעינת מפתח-בעלים למעטפת → power-up 9.682 HIVE של הראשי (האצה ×~1.6)",
+      hiveReady
+        ? "power-up 9.682 HIVE של הראשי — המפתח כבר מחובר ומאומת חי (האצה ×~1.6, מוכן לביצוע)"
+        : "טעינת מפתח-בעלים למעטפת → power-up 9.682 HIVE של הראשי (האצה ×~1.6)",
       "המתנה לרגן טבעי לסף-הקל (8%)"
     ],
-    ownerAction: "אין פעולה נדרשת — התור האוטומטי מבצע; טעינת מפתח-הבעלים (fleet_vault --seal) מהירה את הקצב דרך power-up",
+    ownerAction: hiveReady
+      ? "אין פעולה נדרשת — התור האוטומטי מבצע; נתיב-הראשי מאומת ופתוח (power-up אופציונלי להאצה)"
+      : "אין פעולה נדרשת — התור האוטומטי מבצע; טעינת מפתח-הבעלים (fleet_vault --seal) מהירה את הקצב דרך power-up",
     estimatedTime: fleetLanded ? "מיידי (עוגן בוצע)" : `חלון-צי ~${fleetWindowH !== null ? fleetWindowH.toFixed(1) : "?"} שע' · סף-קל 8% ~${lightH.toFixed(1)} שע' · סף-כבד 12% ~${heavyH.toFixed(1)} שע'`,
     estimatedCost: null,
     resourceLiveChecked: true
@@ -218,7 +268,7 @@ export function networkStatuses(rcPct: number, tronEnergy: number): NetworkStatu
       tronEnergy > 0
         ? "מסלול ישיר פתוח: TriggerSmartContract עם stateRoot בנתוני הקריאה"
         : "הישארות ברכבת tronbridge היומית (root בתוך stateRoot) עד מימון ההימור",
-    blocker: tronEnergy > 0 ? vaultBlocker : "transit לפי החלטת בעלים (decided-custom 2026-09-09): המשך רכבת tronbridge היומית — energy=0 מדידה חיה 2026-09-08T22:05Z, יתרה מרבית 17.6 TRX מתחת לסף-שריפה",
+    blocker: tronEnergy > 0 ? keysPendingBlocker : "transit לפי החלטת בעלים (decided-custom 2026-09-09): המשך רכבת tronbridge היומית — energy=0 מדידה חיה 2026-09-08T22:05Z, יתרה מרבית 17.6 TRX מתחת לסף-שריפה",
     requiredResource: `TRX stake ≥ ${minStake.toLocaleString()} TRX ל-4 יישובי USDT/יום (או שריפה ~27.26 TRX/tx)`,
     unblockPlan: [
       `1. מימון הימור: ≥ ${minStake.toLocaleString()} TRX`,

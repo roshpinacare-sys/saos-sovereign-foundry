@@ -8,6 +8,8 @@ import { saosMode } from "@/lib/saos/modes";
 import { verifyChainDag } from "@/lib/saos/evidence";
 import { networkStatuses } from "@/lib/saos/network-status";
 import { signerRegistry } from "@/lib/saos/signer";
+import { hiveRcLive } from "@/lib/saos/hive-rc-live";
+import { externalSignerKeyMatches } from "@/lib/saos/external-signer-client";
 
 export const dynamic = "force-dynamic";
 
@@ -94,25 +96,36 @@ async function runGate(deep: boolean) {
   );
 
   // 7. external networks — any ready for real anchoring?
-  const rcPct = Number(process.env.HIVE_RC_PCT ?? 0.6);
+  // Task 33: live RC + live key-match snapshot replace the stale env fallback.
+  const [rcLive, keys] = await Promise.all([hiveRcLive(), externalSignerKeyMatches()]);
+  const rcPct = rcLive?.rcPct ?? Number(process.env.HIVE_RC_PCT ?? 0.6);
   const tronEnergy = Number(process.env.TRON_ENERGY ?? 0);
-  const networks = networkStatuses(rcPct, tronEnergy);
+  const networks = networkStatuses(rcPct, tronEnergy, keys);
   const unblocked = networks.filter((n) => n.blocker === null);
+  const readyToAnchor = networks.filter((n) => n.isReadyForAnchor);
   add(
     "networks-ready",
-    unblocked.length > 0 ? "pass" : "warn",
-    unblocked.length > 0
-      ? `רשתות מוכנות: ${unblocked.map((n) => n.network).join(", ")}`
-      : `כל הרשתות חסומות (advisory): ${networks.map((n) => n.network).join(", ")} — דורש כספת/משאבים (מפורט ב-status.networks)`
+    readyToAnchor.length > 0 ? "pass" : unblocked.length > 0 ? "pass" : "warn",
+    readyToAnchor.length > 0
+      ? `רשתות מוכנות לעיגון אמיתי עכשיו: ${readyToAnchor.map((n) => `${n.network} (${n.mode})`).join(", ")} — סלוטים מאומתים חי מול השרשרת`
+      : unblocked.length > 0
+        ? `רשתות ללא חסימה: ${unblocked.map((n) => n.network).join(", ")}`
+        : `כל הרשתות חסומות (advisory): ${networks.map((n) => n.network).join(", ")} — דורש כספת/משאבים (מפורט ב-status.networks)`
   );
 
   // 8. known open security items (honest constants — update as items close)
+  // Task 33: the CI item is now DYNAMIC — the workflow exists (it ran on push);
+  // claiming "CI לא קיים" was a stale lie. Warn only about a non-green last run.
   const openSecurity: string[] = [
-    "GitHub Actions CI לא קיים (הרצה ידנית של bun run check)",
     "SQLite single-writer — לא לפריסה אופקית",
     "secure-cookie דורש HTTPS בפריסה אמיתית",
     "אין session revocation גלובלי (שינוי SAOS_SESSION_SECRET מבטל הכול)"
   ];
+  openSecurity.push(
+    existsSync(path.join(process.cwd(), ".github", "workflows", "ci.yml"))
+      ? "CI קיים ורץ על push — נדרשת ריצה ירוקה לפני מעבר ל־live (בדיקה ידנית ב-GitHub Actions)"
+      : "GitHub Actions CI לא קיים (הרצה ידנית של bun run check)"
+  );
   add("security-open", "warn", `פריטי אבטחה פתוחים (${openSecurity.length}): ${openSecurity.join(" · ")}`);
 
   // 9. signer attached — broadcast needs SOME signer connected

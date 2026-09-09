@@ -109,5 +109,116 @@ export async function externalSignerExecute(input: { requestId: string; network:
   }
 }
 
-// warm the cache on module load (fire-and-forget; sync readers see it shortly after boot)
+// ── Task 33: LIVE key-match snapshot (public data only) ─────────────────────
+// The network-status engine used hardcoded "0/11 matches" text that went stale
+// the moment the owner's keys were re-ingested and verified (Task 32). This
+// reader pulls the signer's /keys/status — PUBLIC derived pubkeys + live
+// on-chain match booleans only, never any secret — with a 60s cache and a
+// fail-closed shape (any error ⇒ connected=false, allMatched=false).
+export interface SignerNetMatch {
+  total: number;
+  matched: number;
+  allMatched: boolean;
+}
+export interface SignerKeyMatches {
+  connected: boolean;
+  networks: string[];
+  mainAccount: string | null;
+  /** network → slot-match summary for the MAIN account (headcorner) */
+  byNetwork: Record<string, SignerNetMatch>;
+  /** fleet accounts whose loaded keys match on-chain for at least the checked network */
+  fleetMatchedAccounts: number;
+  fleetTotalAccounts: number;
+  sealedAt: string | null;
+  checkedAt: string | null;
+}
+
+const KEYS_TTL_MS = 60_000;
+let keysCache: { value: SignerKeyMatches; at: number } | null = null;
+let keysInflight: Promise<SignerKeyMatches> | null = null;
+
+function emptyKeys(): SignerKeyMatches {
+  return {
+    connected: false,
+    networks: [],
+    mainAccount: null,
+    byNetwork: {},
+    fleetMatchedAccounts: 0,
+    fleetTotalAccounts: 0,
+    sealedAt: null,
+    checkedAt: null
+  };
+}
+
+interface KeysStatusRole {
+  loaded?: boolean;
+  match?: boolean | null;
+}
+interface KeysStatusResponse {
+  ok?: boolean;
+  main?: {
+    account?: string;
+    networks?: Record<string, Record<string, KeysStatusRole>>;
+  };
+  fleet?: { username?: string }[];
+  sealedAt?: string;
+}
+
+export async function refreshExternalSignerKeyMatches(): Promise<SignerKeyMatches> {
+  if (!externalSignerConfigured()) {
+    const value = emptyKeys();
+    keysCache = { value, at: Date.now() };
+    return value;
+  }
+  const base = (process.env[URL_ENV] ?? "").replace(/\/$/, "");
+  const token = (process.env[TOKEN_ENV] ?? "").trim();
+  try {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 5_000);
+    const res = await fetch(`${base}/keys/status`, { headers: { authorization: `Bearer ${token}` }, signal: ctl.signal });
+    clearTimeout(t);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = (await res.json()) as KeysStatusResponse;
+    const byNetwork: Record<string, SignerNetMatch> = {};
+    const mainNets = json.main?.networks ?? {};
+    for (const [net, roles] of Object.entries(mainNets)) {
+      const loaded = Object.values(roles).filter((r) => r?.loaded);
+      const matched = loaded.filter((r) => r.match === true);
+      byNetwork[net] = { total: loaded.length, matched: matched.length, allMatched: loaded.length > 0 && matched.length === loaded.length };
+    }
+    const value: SignerKeyMatches = {
+      connected: Boolean(json.ok),
+      networks: Object.keys(mainNets),
+      mainAccount: json.main?.account ?? null,
+      byNetwork,
+      fleetMatchedAccounts: 0,
+      fleetTotalAccounts: Array.isArray(json.fleet) ? json.fleet.length : 0,
+      sealedAt: json.sealedAt ?? null,
+      checkedAt: new Date().toISOString()
+    };
+    keysCache = { value, at: Date.now() };
+    return value;
+  } catch {
+    const value = emptyKeys();
+    keysCache = { value, at: Date.now() };
+    return value;
+  }
+}
+
+export async function externalSignerKeyMatches(): Promise<SignerKeyMatches> {
+  if (keysInflight) return keysInflight;
+  if (keysCache && Date.now() - keysCache.at < KEYS_TTL_MS) return keysCache.value;
+  keysInflight = refreshExternalSignerKeyMatches().finally(() => {
+    keysInflight = null;
+  });
+  return keysInflight;
+}
+
+/** sync read for sync call-sites — reflects the LAST keys-status check only */
+export function externalSignerKeyMatchesCached(): SignerKeyMatches {
+  return keysCache?.value ?? emptyKeys();
+}
+
+// warm both caches on module load (fire-and-forget; sync readers see them shortly after boot)
 void refreshExternalSignerHealth().catch(() => {});
+void refreshExternalSignerKeyMatches().catch(() => {});

@@ -492,12 +492,18 @@ const authCache = new Map(); // `${network}:${account}` → { at, posting, activ
 // on-chain — the SETTLE-10 incident), it is recorded as drift + logged ALERT:
 // detection within minutes instead of weeks.
 type DriftRow = { account: string; network: string; role: string; expected: string; derived: string; at: string };
-const driftState: { lastCheck: string | null; lastSummary: Record<string, unknown> | null; drifts: DriftRow[]; running: boolean } = { lastCheck: null, lastSummary: null, drifts: [], running: false };
+const driftState: { lastCheck: string | null; lastSummary: Record<string, unknown> | null; drifts: DriftRow[]; unmatched: DriftRow[]; running: boolean } = { lastCheck: null, lastSummary: null, drifts: [], unmatched: [], running: false };
+// Task 33: per-slot previous-match memory — "drift" (external rotation) is
+// declared ONLY on a true→false transition. Slots that never matched the live
+// chain (e.g. fleet keys vs STEEM authorities — the known historic posture)
+// are reported as "unmatched/pending-ingest", NOT as a rotation alarm.
+const prevMatch = new Map(); // "acct|net|role" → boolean
 
 async function verifyLiveAll() {
   if (driftState.running || !STATE) return { skipped: true, reason: "check already running or seal unavailable" };
   driftState.running = true;
   const rows: DriftRow[] = [];
+  const unmatchedRows: DriftRow[] = [];
   let okCount = 0, errCount = 0;
   const targets: Array<{ account: string; net: Record<string, Record<string, string | null>> | null; generic: Record<string, string | null> }> = [
     { account: STATE.main.account, net: STATE.main.net ?? null, generic: { posting: STATE.main.postingWif ?? null, active: STATE.main.activeWif ?? null, owner: STATE.main.ownerWif ?? null, memo: STATE.main.memoWif ?? null } },
@@ -518,20 +524,31 @@ async function verifyLiveAll() {
         let derived: string | null = null;
         try { derived = steem.auth.wifToPublic(wif); } catch { errCount++; continue; }
         const expected = auth?.[role] ?? null;
-        if (expected && derived && expected === derived) okCount++;
-        else if (expected) rows.push({ account: t.account, network: net, role, expected, derived: derived ?? "derivation-failed", at: new Date().toISOString() });
+        const slotKey = `${t.account}|${net}|${role}`;
+        const prev = prevMatch.has(slotKey) ? prevMatch.get(slotKey) : null;
+        if (expected && derived && expected === derived) {
+          okCount++;
+          prevMatch.set(slotKey, true);
+        } else if (expected) {
+          const row = { account: t.account, network: net, role, expected, derived: derived ?? "derivation-failed", at: new Date().toISOString() };
+          if (prev === true) rows.push(row); // REAL rotation: matched before, failed now
+          else unmatchedRows.push(row); // never matched — pending ingest / wrong chain
+          prevMatch.set(slotKey, false);
+        }
       }
     }
   }
-  const prevCount = driftState.drifts.length;
+  const prevRotations = driftState.drifts.length;
   driftState.drifts = rows;
+  driftState.unmatched = unmatchedRows;
   driftState.lastCheck = new Date().toISOString();
-  driftState.lastSummary = { ok: okCount, drift: rows.length, errors: errCount };
+  driftState.lastSummary = { ok: okCount, drift: rows.length, unmatched: unmatchedRows.length, errors: errCount };
   driftState.running = false;
-  if (rows.length > prevCount) log("ALERT", `live-drift: ${rows.length} key slot(s) no longer match on-chain authorities — possible external rotation! Accounts: ${[...new Set(rows.map((r) => r.account))].join(",")}`);
-  else if (rows.length) log("WARN", `live-drift still present: ${rows.length} slot(s) unmatched (keys pending re-ingest)`);
+  if (rows.length > 0 && rows.length > prevRotations) log("ALERT", `live-drift ROTATION: ${rows.length} key slot(s) MATCHED before and NO LONGER match the on-chain authority — external rotation detected! Accounts: ${[...new Set(rows.map((r) => r.account))].join(",")}`);
+  else if (rows.length) log("WARN", `live-drift rotation still open: ${rows.length} slot(s) await re-ingest`);
+  else if (unmatchedRows.length) log("INFO", `live-drift clean: ${okCount} slot(s) verified against the live chain; ${unmatchedRows.length} slot(s) never-matched (pending ingest for that chain) — no rotation`);
   else log("INFO", `live-drift check clean: ${okCount} slot(s) verified against the live chain`);
-  return { ok: okCount, drift: rows.length, errors: errCount, checkedAt: driftState.lastCheck, drifts: rows.slice(0, 12) };
+  return { ok: okCount, drift: rows.length, unmatched: unmatchedRows.length, errors: errCount, checkedAt: driftState.lastCheck, drifts: rows.slice(0, 12), unmatchedSample: unmatchedRows.slice(0, 12) };
 }
 setInterval(() => { void verifyLiveAll().catch(() => {}); }, 10 * 60 * 1000);
 setTimeout(() => { void verifyLiveAll().catch(() => {}); }, 20 * 1000);
@@ -673,7 +690,7 @@ const server = Bun.serve({
 
     if (url.pathname === "/keys/verify-live" && (req.method === "GET" || req.method === "POST")) {
       const r = await verifyLiveAll();
-      return Response.json({ ok: true, summary: { slots: r.ok, drift: r.drift, errors: r.errors }, checkedAt: r.checkedAt, drifts: r.drifts, skipped: r.skipped ?? false, reason: r.reason ?? null });
+      return Response.json({ ok: true, summary: { slots: r.ok, drift: r.drift, unmatched: r.unmatched, errors: r.errors }, checkedAt: r.checkedAt, drifts: r.drifts, unmatchedSample: r.unmatchedSample ?? [], skipped: r.skipped ?? false, reason: r.reason ?? null });
     }
 
     // ── Task 29: owner key entry point (self-protecting: only a live authority match is ever written) ──
@@ -695,7 +712,7 @@ const server = Bun.serve({
             active: f.activeWif ? { loaded: true } : { loaded: false }
           });
         }
-        return Response.json({ ok: true, main: { account: STATE.main.account, networks: mainNet }, fleet, sealedAt: STATE.sealedAt, drift: { lastCheck: driftState.lastCheck, openDrifts: driftState.drifts.length, summary: driftState.lastSummary }, version: "2.4.0" });
+        return Response.json({ ok: true, main: { account: STATE.main.account, networks: mainNet }, fleet, sealedAt: STATE.sealedAt, drift: { lastCheck: driftState.lastCheck, openDrifts: driftState.drifts.length, unmatched: driftState.unmatched.length, summary: driftState.lastSummary }, version: "2.4.0" });
       } catch (e) {
         return Response.json({ ok: false, error: String(e?.message ?? e).slice(0, 200) }, { status: 502 });
       }

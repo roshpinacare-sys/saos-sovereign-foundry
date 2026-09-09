@@ -8,6 +8,8 @@ import { enforceRateLimit, ruleFor } from "@/lib/saos/rate-limit";
 import { saosMode } from "@/lib/saos/modes";
 import { networkStatuses } from "@/lib/saos/network-status";
 import { runLiveNetworkProbes, liveProbePlan, type LiveProbeResult } from "@/lib/saos/networks/live-probes";
+import { hiveRcLive } from "@/lib/saos/hive-rc-live";
+import { externalSignerKeyMatches } from "@/lib/saos/external-signer-client";
 import { computePreflight } from "@/lib/saos/preflight";
 import { gitSnapshot } from "@/lib/saos/repo-git";
 
@@ -230,9 +232,11 @@ export async function GET(req: Request) {
     errors.push(`probes: ${e instanceof Error ? e.message : "probe run failed"}`);
   }
 
-  const rcPct = Number(process.env.HIVE_RC_PCT ?? 0.6);
+  // Task 33: live RC + live key-match snapshot replace the stale env fallback.
+  const [rcLive, keysLive] = await Promise.all([hiveRcLive(), externalSignerKeyMatches()]);
+  const rcPct = rcLive?.rcPct ?? Number(process.env.HIVE_RC_PCT ?? 0.6);
   const tronEnergy = Number(process.env.TRON_ENERGY ?? 0);
-  const networksBase = networkStatuses(rcPct, tronEnergy);
+  const networksBase = networkStatuses(rcPct, tronEnergy, keysLive);
   const networks = networksBase.map((n) => {
     const p = probes.find((x) => x.network === n.network) ?? null;
     return {
@@ -305,10 +309,15 @@ export async function GET(req: Request) {
     errors.push(`preflight: ${e instanceof Error ? e.message : "preflight failed"}`);
   }
 
-  // safe-live = the system physically cannot broadcast (no external signer
-  // attached → broadcastCapable false by design). Proof of life never equals
-  // permission to transmit.
-  const safeLive = mode.broadcastCapable === false;
+  // safe-live Task 33 (honest update): the PROOF itself never transmits —
+  // transactionAttempted/signingAttempted/walletUsed are structurally false for
+  // this read-only endpoint. A connected external signer means a REAL broadcast
+  // path exists elsewhere (gated by authority-gate + owner approval) — that is
+  // disclosed honestly via safety.broadcastCapable instead of being denied.
+  const transactionAttempted = false as const;
+  const signingAttempted = false as const;
+  const walletUsed = false as const;
+  const safeLive = !transactionAttempted && !signingAttempted && !walletUsed;
 
   return NextResponse.json({
     ok: true,
@@ -351,10 +360,12 @@ export async function GET(req: Request) {
     safeLive,
     safety: {
       broadcastCapable: mode.broadcastCapable,
-      transactionAttempted: false,
-      signingAttempted: false,
-      walletUsed: false,
-      note: "המערכת מוכיחה חיים בקריאה-בלבד בלבד; שידור/חתימה/ארנק לא הופעלו ואינם אפשריים עד חותם חיצוני + אישור בעלים מפורש"
+      transactionAttempted,
+      signingAttempted,
+      walletUsed,
+      note: mode.broadcastCapable
+        ? "ההוכחה עצמה קריאה-בלבד — לא בוצעו שידור/חתימה/ארנק; נתיב-שידור אמיתי קיים דרך החותם-החיצוני ומוגבל על-ידי authority-gate + אישור בעלים"
+        : "המערכת מוכיחה חיים בקריאה-בלבד בלבד; שידור/חתימה/ארנק לא הופעלו ואינם אפשריים עד חותם חיצוני + אישור בעלים מפורש"
     },
     errors,
     note: "הוכחת-חיים (Task 13): קריאה בלבד — אין עוגן, אין שידור, אין סודות בפלט",

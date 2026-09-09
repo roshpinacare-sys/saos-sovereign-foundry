@@ -78,7 +78,7 @@ export function AgentsTab() {
                       {m.kind === "action" ? <PlugZap className="size-3.5 text-sky-400" aria-hidden /> : <MessageSquare className="size-3.5 text-emerald-400" aria-hidden />}
                       <Mono>{m.agent}</Mono>
                     </span>
-                    <Badge tone={m.status === "executed" ? "ok" : m.status === "refused" ? "danger" : m.status === "new" ? "warn" : "muted"}>
+                    <Badge tone={m.status === "executed" ? "ok" : m.status === "refused" ? "danger" : m.status === "new" ? "warn" : "neutral"}>
                       {m.status === "new" ? "חדש" : m.status === "executed" ? "בוצע" : m.status === "refused" ? "נדחה" : m.status}
                     </Badge>
                     <span className="ms-auto text-[10px] text-zinc-500">{fmtDateTime(m.createdAt)}</span>

@@ -9,6 +9,8 @@ import { saosMode } from "@/lib/saos/modes";
 import { authConfigured } from "@/lib/saos/auth";
 import { enforceRateLimit, ruleFor } from "@/lib/saos/rate-limit";
 import { signerRegistry } from "@/lib/saos/signer";
+import { hiveRcLive } from "@/lib/saos/hive-rc-live";
+import { externalSignerKeyMatches } from "@/lib/saos/external-signer-client";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +23,10 @@ export async function GET(req: Request) {
     );
   }
   try {
-    const rcPct = Number(process.env.HIVE_RC_PCT ?? 0.6);
+    // Task 33: live RC + live key-match snapshot (both cached, fail-closed)
+    // replace the stale env fallbacks that kept the page reporting "blocked".
+    const [rcLive, keys] = await Promise.all([hiveRcLive(), externalSignerKeyMatches()]);
+    const rcPct = rcLive?.rcPct ?? Number(process.env.HIVE_RC_PCT ?? 0.6);
     const tronEnergy = Number(process.env.TRON_ENERGY ?? 0);
     const mode = saosMode();
 
@@ -62,7 +67,8 @@ export async function GET(req: Request) {
         signer: signerRegistry().map((s) => ({ signer: s.signer, status: s.status }))
       },
       matrix: anchoringMatrix(rcPct, tronEnergy),
-      networks: networkStatuses(rcPct, tronEnergy),
+      networks: networkStatuses(rcPct, tronEnergy, keys),
+      rcSource: rcLive ? `live ${rcLive.account} @ ${rcLive.at}` : "env fallback",
       ...(probes ? { probes } : {}),
       historic: HISTORIC_ANCHORS,
       seals: seals.map((s) => ({

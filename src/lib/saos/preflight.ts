@@ -35,7 +35,7 @@ import { verifyChainDag } from "@/lib/saos/evidence";
 import { networkStatuses, type NetworkStatusView } from "@/lib/saos/network-status";
 import { signerRegistry, effectiveStatus, type SignRequest } from "@/lib/saos/signer";
 import { OWNER_DECISIONS } from "@/lib/saos/owner-decisions";
-import { externalSignerHealth } from "@/lib/saos/external-signer-client";
+import { externalSignerHealth, externalSignerKeyMatches, type SignerKeyMatches } from "@/lib/saos/external-signer-client";
 import { hiveRcLive } from "@/lib/saos/hive-rc-live";
 import { fleetCureStatus } from "@/lib/saos/fleet-cure";
 
@@ -75,12 +75,16 @@ function firstAnchorReadiness(
   runbook: string;
 } {
   // recommended network: among networks with NO resource blocker of their own
-  // (status anchored), prefer the one with a verified historic anchor.
-  const resourceReady = networks.filter((n) => n.status === "anchored");
+  // (isReadyForAnchor or plain anchored), prefer one that is READY NOW, then
+  // the one with a verified historic anchor.
+  const resourceReady = networks.filter((n) => n.isReadyForAnchor || n.blocker === null);
+  const readyNow = resourceReady.filter((n) => n.isReadyForAnchor);
   const historicReady = resourceReady.filter((n) => n.lastVerifiedAnchor !== null);
-  const recommended = historicReady[0] ?? resourceReady[0] ?? null;
+  const recommended = readyNow[0] ?? historicReady[0] ?? resourceReady[0] ?? null;
   const recommendedReason = recommended
-    ? `${recommended.network}: אין חוסם-משאב ייחודי (סטטוס anchored)${recommended.lastVerifiedAnchor ? " וקיים עוגן היסטורי מאומת" : ""} — החסם היחיד הוא חיבור כספת חתימה חיצונית`
+    ? recommended.isReadyForAnchor
+      ? `${recommended.network}: סלוטי-מפתח מאומתים חי מול השרשרת (מצב ${recommended.mode}) — מוכנה לעגן עכשיו דרך החותם-החיצוני`
+      : `${recommended.network}: אין חוסם-משאב ייחודי (סטטוס ${recommended.status})${recommended.lastVerifiedAnchor ? " וקיים עוגן היסטורי מאומת" : ""} — החסם היחיד הוא חיבור כספת חתימה חיצונית`
     : "אין רשת עם סטטוס anchored — HIVE מתוזמן אוטומטית דרך עיגון-הצי (fleet-cure); האצה: טעינת מפתח-בעלים → power-up 9.682 HIVE";
 
   const status: "not-ready" | "partial" | "conditional" =
@@ -200,7 +204,8 @@ export async function computePreflight(target: SignRequest["network"] | null): P
   const rcSource = rcLive ? `live ${rcLive.account} @ ${rcLive.at}` : "env fallback";
   const tronEnergy = Number(process.env.TRON_ENERGY ?? 0);
   const fc = fleetCureStatus();
-  const networks: NetworkStatusView[] = networkStatuses(rcPct, tronEnergy);
+  const keys: SignerKeyMatches = await externalSignerKeyMatches();
+  const networks: NetworkStatusView[] = networkStatuses(rcPct, tronEnergy, keys);
   const chosen = target ? networks.filter((n) => n.network === target) : networks;
   const statusClear = chosen.length > 0 && chosen.every((n) => ["anchored", "pending", "gated", "transit"].includes(n.status));
   add(
@@ -233,7 +238,15 @@ export async function computePreflight(target: SignRequest["network"] | null): P
       }
     }
     if (n.network === "STEEM" || n.network === "BLURT") {
-      resourceWarns.push(`${n.network}: מפתחות בחזקת הבעלים (0/11 התאמות-סמכות בסביבה, אומת 2026-09-09); הרשאות-שידור מאומתות סמוך לעוגן אמיתי (advisory)`);
+      // Task 33: live-derived — when the signer's slots verify against the live
+      // chain, the network is READY (no more stale "0/11" scare text).
+      if (n.isReadyForAnchor) {
+        resourceWarns.push(`${n.network}: מוכנה לעיגון — סלוטי-מפתח מאומתים חי מול השרשרת (מצב ${n.mode}); ההרשאות נבדקות שוב לפני כל שידור (authority-gate)`);
+      } else if (keys.connected) {
+        resourceWarns.push(`${n.network}: החותם מחובר אך אין סלוטים מאומתים לרשת זו — נדרש ingest (verify-then-write); הרשאות-שידור מאומתות סמוך לעוגן אמיתי`);
+      } else {
+        resourceWarns.push(`${n.network}: מפתחות בחזקת הבעלים (אין חותם מחובר כרגע); הרשאות-שידור מאומתות סמוך לעוגן אמיתי (advisory)`);
+      }
     }
     // Task 12: Ethereum/Solana — not-configured is a WARN-state, never a fail:
     // missing RPC is the expected dry-run posture, not a broken gate.
