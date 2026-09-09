@@ -1228,3 +1228,23 @@ Stage Summary:
 - The owner can now log in with THEIR OWN main key (STEEM/HIVE/BLURT owner or active — any P-convention variant), stay logged in via the 30d signed HttpOnly session, and the vault remains the single secret holder (signer-side hash-only compare).
 - All closable blockages closed with evidence; resource-gated ones moved to needs-resource with precise owner actions; live-mode deliberately stays gated on explicit consent.
 - Secrets doctrine intact: zero secret prints, zero history rewrites, zero force-push; exposed historical token verified DEAD (401).
+
+---
+Task ID: 39
+Agent: Z.ai Code (main)
+Task: פתרון כל החסימות של הרשת + דחיפה לריפו (owner directive: "פתור את כל החסימות של הרשת מה עוד מגביל אותנו בצע הכל ודחוף לריפו")
+
+Work Log:
+- סקירת מצב: HEAD מסונכרן מול origin/main (טסקים 36-38 כבר על GitHub); token חזר ל-upload/Roshcaregt.txt (gitignored) → fetch עובד
+- סריקת רשת חיה: STEEM+BLURT מעוגנות, HIVE gated על RC (חי 0.03-0.43% < 8%), TRON transit, ETH/SOL קריאות-בלבד OK
+- גילוי חסם אמיתי: 3 מתוך 4 נקודות-RPC של BLURT מתות (rpc.blurt.world, btsd.io, coruscant.io — פסק-זמן/תשובה ריקה); רק beblurt.com + saboin.com חיות (head blocks טריים 63501204/63501175)
+- תיקון ב-3 שכבות: live-probes.ts (סדר 5 מועמדים, חיים-ראשונים), signer.ts verifyTxidPublic BLURT (לולאת מועמדים — כשל-תעבורה מתקדם, תשובה סופית חוזרת מיד), external-signer/index.ts BLURT_NODES (סידור מחדש + hot-reload אומת בלוג 20:14:49)
+- אימות עומק: get_transaction פרוטוקול-זהה על שתי הנקודות החיות (HTTP 200 + JSON-RPC error ל-txid לא-מוכר → unverified כנה); verifyCondenser זהה-קוד ל-STEEM/HIVE (הוכח 8/8 בטסק 37)
+- אימות דפדפן מלא (agent-browser): האפליקציה רנדרת, BLURT "נעוגן + סלוטים מאומתים חי 3/3 + עוגן cda701d1… נבדק 20:19", HIVE "חסום-שער אך זה כבר לא חוסם — חלון-עוגן-צי מתוזמן אוטומטית", דחיית מפתח-מזויף כנה (POST owner-keys → ok:false, refused, "שום דבר לא נכתב", כספת נאטמת 20:07:32 ללא שינוי), אפס גלישה אופקית 390/1440, footer בסוף-המסמך בדיוק, אפס שגיאות-עמוד
+- Session: authenticated:true (dev-managed), 30d HttpOnly חי; התחברות-בעלים אמיתית אומתה 19:54 בלוג החותם (BLURT/owner headcorner)
+- Commit 43d05bd + push מוצלח b84a2b4..43d05bd (ללא force) + fetch אימות 0/0
+
+Stage Summary:
+- החסם-הרשת האחרון שניתן לסגירה מקומית נסגר: BLURT רוטציה חיים-ראשונים בכל שכבות הקריאה והאימות
+- נותרו רק שערים כנים הדורשים משאבי-בעלים: HIVE RC (חלון אוטומטי מתוזמן ~0.8 שע'), TRON TRX, ETH gas, SOL rent, live-mode (הסכמה מפורשת), hardware-signer (לא מחובר)
+- GitHub token חי ומתפקד — ערוץ ה-push פתוח; secrets לא נדפסו ולא הועלו
