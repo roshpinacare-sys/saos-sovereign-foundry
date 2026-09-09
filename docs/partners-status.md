@@ -54,7 +54,7 @@
 
 | חשבון | HIVE posting | HIVE active | STEEM posting/active | הערות |
 |---|---|---|---|---|
-| headcorner (ראשי) | בחזקת הבעלים | בחזקת הבעלים (STM8c9vp3hU…) | בחזקת הבעלים | 9.682 HIVE נזיל + BEE/CENT/VKBT — כולם נעולים למפתח-בעלים; rail המרה מוכן (DEX convert) |
+| headcorner (ראשי) | בחזקת הבעלים | בחזקת הבעלים (STM8c9vp3hU…) | בחזקת הבעלים | 9.682 HIVE נזיל + BEE/CENT/VKBT — כולם נעולים למפתח-בעלים; rail המרה מוכן (DEX hive-rail) |
 | tov | בחזקת הבעלים | בחזקת הבעלים (STM4wCC3Qq2H…) | בחזקת הבעלים | RC 6.1% — הבריא בשדה; אין נזיל |
 | cashmachine | ✓ מאומת | ✓ מאומת | ✗ | RC ~8% — החלון הראשון-כמעט |
 | haran | ✓ | ✓ | ✗ | RC 0.06% |

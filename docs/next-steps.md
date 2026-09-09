@@ -110,7 +110,7 @@
 | חסימה | מה נדרש לשחרור | בעל-התפקיד | סטטוס |
 |---|---|---|---|
 | כספת חתימה | — | — | ✅ נפתר: external-signer :3033 + מעטפת GCM; מפתחות-צי מאומתים-חי 9/9 HIVE; STEEM/headcorner/tov = חזקת-בעלים (מטריצה: partners-status.md) |
-| HIVE rc-floor | — | אוטומטי | ✅ מטופל: fleet-cure (:3034) משדר את ה-weave הממתין בחלון הצי הראשון (~3.3 שע' מזמן-הכתיבה) ורושם txid; האצה-אופציונלית: power-up 9.682 HIVE (דורש מפתח-בעלים; rail מוכן: DEX convert) |
+| HIVE rc-floor | — | אוטומטי | ✅ מטופל: fleet-cure (:3034) משדר את ה-weave הממתין בחלון הצי הראשון (~3.3 שע' מזמן-הכתיבה) ורושם txid; האצה-אופציונלית: power-up 9.682 HIVE (דורש מפתח-בעלים; rail מוכן: DEX hive-rail) |
 | TRON energy-0 | stake ≥25,958 TRX (4 יישובים/יום) או שריפה | הבעלים (אופציונלי) | ✅ מוכרע: transit (tronbridge יומית) לפי החלטת בעלים — decided-custom |
 | GitHub Actions | יצירת workflow שמריץ `bun run check` | סבב הבא | פתוח (לא-חוסם) |
 | build-verification | הרצת `bun run build` מחוץ לסנדבוקס | הבעלים | deferred (לא-חוסם) |
