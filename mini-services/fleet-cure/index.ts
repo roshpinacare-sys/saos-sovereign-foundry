@@ -165,9 +165,12 @@ function saveState(s: CureState) {
   try { writeFileSync(STATE_FILE, JSON.stringify(s, null, 1)); } catch {}
 }
 
-async function writeStatus(state: CureState, rows: FleetRow[], note: string) {
+async function writeStatus(state: CureState, rows: FleetRow[], note: string, pendingWeave?: boolean) {
   const status = {
     updatedAt: new Date().toISOString(),
+    // Task 62: readiness ≠ schedule. חלון-RC פתוח הוא תנאי-הכרח, לא תוכנית.
+    // הדגל הזה = האם בקשת-weave תלויה באמת קיימת — רק אז מותר למסך להצהיר "מתוזמן".
+    pendingWeave: pendingWeave ?? false,
     purpose: "Task 26-c fleet RC cure — the pending HIVE weave SignRequest executes automatically at the first fleet RC window (keys verified live 9/9 HIVE posting; executor = external-signer :3033)",
     opCostRc: OP_COST_RC,
     measuredOpCostRc: 225_041_204,
@@ -209,13 +212,13 @@ async function cycle(state: CureState): Promise<void> {
   });
 
   if (state.doneAccount && state.txid) {
-    await writeStatus(state, rows, "weave landed — cure complete for this SignRequest");
+    await writeStatus(state, rows, "weave landed — cure complete for this SignRequest", true);
     return;
   }
 
   const req = await pendingHiveWeave();
   if (!req) {
-    await writeStatus(state, rows, "no pending HIVE weave SignRequest found — nothing to execute");
+    await writeStatus(state, rows, "no pending HIVE weave SignRequest found — nothing to execute", false);
     return;
   }
 
@@ -226,17 +229,17 @@ async function cycle(state: CureState): Promise<void> {
     state.refusedReqId = undefined;
   }
   if (state.refusedReqId === req.id) {
-    await writeStatus(state, rows, `sig=${req.id} was DEFINITIVELY refused by the chain (nothing broadcast) — auto-retry stopped; operator decides next`);
+    await writeStatus(state, rows, `sig=${req.id} was DEFINITIVELY refused by the chain (nothing broadcast) — auto-retry stopped; operator decides next`, true);
     return;
   }
   if (state.lastAttemptAt && Date.now() - Date.parse(state.lastAttemptAt) > 55 * 60_000) {
-    await writeStatus(state, rows, `sig=${req.id} still unrecorded >55min after the last attempt — past the signer idempotency-ledger window (1h); auto-retry stopped (operator decides)`);
+    await writeStatus(state, rows, `sig=${req.id} still unrecorded >55min after the last attempt — past the signer idempotency-ledger window (1h); auto-retry stopped (operator decides)`, true);
     return;
   }
 
   const ready = FLEET.map((a) => ({ a, m: mana.get(a)?.mana ?? 0 })).sort((x, y) => y.m - x.m)[0];
   if (!ready || ready.m < OP_COST_RC) {
-    await writeStatus(state, rows, `no fleet account at op-cost yet — best ${ready?.a ?? "?"} ${(ready?.m ?? 0) >= 1e6 ? Math.round((ready?.m ?? 0) / 1e6) + "M" : String(ready?.m ?? 0)} RC`);
+    await writeStatus(state, rows, `no fleet account at op-cost yet — best ${ready?.a ?? "?"} ${(ready?.m ?? 0) >= 1e6 ? Math.round((ready?.m ?? 0) / 1e6) + "M" : String(ready?.m ?? 0)} RC`, true);
     return;
   }
 
@@ -256,7 +259,7 @@ async function cycle(state: CureState): Promise<void> {
     const recorded = await recordTxid(req.id, r.txid);
     if (recorded) state.recordedAt = new Date().toISOString();
     log("INFO", `WEAVE LANDED: txid=${r.txid} account=${ready.a} recorded=${recorded}`);
-    await writeStatus(state, rows, `weave landed txid=${r.txid} (recorded=${recorded})`);
+    await writeStatus(state, rows, `weave landed txid=${r.txid} (recorded=${recorded})`, true);
   } else {
     // roast 61: classify like the foundry does — 400/403/429 or failureClass
     // chain-rejected means the chain ANSWERED and refused (nothing broadcast,
@@ -265,7 +268,7 @@ async function cycle(state: CureState): Promise<void> {
     const definitive = r.status === 400 || r.status === 403 || r.status === 429 || r.failureClass === "chain-rejected";
     if (definitive) state.refusedReqId = req.id;
     log("WARN", `weave attempt failed on ${ready.a} (definitive=${definitive}): ${String(r.error ?? "?").slice(0, 160)}`);
-    await writeStatus(state, rows, `attempt failed (${ready.a}, definitive=${definitive}): ${String(r.error ?? "?").slice(0, 120)}${definitive ? " — auto-retry stopped" : " — retry next cycle within the ledger window"}`);
+    await writeStatus(state, rows, `attempt failed (${ready.a}, definitive=${definitive}): ${String(r.error ?? "?").slice(0, 120)}${definitive ? " — auto-retry stopped" : " — retry next cycle within the ledger window"}`, true);
   }
   saveState(state);
 }

@@ -4,6 +4,7 @@ import path from "path";
 
 import { audit, authConfigured, verifyLoginKey } from "@/lib/saos/auth";
 import { coarseError } from "@/lib/saos/api-errors";
+import { ensureSupervisor } from "@/lib/saos/supervisor-bridge";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -111,6 +112,9 @@ const OUTFLOWS: Array<[string, string]> = [
 ];
 
 export async function GET(req: Request) {
+  // Task 62: מעיר את מפקח-השירותים בתוך תהליך-ה-Next (פעם-אחת, בטוח-לכפילות)
+  ensureSupervisor();
+  const GEN = "v4-gen-marker"; void GEN;
   const rl = enforceRateLimit("keys-map", req);
   if (!rl.allowed) {
     return NextResponse.json(

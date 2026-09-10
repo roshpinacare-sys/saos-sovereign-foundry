@@ -230,9 +230,14 @@ export async function computePreflight(target: SignRequest["network"] | null): P
         resourceWarns.push(`HIVE: מוכנה לעגן עכשיו — RC ראשי מדוד ${rcPct}% ≥ סף-הקל 8% ומפתחות-ראשי מאומתים חי (HIVE ${keys.byNetwork.HIVE?.matched ?? 0}/${keys.byNetwork.HIVE?.total ?? 0}); עוגן-צי אוטומטי נמשך במקביל [${rcSource}]`);
       } else if (fc.lastTxid) {
         resourceWarns.push(`HIVE: עוגן-צי בוצע — weave txid ${fc.lastTxid.slice(0, 12)}… (fleet-cure, RC מדוד ${rcPct}% מתוך ${rcSource})`);
-      } else if (fc.best && fc.isFresh && fc.best.etaMin <= 24 * 60) {
+      } else if (fc.best && fc.isFresh && fc.scheduled && fc.best.etaMin <= 24 * 60) {
         resourceWarns.push(
-          `HIVE: עוגן-צי ראשון מתוזמן אוטומטית בעוד ~${Math.round(fc.best.etaMin)} דק' (${fc.best.account}, מנה ${Math.round(fc.best.mana / 1e6)}M/230M RC) — מפתחות צי מאומתים 9/9 HIVE-posting; RC ראשי מדוד ${rcPct}% (סף-קל 8% ברגן) [${rcSource}]`
+          `HIVE: עוגן-צי ראשון מתוזמן אוטומטית בעוד ~${Math.round(fc.best.etaMin)} דק' (${fc.best.account}, מנה ${Math.round(fc.best.mana / 1e6)}M/230M RC, בקשת-weave תלויה קיימת) — מפתחות צי מאומתים 9/9 HIVE-posting; RC ראשי מדוד ${rcPct}% (סף-קל 8% ברגן) [${rcSource}]`
+        );
+      } else if (fc.best && fc.isFresh && !fc.scheduled) {
+        // Task 62: הצי מוכן אבל אין בקשת-weave תלויה — כנות: שום-דבר לא מתוזמן
+        resourceWarns.push(
+          `HIVE: הצי מוכן (${fc.best.account}, חלון-RC פתוח) אבל אין בקשת-weave תלויה — אין עוגן-צי מתוזמן; העוגן-האוטומטי ירוץ רק כשתיווצר בקשה (הערת-הדמון: ${String(fc.note ?? "?").slice(0, 80)}) [${rcSource}]`
         );
       } else if (fc.best && !fc.isFresh) {
         // roast 61: network-status gates fleet promises on isFresh — preflight

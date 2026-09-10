@@ -5,6 +5,7 @@ import path from "path";
 import { db } from "@/lib/db";
 import { auditDroppedCount, authConfigured, currentSessionEpoch } from "@/lib/saos/auth";
 import { coarseError } from "@/lib/saos/api-errors";
+import { ensureSupervisor } from "@/lib/saos/supervisor-bridge";
 import { enforceRateLimit, ruleFor } from "@/lib/saos/rate-limit";
 import { saosModeFresh } from "@/lib/saos/modes";
 import { networkStatuses } from "@/lib/saos/network-status";
@@ -134,6 +135,8 @@ async function backupProof(): Promise<{ lastBackupAt: string | null; lastVerifie
 }
 
 export async function GET(req: Request) {
+  // Task 62: מעיר את מפקח-השירותים בתוך תהליך-ה-Next (פעם-אחת, בטוח-לכפילות)
+  ensureSupervisor();
   const rl = enforceRateLimit("live-proof", req);
   if (!rl.allowed) {
     return NextResponse.json({ ok: false, error: "rate-limited", retryAfterSec: rl.retryAfterSec }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } });

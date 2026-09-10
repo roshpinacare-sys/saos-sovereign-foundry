@@ -32,6 +32,17 @@ export interface FleetCureStatus {
   fileAgeMin: number | null;
   /** true only when the status file was written by a live daemon recently (≤ FRESH_MAX_MIN) — stale files are EVIDENCE, not schedules */
   isFresh: boolean;
+  /**
+   * Task 62: does a pending HIVE weave SignRequest ACTUALLY exist (the daemon's
+   * own verdict this cycle)? Readiness (an open RC window) is a necessary
+   * condition, NOT a schedule — the fresh-file era still lied by composing
+   * "מתוזמן בעוד ~X דק'" from best.etaMin while the daemon's own note said
+   * "no pending HIVE weave SignRequest found — nothing to execute".
+   * null = legacy file without the flag (the note heuristic decides).
+   */
+  pendingWeave: boolean | null;
+  /** honest schedule claim: a live daemon AND a pending weave both verified */
+  scheduled: boolean;
 }
 
 /** Roast 2026-09-10: the daemon was dead ~4.7h while the UI kept promising
@@ -43,7 +54,7 @@ let cache: { at: number; value: FleetCureStatus } | null = null;
 
 export function fleetCureStatus(): FleetCureStatus {
   if (cache && Date.now() - cache.at < CACHE_TTL_MS) return cache.value;
-  const empty: FleetCureStatus = { updatedAt: null, lastTxid: null, recordedAt: null, note: null, best: null, accounts: [], fileAgeMin: null, isFresh: false };
+  const empty: FleetCureStatus = { updatedAt: null, lastTxid: null, recordedAt: null, note: null, best: null, accounts: [], fileAgeMin: null, isFresh: false, pendingWeave: null, scheduled: false };
   try {
     if (!existsSync(STATUS_PATH)) {
       cache = { at: Date.now(), value: empty };
@@ -61,6 +72,16 @@ export function fleetCureStatus(): FleetCureStatus {
     const waiting = accounts
       .filter((a) => typeof a.etaToWindowMin === "number" && a.etaToWindowMin !== null)
       .sort((a, b) => (a.etaToWindowMin ?? Infinity) - (b.etaToWindowMin ?? Infinity))[0];
+    // Task 62: the machine flag wins; legacy files (no flag) fall back to the
+    // daemon's note — "no pending…" / definitive-stop pages mean NOT scheduled.
+    const rawFlag = (j as { pendingWeave?: unknown }).pendingWeave;
+    const pendingWeave: boolean | null =
+      typeof rawFlag === "boolean"
+        ? rawFlag
+        : j.note
+          ? !/^(no pending|sig=)/i.test(j.note.trim())
+          : null;
+    const isFresh = ageMin <= FLEET_STATUS_FRESH_MAX_MIN;
     const value: FleetCureStatus = {
       updatedAt: j.updatedAt ?? null,
       lastTxid: j.lastTxid ?? null,
@@ -69,7 +90,9 @@ export function fleetCureStatus(): FleetCureStatus {
       best: waiting ? { account: waiting.account, etaMin: waiting.etaToWindowMin as number, mana: waiting.mana } : null,
       accounts,
       fileAgeMin: ageMin,
-      isFresh: ageMin <= FLEET_STATUS_FRESH_MAX_MIN
+      isFresh,
+      pendingWeave,
+      scheduled: isFresh && pendingWeave === true
     };
     cache = { at: Date.now(), value };
     return value;

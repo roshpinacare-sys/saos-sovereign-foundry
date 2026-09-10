@@ -116,6 +116,35 @@ async function main() {
   report("GET /status networks x6", Array.isArray(s.body.networks) && s.body.networks.length === 6, "incl. ETHEREUM+SOLANA (Task 12)");
   report("GET /status matrix x6", Array.isArray(s.body.matrix) && s.body.matrix.length === 6);
 
+  // Task 62: the supervisor is the only thing keeping the mini-services alive —
+  // regressions here were invisible for 13h (register() never ran, fleet-cure
+  // was never in the list, boot-env drift silently disabled guardian+chief).
+  const sup = Array.isArray(s.body.supervisor) ? s.body.supervisor : [];
+  report("task-62: /status exposes supervisor truth (4 services incl. fleet-cure)", sup.length === 4 && sup.some((x) => x.name === "fleet-cure"), `got=${sup.map((x) => x.name).join(",") || "none"}`);
+  report("task-62: supervisor entries carry alive+disabled verdicts", sup.every((x) => typeof x.alive === "boolean" && typeof x.disabled === "boolean"), sup.map((x) => `${x.name}:${x.alive ? "up" : "DOWN"}${x.disabled ? "(disabled)" : ""}`).join(" "));
+
+  // Task 62: the fleet-schedule claim must match the executor's own evidence —
+  // "עוגן-צי ... מתוזמן" may appear ONLY when the status file's pendingWeave
+  // flag is true (roast-62: readiness ≠ schedule; the fresh-file lie).
+  try {
+    const fsMod = await import("fs");
+    let pendingWeave = null;
+    try {
+      const st = JSON.parse(fsMod.readFileSync("docs/evidence/fleet-cure-status.json", "utf8"));
+      pendingWeave = typeof st.pendingWeave === "boolean" ? st.pendingWeave : null;
+    } catch {}
+    const hiveNet = (s.body.networks ?? []).find((n) => n.network === "HIVE");
+    const blocker = String(hiveNet?.blocker ?? "");
+    const promisesScheduled = /עוגן-צי אוטומטי\s+בעוד|מתוזמן אוטומטית/.test(blocker);
+    report(
+      "task-62: fleet 'scheduled' claim only with pendingWeave=true (readiness ≠ schedule)",
+      !promisesScheduled || pendingWeave === true,
+      `claim=${promisesScheduled ? "scheduled" : "not-scheduled"} file.pendingWeave=${String(pendingWeave)}`
+    );
+  } catch (e) {
+    report("task-62: fleet 'scheduled' claim only with pendingWeave=true", false, String(e.message ?? e).slice(0, 80));
+  }
+
   // 1b. Task 13: in LIVE mode a seal is broadcast-adjacent → the route (by
   // design) requires an authenticated operator. Establish a session up-front
   // when a key is available and attach it to seal drills; in dry-run/safe

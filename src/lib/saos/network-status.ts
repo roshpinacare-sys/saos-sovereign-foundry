@@ -97,7 +97,8 @@ export function networkStatuses(rcPct: number, tronEnergy: number, keys?: Signer
   // while the UI kept promising "מתוזמן אוטומטית" from a frozen snapshot, and
   // the daemon's own last note was "nothing to execute"). Durations are
   // humanized so "~0.0 שע'" can never appear again.
-  const fleetScheduled = Boolean(fc.best && fc.isFresh);
+  // Task 62: scheduled = live daemon AND a pending weave — readiness alone never schedules
+  const fleetScheduled = Boolean(fc.best && fc.scheduled);
   const fleetEtaMin = fleetScheduled && fc.best ? fc.best.etaMin : null;
   const fleetEtaLabel = fleetEtaMin === null
     ? null
@@ -219,8 +220,11 @@ export function networkStatuses(rcPct: number, tronEnergy: number, keys?: Signer
   const hiveBlocker = fleetLanded || mainReady
     ? null
     : fleetScheduled
-      ? `rc-floor לחשבון-הראשי: נוכחי ${rcPct}% מתחת לסף-הקל ${HIVE_RC_FLOOR_LIGHT}% — חסום לעיגון-ראשי עכשיו; עוגן-צי אוטומטי ${fleetEtaLabel ?? ""} (${fc.best?.account} · סטטוס טרי); ${keysNote}`
-      : `rc-floor: נוכחי ${rcPct}% מתחת לסף-הקל ${HIVE_RC_FLOOR_LIGHT}% / סף-הכבד ${HIVE_RC_FLOOR_HEAVY}% — אין עוגן-צי מתוזמן${fleetStaleNote ? ` (${fleetStaleNote})` : " (הדמון לא רץ)"}; ${keysNote}`;
+      ? `rc-floor לחשבון-הראשי: נוכחי ${rcPct}% מתחת לסף-הקל ${HIVE_RC_FLOOR_LIGHT}% — חסום לעיגון-ראשי עכשיו; עוגן-צי אוטומטי ${fleetEtaLabel ?? ""} (${fc.best?.account} · בקשת-weave תלויה קיימת); ${keysNote}`
+      : fc.best && fc.isFresh
+        ? // Task 62: חלון-RC פתוח אבל אין בקשה תלויה — הצי מוכן, שום-דבר לא מתוזמן
+          `rc-floor לחשבון-הראשי: נוכחי ${rcPct}% מתחת לסף-הקל ${HIVE_RC_FLOOR_LIGHT}% — חסום לעיגון-ראשי עכשיו; הצי מוכן (${fc.best.account}, חלון-RC פתוח) אבל אין בקשת-weave תלויה — אין עוגן-צי מתוזמן, הוא ירוץ אוטומטית רק כשתיווצר בקשה; ${keysNote}`
+        : `rc-floor: נוכחי ${rcPct}% מתחת לסף-הקל ${HIVE_RC_FLOOR_LIGHT}% / סף-הכבד ${HIVE_RC_FLOOR_HEAVY}% — אין עוגן-צי מתוזמן${fleetStaleNote ? ` (${fleetStaleNote})` : " (הדמון לא רץ)"}; ${keysNote}`;
   const hive: NetworkStatusView = {
     network: "HIVE",
     status: mainReady ? "anchored" : fleetLanded || rcAboveLight ? "pending" : "gated",

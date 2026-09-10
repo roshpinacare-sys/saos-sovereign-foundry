@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { anchoringMatrix } from "@/lib/saos/anchor-gates";
 import { coarseError } from "@/lib/saos/api-errors";
+import { ensureSupervisor } from "@/lib/saos/supervisor-bridge";
+import { supervisorStatus } from "@/instrumentation-node";
 import { HISTORIC_ANCHORS } from "@/lib/saos/historic";
 import { networkStatuses } from "@/lib/saos/network-status";
 import { probeEthereumReadonly } from "@/lib/saos/networks/ethereum";
@@ -16,6 +18,8 @@ import { externalSignerKeyMatches } from "@/lib/saos/external-signer-client";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
+  // Task 62: מעיר את מפקח-השירותים בתוך תהליך-ה-Next (פעם-אחת, בטוח-לכפילות)
+  ensureSupervisor();
   const rl = enforceRateLimit("status", req);
   if (!rl.allowed) {
     return NextResponse.json(
@@ -45,14 +49,16 @@ export async function GET(req: Request) {
       };
     }
 
-    const [seals, receipts, opCount] = await Promise.all([
+    const [seals, receipts, opCount, supervisor] = await Promise.all([
       db.sealRecord.findMany({
         orderBy: { createdAt: "desc" },
         take: 8,
         include: { anchors: true, _count: { select: { leaves: true } } }
       }),
       db.evidenceReceipt.findMany({ orderBy: { createdAt: "desc" }, take: 10 }),
-      db.opLog.count()
+      db.opLog.count(),
+      // Task 62: אמת-המפקח — חי/מנוטרל/ניסיונות, מדידת-TCP רגעית (לא קובץ-סטטוס קפוא)
+      supervisorStatus()
     ]);
 
     return NextResponse.json({
@@ -69,6 +75,8 @@ export async function GET(req: Request) {
       },
       matrix: anchoringMatrix(rcPct, tronEnergy),
       networks: networkStatuses(rcPct, tronEnergy, keys),
+      // Task 62: אמת-שירותי-הרקע — הטענה היחידה שמותר למסך להציג על הצי
+      supervisor,
       rcSource: rcLive ? `live ${rcLive.account} @ ${rcLive.at}` : "env fallback",
       ...(probes ? { probes } : {}),
       historic: HISTORIC_ANCHORS,
