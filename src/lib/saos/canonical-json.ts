@@ -34,20 +34,23 @@ export function canonicalize(value: unknown): string {
     if (t === "symbol" || t === "function") fail("symbol/function rejected");
     if (t === "object") {
       const o = v as object;
+      if (o instanceof Date) return o.toISOString(); // before seen.add — a shared Date is legal (roast 51)
       if (seen.has(o)) fail("circular reference rejected");
       seen.add(o);
       if (Array.isArray(o)) {
-        return o.map((x) => {
+        const mapped = o.map((x) => {
           if (x === undefined) return null; // sparse array collapsed
           return walk(x);
         });
+        seen.delete(o); // roast 51: DAG-shared subobjects are LEGAL input — only true cycles (a reference still being walked) are rejected; never deleting made {a:x, b:x} throw a false "circular"
+        return mapped;
       }
-      if (o instanceof Date) return o.toISOString();
       const entries = Object.entries(o as Record<string, unknown>)
         .filter(([, val]) => val !== undefined)
         .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
       const out: Record<string, unknown> = {};
       for (const [k, val] of entries) out[k] = walk(val);
+      seen.delete(o); // same DFS discipline for plain objects
       return out;
     }
     fail(`unsupported type ${t}`);

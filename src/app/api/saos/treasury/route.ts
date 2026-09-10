@@ -141,10 +141,14 @@ async function tronRow(label: string, address: string): Promise<BalanceRow> {
       error: "כתובת לא תקפה (checksum/prefix) — הסימון בתיעוד אינו כתובת TRON אמיתית"
     };
   }
-  const tryEndpoints = async (): Promise<BalanceRow> => {
-    // primary: TronGrid v1; fallback: full-node POST /wallet/getaccount
+  // roast 51: rotate BASE endpoints — both old fallbacks (v1/accounts AND
+  // wallet/getaccount) lived on api.trongrid.io alone, so one trongrid 429
+  // storm killed both simultaneously. tronstack live-verified 2026-09-10
+  // (head 86115750) joins the chain; TRC20 note: only trongrid v1 returns trc20.
+  const bases = ["https://api.trongrid.io", "https://api.tronstack.io"];
+  const tryOne = async (base: string): Promise<BalanceRow> => {
     try {
-      const j = (await jsonFetch(`https://api.trongrid.io/v1/accounts/${address}`)) as {
+      const j = (await jsonFetch(`${base}/v1/accounts/${address}`)) as {
         data?: Array<{ balance?: number; trc20?: Record<string, string>[]; create_time?: number }>;
       };
       const d = j.data?.[0];
@@ -159,8 +163,8 @@ async function tronRow(label: string, address: string): Promise<BalanceRow> {
         activated: Boolean(d?.create_time)
       };
     } catch {
-      // fallback: official full-node endpoint (different rate bucket than v1/accounts; TRC20 not included there)
-      const res = await fetch("https://api.trongrid.io/wallet/getaccount", {
+      // fallback: official full-node endpoint (different rate bucket; TRC20 not included there)
+      const res = await fetch(`${base}/wallet/getaccount`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ address, visible: true }),
@@ -184,12 +188,26 @@ async function tronRow(label: string, address: string): Promise<BalanceRow> {
     }
   };
   try {
-    return await tryEndpoints();
+    for (const base of bases) {
+      try {
+        return await tryOne(base);
+      } catch {
+        // base down (both endpoints on it) — rotate to the next base
+      }
+    }
+    throw new Error(`כל ${bases.length} נקודות-הקריאה דחו (trongrid+tronstack)`);
   } catch (e) {
     // one patient retry — public RPC 429 storms are transient (politeness window)
     await sleep(1_500);
     try {
-      return await tryEndpoints();
+      for (const base of bases) {
+        try {
+          return await tryOne(base);
+        } catch {
+          // rotate
+        }
+      }
+      throw new Error(`כל ${bases.length} נקודות-הקריאה דחו (trongrid+tronstack) אחרי ניסיון-חוזר`);
     } catch {
       return { label, address, status: "error", error: e instanceof Error ? e.message : String(e) };
     }
@@ -288,24 +306,30 @@ interface GrapheneRow {
   created?: string;
 }
 
-async function grapheneRow(label: string, chain: "BLURT" | "STEEM" | "HIVE", url: string): Promise<GrapheneRow> {
-  try {
-    const r = (await rpc(url, "condenser_api.get_accounts", [[GRAPHENE_ACCOUNT]])) as Array<Record<string, string>>;
-    const a = r?.[0];
-    if (!a) return { label, chain, status: "error", error: "account-not-found" };
-    return {
-      label,
-      chain,
-      status: "ok",
-      liquid: a.balance,
-      liquidNum: Number(a.balance.split(" ")[0].replace(/,/g, "")),
-      debt: a.sbd_balance ?? a.hbd_balance,
-      vested: a.vesting_shares,
-      created: a.created
-    };
-  } catch (e) {
-    return { label, chain, status: "error", error: e instanceof Error ? e.message : String(e) };
+async function grapheneRow(label: string, chain: "BLURT" | "STEEM" | "HIVE", urls: string[]): Promise<GrapheneRow> {
+  // roast 51: rotate candidates — one hostile/dead host must not fake an
+  // "error" row (a treasury account is fine even when steemit.com 403s solo)
+  let lastErr: unknown = null;
+  for (const url of urls) {
+    try {
+      const r = (await rpc(url, "condenser_api.get_accounts", [[GRAPHENE_ACCOUNT]])) as Array<Record<string, string>>;
+      const a = r?.[0];
+      if (!a) return { label, chain, status: "error", error: "account-not-found" };
+      return {
+        label,
+        chain,
+        status: "ok",
+        liquid: a.balance,
+        liquidNum: Number(a.balance.split(" ")[0].replace(/,/g, "")),
+        debt: a.sbd_balance ?? a.hbd_balance,
+        vested: a.vesting_shares,
+        created: a.created
+      };
+    } catch (e) {
+      lastErr = e;
+    }
   }
+  return { label, chain, status: "error", error: lastErr instanceof Error ? lastErr.message : String(lastErr) };
 }
 
 async function buildTreasury() {
@@ -326,9 +350,9 @@ async function buildTreasury() {
     Promise.all([solRow("ארנק Solana (פורנזי)", SOL_FORENSIC)])
   ]);
   const graphene = await Promise.all([
-    grapheneRow("BLURT", "BLURT", "https://rpc.beblurt.com"),
-    grapheneRow("STEEM", "STEEM", "https://api.steemit.com"),
-    grapheneRow("HIVE", "HIVE", "https://api.hive.blog")
+    grapheneRow("BLURT", "BLURT", ["https://rpc.beblurt.com", "https://blurt-rpc.saboin.com"]),
+    grapheneRow("STEEM", "STEEM", ["https://api.steemit.com", "https://api.steem.fans", "https://api.justyy.com"]),
+    grapheneRow("HIVE", "HIVE", ["https://api.hive.blog", "https://api.deathwing.me", "https://api.openhive.network"])
   ]);
 
   // traced outflow destinations (public balances of addresses that RECEIVED our funds)

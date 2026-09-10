@@ -268,6 +268,45 @@ async function probeJson(url: string, body: unknown, timeoutMs = 5_000): Promise
   }
 }
 
+/**
+ * roast 51 — condenser candidate lists per network (same doctrine as BLURT/ETH):
+ * a single hardcoded endpoint makes "unverifiable" an intermittent lie when one
+ * host 403/429s while the chain is fine. All candidates live-verified 2026-09-10
+ * with fresh heads (steem 109449504 / hive 109784074). A transport failure
+ * ("לא נגיש/פסק-זמן") advances to the next candidate; a definitive answer
+ * (verified OR endpoint-answered-but-unknown-txid) returns immediately.
+ */
+const CONDENSER_CANDIDATES: Record<"STEEM" | "HIVE", string[]> = {
+  STEEM: ["https://api.steemit.com", "https://api.steem.fans", "https://api.justyy.com", "https://steemapi.boylikegirl.club"],
+  HIVE: ["https://api.hive.blog", "https://api.deathwing.me", "https://api.openhive.network"]
+};
+
+/**
+ * rotate condenser candidates for one condenser-chain verification, then (when
+ * the signer gave a block hint) fall back to get_block on the endpoint that
+ * actually ANSWERED — never on the dead one (roast 50 BLURT lesson, generalized).
+ */
+async function verifyCondenserRotating(
+  network: "STEEM" | "HIVE",
+  txid: string,
+  blockHint?: number | null
+): Promise<TxidVerification> {
+  let last: TxidVerification = { verified: false, source: null, reason: `אימות ${network}: אף נקודת-קצה ציבורית לא נבדקה` };
+  let answeredUrl: string | null = null;
+  for (const url of CONDENSER_CANDIDATES[network]) {
+    last = await verifyCondenser(url, network, txid);
+    if (last.verified) return last;
+    if (last.reason.includes("לא נגיש") || last.reason.includes("פסק-זמן")) continue;
+    answeredUrl = url; // definitive answer (unknown txid) — stop rotating
+    break;
+  }
+  if (blockHint) {
+    const viaBlock = await verifyCondenserBlock(answeredUrl ?? CONDENSER_CANDIDATES[network][0]!, network, txid, blockHint);
+    if (viaBlock.verified) return viaBlock;
+  }
+  return last;
+}
+
 /** STEEM / HIVE condenser API: get_transaction returns null/empty when unknown */
 async function verifyCondenser(apiUrl: string, network: string, txid: string): Promise<TxidVerification> {
   const json = await probeJson(apiUrl, { jsonrpc: "2.0", method: "condenser_api.get_transaction", params: [txid], id: 1 });
@@ -312,22 +351,28 @@ async function verifyCondenserBlock(apiUrl: string, network: string, txid: strin
   };
 }
 
-/** TRON: GET gettransactionbyid on TronGrid public API */
+/** TRON: GET gettransactionbyid — trongrid primary, tronstack on transport failure (roast 51: a 429 on one host must not fake an unverifiable anchor) */
+const TRON_VERIFY_ENDPOINTS = ["https://api.trongrid.io", "https://api.tronstack.io"];
 async function verifyTron(txid: string): Promise<TxidVerification> {
-  const url = `https://api.trongrid.io/wallet/gettransactionbyid?value=${encodeURIComponent(txid)}`;
-  try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(5_000), cache: "no-store" });
-    if (!res.ok) {
-      return { verified: false, source: null, reason: "אימות TRON נכשל: TronGrid לא נגיש (HTTP " + res.status + ") — unverified" };
+  let lastReason = "אימות TRON: אף נקודת-קצה לא נוסתה";
+  for (const base of TRON_VERIFY_ENDPOINTS) {
+    const url = `${base}/wallet/gettransactionbyid?value=${encodeURIComponent(txid)}`;
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(5_000), cache: "no-store" });
+      if (!res.ok) {
+        lastReason = `אימות TRON: ${new URL(url).host} לא נגיש (HTTP ${res.status}) — עובר לנקודת-הקריאה הבאה`;
+        continue; // transport failure — rotate, never fake "unverified by the network"
+      }
+      const json = (await res.json()) as { ret?: Array<{ result?: boolean }>; raw_data?: unknown };
+      if (json?.raw_data && Array.isArray(json.ret) && json.ret[0]?.result === true) {
+        return { verified: true, source: url, reason: `txid אומת מול ${new URL(url).host}` };
+      }
+      return { verified: false, source: null, reason: `${new URL(url).host} לא מכיר את ה-txid (או שהוא עדיין ב-mempool) — unverified` };
+    } catch {
+      lastReason = `אימות TRON: ${new URL(url).host} לא נגיש מהסנדבוקס (פסק-זמן) — עובר לנקודת-הקריאה הבאה`;
     }
-    const json = (await res.json()) as { ret?: Array<{ result?: boolean }>; raw_data?: unknown };
-    if (json?.raw_data && Array.isArray(json.ret) && json.ret[0]?.result === true) {
-      return { verified: true, source: "https://api.trongrid.io/wallet/gettransactionbyid", reason: "txid אומת מול TronGrid" };
-    }
-    return { verified: false, source: null, reason: "TronGrid לא מכיר את ה-txid (או שהוא עדיין ב-mempool) — unverified" };
-  } catch {
-    return { verified: false, source: null, reason: "אימות TRON נכשל: TronGrid לא נגיש מהסנדבוקס (פסק-זמן) — unverified" };
   }
+  return { verified: false, source: null, reason: `${lastReason} — unverified` };
 }
 
 /** ETHEREUM: read-only eth_getTransactionByHash, rotating keyless public RPCs (roast 50) */
@@ -387,16 +432,9 @@ async function verifySolana(txid: string): Promise<TxidVerification> {
 
 export async function verifyTxidPublic(network: SignRequest["network"], txid: string, blockHint?: number | null): Promise<TxidVerification> {
   switch (network) {
-    case "STEEM": {
-      const primary = await verifyCondenser("https://api.steemit.com", "STEEM", txid);
-      if (primary.verified || !blockHint) return primary;
-      return await verifyCondenserBlock("https://api.steemit.com", "STEEM", txid, blockHint);
-    }
-    case "HIVE": {
-      const primary = await verifyCondenser("https://api.hive.blog", "HIVE", txid);
-      if (primary.verified || !blockHint) return primary;
-      return await verifyCondenserBlock("https://api.hive.blog", "HIVE", txid, blockHint);
-    }
+    case "STEEM":
+    case "HIVE":
+      return verifyCondenserRotating(network, txid, blockHint);
     case "BLURT": {
       // Task 39: BLURT RPC rotation — beblurt + saboin verified LIVE 2026-09-09;
       // rpc.blurt.world is dead (kept last in case it revives). Transport failure

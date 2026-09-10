@@ -45,11 +45,19 @@ export interface LiveProbeResult {
   reason: string;
 }
 
-/** well-known KEYLESS public read endpoints — re-verified live 2026-09-09 (Task 39):
- *  BLURT: beblurt + saboin alive (fresh head blocks); world/btsd/coruscant DEAD
- *  (kept as trailing fallbacks — reached only if both live endpoints fail) */
+/** well-known KEYLESS public read endpoints — rotation (roast 51, the Task-50
+ *  ETH doctrine applied to the remaining chains): a single hardcoded endpoint
+ *  made "network dead" an intermittent lie (publicnode 403'd solo; trongrid
+ *  429-storms are proven on this env). All candidates below answered LIVE
+ *  2026-09-10 with fresh heads:
+ *  STEEM  steemit 109449504 · steem.fans 109449504 · justyy 109449504 · boylikegirl 109449505
+ *  HIVE   hive.blog 109784074 · deathwing 109784074 · openhive 109784075
+ *         (hive-api.arcange.eu FAILED live — excluded, never a dead name)
+ *  TRON   trongrid 86115748 · tronstack 86115750
+ *  BLURT  beblurt + saboin alive (Task 39); world/btsd/coruscant DEAD (kept
+ *         as trailing fallbacks — reached only if both live endpoints fail) */
 const GRAPHENE_ENDPOINTS: Record<"STEEM" | "BLURT" | "HIVE", string[]> = {
-  STEEM: ["https://api.steemit.com"],
+  STEEM: ["https://api.steemit.com", "https://api.steem.fans", "https://api.justyy.com", "https://steemapi.boylikegirl.club"],
   BLURT: [
     "https://rpc.beblurt.com",
     "https://blurt-rpc.saboin.com",
@@ -57,9 +65,9 @@ const GRAPHENE_ENDPOINTS: Record<"STEEM" | "BLURT" | "HIVE", string[]> = {
     "https://rpc.blurt.btsd.io",
     "https://blurt-rpc.coruscant.io"
   ],
-  HIVE: ["https://api.hive.blog"]
+  HIVE: ["https://api.hive.blog", "https://api.deathwing.me", "https://api.openhive.network"]
 };
-const TRON_ENDPOINTS = ["https://api.trongrid.io"];
+const TRON_ENDPOINTS = ["https://api.trongrid.io", "https://api.tronstack.io"];
 
 const PROBE_TIMEOUT_MS = 2_500;
 const CACHE_TTL_MS = 60_000;
@@ -158,7 +166,7 @@ async function probeTron(): Promise<LiveProbeResult> {
         }
       }
     } catch {
-      // try next candidate — never throw
+      // next candidate — trongrid 429 must never fake a dead TRON chain (roast 51)
     }
   }
   return {
