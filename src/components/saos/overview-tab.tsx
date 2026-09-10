@@ -546,6 +546,64 @@ export function MyKeysPanel() {
         <p className="flex items-center gap-2 text-xs text-zinc-500"><span className="pulse-dot inline-block size-1.5 rounded-full bg-emerald-400" aria-hidden /> טוען מפת-מפתחות…</p>
       ) : (
         <div className="space-y-4">
+          {/* ── 0. מרכז-החיבור — Task 64: האם הכל חובר? התשובה החיה, ללא חיפוש ── */}
+          {keysQ.data.connection && (
+            <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.04] p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-200">
+                  <Server className="size-3.5" aria-hidden /> מרכז-החיבור — הכל מחובר?
+                </span>
+                {(() => {
+                  const svc = keysQ.data.connection?.services ?? [];
+                  const alive = svc.filter((s) => s.alive).length;
+                  const v = keysQ.data.connection?.vault;
+                  const allOk = svc.length > 0 && alive === svc.length && v?.reachable && (v.summary?.drift ?? 1) === 0;
+                  return <Badge tone={allOk ? "ok" : "warn"}>{allOk ? "הכל מחובר וחי" : `חיבור חלקי — ${alive}/${svc.length} שירותים`}</Badge>;
+                })()}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {(keysQ.data.connection.services ?? []).map((s) => (
+                  <Badge key={s.name} tone={s.alive ? "ok" : "danger"} title={`:${s.port}`}>{s.alive ? "✓" : "✗"} {s.name}</Badge>
+                ))}
+                {keysQ.data.connection.vault.reachable ? (
+                  <Badge tone="ok" title={keysQ.data.connection.vault.sealedAt ? `נאטם ${keysQ.data.connection.vault.sealedAt}` : undefined}>
+                    כספת: {keysQ.data.connection.vault.summary?.ok ?? "?"} סלוטים מאומתים-חי · סטיות: {keysQ.data.connection.vault.summary?.drift ?? "?"}
+                  </Badge>
+                ) : (
+                  <Badge tone="danger">כספת לא נגישה</Badge>
+                )}
+              </div>
+              {keysQ.data.connection.vault.summary?.ok === 16 ? (
+                <p className="mt-2 text-[11px] leading-relaxed text-zinc-400">
+                  מצב-המפתחות המלא: headcorner 12/12 (STEEM · HIVE · BLURT × owner/active/posting/memo) + tov 4/4-BLURT — הכל נגזר, נטען ומאומת מול השרשרת החיה.
+                </p>
+              ) : null}
+            </div>
+          )}
+
+          {/* ── 0-b. פערים-פתוחים — כל פער עם סגירה בצעד-אחד ── */}
+          {keysQ.data.openGaps && keysQ.data.openGaps.length > 0 && (
+            <div className="rounded-xl border border-amber-400/25 bg-amber-400/[0.05] p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="flex items-center gap-1.5 text-xs font-bold text-amber-200">
+                  <ListChecks className="size-3.5" aria-hidden /> פערים-פתוחים ({keysQ.data.openGaps.length}) — לכל אחד סגירה בצעד-אחד
+                </span>
+              </div>
+              <div className="scroll-slim mt-2 max-h-64 space-y-2 overflow-y-auto pl-1">
+                {keysQ.data.openGaps.map((g) => (
+                  <div key={g.id} className="rounded-lg border border-zinc-800/70 bg-zinc-950/60 p-2.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge tone={g.state === "waiting-owner" ? "warn" : "neutral"}>{g.state === "waiting-owner" ? "ממתין לבעלים" : "חסום-חוץ"}</Badge>
+                      <span className="text-[11px] font-bold text-zinc-200">{g.title}</span>
+                    </div>
+                    <p className="mt-1 text-[10px] leading-relaxed text-zinc-400">{g.detail}</p>
+                    <p className="mt-1 text-[10px] leading-relaxed text-emerald-300/90"><span className="font-bold">סגירה:</span> {g.oneStep}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* ── 1. כניסה — one screen, zero files ── */}
           <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.04] p-3">
             <div className="flex flex-wrap items-center gap-2">
@@ -636,12 +694,39 @@ export function MyKeysPanel() {
                     <KeySlotBadge label="owner" slot={slots.owner} />
                     <KeySlotBadge label="active" slot={slots.active} />
                     <KeySlotBadge label="posting" slot={slots.posting} />
+                    <KeySlotBadge label="memo" slot={slots.memo} />
                   </span>
                 ))
               ) : (
                 <span className="text-[11px] text-zinc-500">אין נתוני-חריצים — הפעל את החותם החיצוני (:3033)</span>
               )}
             </div>
+            {chain?.reachable && Array.isArray(chain.fleet) && chain.fleet.some((f) => f.networks && Object.keys(f.networks).length > 0) ? (
+              (() => {
+                // כנות: הפסק-דין לפר-סלוט-צי נגזר מסיכום-הסטיות החי (כל סלוטי-הכספת נבדקים בכל-בדיקה).
+                // unmatched>0 או errors>0 ⇒ לא נוכל לטעון התאמה פר-סלוט ⇒ מוצג "טעון (לא-אומת)".
+                const sum = keysQ.data.connection?.vault.summary;
+                const fleetVerified = sum ? (sum.unmatched ?? 1) === 0 && (sum.errors ?? 1) === 0 : false;
+                return (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {chain.fleet.filter((f) => f.networks && Object.keys(f.networks).length > 0).map((f) => (
+                      <span key={f.username} className="flex flex-wrap items-center gap-1 rounded-lg border border-zinc-800 bg-zinc-950/60 px-2 py-1">
+                        <span className="font-mono text-[10px] font-bold text-zinc-300">{f.username}</span>
+                        {Object.entries(f.networks ?? {}).map(([net, roles]) => (
+                          <span key={net} className="flex items-center gap-1">
+                            <span className="font-mono text-[10px] text-zinc-500">{net}</span>
+                            <KeySlotBadge label="owner" slot={{ loaded: roles.owner, match: roles.owner ? (fleetVerified ? true : null) : false }} />
+                            <KeySlotBadge label="active" slot={{ loaded: roles.active, match: roles.active ? (fleetVerified ? true : null) : false }} />
+                            <KeySlotBadge label="posting" slot={{ loaded: roles.posting, match: roles.posting ? (fleetVerified ? true : null) : false }} />
+                            <KeySlotBadge label="memo" slot={{ loaded: roles.memo, match: roles.memo ? (fleetVerified ? true : null) : false }} />
+                          </span>
+                        ))}
+                      </span>
+                    ))}
+                  </div>
+                );
+              })()
+            ) : null}
             <p className="mt-1.5 text-[10px] leading-relaxed text-zinc-500">
               חומר-מפתח פרטי (WIF) לעולם לא מוצג — רק פסקי-דין מול רשויות-החיה בשרשרת.
             </p>
@@ -680,6 +765,27 @@ export function MyKeysPanel() {
                     <span className="min-w-0 flex-1 truncate" dir="ltr"><Mono className="text-[10px] text-zinc-300" title={f.path}>{f.path}</Mono></span>
                     {f.exists && f.bytes > 0 && <span className="shrink-0 text-[10px] tabular-nums text-zinc-500">{f.bytes} B</span>}
                     <span className="w-full truncate text-[10px] text-zinc-500" title={f.note}>{f.note}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {/* ── 6. חומר-הבעלים — מה נשלח, מה חובר, מה הושמד ── */}
+          {keysQ.data.material && keysQ.data.material.length > 0 && (
+            <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="flex items-center gap-1.5 text-xs font-bold text-zinc-200">
+                  <FileLock2 className="size-3.5 text-zinc-400" aria-hidden /> חומר-הבעלים — מה חובר ומה נאטם
+                </span>
+              </div>
+              <ul className="scroll-slim mt-2 max-h-56 space-y-1.5 overflow-y-auto pl-1">
+                {keysQ.data.material.map((m) => (
+                  <li key={m.path} className="rounded-lg border border-zinc-800/70 bg-zinc-950/60 px-2.5 py-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge tone={m.exists ? "ok" : "neutral"}>{m.exists ? "נשמר" : "מושמד"}</Badge>
+                      <span className="min-w-0 flex-1 truncate" dir="ltr"><Mono className="text-[10px] text-zinc-300">{m.path}</Mono></span>
+                    </div>
+                    <p className="mt-0.5 text-[10px] text-zinc-500">{m.role} · {m.disposition}</p>
                   </li>
                 ))}
               </ul>

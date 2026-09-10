@@ -582,7 +582,9 @@ async function slotView(net, acct, wif, role) {
   let expected = null, match = null;
   try {
     const auth = await chainAuthorities(net, acct);
-    expected = role === "active" ? auth.active : role === "owner" ? auth.owner : auth.posting;
+    // Task 64: memo slots are real slots (16/16 drift coverage) — the view used
+    // to compare a memo WIF against the POSTING authority (silently false).
+    expected = role === "active" ? auth.active : role === "owner" ? auth.owner : role === "memo" ? auth.memo : auth.posting;
     // Task 36: prefix-aware — same payload decides (STM render vs BLT authority)
     match = derived !== null && expected !== null && derived.slice(3) === expected.slice(3);
   } catch { match = null; }
@@ -991,18 +993,37 @@ const server = Bun.serve({
           mainNet[net] = {
             posting: await slotView(net, STATE.main.account, STATE.main.net?.[net]?.postingWif ?? STATE.main.postingWif, "posting"),
             active: await slotView(net, STATE.main.account, STATE.main.net?.[net]?.activeWif ?? STATE.main.activeWif, "active"),
-            owner: await slotView(net, STATE.main.account, STATE.main.net?.[net]?.ownerWif ?? STATE.main.ownerWif, "owner")
+            owner: await slotView(net, STATE.main.account, STATE.main.net?.[net]?.ownerWif ?? STATE.main.ownerWif, "owner"),
+            memo: await slotView(net, STATE.main.account, STATE.main.net?.[net]?.memoWif ?? STATE.main.memoWif, "memo")
           };
         }
+        // Task 64 (חיבור-הכל): the fleet display used to show only generic
+        // posting/active — a net-tagged account (tov: BLURT-only) rendered as
+        // loaded:false on every visible slot while its keys were LIVE and
+        // drift-verified. The display now carries the per-network role map,
+        // only for networks that actually hold material (empty nets omitted —
+        // absence means "no key material for that net", never "loaded:false").
         const fleet = [];
         for (const f of STATE.fleet) {
+          const networks = {};
+          for (const net of ["STEEM", "HIVE", "BLURT"]) {
+            const n = f.net?.[net] ?? {};
+            const roles = {
+              posting: Boolean(n.postingWif ?? f.postingWif),
+              active: Boolean(n.activeWif ?? f.activeWif),
+              owner: Boolean(n.ownerWif ?? f.ownerWif),
+              memo: Boolean(n.memoWif)
+            };
+            if (roles.posting || roles.active || roles.owner || roles.memo) networks[net] = roles;
+          }
           fleet.push({
             username: f.username,
             posting: f.postingWif ? { loaded: true } : { loaded: false },
-            active: f.activeWif ? { loaded: true } : { loaded: false }
+            active: f.activeWif ? { loaded: true } : { loaded: false },
+            networks
           });
         }
-        return Response.json({ ok: true, main: { account: STATE.main.account, networks: mainNet }, fleet, sealedAt: STATE.sealedAt, drift: { lastCheck: driftState.lastCheck, openDrifts: driftState.drifts.length, unmatched: driftState.unmatched.length, summary: driftState.lastSummary }, version: "2.4.0" });
+        return Response.json({ ok: true, main: { account: STATE.main.account, networks: mainNet }, fleet, sealedAt: STATE.sealedAt, drift: { lastCheck: driftState.lastCheck, openDrifts: driftState.drifts.length, unmatched: driftState.unmatched.length, summary: driftState.lastSummary }, version: "2.4.2" });
       } catch (e) {
         return Response.json({ ok: false, error: String(e?.message ?? e).slice(0, 200) }, { status: 502 });
       }

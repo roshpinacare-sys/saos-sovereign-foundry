@@ -5,6 +5,7 @@ import path from "path";
 import { audit, authConfigured, verifyLoginKey } from "@/lib/saos/auth";
 import { coarseError } from "@/lib/saos/api-errors";
 import { ensureSupervisor } from "@/lib/saos/supervisor-bridge";
+import { supervisorStatus } from "@/instrumentation-node";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -140,12 +141,48 @@ export async function GET(req: Request) {
 
     // ── 3. key files (paths + sizes only, NEVER content) ──
     const files = [
-      fileMeta(path.join(UPLOAD_DIR, "הדקור.txt"), "ערכת המפתחות האמיתית של headcorner (STEEM+HIVE) — הועלתה על ידי הבעלים"),
-      fileMeta(path.join(UPLOAD_DIR, "בלורט.evm"), "מעטפת BLURT"),
       fileMeta(uploadPath, "עותק מפתח-אדמין (המיקום ההיסטורי של הבעלים)"),
-      fileMeta(secretPath, "מפתח-אדמין — מחוץ לעץ הפרויקט (SH-7)"),
+      fileMeta(path.join(UPLOAD_DIR, "photo_2026-09-10_01-12-28.jpg"), "הצירוף-מהתמונה (mnemonic) — מקור-הנגזרת של משפחת-הארנקים · עותק-המערכת היחיד — לא למחוק"),
+      fileMeta(path.join(UPLOAD_DIR, "negen-space.html"), "דף-עיצוב (מרחב-סגנונות) — חומר-עזר, ללא מפתחות"),
       fileMeta(path.join(SECRETS_DIR, "external-signer-token"), "טוקן אימות לחותם החיצוני :3033"),
-      fileMeta(path.join(SECRETS_DIR, "fleet-envelope"), "מעטפת-הצי החתומה (WIF-ים — החומר עצמו לעולם לא נחשף)")
+      fileMeta(path.join(SECRETS_DIR, "fleet-envelope"), "מעטפת-הכספת החתומה (WIF-ים — החומר עצמו לעולם לא נחשף)"),
+      fileMeta(path.join(process.cwd(), "backups", "key-backup-headcorner-20260910.enc"), "גיבוי-טרי מוצפן של כל 16 הסלוטים החיים (10-09) — סיסמה נמסרה בצ'אט בלבד"),
+      fileMeta(path.join(process.cwd(), "backups", "key-backup-headcorner-20260909.enc"), "גיבוי מוצפן עידן-הצי (09-09: 10 חשבונות-צי × STEEM/HIVE + headcorner) — סיסמה אצל הבעלים בצ'אט"),
+      fileMeta("/tmp/my-project/backups/key-backup-headcorner-20260909.enc", "עותק-שרד של גיבוי 09-09 (זהה md5)")
+    ];
+
+    // ── 4. Task 64 מרכז-החיבור: חיים + פערים-פתוחים + חומר-בעלים ──
+    const svcs = await supervisorStatus();
+    const vaultSummary = ((signerBody.drift as { summary?: { ok?: number; drift?: number; unmatched?: number; errors?: number } } | undefined)?.summary) ?? null;
+    const fleetAccountsWithKeys = Array.isArray(signerBody.fleet)
+      ? (signerBody.fleet as Array<{ networks?: Record<string, unknown> }>).filter((f) => f.networks && Object.keys(f.networks).length > 0).length
+      : 0;
+
+    const oldBackup = files[6];
+    const openGaps = [
+      {
+        id: "fleet-slots",
+        title: "סלוטי-הצי (9 חשבונות HIVE) — חומר קיים, ממתין סיסמה",
+        detail: `המפתחות של כל חשבונות-הצי קיימים בגיבוי המוצפן ${oldBackup.path}${oldBackup.exists ? " (על-הדיסק, אומת)" : " (לא נמצא על-הדיסק — ניתן לשחזור מהיסטוריית-הגיט)"} — נבלעו ואומתו-חי 18/18 בעבר. סיסמת-הגיבוי נמסרה לבעלים בצ'אט (09-09, עידן "keys-rescue").`,
+        oneStep: "הבעלים מדביק את סיסמת-הגיבוי מהצ'אט של 09-09 → פענוח → ingest → הצי חי. שום דבר אחר לא נדרש.",
+        state: "waiting-owner" as const
+      },
+      {
+        id: "tov-rot1",
+        title: "tov-STEEM/HIVE — יתום-ROT1 (נכסים זעירים, לא חוסם דבר)",
+        detail: "המפתחות סובבו חיצונית (SETTLE-10) והסיד של עץ-ROT1 לא נמצא. יתרה ציבורית: 0.449 STEEM + ווסטינג-זעיר. לא חוסם שום צינור.",
+        oneStep: "אם סיד-ROT1 (64-hex) ימצא אי-פעם — הדבקה אחת במסך-אבטחה → כל-העץ נגזר ונאומת אוטומטית.",
+        state: "blocked-external" as const
+      }
+    ];
+
+    const ownerMaterial = [
+      { path: "upload/הד.txt", role: "סיסמאות-אב headcorner+tov", disposition: "הושמד 10-09 (shred ×3) אחרי 8/8 התאמות-חי ואישור-הבעלים — הנגזרות חיות בכספת ובגיבוי-הטרי", exists: false },
+      { path: "upload/הדקור.txt", role: "ערכת STEEM/HIVE של headcorner", disposition: "הושמד 10-09 (shred ×3, פריצדנט-32) — 8/8 נבלעו ומאומתים-חי", exists: false },
+      { path: "upload/בלורט.evm", role: "סיסמת-אב BLURT של headcorner", disposition: "הושמד 10-09 — הוכח מקומית שהוא שכפול-מדויק של סיסמת-headcorner בהד.txt (אותו מפתח-ציבורי נגזר)", exists: false },
+      { path: "upload/photo_2026-09-10_01-12-28.jpg", role: "צירוף-מילים (מקור משפחת-TRON והארנקים)", disposition: "נשמר — עותק-המערכת היחיד של הנגזרת; נגזר ונמפה במלואו (FUNDS-RECON)", exists: true },
+      { path: "upload/saos-admin-key.txt", role: "עותק מפתח-אדמין", disposition: "נשמר — המיקום ההיסטורי שהבעלים מכיר (hash מאומת)", exists: true },
+      { path: "upload/negen-space.html", role: "דף-עיצוב", disposition: "נשמר — חומר-עזר, ללא מפתחות", exists: true }
     ];
 
     const res = NextResponse.json(
@@ -173,6 +210,18 @@ export async function GET(req: Request) {
               fleet: signerBody.fleet ?? []
             }
           : { reachable: false, error: signer.error ?? "signer-unreachable" },
+        connection: {
+          vault: {
+            reachable: signer.reachable,
+            version: (signerBody.version as string | undefined) ?? null,
+            summary: vaultSummary,
+            sealedAt: (signerBody.sealedAt as string | undefined) ?? null,
+            fleetAccountsWithKeys
+          },
+          services: svcs.map((s) => ({ name: s.name, port: s.port, alive: s.alive, disabled: s.disabled }))
+        },
+        openGaps,
+        material: ownerMaterial,
         wallets: {
           derivation: "נגזרים מצירוף-התמונה של הבעלים · TRON משפחה m/44'/195'/0'/0/i (idx0..idx5) · חומר-מפתח פרטי לעולם לא מוצג כאן",
           tron: [...TRON_FAMILY.map(([label, address]) => ({ label, address })), { label: "כתובת פורנזית (TYVw…)", address: TRON_FORENSIC }],

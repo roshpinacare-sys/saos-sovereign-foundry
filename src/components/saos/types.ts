@@ -573,8 +573,8 @@ export interface KeysMapChainKeys {
   error?: string;
   sealedAt?: string | null;
   account?: string;
-  networks?: Record<string, { posting: OwnerKeySlot; active: OwnerKeySlot; owner?: OwnerKeySlot }> | null;
-  fleet?: Array<{ username: string; posting: { loaded: boolean }; active: { loaded: boolean } }>;
+  networks?: Record<string, { posting: OwnerKeySlot; active: OwnerKeySlot; owner?: OwnerKeySlot; memo?: OwnerKeySlot }> | null;
+  fleet?: Array<{ username: string; posting: { loaded: boolean }; active: { loaded: boolean }; networks?: Record<string, { posting: boolean; active: boolean; owner: boolean; memo: boolean }> }>;
 }
 
 export interface KeysMapResponse {
@@ -591,6 +591,18 @@ export interface KeysMapResponse {
   };
   login?: { devAutoSession: boolean; hint: string };
   chainKeys?: KeysMapChainKeys;
+  connection?: {
+    vault: {
+      reachable: boolean;
+      version: string | null;
+      summary: { ok?: number; drift?: number; unmatched?: number; errors?: number } | null;
+      sealedAt: string | null;
+      fleetAccountsWithKeys: number;
+    };
+    services: Array<{ name: string; port: number; alive: boolean; disabled: boolean }>;
+  };
+  openGaps?: Array<{ id: string; title: string; detail: string; oneStep: string; state: "waiting-owner" | "blocked-external" }>;
+  material?: Array<{ path: string; role: string; disposition: string; exists: boolean }>;
   wallets?: {
     derivation: string;
     tron: KeysMapAddressRow[];
