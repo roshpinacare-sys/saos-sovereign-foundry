@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/saos/rate-limit";
 import { simulateEconomy, DEFAULT_ECONOMY, type EconomyInput } from "@/lib/saos/economy";
 import { appendReceipt } from "@/lib/saos/receipt-store";
 import { db } from "@/lib/db";
@@ -13,6 +14,13 @@ export const dynamic = "force-dynamic";
  *   3. chains an evidence receipt (money as micro-units — integers only)
  */
 export async function GET(req: Request) {
+  const rl = enforceRateLimit("economy", req);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { ok: false, error: "rate-limited: ניסיונות רבים מדי — המתן רגע", retryAfterSec: rl.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+    );
+  }
   try {
     const url = new URL(req.url);
     const q = url.searchParams;

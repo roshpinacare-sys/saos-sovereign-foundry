@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/saos/rate-limit";
 import { kernelSelftest } from "@/lib/saos/kernel";
 import { appendReceipt } from "@/lib/saos/receipt-store";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const rl = enforceRateLimit("kernel", req);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { ok: false, error: "rate-limited: ניסיונות רבים מדי — המתן רגע", retryAfterSec: rl.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+    );
+  }
   try {
     const result = await kernelSelftest();
 

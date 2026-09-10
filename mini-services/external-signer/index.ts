@@ -719,7 +719,13 @@ async function verifyRcFeasibility(network, account) {
  *  network-suffixed keys (Task 29) win over the legacy generic slot */
 function keyFor(account, authLevel, network) {
   const isMain = !account || account === STATE.main.account;
-  const net = network === "HIVE" ? "HIVE" : "STEEM";
+  // Task 47 FIX (root cause of BLURT anchor refusal): BLURT must resolve its OWN
+  // net-suffixed slots. It used to collapse to "STEEM" here, so after Task 43's
+  // real-key ingest filled the STEEM slots, every BLURT request shadowed the
+  // correct password-derived BLURT key with the STEEM posting WIF and the
+  // authority gate (correctly) refused. Worked in Task 40 only because the
+  // STEEM slots were still empty then — classic slot-shadowing regression.
+  const net = network === "HIVE" ? "HIVE" : network === "BLURT" ? "BLURT" : "STEEM";
   const target = isMain ? STATE.main : STATE.fleet.find((f) => f.username === account);
   if (!target) return { target: null, wif: null, targetAccount: account ?? STATE.main.account };
   const generic = authLevel === "active" ? (target.activeWif ?? null) : authLevel === "owner" ? (target.ownerWif ?? null) : (target.postingWif ?? null);

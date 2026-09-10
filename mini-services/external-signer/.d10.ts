@@ -1,3 +1,11 @@
+/**
+ * ONE-OFF FORENSIC EXPERIMENT (Task 30 era) — NOT part of the signer runtime.
+ * Purpose: ROT1-seed candidate derivation probes for the STEEM/HIVE key
+ * recovery investigation. Reads the mnemonic ONLY from $HOME (outside the
+ * repo, owner custody); contains no secret material; never imported anywhere.
+ * Status: superseded by Task 43 real-keys ingest (upload/הדקור.txt) — kept as
+ * documented forensic history per the append-only evidence discipline.
+ */
 import { createHash, createHmac } from "crypto";
 import * as bip39 from "@scure/bip39";
 import { wordlist } from "@scure/bip39/wordlists/english.js";

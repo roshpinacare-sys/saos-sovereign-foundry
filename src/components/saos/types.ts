@@ -586,7 +586,6 @@ export interface KeysMapResponse {
     masked: string | null;
     hashMatch: boolean | null;
     source: string | null;
-    withheld?: string | null; // Task 46: material gated same-origin only — cross-origin requests get this marker instead
   };
   login?: { devAutoSession: boolean; hint: string };
   chainKeys?: KeysMapChainKeys;

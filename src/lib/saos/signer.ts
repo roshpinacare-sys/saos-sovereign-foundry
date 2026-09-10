@@ -281,6 +281,37 @@ async function verifyCondenser(apiUrl: string, network: string, txid: string): P
   return { verified: false, source: null, reason: `הרשת הציבורית (${apiUrl}) לא מכירה את ה-txid — הבקשה מסומנת unverified` };
 }
 
+/**
+ * Task 47 — block-based fallback for condenser chains (proven needed on BLURT):
+ * BLURT public nodes lag on account_history (get_transaction says "Unknown
+ * Transaction" minutes after a tx is in a block) and their condenser responses
+ * TRUNCATE transaction_id to 40 chars. When the caller has the signer's
+ * confirmedBlock hint, we verify against the block itself: a tx whose id is a
+ * prefix of ours (40+ hex chars — collision-impossible in practice) carrying
+ * our custom_json id is the same transaction.
+ */
+async function verifyCondenserBlock(apiUrl: string, network: string, txid: string, blockNum: number): Promise<TxidVerification> {
+  const json = await probeJson(apiUrl, { jsonrpc: "2.0", method: "condenser_api.get_block", params: [blockNum], id: 1 }, 8_000);
+  if (json === null) {
+    return { verified: false, source: null, reason: `אימות ${network} (בלוק ${blockNum}) נכשל: ה-RPC הציבורי לא נגיש — unverified` };
+  }
+  const txs = (json as { result?: { transactions?: Array<{ transaction_id?: string; operations?: Array<[string, Record<string, unknown>]> }> } }).result?.transactions ?? [];
+  const hit = txs.find((tx) => {
+    const id = tx.transaction_id ?? "";
+    return id === txid || (id.length >= 32 && txid.startsWith(id));
+  });
+  if (!hit) {
+    return { verified: false, source: null, reason: `${network}: הבלוק ${blockNum} אותר אך אינו מכיל את ה-txid — unverified` };
+  }
+  const op = hit.operations?.[0];
+  const customId = typeof op?.[1]?.id === "string" ? (op[1].id as string) : null;
+  return {
+    verified: true,
+    source: `${apiUrl} (get_block ${blockNum})`,
+    reason: `txid אומת בבלוק ${blockNum} מול הרשת הציבורית${customId ? ` (custom_json ${customId})` : ""}`
+  };
+}
+
 /** TRON: GET gettransactionbyid on TronGrid public API */
 async function verifyTron(txid: string): Promise<TxidVerification> {
   const url = `https://api.trongrid.io/wallet/gettransactionbyid?value=${encodeURIComponent(txid)}`;
@@ -348,17 +379,26 @@ async function verifySolana(txid: string): Promise<TxidVerification> {
   }
 }
 
-export async function verifyTxidPublic(network: SignRequest["network"], txid: string): Promise<TxidVerification> {
+export async function verifyTxidPublic(network: SignRequest["network"], txid: string, blockHint?: number | null): Promise<TxidVerification> {
   switch (network) {
-    case "STEEM":
-      return verifyCondenser("https://api.steemit.com", "STEEM", txid);
-    case "HIVE":
-      return verifyCondenser("https://api.hive.blog", "HIVE", txid);
+    case "STEEM": {
+      const primary = await verifyCondenser("https://api.steemit.com", "STEEM", txid);
+      if (primary.verified || !blockHint) return primary;
+      return await verifyCondenserBlock("https://api.steemit.com", "STEEM", txid, blockHint);
+    }
+    case "HIVE": {
+      const primary = await verifyCondenser("https://api.hive.blog", "HIVE", txid);
+      if (primary.verified || !blockHint) return primary;
+      return await verifyCondenserBlock("https://api.hive.blog", "HIVE", txid, blockHint);
+    }
     case "BLURT": {
       // Task 39: BLURT RPC rotation — beblurt + saboin verified LIVE 2026-09-09;
       // rpc.blurt.world is dead (kept last in case it revives). Transport failure
       // ("לא נגיש/פסק-זמן") advances to the next candidate; a definitive answer
       // (verified OR endpoint-answered-but-unknown-txid) returns immediately.
+      // Task 47: when get_transaction is unknown (account_history lag) and the
+      // signer confirmed a block, verify against the block itself — BLURT public
+      // history indexing lags blocks by minutes.
       const blurtCandidates = [
         "https://rpc.beblurt.com",
         "https://blurt-rpc.saboin.com",
@@ -373,7 +413,11 @@ export async function verifyTxidPublic(network: SignRequest["network"], txid: st
         last = await verifyCondenser(url, "BLURT", txid);
         if (last.verified) return last;
         if (last.reason.includes("לא נגיש") || last.reason.includes("פסק-זמן")) continue;
-        return last; // הנקודה ענתה והחזירה תשובה סופית (txid לא מוכר)
+        break; // הנקודה ענתה והחזירה תשובה סופית (txid לא מוכר) — ננסה נפילה-לבלוק
+      }
+      if (blockHint) {
+        const viaBlock = await verifyCondenserBlock("https://rpc.beblurt.com", "BLURT", txid, blockHint);
+        if (viaBlock.verified) return viaBlock;
       }
       return last;
     }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/saos/rate-limit";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +10,14 @@ export const dynamic = "force-dynamic";
  * EconomySnapshot rows. Written by /api/saos/energy and /api/saos/economy.
  * Read-only — no receipts, no writes.
  */
-export async function GET() {
+export async function GET(req: Request) {
+  const rl = enforceRateLimit("plans", req);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { ok: false, error: "rate-limited: ניסיונות רבים מדי — המתן רגע", retryAfterSec: rl.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+    );
+  }
   try {
     const [energyPlans, economySnapshots] = await Promise.all([
       db.energyPlan.findMany({ orderBy: { createdAt: "desc" }, take: 10 }),

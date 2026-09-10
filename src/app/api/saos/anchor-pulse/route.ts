@@ -115,7 +115,8 @@ export async function POST(req: Request) {
   }
 
   // independent public verification — the anchor must stand on its own
-  const verification = await verifyTxidPublic(network, exec.txid);
+  // (Task 47: blockHint lets the verifier use get_block when account_history lags)
+  const verification = await verifyTxidPublic(network, exec.txid, exec.confirmedBlock ?? null);
 
   const row = await db.anchorTx.create({
     data: {

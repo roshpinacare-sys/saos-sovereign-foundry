@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/saos/rate-limit";
 import { db } from "@/lib/db";
 import { buildMerkleTree, merkleProof, verifyMerkleProof } from "@/lib/saos/merkle";
 import { appendReceipt } from "@/lib/saos/receipt-store";
@@ -11,7 +12,14 @@ export const dynamic = "force-dynamic";
  * Anyone can verify without trusting us. (steem-main verify-pack discipline)
  * For the full multi-seal + receipt-chain verification use /api/saos/verify-chain.
  */
-export async function GET() {
+export async function GET(req: Request) {
+  const rl = enforceRateLimit("verify-pack", req);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { ok: false, error: "rate-limited: ניסיונות רבים מדי — המתן רגע", retryAfterSec: rl.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+    );
+  }
   try {
     const seal = await db.sealRecord.findFirst({
       orderBy: { createdAt: "desc" },

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/saos/rate-limit";
 import {
   planEnergize,
   minStakeForSettlements,
@@ -20,6 +21,13 @@ export const dynamic = "force-dynamic";
  *   3. chains an evidence receipt (integer-safe canonical payload)
  */
 export async function GET(req: Request) {
+  const rl = enforceRateLimit("energy", req);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { ok: false, error: "rate-limited: ניסיונות רבים מדי — המתן רגע", retryAfterSec: rl.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+    );
+  }
   try {
     const url = new URL(req.url);
     const net = (url.searchParams.get("net") ?? "tron").toLowerCase();
