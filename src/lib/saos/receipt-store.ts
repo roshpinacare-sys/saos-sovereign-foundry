@@ -55,9 +55,18 @@ async function appendOn(client: DbLike, kind: string, payload: Record<string, un
   }
 }
 
-/** append a receipt in its own serialized transaction (GET-route side effects) */
+/**
+ * Append a receipt in its own serialized transaction (GET-route side effects).
+ * roast 53 — F2 honesty: the docstring always claimed "concurrent appends
+ * cannot interleave", but this path ran a bare $transaction: only the
+ * rollback-journal lock-upgrade dance + BUSY retries made a head-fork
+ * unlikely (safe by luck, and only while journal_mode stays "delete" — flip
+ * to WAL and the read-then-write window forks for real). Every append now
+ * queues through the SAME in-process write mutex the seal route uses:
+ * serial by construction, independent of journal mode.
+ */
 export function appendReceipt(kind: string, payload: Record<string, unknown>, sealId?: string): Promise<AppendResult> {
-  return db.$transaction((tx) => appendOn(tx, kind, payload, sealId));
+  return withWriteLock(() => db.$transaction((tx) => appendOn(tx, kind, payload, sealId)));
 }
 
 /** append a receipt inside a caller-owned transaction (seal route — same tx as the seal) */

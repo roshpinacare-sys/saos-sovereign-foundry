@@ -3,7 +3,7 @@ import { existsSync, readFileSync, statSync } from "fs";
 import os from "os";
 import path from "path";
 import { db } from "@/lib/db";
-import { authConfigured, currentSessionEpoch } from "@/lib/saos/auth";
+import { auditDroppedCount, authConfigured, currentSessionEpoch } from "@/lib/saos/auth";
 import { enforceRateLimit, ruleFor } from "@/lib/saos/rate-limit";
 import { saosMode } from "@/lib/saos/modes";
 import { networkStatuses } from "@/lib/saos/network-status";
@@ -145,11 +145,12 @@ export async function GET(req: Request) {
   // ── Level 1: database + system ─────────────────────────────────────────
   let database: { ok: boolean; counts: Record<string, number> } = { ok: false, counts: {} };
   let service: "ok" | "degraded" | "down" = "down";
-  let auditProof: { recentEvents24h: number; totalEvents: number; lastEventAt: string | null; lastEventKind: string | null } = {
+  let auditProof: { recentEvents24h: number; totalEvents: number; lastEventAt: string | null; lastEventKind: string | null; dropped: number } = {
     recentEvents24h: 0,
     totalEvents: 0,
     lastEventAt: null,
-    lastEventKind: null
+    lastEventKind: null,
+    dropped: auditDroppedCount()
   };
   let backups = { lastBackupAt: null as string | null, lastVerified: false, fresh: false, detail: null as string | null };
   let sessionEpoch: string | null = null;
@@ -188,7 +189,8 @@ export async function GET(req: Request) {
       recentEvents24h: audit24h,
       totalEvents: auditTotal,
       lastEventAt: lastAudit?.createdAt.toISOString() ?? null,
-      lastEventKind: lastAudit?.kind ?? null
+      lastEventKind: lastAudit?.kind ?? null,
+      dropped: auditDroppedCount() // roast 53 — dropped audit writes are VISIBLE, never silent
     };
     backups = backupsRes;
     // epoch metadata only — "bootstrap" = pre-revocation epoch, "rotated" =

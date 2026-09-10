@@ -20,8 +20,27 @@ export interface MerkleTree {
   levels: string[][];
 }
 
+/**
+ * roast 53 — concatenation ambiguity, killed at the door.
+ * The tree hashes `left + right` with NO separator, so ["ab","cd"] and
+ * ["a","bcd"] build the SAME root — a classic serialization collision.
+ * It is unambiguous ONLY when every leaf is a fixed-width sha256 hex digest
+ * (64 chars), which is exactly what every real caller produces
+ * (seal route: canonicalDigest(tx); breakthrough: sha256Hex(witness)).
+ * Anything else is now REJECTED fail-closed instead of silently colliding.
+ */
+const HEX64_RE = /^[0-9a-f]{64}$/;
+
+function assertSealGradeLeaf(leaf: string, i: number): void {
+  if (!HEX64_RE.test(leaf))
+    throw new Error(
+      `leaf ${i} is not a 64-hex sha256 digest — ambiguous concatenation class refused (roast 53)`
+    );
+}
+
 export async function buildMerkleTree(leaves: string[]): Promise<MerkleTree> {
   if (leaves.length === 0) throw new Error("no leaves — nothing to seal");
+  leaves.forEach(assertSealGradeLeaf);
   const levels: string[][] = [[...leaves]];
   let current = [...leaves];
   while (current.length > 1) {

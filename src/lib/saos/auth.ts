@@ -134,8 +134,13 @@ export function ipHashOf(req: Request): string | null {
 }
 
 export function clientIpOf(req: Request): string | null {
+  // roast 53 — LAST XFF entry (our gateway appends the real peer); taking the
+  // first let a client forge its audit fingerprint per request.
   const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0]!.trim();
+  if (xff) {
+    const parts = xff.split(",").map((s) => s.trim()).filter((s) => s.length > 0);
+    if (parts.length > 0) return parts[parts.length - 1]!;
+  }
   return req.headers.get("x-real-ip")?.trim() ?? null;
 }
 
@@ -262,6 +267,18 @@ export function verifyLoginKey(key: string): boolean {
   return safeHexEqual(sha256Hex(key.trim()), hash);
 }
 
+/**
+ * roast 53 — dropped-audit honesty. audit() must never crash the request
+ * path, but the old comment claimed failures were "surfaced via /audit
+ * counts" — nothing surfaced them. Now every dropped write is counted in
+ * process memory and exposed via /api/saos/live-proof (auditProof.dropped).
+ * A growing count = the audit trail itself is degraded — visible, not silent.
+ */
+let auditDropped = 0;
+export function auditDroppedCount(): number {
+  return auditDropped;
+}
+
 /** audit trail — every sensitive attempt lands here (allowed or denied) */
 export async function audit(entry: {
   kind: string;
@@ -283,6 +300,6 @@ export async function audit(entry: {
       }
     });
   } catch {
-    // auditing must never crash the request path — surfaced via /audit counts
+    auditDropped += 1; // never crash the request path — surfaced via /live-proof
   }
 }

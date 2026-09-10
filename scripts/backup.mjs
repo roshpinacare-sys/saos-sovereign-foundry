@@ -95,15 +95,53 @@ async function main() {
   const snap = new PrismaClient({ datasources: { db: { url: `file:${snapPath}` } } });
   let verified = false;
   let integrity = "unknown";
+  let countsMatch = false;
+  let chainProof = { ok: false, receipts: 0, digestErrors: 0, linkErrors: 0, sealsChecked: 0, sealErrors: 0 };
   try {
     const ic = await snap.$queryRawUnsafe("PRAGMA integrity_check");
     integrity = Array.isArray(ic) && ic[0]?.integrity_check ? ic[0].integrity_check : String(ic);
-    let countsMatch = true;
+    countsMatch = true;
     for (const m of Object.keys(counts)) {
       const c = await snap[m].count();
       if (c !== counts[m]) { countsMatch = false; console.error(`  count mismatch ${m}: live=${counts[m]} snapshot=${c}`); }
     }
-    verified = integrity === "ok" && countsMatch;
+
+    // 3b. roast 53 — verify the EVIDENCE CHAIN inside the snapshot itself.
+    // "counts match" proves the copy is faithful to the live DB; it does NOT
+    // prove the backed-up chain is intact. A backup whose receipt chain is
+    // broken (or whose top seal's leaves no longer rebuild the anchored
+    // root) must never wear the "verified" stamp. Same discipline as
+    // /api/saos/verify-chain, executed against the snapshot.
+    const { verifyChainDag } = await import("../src/lib/saos/evidence");
+    const { buildMerkleTree } = await import("../src/lib/saos/merkle");
+    const snapReceipts = await snap.evidenceReceipt.findMany({ orderBy: { createdAt: "asc" } });
+    const dag = await verifyChainDag(
+      snapReceipts.map((r) => ({
+        kind: r.kind,
+        at: (r.at ?? r.createdAt).toISOString(),
+        payload: JSON.parse(r.payload),
+        prevDigest: r.prevDigest,
+        digest: r.digest
+      }))
+    );
+    chainProof.receipts = snapReceipts.length;
+    chainProof.digestErrors = dag.digestErrors.length;
+    chainProof.linkErrors = dag.linkErrors.length;
+
+    const snapSeals = await snap.sealRecord.findMany({ orderBy: { height: "desc" }, include: { leaves: true } });
+    chainProof.sealsChecked = snapSeals.length;
+    for (const seal of snapSeals) {
+      const leaves = [...seal.leaves].sort((a, b) => a.index - b.index).map((l) => l.digest);
+      const dup = leaves.length - new Set(leaves).size;
+      const tree = await buildMerkleTree(leaves);
+      if (leaves.length !== seal.leavesCount || dup > 0 || tree.root !== seal.root) {
+        chainProof.sealErrors += 1;
+        console.error(`  seal height=${seal.height}: chain-proof failed in snapshot`);
+      }
+    }
+    chainProof.ok = dag.digestErrors.length === 0 && dag.linkErrors.length === 0 && chainProof.sealErrors === 0 && snapSeals.length > 0;
+
+    verified = integrity === "ok" && countsMatch && chainProof.ok;
   } catch (e) {
     integrity = `error: ${e.message}`;
   }
@@ -113,7 +151,7 @@ async function main() {
   await main.opLog.create({
     data: {
       op: "backup",
-      detail: `backup-${stamp} verified=${verified} integrity=${integrity} seals=${counts.sealRecord} receipts=${counts.evidenceReceipt}`
+      detail: `backup-${stamp} verified=${verified} integrity=${integrity} chain=${chainProof.ok ? "ok" : "BROKEN"} seals=${counts.sealRecord} receipts=${counts.evidenceReceipt}`
     }
   });
   await main.$disconnect();
@@ -128,7 +166,8 @@ async function main() {
 
   console.log(`\nbackup → ${dir}`);
   console.log(`   snapshot: db.sqlite3 (${(fs.statSync(snapPath).size / 1024).toFixed(1)} KB)`);
-  console.log(`   integrity: ${integrity} · counts-match: ${verified ? "yes" : "NO"}`);
+  console.log(`   integrity: ${integrity} · counts-match: ${countsMatch ? "yes" : "NO"}`);
+  console.log(`   chain-proof: ${chainProof.ok ? "ok" : "BROKEN"} — receipts=${chainProof.receipts} digestErrors=${chainProof.digestErrors} linkErrors=${chainProof.linkErrors} seals=${chainProof.sealsChecked} sealErrors=${chainProof.sealErrors}`);
   console.log(`   counts: ${Object.entries(counts).map(([k, v]) => `${k}=${v}`).join(" ")}`);
   console.log(`   git: ${gitCommit.slice(0, 12)}`);
   if (removed.length) console.log(`   retention: removed ${removed.join(", ")}`);

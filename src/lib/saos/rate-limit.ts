@@ -77,6 +77,34 @@ function prune(now: number): void {
   for (const [key, entry] of store) {
     if (now - entry.windowStart > WINDOW_MS) store.delete(key);
   }
+  // roast 53 — hard cap: prune only removes EXPIRED keys; 5,000+ DISTINCT
+  // fresh keys within one window would grow the map unbounded (the doc
+  // claimed memory hygiene that a same-window flood defeats). Delete in
+  // insertion order (oldest first) — a hard ceiling, not a hope.
+  if (store.size >= 5_000) {
+    for (const key of store.keys()) {
+      store.delete(key);
+      if (store.size < 5_000) break;
+    }
+  }
+}
+
+/**
+ * roast 53 — the client fingerprint is now the TRUSTED-PROXY one.
+ * Our gateway (Caddy) APPENDS the real peer address to X-Forwarded-For, so
+ * the LAST entry is the only one the attacker does not control. The old code
+ * took the FIRST entry — a client could send `X-Forwarded-For: <random>` per
+ * request and mint a fresh bucket every time: "rate limiting" was an
+ * intermittent lie against deliberate abuse. (Correlation-only consumers use
+ * the same discipline via auth.clientIpOf.)
+ */
+function trustedClientKey(req: Request): string {
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) {
+    const parts = xff.split(",").map((s) => s.trim()).filter((s) => s.length > 0);
+    if (parts.length > 0) return parts[parts.length - 1]!.slice(0, 64);
+  }
+  return req.headers.get("x-real-ip")?.trim().slice(0, 64) || "local";
 }
 
 export function checkRateLimit(rule: RateLimitRule, fingerprint: string): RateLimitDecision {
@@ -100,7 +128,5 @@ export function checkRateLimit(rule: RateLimitRule, fingerprint: string): RateLi
 
 /** one-call guard for route handlers */
 export function enforceRateLimit(name: RateRuleName, req: Request): RateLimitDecision {
-  const xff = req.headers.get("x-forwarded-for");
-  const ip = xff ? xff.split(",")[0]!.trim() : req.headers.get("x-real-ip")?.trim() ?? "local";
-  return checkRateLimit(ruleFor(name), ip);
+  return checkRateLimit(ruleFor(name), trustedClientKey(req));
 }
