@@ -209,10 +209,10 @@ export function ChainTab() {
                       ]}
                     />
                     <div className="mt-2 flex flex-wrap gap-1.5">
-                      {s.anchors.map((a) => {
+                      {s.anchors.map((a, ai) => {
                         const info = ANCHOR_STATUS[a.status] ?? ANCHOR_STATUS.pending;
                         return (
-                          <Badge key={a.network} tone={info.tone} title={a.gate ?? a.txid ?? undefined}>
+                          <Badge key={`${a.network}:${ai}`} tone={info.tone} title={a.gate ?? a.txid ?? undefined}>
                             {a.network}: {info.label}
                             {a.txid ? ` · ${a.txid.slice(0, 10)}…` : ""}
                           </Badge>

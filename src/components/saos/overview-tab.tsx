@@ -300,10 +300,10 @@ export function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void 
                   </div>
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                     <span className="text-[10px] text-zinc-500">{s.leaves} עלים</span>
-                    {s.anchors.map((a) => {
+                    {s.anchors.map((a, ai) => {
                       const info = ANCHOR_STATUS[a.status] ?? ANCHOR_STATUS.pending;
                       return (
-                        <Badge key={a.network} tone={info.tone}>
+                        <Badge key={`${a.network}:${ai}`} tone={info.tone}>
                           {a.network}: {info.label}
                         </Badge>
                       );
