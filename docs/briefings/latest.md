@@ -1,18 +1,18 @@
-# בריף ראש-המטה — 2026-09-09T23:14:22.001Z
+# בריף ראש-המטה — 2026-09-09T23:44:04.599Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: 45c81c5
+HEAD: 0c34743
+- 0c34743 feat(42): SOVEREIGN v4 AURORA CONSOLE — full redesign: side console-rail (RTL 248px, brand/nav/mode/clock), contextual sticky topbar, aurora-mesh background (animated conic ribbons + engineering grid), deep glass with gradient hairlines, Heebo+Space Grotesk typography, new card/button/stat language (emerald↔gold, display numerals, hover-lift); class-contract preserved so all 10 tabs work unchanged; grid fix: toaster+skip-link moved out of auto-placement; mobile horizontal nav rail; browser-verified desktop+mobile, 0 console errors, lint clean. No logic changes.
+- bce4413 fix(42): owner login channel restored post-wipe — new signer token + rebuilt fleet envelope (scrypt/AES tag-order fixed), BLURT posting/active/memo re-derived from owner password and live-verified (LOADED+MATCH), signer fixes: BLURT netTag slot corruption, STATE refresh after ingest, master-password login fallback (hash-only in-signer); app env: SAOS_EXTERNAL_SIGNER_URL/TOKEN restored; E2E: 200 owner:headcorner via BLURT/active, 30d session; STEEM/HIVE honestly awaiting owner universal-paste (ROT1 seed is owner-custody, 0 local matches)
 - 45c81c5 fix(41-recovery): full state restoration after external wipe event (~22:03) — .env rebuilt (live+confirm, new admin key OUTSIDE tree per SH-7), fresh verified backup, 9/9 owner decisions re-recorded from git-documented evidence only (0 invented), new genesis seal 9edc42eb, incident evidence doc; preflight: 5 hard blockers -> 0, readyForAnchor=true, mode=live, browser-verified
 - c27170d docs(41-fix): worklog — askpass protocol re-fix, repo fully synced 337574d, v3 verified live
 - 337574d ops(41): fleet-cure status auto-sync
-- e733b86 e69d3255-58c7-450b-95f5-5cb3c71a9369
-- d710251 feat(41): SOVEREIGN v3 design system + live cross-chain Treasury — deep-space glass UI (blueprint grid, gold/emerald auras, shimmer, pulse) restyled kit primitives (identical API), pill nav + glass header with v3 chip; new /api/saos/treasury route (read-only public RPCs, base58check local validation caught 6 PHONY vault addresses from KEY-RECOVERY.md, 60s cache, stagger+fallback, never-500) + treasury-tab with TRX gap meter (27.20 TRX missing to USDT settlement) and honest graphene balances (BLURT 42.283, STEEM 0.670); push channel restored (fresh token + fixed GIT_ASKPASS protocol — was returning 2 lines per prompt); .gitignore restored from near-total wipe; git push origin main
 guardian: ok=true runs=0 devMode=true tickAlive=true token=false
-briefings אחרונים: BRIEF-2026-09-09T15-23-37.md, BRIEF-2026-09-09T15-53-40.md, BRIEF-2026-09-09T22-03-40.md, BRIEF-2026-09-09T22-33-30.md, BRIEF-2026-09-09T23-03-35.md
+briefings אחרונים: BRIEF-2026-09-09T15-53-40.md, BRIEF-2026-09-09T22-03-40.md, BRIEF-2026-09-09T22-33-30.md, BRIEF-2026-09-09T23-03-35.md, BRIEF-2026-09-09T23-14-22.md
 ── זנב next-steps.md ──
 …
 ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
@@ -34,27 +34,29 @@ briefings אחרונים: BRIEF-2026-09-09T15-23-37.md, BRIEF-2026-09-09T15-53-4
 - `hive-rc-floor`: **needs-resource → decided-custom** (המשאב קיים, המסילה נבנתה והוכחה, נותר פעולת-הרצה אחת על-הרנטיים). `tron-stake`/`vault-restore` נשארים כנים (TRX אבק בלי נתיב; שחזור-חוץ).
 
 ### תקרית שנתפסה ותוקנה (Task 27-b)
-במהלך-ההפעלה הראשונה של ה-DEX דלף DATABASE_URL מה-shell (foundry custom.db דרס את .env של ה-DEX — קדימות process.env) וקו-הריליי שלו כתב 2 קבלות-זרות לשרשרת-ה-foundry (23:14:38/23:15:14). נתפס בבדיקת-החובה שלפני-סגירה: אוכסן (docs/evidence/dex-relay-pollution-archive-2026-09-08.json, sha256 34f3a606…), הוסר, והסכימה הוקשתה — EvidenceReceipt.at נעשה REQUIRED כך שכותב-זר נכשל מבנית. verifyChainDag PASS מחדש.
-
-### פתוח מ-Task 27
-- **הרצה-מסיימת על-הרנטיים** (בעלים/רנטיים): `node agent/he_powerup.cjs --amount ALL` → אחריה ה-UI יראה RC עולה (מדידה חיה ב-.env תעודכן), ושער-המשאבים נסגר מקצה-לקצה.
-- ה-runtime מוחק קבצים שאין-לו (last-writer-wins snapshot) — DAEMONS.md/תיקוני-קוד יישמרו בהיסטוריה וב-clone-טרי; הערוץ-העמיד הוא ה-foundry-repo + הבעלים.
-- lsa withdraw (0.00
+במהלך-ההפעלה הראשונה של ה-DEX דלף DATABASE_URL מה-shell (foundry custom.db דרס את .env של ה-DEX — קדימות process.env) וקו-הריליי שלו כתב 2 קבלות-זרות לשרשרת-ה-foundry (23:14:38/23:15:14). נתפס בבדיקת-החובה שלפני-סגירה: אוכסן (docs/evidence/dex-relay-pollution-archive-2026-09-08.json, sha256 34f3a606…), הוסר, והסכימה הוקשתה — EvidenceReceipt.at נעשה REQUIRED כך שכותב-זר נכשל מבנית. veri
 ```
 </details>
 ## מצב רשת
-הרשת פעילה במצב live עם מערכת אוטומציה מתקדמת לניהול משאבים (RC) ב-HIVE, שיפור רגיל של רגן יומי ב-55%, ומסלול המרה מוכח בין HIVE לטוקנים ב-DEX. המערכת עברה תיקון מכריע לשחרור כספים עומדים (9.682 HIVE) שהיו תקועים בגלל באג RC.
+הרשת פעילה עם SOVEREIGN v4 AURORA CONSOLE, מצב live. המערכת עברה שחזור מלא לאחר אירוע חיצוני, עם 9/9 החלטות בעלים מאומתות. נמצא 9.682 HIVE נזילים על headcorner, עם RC נמוך ב-HIVE (0.003%) מהמתין לעוגן. קיימת מסילת המרה אמיתית פעילה ב-DEX עם שערי אבטחה.
 
-## סיכונים / דברים מדממים (או "אין")
-אין סיכונים מדממים. כל המערכות פועלות כמתוכנן, עם ראיות חיות מהשרשרת ותיעוד מלא של כל התיקונים. ה-DEX עבר בדיקת אבטחה והוסרו ממנו קבלות-זרות לא מורשות.
+## סיכונים / דברים מדממים
+- RC נמוך ב-HIVE מגביל פעילות לפעולה אחת בכל ~25 דקות במקום כל 36 שניות.
+- פעולת powerup של macrame ממתינה ל-RC (~3.5 שעות נותרות).
+- נתון זמן אמת מדויק להגעת RC למקסימום לא זמין (כרגע ~232 דקות ל-macrame).
+- חשיפה קודמת של DATABASE_URL נתפסה ותוקנה, עם ראיות מאוחסנות.
 
-## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימות
-1. [רנטיים/רנטיים] הפעלת `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי, כדי להשלים את התיקון של שחרור ה-HIVE והעלאת ה-RC. קריטריון-אימות: עלייה ב-RC הכולל של הצי לאחר הרצה.
-2. [רנטיים/רנטיים] פעולת `fleet-cure` הראשונה: ניטור ה-RC של הצי כל 5 דקות וביצוע `weave` כאשר חייל ראשון עובר את סף 230M RC. קריטריון-אימות: רישום ה-txid ב-`docs/evidence/fleet-cure-status.json`.
-3. [רנטיים/רנטיים] המתנה פסיבית להשלמת ה-powerup של macrame (ETA ~3.5 שעות) ואימות הפעולה דרך ה-API הציבורי. קריטריון-אימות: עדכון המאזן של macrame ב-DEX עם ה-HIVE המומר.
+## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
+1. [רנטיים/ראשי] הפעל `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי → אימות: עליית RC ב-foundry לאחר הרצה, התראות ב-UI מעודכנות.
+2. [רנטיים/ראשי] המתן להשלמת פעולת powerup של macrame ואימות קבלת ה-HP → אימות: גידול במאזן ה-HP של macrame ב-foundry.
+3. [רנטיים/ראשי] פעילות fleet-cure על הרנטיים החי → אימות: יצירת קובץ docs/evidence/fleet-cure-status.json עם מדידות RC מעודכנות.
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-אישור הפעלת `fleet-cure` כשירות רקע קבוע, עם חלון זמן דינמי לביצוע `weave` על בסיס מדידות RC חיות. הגדרת `HIVE_RC_PCT` ל-1.84% כבסיס למעקב אחר התאוששות הרגן.
+- הפעלת תיקון ה-RC floor על הרנטיים החי כדי לאפשר אוטומציית powerup.
+- פיקוח על התקדמות fleet-cure ואימות תפקודו.
+- ניטור קריטי של זמינות ה-RC והתראות ETA.
 
 ## נשאר לבעלים בלבד (או "כלום")
-הפעלת האוטומציה העתידית של `delegate_vesting_shares` כאשר יהיה HP זמין להאצלה. החלטה סופית על מימון והעברת TRX (אם תתבקש). שמירת מפתחות ה-HIVE וה-STEEM בחזקת הבעלים בלבד.
+- אימות סופי של מפתחות הבעלים עבור STEEM ו-BLURT.
+- החלטות על מימון פוטנציאלי ל-TRX staking (transit).
+- אישור סופי לשחזור vault אם יידרש.

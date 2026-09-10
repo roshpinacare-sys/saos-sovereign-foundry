@@ -1,6 +1,6 @@
 "use client";
 
-import { Coins, Gem, Landmark, Target, TriangleAlert, Wallet } from "lucide-react";
+import { Coins, Gem, Landmark, Sparkles, Target, TriangleAlert, Wallet } from "lucide-react";
 
 import {
   Badge,
@@ -30,7 +30,7 @@ export function TreasuryTab() {
           <span className="text-gradient-gold">קופה חיה — כל הכספים שלנו, מהרשת בלבד</span>
         </h2>
         <p className="mt-0.5 text-xs text-zinc-500">
-          יתרות אמיתיות מ-TRON / Ethereum / BLURT / STEEM / HIVE · קריאה-בלבד · אף מפתח לא מעורב · מטמון 60 שניות
+          יתרות אמיתיות מ-TRON / Ethereum / Solana / BLURT / STEEM / HIVE · קריאה-בלבד · אף מפתח לא מעורב · מטמון 60 שניות
         </p>
       </div>
 
@@ -57,10 +57,11 @@ function TreasuryBody({ data, onRefresh, refreshing }: { data: TreasuryResponse;
       )}
 
       {/* summary stats */}
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
         <Stat label="TRX נזיל — סה״כ" value={s.totalTrx === null ? "—" : s.totalTrx.toFixed(2)} tone={s.totalTrx && s.totalTrx >= data.constants.trxPerUsdtTransfer ? "ok" : "danger"} hint={gap === 0 && s.totalTrx !== null ? "מספיק לישוב USDT" : gap !== null ? `חסר ${gap.toFixed(2)} TRX לישוב` : undefined} mono />
         <Stat label="USDT על TRON" value={s.totalTronUsdt === null ? "—" : s.totalTronUsdt.toFixed(2)} tone="gold" mono />
         <Stat label="ETH — סה״כ" value={s.totalEth === null ? "—" : s.totalEth.toFixed(4)} tone={s.totalEth ? "ok" : "default"} hint={`USDT: ${s.totalEthUsdt === null ? "—" : s.totalEthUsdt.toFixed(2)}`} mono />
+        <Stat label="SOL — סה״כ" value={s.totalSol === null ? "—" : s.totalSol.toFixed(4)} tone={s.totalSol ? "ok" : "default"} hint={`USDT/USDC: ${s.totalSolUsdt === null ? "—" : s.totalSolUsdt.toFixed(2)}`} mono />
         <Stat label={`${data.account} — נזיל (BLURT+STEEM+HIVE)`} value={s.grapheneLiquid === null ? "—" : s.grapheneLiquid.toFixed(2)} tone="gold" hint="סכום מאוחד של שלוש הרשתות" mono />
         <Stat label="מקור" value="קריאה-בלבד" tone="info" hint={`עודכן ${new Date(data.generatedAt).toLocaleTimeString("he-IL")}`} />
       </div>
@@ -94,7 +95,7 @@ function TreasuryBody({ data, onRefresh, refreshing }: { data: TreasuryResponse;
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <AddressTablePanel
-          title="TRON — ארנק חדש + כספת"
+          title="TRON — ארנק חדש + כספת פורנזית"
           icon={<Wallet aria-hidden className="size-4 text-emerald-300" />}
           rows={data.chains.tron.rows}
           explorer={data.chains.tron.explorer}
@@ -109,10 +110,18 @@ function TreasuryBody({ data, onRefresh, refreshing }: { data: TreasuryResponse;
         />
       </div>
 
+      <AddressTablePanel
+        title="Solana — כספת פורנזית (ממתינה להחלטת בעלים)"
+        icon={<Sparkles aria-hidden className="size-4 text-violet-300" />}
+        rows={data.chains.solana.rows}
+        explorer={data.chains.solana.explorer}
+        nativeSymbol="SOL"
+      />
+
       <GraphenePanel rows={data.chains.graphene.rows} account={data.account} lastChecked={data.generatedAt} onRefresh={onRefresh} refreshing={refreshing} />
 
       <p className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-[11px] leading-relaxed text-zinc-500">
-        שקיפות מלאה: המסך קורא רק יתרות ציבוריות של כתובות ידועות (docs/KEY-RECOVERY.md + הארנק החדש של הבעלים). כתובות נוספות של הבעלים (בורסות, ארנקי קר), לא נגישות למערכת ולכן לא מוצגות — הנתון כאן הוא תמיד &quot;מה המערכת באמת רואה&quot;, לא יותר.
+        שקיפות מלאה: המסך קורא רק יתרות ציבוריות של כתובות ידועות (docs/KEY-RECOVERY.md + docs/FORENSIC-AUDIT.md + הארנק החדש של הבעלים). תיקון 2026-09-10: שש-הכתובות שסומנו בעבר כ&quot;כספות TRON&quot; התגלו כמפתות-ציבוריים של STEEM/HIVE בקידומת שגויה — הוסרו מהמסך. כתובות נוספות של הבעלים (בורסות, ארנקי קר), לא נגישות למערכת ולכן לא מוצגות — הנתון כאן הוא תמיד &quot;מה המערכת באמת רואה&quot;, לא יותר.
       </p>
     </div>
   );

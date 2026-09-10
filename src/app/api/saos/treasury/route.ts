@@ -67,15 +67,16 @@ async function rpc(url: string, method: string, params: unknown[]): Promise<unkn
 const weiToEth = (hex: string): number => Number(BigInt(hex)) / 1e18;
 
 // ── public addresses only (from docs/KEY-RECOVERY.md + owner's new wallet) ──
-const TRON_VAULT = [
-  "TM5beptA4oKZVuj5Q7KANrXNdgYFjN13VRn",
-  "TM6UBp98qFGJZtazSxb1GgGoLjJTgyvZJTJ",
-  "TM6p6ZNW7jHCR6cCG6rBavKjW6JGsjjebHe",
-  "TM6u99ogJKojfZC94VCs73N3wVRxnm9XTjV",
-  "TM8c9vp3hUnNsXHaWLPTpcYWkPpK5GrnySg",
-  "TM8mSbBz8zsMfBow2xa1yfTuNhdp6KZf3v7"
-];
+// HISTORY FIX (Task 43): the previous "TRON_VAULT" list (TM5beptA…, TM6UBp98…,
+// TM6p6ZNW…, TM6u99og…, TM8c9vp3…, TM8mSbBz…) was PROVEN bogus — those strings
+// are the account's STEEM/HIVE *public keys* with the STM prefix swapped to TM
+// (bit-for-bit identical suffixes). They fail TRON base58check and always
+// rendered as 6 permanent errors in the UI. They are gone; the ONE real,
+// checksum-valid forensic TRON address from docs/FORENSIC-AUDIT.md is used
+// instead, plus the owner's new cycle-1 wallet.
+const TRON_FORENSIC = "TYVwwuvdDmfy3shxT3cb3RKLrRCshaZxTy";
 const TRON_NEW = "TAzZZkrwBXk59iRya7esnKVJeV1xLtqkGr";
+const SOL_FORENSIC = "9knfnFMLmhUNjKRDbR1BmVnVkq4BRczyYjJ7BqiZSgiL";
 const ETH_NEW = ["0x7b7869d126fa1ecc19a3426d07be8186225a2c31", "0xe05e7988bac84c58b0a076816627a01aee270eb8"];
 const ETH_VAULT = ["0x2767e8146c11bad1d9b0784f11325375195c1b0f", "0x94f4cb4fc0c50d742a583576b2cb1d14fa55dd99"];
 const GRAPHENE_ACCOUNT = "headcorner";
@@ -83,6 +84,8 @@ const GRAPHENE_ACCOUNT = "headcorner";
 const USDT_TRC20 = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
 const USDT_ERC20 = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
 const ETH_RPC = "https://ethereum-rpc.publicnode.com";
+const USDT_SPL = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"; // native USDT mint on Solana
+const USDC_SPL = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // native USDC mint on Solana
 /** USDT TRC20 transfer ≈ 64,895 energy; burn price 420 sun/energy → ≈ 27.25 TRX per settlement */
 const TRX_PER_USDT_TRANSFER = 27.25;
 
@@ -176,6 +179,60 @@ async function evmRow(label: string, address: string): Promise<BalanceRow> {
   }
 }
 
+/** Solana RPC — honors SOL_RPC_URL when set; read-only, keyless, never throws outward */
+function solRpcUrl(): string {
+  const env = (process.env.SOL_RPC_URL ?? "").trim();
+  return env || "https://api.mainnet-beta.solana.com";
+}
+
+async function solRow(label: string, address: string): Promise<BalanceRow> {
+  try {
+    const url = solRpcUrl();
+    const bal = (await rpc(url, "getBalance", [address])) as { value?: number; context?: { slot?: number } };
+    let usdt = 0;
+    let usdc = 0;
+    try {
+      const toks = (await rpc(url, "getTokenAccountsByOwner", [
+        address,
+        { programId: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" },
+        { encoding: "jsonParsed" }
+      ])) as {
+        value?: Array<{
+          account?: {
+            data?: {
+              parsed?: {
+                info?: {
+                  mint?: string;
+                  tokenAmount?: { uiAmount?: number | null };
+                };
+              };
+            };
+          };
+        }>;
+      };
+      for (const t of toks.value ?? []) {
+        const mint = t.account?.data?.parsed?.info?.mint;
+        const amt = t.account?.data?.parsed?.info?.tokenAmount?.uiAmount ?? 0;
+        if (mint === USDT_SPL) usdt += amt;
+        else if (mint === USDC_SPL) usdc += amt;
+      }
+      if (usdc > 0) usdt += usdc; // stablecoin exposure reported in the same slot
+    } catch {
+      // native balance is still honest data; failing SPL read reports as 0
+    }
+    return {
+      label,
+      address,
+      status: "ok",
+      native: (bal.value ?? 0) / 1e9,
+      nativeSymbol: "SOL",
+      usdt
+    };
+  } catch (e) {
+    return { label, address, status: "error", error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 interface GrapheneRow {
   label: string;
   chain: string;
@@ -210,13 +267,19 @@ async function grapheneRow(label: string, chain: "BLURT" | "STEEM" | "HIVE", url
 
 async function buildTreasury() {
   const tronRows: BalanceRow[] = [];
-  for (const [i, [label, address]] of [["ארנק חדש (מחזור ראשון)", TRON_NEW] as const, ...TRON_VAULT.map((a, j) => [`כספת TRON #${j + 1}`, a] as const)].entries()) {
+  for (const [i, [label, address]] of [
+    ["ארנק חדש (מחזור ראשון)", TRON_NEW] as const,
+    ["כספת TRON (פורנזי)", TRON_FORENSIC] as const
+  ].entries()) {
     if (i > 0) await sleep(150); // stagger — public RPC politeness (avoids 429 storms)
     tronRows.push(await tronRow(label, address));
   }
-  const evm = await Promise.all([
-    ...ETH_NEW.map((a, i) => evmRow(`ארנק חדש ETH #${i + 1}`, a)),
-    ...ETH_VAULT.map((a, i) => evmRow(`כספת ETH #${i + 1}`, a))
+  const [evm, solana] = await Promise.all([
+    Promise.all([
+      ...ETH_NEW.map((a, i) => evmRow(`ארנק חדש ETH #${i + 1}`, a)),
+      ...ETH_VAULT.map((a, i) => evmRow(`כספת ETH #${i + 1}`, a))
+    ]),
+    Promise.all([solRow("ארנק Solana (פורנזי)", SOL_FORENSIC)])
   ]);
   const graphene = await Promise.all([
     grapheneRow("BLURT", "BLURT", "https://rpc.beblurt.com"),
@@ -228,6 +291,8 @@ async function buildTreasury() {
   const totalTronUsdt = tronRows.reduce((s, r) => s + (r.status === "ok" ? (r.usdt ?? 0) : 0), 0);
   const totalEth = evm.reduce((s, r) => s + (r.status === "ok" ? (r.native ?? 0) : 0), 0);
   const totalEthUsdt = evm.reduce((s, r) => s + (r.status === "ok" ? (r.usdt ?? 0) : 0), 0);
+  const totalSol = solana.reduce((s, r) => s + (r.status === "ok" ? (r.native ?? 0) : 0), 0);
+  const totalSolUsdt = solana.reduce((s, r) => s + (r.status === "ok" ? (r.usdt ?? 0) : 0), 0);
   const grapheneLiquid = graphene.reduce((s, g) => s + (g.status === "ok" ? (g.liquidNum ?? 0) : 0), 0);
 
   return {
@@ -240,6 +305,8 @@ async function buildTreasury() {
       totalTronUsdt,
       totalEth,
       totalEthUsdt,
+      totalSol,
+      totalSolUsdt,
       grapheneLiquid,
       /** הפער לישוב USDT אחד על TRON (שריפת אנרגיה) — המספר שחוסם את ה-TRC20 */
       gapToUsdtSettlement: Math.max(0, TRX_PER_USDT_TRANSFER - totalTrx)
@@ -248,6 +315,7 @@ async function buildTreasury() {
     chains: {
       tron: { rows: tronRows, explorer: "https://tronscan.org/#/address/" },
       evm: { rows: evm, explorer: "https://etherscan.io/address/" },
+      solana: { rows: solana, explorer: "https://solscan.io/account/" },
       graphene: { rows: graphene }
     }
   };
@@ -280,10 +348,17 @@ export async function GET(req: Request) {
         totalTronUsdt: null,
         totalEth: null,
         totalEthUsdt: null,
+        totalSol: null,
+        totalSolUsdt: null,
         grapheneLiquid: null,
         gapToUsdtSettlement: null
       },
-      chains: { tron: { rows: [], explorer: "" }, evm: { rows: [], explorer: "" }, graphene: { rows: [] } }
+      chains: {
+        tron: { rows: [], explorer: "" },
+        evm: { rows: [], explorer: "" },
+        solana: { rows: [], explorer: "" },
+        graphene: { rows: [] }
+      }
     });
   }
 }

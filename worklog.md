@@ -1361,3 +1361,26 @@ Work Log:
 Stage Summary:
 - v4 = מהפך ויזואלי מלא (מסגרת-צד + aurora + טיפוגרפיה חדשה) בלי לגעת בלוגיקה וב-APIs.
 - באותו סבב: תיקון lint בחותם (fallback הלוגין — גזירה אחת במקום לולאת רשתות).
+
+---
+Task ID: 43
+Agent: Z.ai Code (chief-of-staff session)
+Task: "תבדוק את זה אני לא מצליח להתחבר ותבדוק מה עם הtrx וסולנה ודחוף לריפו" — קובץ מפתחות שהועלה (upload/הדקור.txt)
+
+Work Log:
+- סיווג בטוח של הקובץ שהועלה (בלי להדפיס סודות): 2 קבוצות × 4 WIF-52 (owner/active/posting/memo), הקבוצה השנייה תחת כותרת "hive".
+- ניסיון-login עם כל 8 המפתחות מול /api/saos/auth → 401 הכל: הכספת משווה רק מול מפתחות טעונים, והמפתחות האמיתיים מעולם לא נבלעו (רק נגזרות ROT1 שגויות ל-STEEM/HIVE).
+- גזירת מפתות-ציבוריים אופליין (blurtjs ECC): L04 == סמכות-ה-posting הצפויה של STEEM בכספת, L12 == של HIVE — הקובץ הוא ערכת-המפתחות האמיתית של headcorner.
+- POST :3033/keys/ingest (verify-then-write מול רשויות-חיות): 8/8 INGESTED (STEEM+HIVE owner/active/posting/memo, account=headcorner), מעטפת נאטמה 2026-09-10T00:10:59Z.
+- /keys/status לאחר מכן: STEEM owner/active/posting LOADED+MATCH, HIVE owner/active/posting LOADED+MATCH, BLURT posting+active LOADED+MATCH.
+- אימות login חי: active-key → HTTP 200 via=STEEM/active actor=owner:headcorner ttl=30d; owner-key → 200 via=STEEM/owner. UI: נתיב-שגיאה עם מפתח זר → toast "התחברות נדחתה" ✓.
+- פענוח תעלומת "כספות TRON": כל 6 הכתובות TM5beptA/TM6UBp98/TM6p6ZNW/TM6u99og/TM8c9vp3/TM8mSbBz הן המפתות-הציבוריים STEEM/HIVE מהקובץ עם קידומת STM→TM (כושלות base58check).
+- מדידות חי: TRON TAzZZ…=0.05 TRX (USDT 0, פער 27.20 לישוב); TYVwwu…=לא-מופעל/0; SOL 9knfnF…=0 (נסחב מאז 0.0294); ETH כל 4=0.
+- route הקופה תוקן: הוסרו 6 השורות הכוזבות, נוספה כתובת TRON פורנזית תקפה + מקטע Solana חי (getBalance + SPL USDT/USDC), summary totalSol/totalSolUsdt; types + treasury-tab עודכנו (Stat SOL + פאנל Solana + הערת-שקיפות).
+- lint נקי; דפדפן: קופה חיה מציגה SOL 0.0000 + TRON נקי משגיאות; מובייל 390 תקין; 0 שגיאות קונסולה; פוטר דביק.
+- מסמך ראיות: docs/evidence/KEYS-INGEST-2026-09-10.md (אסור חומר-מפתח — רק ציבורי).
+
+Stage Summary:
+- ערוץ ההתחברות של הבעלים שוחזר סופית: המפתחות האמיתיים (STEEM+HIVE) נבלעו, אומתו מול השרשרת, וה-login מחזיר 200 owner:headcorner ל-30 יום.
+- נמחקו 6 שגיאות-קבע ממסך הקופה (מפתות-ציבוריים שסומנו בטעות ככתובות TRON) ונוסף מקטע Solana חי.
+- מצב כספים: TRX 0.05 (פער 27.20 ל-TRC20), SOL 0, ETH 0, גרפין 42.95 נזיל.

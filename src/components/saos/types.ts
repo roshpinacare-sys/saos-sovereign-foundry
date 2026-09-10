@@ -616,6 +616,8 @@ export interface TreasuryResponse {
     totalTronUsdt: number | null;
     totalEth: number | null;
     totalEthUsdt: number | null;
+    totalSol: number | null;
+    totalSolUsdt: number | null;
     grapheneLiquid: number | null;
     gapToUsdtSettlement: number | null;
   };
@@ -623,6 +625,7 @@ export interface TreasuryResponse {
   chains: {
     tron: { rows: TreasuryBalanceRow[]; explorer: string };
     evm: { rows: TreasuryBalanceRow[]; explorer: string };
+    solana: { rows: TreasuryBalanceRow[]; explorer: string };
     graphene: { rows: TreasuryGrapheneRow[] };
   };
 }
