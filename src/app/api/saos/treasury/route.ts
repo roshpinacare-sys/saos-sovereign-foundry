@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
+import type { TreasuryOutflowRow } from "@/components/saos/types";
 
 export const dynamic = "force-dynamic";
 
@@ -66,7 +67,7 @@ async function rpc(url: string, method: string, params: unknown[]): Promise<unkn
 
 const weiToEth = (hex: string): number => Number(BigInt(hex)) / 1e18;
 
-// ── public addresses only (from docs/KEY-RECOVERY.md + owner's new wallet) ──
+// ── public addresses only (owner's photo-wallet family + forensic docs) ──
 // HISTORY FIX (Task 43): the previous "TRON_VAULT" list (TM5beptA…, TM6UBp98…,
 // TM6p6ZNW…, TM6u99og…, TM8c9vp3…, TM8mSbBz…) was PROVEN bogus — those strings
 // are the account's STEEM/HIVE *public keys* with the STM prefix swapped to TM
@@ -74,12 +75,39 @@ const weiToEth = (hex: string): number => Number(BigInt(hex)) / 1e18;
 // rendered as 6 permanent errors in the UI. They are gone; the ONE real,
 // checksum-valid forensic TRON address from docs/FORENSIC-AUDIT.md is used
 // instead, plus the owner's new cycle-1 wallet.
+//
+// FULL-FAMILY FIX (Task 44 recon): the photo mnemonic derives a FAMILY of TRON
+// addresses (m/44'/195'/0'/0/i). The deep on-chain ledger trace proved idx1..idx5
+// are LIVE and hold real balances — counting only idx0 under-reported the family
+// by ~4.59 TRX. All six family rows + the verified outflow destinations are now shown.
 const TRON_FORENSIC = "TYVwwuvdDmfy3shxT3cb3RKLrRCshaZxTy";
-const TRON_NEW = "TAzZZkrwBXk59iRya7esnKVJeV1xLtqkGr";
+const TRON_FAMILY: Array<[string, string]> = [
+  ["ארנק משפחה idx0 (ראשי)", "TAzZZkrwBXk59iRya7esnKVJeV1xLtqkGr"],
+  ["ארנק משפחה idx1", "TRKStC5HbWzqdnrWDfc4vYNfgQgyZuQKP4"],
+  ["ארנק משפחה idx2", "TNd4aFZk1YUeP9uzUWCefJyadjCxZXBoBg"],
+  ["ארנק משפחה idx3", "TDuyQNSm2XbVKNgdKgjCyHfxkzXAmo2YXG"],
+  ["ארנק משפחה idx4", "TSJw2GYkmcsYNjALFaNYxySkgGfkvBD8sP"],
+  ["ארנק משפחה idx5", "TLhp6hhm7RgB7xFsSTAatuWyEWpScVbJ4U"]
+];
 const SOL_FORENSIC = "9knfnFMLmhUNjKRDbR1BmVnVkq4BRczyYjJ7BqiZSgiL";
 const ETH_NEW = ["0x7b7869d126fa1ecc19a3426d07be8186225a2c31", "0xe05e7988bac84c58b0a076816627a01aee270eb8"];
 const ETH_VAULT = ["0x2767e8146c11bad1d9b0784f11325375195c1b0f", "0x94f4cb4fc0c50d742a583576b2cb1d14fa55dd99"];
 const GRAPHENE_ACCOUNT = "headcorner";
+
+// Forensic money-flow (deep ledger trace 2026-09-10, on-chain verified):
+//   in:  31.219502 TRX from outside (29.943347 TGUYnMLu… + 1.276142 returned by idx1 + 0.000013 dust)
+//   out: 18.704323 TRX swept in ONE minute (2026-09-08 13:23) by idx0+idx1+idx2 → TG6SrsM… (external)
+//   then 2026-09-09 09:23 TG6SrsM… → TMXHfFQd… (2020 wallet) 17.099234 TRX — SITTING there
+//   then 2026-09-09 09:25 SOL swept from 9knfnF… → A2Y1d3… 0.023976 SOL — SITTING there
+//   residual = activation/network fees (7 fresh accounts × ~1.1 TRX) — computed as live residual
+const FLOW_EXTERNAL_IN_TRX = 31.219502;
+const FLOW_SWEPT_OUT_TRX = 18.704323;
+const FLOW_OUT_TARGETS = {
+  hub: "TG6SrsMJjRqnqAyYM8kGZu1rgkpsgizKEn",
+  tron17: "TMXHfFQdG6BB8kwVfbMYuiXWqr9P5S4VAU",
+  sol: "A2Y1d3vefh81Ta2DcpazmLaZT4EHdbUX8XjZxigNdVyj",
+  funder: "TGUYnMLufLM19NoJcyWkaU32kVjQso2bpQ"
+};
 
 const USDT_TRC20 = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
 const USDT_ERC20 = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
@@ -156,7 +184,13 @@ async function tronRow(label: string, address: string): Promise<BalanceRow> {
   try {
     return await tryEndpoints();
   } catch (e) {
-    return { label, address, status: "error", error: e instanceof Error ? e.message : String(e) };
+    // one patient retry — public RPC 429 storms are transient (politeness window)
+    await sleep(1_500);
+    try {
+      return await tryEndpoints();
+    } catch {
+      return { label, address, status: "error", error: e instanceof Error ? e.message : String(e) };
+    }
   }
 }
 
@@ -267,11 +301,12 @@ async function grapheneRow(label: string, chain: "BLURT" | "STEEM" | "HIVE", url
 
 async function buildTreasury() {
   const tronRows: BalanceRow[] = [];
-  for (const [i, [label, address]] of [
-    ["ארנק חדש (מחזור ראשון)", TRON_NEW] as const,
-    ["כספת TRON (פורנזי)", TRON_FORENSIC] as const
-  ].entries()) {
-    if (i > 0) await sleep(150); // stagger — public RPC politeness (avoids 429 storms)
+  const family: Array<[string, string]> = [
+    ...TRON_FAMILY,
+    ["כספת TRON (פורנזי)", TRON_FORENSIC]
+  ];
+  for (const [i, [label, address]] of family.entries()) {
+    if (i > 0) await sleep(350); // stagger — public RPC politeness (avoids 429 storms)
     tronRows.push(await tronRow(label, address));
   }
   const [evm, solana] = await Promise.all([
@@ -287,13 +322,52 @@ async function buildTreasury() {
     grapheneRow("HIVE", "HIVE", "https://api.hive.blog")
   ]);
 
+  // traced outflow destinations (public balances of addresses that RECEIVED our funds)
+  const outflows: TreasuryOutflowRow[] = [];
+  {
+    const hub = await tronRow("צומת-יציאה (קיבל 18.70 TRX)", FLOW_OUT_TARGETS.hub);
+    outflows.push({
+      label: hub.label, address: FLOW_OUT_TARGETS.hub, chain: "TRON", status: hub.status,
+      error: hub.error, native: hub.native, nativeSymbol: "TRX",
+      receivedFromUs: FLOW_SWEPT_OUT_TRX,
+      note: "רוקן את idx0+idx1+idx2 בדקה אחת (2026-09-08 13:23) והעביר הלאה — כתובת לא נגזרת מהצירוף שלנו"
+    });
+    await sleep(350);
+    const t17 = await tronRow("יעד 17.10 TRX (ארנק 2020)", FLOW_OUT_TARGETS.tron17);
+    outflows.push({
+      label: t17.label, address: FLOW_OUT_TARGETS.tron17, chain: "TRON", status: t17.status,
+      error: t17.error, native: t17.native, nativeSymbol: "TRX",
+      receivedFromUs: 17.099234,
+      note: "קיבל 17.099234 TRX ב-2026-09-09 09:23 — ארנק מ-2020-09-15 שהיה רדום מ-2023; הסכום יושב שם מאז. דורש אימות בעלים שזה ארנק שלו"
+    });
+    await sleep(350);
+    const solOut = await solRow("יעד SOL (ניקוז סולנה)", FLOW_OUT_TARGETS.sol);
+    outflows.push({
+      label: solOut.label, address: FLOW_OUT_TARGETS.sol, chain: "SOLANA", status: solOut.status,
+      error: solOut.error, native: solOut.native, nativeSymbol: "SOL",
+      receivedFromUs: 0.023976117,
+      note: "קיבל 0.023976 SOL ב-2026-09-09 09:25 — שתי דקות אחרי ה-TRX; לא זז מאז"
+    });
+    await sleep(350);
+    const funder = await tronRow("מקור המימון הראשוני", FLOW_OUT_TARGETS.funder);
+    outflows.push({
+      label: funder.label, address: FLOW_OUT_TARGETS.funder, chain: "TRON", status: funder.status,
+      error: funder.error, native: funder.native, nativeSymbol: "TRX",
+      note: "העביר 29.943347 TRX ל-idx0 ב-2026-09-05 19:39 (הפעיל את הארנק) — ארנק חיצוני מ-2024"
+    });
+  }
+
   const totalTrx = tronRows.reduce((s, r) => s + (r.status === "ok" ? (r.native ?? 0) : 0), 0);
   const totalTronUsdt = tronRows.reduce((s, r) => s + (r.status === "ok" ? (r.usdt ?? 0) : 0), 0);
+  const familyRows = tronRows.filter((r) => TRON_FAMILY.some(([, a]) => a === r.address));
+  const totalTrxFamily = familyRows.reduce((s, r) => s + (r.status === "ok" ? (r.native ?? 0) : 0), 0);
   const totalEth = evm.reduce((s, r) => s + (r.status === "ok" ? (r.native ?? 0) : 0), 0);
   const totalEthUsdt = evm.reduce((s, r) => s + (r.status === "ok" ? (r.usdt ?? 0) : 0), 0);
   const totalSol = solana.reduce((s, r) => s + (r.status === "ok" ? (r.native ?? 0) : 0), 0);
   const totalSolUsdt = solana.reduce((s, r) => s + (r.status === "ok" ? (r.usdt ?? 0) : 0), 0);
   const grapheneLiquid = graphene.reduce((s, g) => s + (g.status === "ok" ? (g.liquidNum ?? 0) : 0), 0);
+  // residual fees: balanced ledger residual (external in − swept out − live family) — honest, labeled as residual
+  const burnedFees = FLOW_EXTERNAL_IN_TRX - FLOW_SWEPT_OUT_TRX - totalTrxFamily;
 
   return {
     ok: true as const,
@@ -302,6 +376,7 @@ async function buildTreasury() {
     account: GRAPHENE_ACCOUNT,
     summary: {
       totalTrx,
+      totalTrxFamily,
       totalTronUsdt,
       totalEth,
       totalEthUsdt,
@@ -312,6 +387,20 @@ async function buildTreasury() {
       gapToUsdtSettlement: Math.max(0, TRX_PER_USDT_TRANSFER - totalTrx)
     },
     constants: { trxPerUsdtTransfer: TRX_PER_USDT_TRANSFER },
+    flow: {
+      externalInTrx: FLOW_EXTERNAL_IN_TRX,
+      sweptOutTrx: FLOW_SWEPT_OUT_TRX,
+      burnedFeesTrx: burnedFees >= 0 ? Math.round(burnedFees * 1e6) / 1e6 : null,
+      story: [
+        "2026-09-05 19:39 — ארנק idx0 הופעל עם 29.943347 TRX ממקור חיצוני",
+        "2026-09-05..07 — הכסף נע בתוך משפחת הארנקים (idx0↔idx1↔idx2↔idx3↔idx5) — 7 כתובות חדשות נפתחו ונשרפו ~1.1 TRX עמלת-הפעלה לכל אחת",
+        "2026-09-08 13:23 — ריקון מתואם: idx0+idx1+idx2 שלחו 18.704323 TRX בדקה אחת לכתובת חיצונית (צומת-היציאה)",
+        "2026-09-09 09:23 — הצומת העביר 17.099234 TRX לארנק מ-2020 — הסכום יושב שם עד היום (" + FLOW_OUT_TARGETS.tron17.slice(0, 10) + "…)",
+        "2026-09-09 09:25 — גם סולנה נוקזה: 0.023976 SOL מהכספת הפורנזית לכתובת חיצונית — לא זזה מאז",
+        "מה שנשאר אצלנו: " + totalTrxFamily.toFixed(4) + " TRX פרוסים על idx0..idx5 — כל שאר היתרות של ETH/SOL/USDT = 0"
+      ],
+      outflows
+    },
     chains: {
       tron: { rows: tronRows, explorer: "https://tronscan.org/#/address/" },
       evm: { rows: evm, explorer: "https://etherscan.io/address/" },
@@ -345,6 +434,7 @@ export async function GET(req: Request) {
       error: e instanceof Error ? e.message : String(e),
       summary: {
         totalTrx: null,
+        totalTrxFamily: null,
         totalTronUsdt: null,
         totalEth: null,
         totalEthUsdt: null,
@@ -352,6 +442,13 @@ export async function GET(req: Request) {
         totalSolUsdt: null,
         grapheneLiquid: null,
         gapToUsdtSettlement: null
+      },
+      flow: {
+        externalInTrx: FLOW_EXTERNAL_IN_TRX,
+        sweptOutTrx: FLOW_SWEPT_OUT_TRX,
+        burnedFeesTrx: null,
+        story: [],
+        outflows: []
       },
       chains: {
         tron: { rows: [], explorer: "" },

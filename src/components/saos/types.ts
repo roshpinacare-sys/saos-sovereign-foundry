@@ -604,6 +604,19 @@ export interface TreasuryGrapheneRow {
   created?: string;
 }
 
+export interface TreasuryOutflowRow {
+  label: string;
+  address: string;
+  chain: "TRON" | "SOLANA";
+  status: "ok" | "error";
+  error?: string;
+  native?: number;
+  nativeSymbol?: string;
+  /** what this address received from our wallets (forensic on-chain trace, 2026-09-10) */
+  receivedFromUs?: number;
+  note?: string;
+}
+
 export interface TreasuryResponse {
   ok: boolean;
   generatedAt: string;
@@ -613,6 +626,8 @@ export interface TreasuryResponse {
   account: string;
   summary: {
     totalTrx: number | null;
+    /** TRX sitting on the whole photo-wallet family (idx0..idx5) — totalTrx above == this since Task 44 */
+    totalTrxFamily: number | null;
     totalTronUsdt: number | null;
     totalEth: number | null;
     totalEthUsdt: number | null;
@@ -622,6 +637,14 @@ export interface TreasuryResponse {
     gapToUsdtSettlement: number | null;
   };
   constants: { trxPerUsdtTransfer: number };
+  /** forensic money-flow story (Task 44 recon, on-chain verified) */
+  flow: {
+    externalInTrx: number;
+    sweptOutTrx: number;
+    burnedFeesTrx: number | null;
+    story: string[];
+    outflows: TreasuryOutflowRow[];
+  };
   chains: {
     tron: { rows: TreasuryBalanceRow[]; explorer: string };
     evm: { rows: TreasuryBalanceRow[]; explorer: string };

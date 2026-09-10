@@ -1,18 +1,18 @@
-# בריף ראש-המטה — 2026-09-09T23:44:04.599Z
+# בריף ראש-המטה — 2026-09-10T00:44:07.311Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: 0c34743
+HEAD: b226eec
+- b226eec fix(43): owner login fully restored via real-keys ingest + treasury honest data fix
 - 0c34743 feat(42): SOVEREIGN v4 AURORA CONSOLE — full redesign: side console-rail (RTL 248px, brand/nav/mode/clock), contextual sticky topbar, aurora-mesh background (animated conic ribbons + engineering grid), deep glass with gradient hairlines, Heebo+Space Grotesk typography, new card/button/stat language (emerald↔gold, display numerals, hover-lift); class-contract preserved so all 10 tabs work unchanged; grid fix: toaster+skip-link moved out of auto-placement; mobile horizontal nav rail; browser-verified desktop+mobile, 0 console errors, lint clean. No logic changes.
 - bce4413 fix(42): owner login channel restored post-wipe — new signer token + rebuilt fleet envelope (scrypt/AES tag-order fixed), BLURT posting/active/memo re-derived from owner password and live-verified (LOADED+MATCH), signer fixes: BLURT netTag slot corruption, STATE refresh after ingest, master-password login fallback (hash-only in-signer); app env: SAOS_EXTERNAL_SIGNER_URL/TOKEN restored; E2E: 200 owner:headcorner via BLURT/active, 30d session; STEEM/HIVE honestly awaiting owner universal-paste (ROT1 seed is owner-custody, 0 local matches)
 - 45c81c5 fix(41-recovery): full state restoration after external wipe event (~22:03) — .env rebuilt (live+confirm, new admin key OUTSIDE tree per SH-7), fresh verified backup, 9/9 owner decisions re-recorded from git-documented evidence only (0 invented), new genesis seal 9edc42eb, incident evidence doc; preflight: 5 hard blockers -> 0, readyForAnchor=true, mode=live, browser-verified
 - c27170d docs(41-fix): worklog — askpass protocol re-fix, repo fully synced 337574d, v3 verified live
-- 337574d ops(41): fleet-cure status auto-sync
 guardian: ok=true runs=0 devMode=true tickAlive=true token=false
-briefings אחרונים: BRIEF-2026-09-09T15-53-40.md, BRIEF-2026-09-09T22-03-40.md, BRIEF-2026-09-09T22-33-30.md, BRIEF-2026-09-09T23-03-35.md, BRIEF-2026-09-09T23-14-22.md
+briefings אחרונים: BRIEF-2026-09-09T22-03-40.md, BRIEF-2026-09-09T22-33-30.md, BRIEF-2026-09-09T23-03-35.md, BRIEF-2026-09-09T23-14-22.md, BRIEF-2026-09-09T23-44-04.md
 ── זנב next-steps.md ──
 …
 ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
@@ -34,29 +34,29 @@ briefings אחרונים: BRIEF-2026-09-09T15-53-40.md, BRIEF-2026-09-09T22-03-4
 - `hive-rc-floor`: **needs-resource → decided-custom** (המשאב קיים, המסילה נבנתה והוכחה, נותר פעולת-הרצה אחת על-הרנטיים). `tron-stake`/`vault-restore` נשארים כנים (TRX אבק בלי נתיב; שחזור-חוץ).
 
 ### תקרית שנתפסה ותוקנה (Task 27-b)
-במהלך-ההפעלה הראשונה של ה-DEX דלף DATABASE_URL מה-shell (foundry custom.db דרס את .env של ה-DEX — קדימות process.env) וקו-הריליי שלו כתב 2 קבלות-זרות לשרשרת-ה-foundry (23:14:38/23:15:14). נתפס בבדיקת-החובה שלפני-סגירה: אוכסן (docs/evidence/dex-relay-pollution-archive-2026-09-08.json, sha256 34f3a606…), הוסר, והסכימה הוקשתה — EvidenceReceipt.at נעשה REQUIRED כך שכותב-זר נכשל מבנית. veri
+במהלך-ההפעלה הראשונה של ה-DEX דלף DATABASE_URL מה-shell (foundry custom.db דרס את .env של ה-DEX — קדימות process.env) וקו-הריליי שלו כתב 2 קבלות-זרות לשרשרת-ה-foundry (23:14:38/23:15:14). נתפס בבדיקת-החובה שלפני-סגירה: אוכסן (docs/evidence/dex-relay-pollution-archive-2026-09-08.json, sha256 34f3a606…), הוסר, והסכימה הוקשתה — EvidenceReceip
 ```
 </details>
 ## מצב רשת
-הרשת פעילה עם SOVEREIGN v4 AURORA CONSOLE, מצב live. המערכת עברה שחזור מלא לאחר אירוע חיצוני, עם 9/9 החלטות בעלים מאומתות. נמצא 9.682 HIVE נזילים על headcorner, עם RC נמוך ב-HIVE (0.003%) מהמתין לעוגן. קיימת מסילת המרה אמיתית פעילה ב-DEX עם שערי אבטחה.
+רשת SAOS פועלת במצב live עם תיקון קריטי למנגנון RC של HIVE שהשחיר. נמצאו 9.682 HIVE נזילים על headcorner עם RC נמוך מאוד (0.003%), מה שמאפשר פעולה אחת כל ~25 דקות. מסילת המרה מלאה בין HIVE ל-DEX פעילה ומוכחת, עם שערי אבטחה פעילים.
 
 ## סיכונים / דברים מדממים
-- RC נמוך ב-HIVE מגביל פעילות לפעולה אחת בכל ~25 דקות במקום כל 36 שניות.
-- פעולת powerup של macrame ממתינה ל-RC (~3.5 שעות נותרות).
-- נתון זמן אמת מדויק להגעת RC למקסימום לא זמין (כרגע ~232 דקות ל-macrame).
-- חשיפה קודמת של DATABASE_URL נתפסה ותוקנה, עם ראיות מאוחסנות.
+- RC נמוך מאוד ב-HIVE (0.003%) מגביל ביצועים לפעולה אחת כל 25 דקות
+- תיקון RC עדיין לא הופעל על הרנטיים החי (מתבצע דרך `he_powerup.cjs --amount ALL`)
+- lsa withdraw ממתין ל-RC מספיק (~3.5h)
+- STEEM/BLURT מוגבלים למפתחות בעלים בלבד (אין תאימות בסביבה)
 
 ## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
-1. [רנטיים/ראשי] הפעל `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי → אימות: עליית RC ב-foundry לאחר הרצה, התראות ב-UI מעודכנות.
-2. [רנטיים/ראשי] המתן להשלמת פעולת powerup של macrame ואימות קבלת ה-HP → אימות: גידול במאזן ה-HP של macrame ב-foundry.
-3. [רנטיים/ראשי] פעילות fleet-cure על הרנטיים החי → אימות: יצירת קובץ docs/evidence/fleet-cure-status.json עם מדידות RC מעודכנות.
+1. [רנטיים/רנטיים] הפעל `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי + אימת עלייה ב-RC לאחר הרצה
+2. [רנטיים/רנטיים] הפעל `fleet-cure` service (:3034) לניטור וביצוע אוטומטי של weave כאשר RC ≥230M + אימת רישום txid ב-foundry
+3. [רנטיים/רנטיים] עקוב אחרי lsa withdraw עד להשלמה + אימת קבלת הכסף ב-HIVE
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-- הפעלת תיקון ה-RC floor על הרנטיים החי כדי לאפשר אוטומציית powerup.
-- פיקוח על התקדמות fleet-cure ואימות תפקודו.
-- ניטור קריטי של זמינות ה-RC והתראות ETA.
+- אישור הפעלת `he_powerup.cjs --amount ALL` על הרנטיים החי כדי להפעיל את מנגנון ה-RC המתוקן
+- הפעלת `fleet-cure` service לניהול אוטומטי של RC בעתיד
+- עדכון פרמטרים ב-.env על סמך מדידות RC חיות
 
-## נשאר לבעלים בלבד (או "כלום")
-- אימות סופי של מפתחות הבעלים עבור STEEM ו-BLURT.
-- החלטות על מימון פוטנציאלי ל-TRX staking (transit).
-- אישור סופי לשחזור vault אם יידרש.
+## נשאר לבעלים בלבד
+- שימוש במפתחות הבעלים ל-STEEM/BLURT (אין תאימות בסביבה)
+- החלטה על זמן הפעלת האצת HP דרך external-signer v2.1 כאשר יהיה HP להאציל
+- החלטה על מימון TRX ל-staking (transit לפי הבעלים)

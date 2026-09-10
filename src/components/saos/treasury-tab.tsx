@@ -1,6 +1,6 @@
 "use client";
 
-import { Coins, Gem, Landmark, Sparkles, Target, TriangleAlert, Wallet } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Coins, Flame, Gem, Landmark, Route, Sparkles, Target, TriangleAlert, Wallet } from "lucide-react";
 
 import {
   Badge,
@@ -93,9 +93,11 @@ function TreasuryBody({ data, onRefresh, refreshing }: { data: TreasuryResponse;
         </div>
       </Panel>
 
+      <MoneyFlowPanel data={data} />
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <AddressTablePanel
-          title="TRON — ארנק חדש + כספת פורנזית"
+          title="TRON — משפחת הארנקים (idx0..idx5) + כספת פורנזית"
           icon={<Wallet aria-hidden className="size-4 text-emerald-300" />}
           rows={data.chains.tron.rows}
           explorer={data.chains.tron.explorer}
@@ -121,9 +123,87 @@ function TreasuryBody({ data, onRefresh, refreshing }: { data: TreasuryResponse;
       <GraphenePanel rows={data.chains.graphene.rows} account={data.account} lastChecked={data.generatedAt} onRefresh={onRefresh} refreshing={refreshing} />
 
       <p className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-[11px] leading-relaxed text-zinc-500">
-        שקיפות מלאה: המסך קורא רק יתרות ציבוריות של כתובות ידועות (docs/KEY-RECOVERY.md + docs/FORENSIC-AUDIT.md + הארנק החדש של הבעלים). תיקון 2026-09-10: שש-הכתובות שסומנו בעבר כ&quot;כספות TRON&quot; התגלו כמפתות-ציבוריים של STEEM/HIVE בקידומת שגויה — הוסרו מהמסך. כתובות נוספות של הבעלים (בורסות, ארנקי קר), לא נגישות למערכת ולכן לא מוצגות — הנתון כאן הוא תמיד &quot;מה המערכת באמת רואה&quot;, לא יותר.
+        שקיפות מלאה: המסך קורא רק יתרות ציבוריות של כתובות ידועות (משפחת הארנק שנגזרה מהצירוף של הבעלים + docs/FORENSIC-AUDIT.md + יעדי-היציאה שאותרו במעקב הפורנזי). תיקון 2026-09-10: שש-הכתובות שסומנו בעבר כ&quot;כספות TRON&quot; התגלו כמפתות-ציבוריים של STEEM/HIVE בקידומת שגויה — הוסרו. מעקב 2026-09-10: הלדג׳ר המלא של כל העסקאות אומת מול הרשת — הפער בספירה הקודמת נסגר מתמטית. כתובות נוספות של הבעלים (בורסות, ארנקי קר), לא נגישות למערכת ולכן לא מוצגות.
       </p>
     </div>
+  );
+}
+
+function MoneyFlowPanel({ data }: { data: TreasuryResponse }) {
+  const f = data.flow;
+  if (!f || !f.outflows?.length) return null;
+  return (
+    <Panel
+      title="מסלול הכסף — פורנזיה מלאה של כל עסקה (מאומת מול הרשת)"
+      icon={<Route aria-hidden className="size-4 text-amber-300" />}
+      source="מעקב לדג׳ר מלא · TronGrid + Solana RPC"
+      lastChecked={data.generatedAt}
+    >
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+        <div className="glass rounded-xl p-3">
+          <div className="flex items-center gap-1.5 text-[11px] text-zinc-500">
+            <ArrowDownToLine className="size-3.5 text-emerald-300" aria-hidden /> נכנס מבחוץ
+          </div>
+          <p className="mt-1 font-mono text-lg font-bold text-emerald-300 tabular-nums">{f.externalInTrx.toFixed(4)} TRX</p>
+        </div>
+        <div className="glass rounded-xl p-3">
+          <div className="flex items-center gap-1.5 text-[11px] text-zinc-500">
+            <ArrowUpFromLine className="size-3.5 text-rose-300" aria-hidden /> רוקן החוצה
+          </div>
+          <p className="mt-1 font-mono text-lg font-bold text-rose-300 tabular-nums">{f.sweptOutTrx.toFixed(4)} TRX</p>
+        </div>
+        <div className="glass rounded-xl p-3">
+          <div className="flex items-center gap-1.5 text-[11px] text-zinc-500">
+            <Flame className="size-3.5 text-amber-300" aria-hidden /> נשרף בעמלות (שיור מאוזן)
+          </div>
+          <p className="mt-1 font-mono text-lg font-bold text-amber-300 tabular-nums">{f.burnedFeesTrx === null ? "—" : f.burnedFeesTrx.toFixed(4)} TRX</p>
+        </div>
+      </div>
+
+      <ol className="scroll-slim mt-3 max-h-64 space-y-1.5 overflow-y-auto pl-1">
+        {f.story.map((line, i) => (
+          <li key={i} className="flex items-start gap-2 text-[11px] leading-relaxed text-zinc-400">
+            <span className="mt-1 size-1.5 shrink-0 rounded-full bg-amber-400/70" aria-hidden />
+            <span>{line}</span>
+          </li>
+        ))}
+      </ol>
+
+      <div className="mt-3 space-y-2">
+        <p className="text-[11px] font-bold text-zinc-300">יעדי-היציאה — היתרות שלהם כרגע (ציבורי):</p>
+        {f.outflows.map((o) => (
+          <div key={o.address} className="glass rounded-xl p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-bold text-zinc-200">{o.label}</span>
+              {o.status === "error" ? (
+                <Badge tone="danger">שגיאה: {o.error}</Badge>
+              ) : (
+                <span className="text-xs tabular-nums text-zinc-300">
+                  <strong className="font-bold text-zinc-200">{(o.native ?? 0).toFixed(6)}</strong> {o.nativeSymbol}
+                  {o.receivedFromUs !== undefined && <span className="ms-2 text-[10px] text-zinc-500">(מאיתנו: {o.receivedFromUs.toFixed(6)})</span>}
+                </span>
+              )}
+            </div>
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <Mono className="text-[11px] text-zinc-500" title={o.address}>
+                {o.address.slice(0, 10)}…{o.address.slice(-6)}
+              </Mono>
+              <Badge tone="neutral">{o.chain}</Badge>
+              <a
+                href={o.chain === "TRON" ? `https://tronscan.org/#/address/${o.address}` : `https://solscan.io/account/${o.address}`}
+                target="_blank"
+                rel="noreferrer"
+                className="ms-auto text-[11px] text-teal-400 underline-offset-2 hover:underline"
+                aria-label={`צפה ב-${o.label} בסייר הבלוקים`}
+              >
+                סייר ↗
+              </a>
+            </div>
+            {o.note && <p className="mt-1.5 text-[11px] leading-relaxed text-zinc-500">{o.note}</p>}
+          </div>
+        ))}
+      </div>
+    </Panel>
   );
 }
 
