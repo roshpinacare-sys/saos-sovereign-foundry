@@ -218,6 +218,7 @@ export const EP = {
   revokeAll: "/api/saos/auth/revoke-all",
   seal: "/api/saos/seal",
   ownerKeys: "/api/saos/owner-keys",
+  keysMap: "/api/saos/keys-map",
   verifyLive: "/api/saos/verify-live",
   agentBridge: "/api/saos/agent-bridge",
   research: "/api/saos/research",

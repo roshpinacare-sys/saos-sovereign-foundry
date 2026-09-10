@@ -2,15 +2,23 @@
 
 import {
   CheckCircle2,
+  Copy,
   Database,
+  Eye,
+  EyeOff,
+  FileLock2,
   GitBranch,
+  KeyRound,
   ListChecks,
+  LogIn,
   ReceiptText,
   Rocket,
   Server,
   ShieldAlert,
-  Target
+  Target,
+  Wallet
 } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -31,10 +39,10 @@ import {
   cn,
   fmtDateTime
 } from "@/components/ui/kit";
-import { EP, errText, useSaos } from "./api";
+import { EP, errText, refreshKey, useSaos } from "./api";
 import { LiveProofCard } from "./live-proof-card";
 import { ANCHOR_STATUS, NETWORK_STATUS } from "./labels";
-import type { DecisionsResponse, PreflightResponse, RepoStatusResponse, StatusResponse } from "./types";
+import type { AuthStateResponse, DecisionsResponse, KeysMapResponse, PreflightResponse, RepoStatusResponse, StatusResponse } from "./types";
 
 /** which screen handles each preflight blocker — priority mirrors the server's own recommendedNextAction order */
 function blockerTab(blockerIds: string[], hasOpenSignature: boolean): string {
@@ -113,6 +121,9 @@ export function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void 
           </div>
         </CardContent>
       </Card>
+
+      {/* כל המפתחות על הראשי — Task 45 (owner directive 2026-09-10) */}
+      <MyKeysPanel />
 
       {/* first-anchor readiness (Task 11) */}
       <FirstAnchorCard readiness={preflight.firstAnchorReadiness} generatedAt={preflight.generatedAt} onNavigate={onNavigate} />
@@ -404,5 +415,267 @@ function FirstAnchorCard({
         </Btn>
       </div>
     </Panel>
+  );
+}
+
+// ─── MyKeysPanel (Task 45) — כל המפתחות על המסך הראשי, מסודרים ──────────────
+// Owner directive 2026-09-10: "אני לא רוצה על הקובץ אני רוצה על הראשי וזהו
+// או כל מפתח כמו שצריך מסודר" — no more file-hunting: every key, its status
+// and its place, right here. Discipline mirrors the API: admin-key material
+// is revealable (app-synthetic, rotateable); chain-key material is NEVER
+// rendered — verdicts and public addresses only.
+
+function copyText(value: string, what: string): void {
+  if (!navigator.clipboard) {
+    toast.error("הדפדפן לא מאפשר העתקה — סמן והעתק ידנית");
+    return;
+  }
+  navigator.clipboard
+    .writeText(value)
+    .then(() => toast.success(`${what} הועתק`))
+    .catch(() => toast.error("ההעתקה נכשלה"));
+}
+
+function AddrRow({ label, address }: { label: string; address: string }) {
+  return (
+    <div className="flex items-center gap-2 rounded-lg border border-zinc-800/70 bg-zinc-900/60 px-2.5 py-1.5">
+      <span className="w-24 shrink-0 truncate text-[10px] text-zinc-500 sm:w-32" title={label}>{label}</span>
+      <Mono className="min-w-0 flex-1 truncate text-[10px] text-zinc-300" title={address}>{address}</Mono>
+      <button
+        type="button"
+        onClick={() => copyText(address, "כתובת")}
+        className="shrink-0 rounded-md border border-white/10 px-1.5 py-0.5 text-[10px] text-zinc-400 transition-colors hover:bg-white/10 hover:text-zinc-200 focus-visible:outline-2 focus-visible:outline-emerald-400"
+        aria-label={`העתק את הכתובת של ${label}`}
+      >
+        <Copy className="size-3" aria-hidden />
+        <span className="sr-only">העתק</span>
+      </button>
+    </div>
+  );
+}
+
+function KeySlotBadge({ label, slot }: { label: string; slot: { loaded: boolean; match?: boolean | null } | undefined }) {
+  if (!slot) return <Badge tone="neutral">{label}: —</Badge>;
+  const ok = slot.loaded && slot.match !== false;
+  return (
+    <Badge tone={ok ? "ok" : "danger"} title={ok ? "טעון ותואם לרשות-החיה בשרשרת" : "לא טעון או לא תואם"}>
+      {label}: {slot.loaded ? (slot.match === true ? "טעון+תואם" : "טעון") : "לא טעון"}
+    </Badge>
+  );
+}
+
+export function MyKeysPanel() {
+  const keysQ = useSaos<KeysMapResponse>("keys-map", () => fetch(EP.keysMap).then((r) => r.json() as Promise<KeysMapResponse>));
+  const authQ = useSaos<AuthStateResponse>("auth", () => fetch(EP.auth).then((r) => r.json() as Promise<AuthStateResponse>));
+  const [revealed, setRevealed] = useState(false);
+  const [loggingIn, setLoggingIn] = useState(false);
+
+  const authenticated = authQ.state === "ready" ? authQ.data.authenticated : null;
+  const actor = authQ.state === "ready" ? authQ.data.actor : null;
+
+  const quickLogin = async () => {
+    setLoggingIn(true);
+    try {
+      const r = await fetch(EP.auth, { cache: "no-store" });
+      const j = (await r.json()) as AuthStateResponse;
+      if (j.authenticated) {
+        await refreshKey("auth", () => fetch(EP.auth).then((x) => x.json() as Promise<AuthStateResponse>));
+        toast.success(`מחובר — ${j.actor}`);
+      } else {
+        toast.error(j.error ? `הכניסה נדחתה: ${j.error}` : "הכניסה נדחתה");
+      }
+    } catch {
+      toast.error("שגיאת רשת בכניסה-המהירה");
+    } finally {
+      setLoggingIn(false);
+    }
+  };
+
+  const chain = keysQ.state === "ready" ? keysQ.data.chainKeys : undefined;
+  const networks = chain?.reachable ? chain.networks ?? {} : {};
+
+  return (
+    <Panel
+      title="המפתחות שלי — הכל כאן על הראשי, מסודר"
+      icon={<KeyRound className="size-4 text-amber-400" aria-hidden />}
+      source="/api/saos/keys-map"
+      lastChecked={keysQ.state === "ready" ? keysQ.data.generatedAt ?? keysQ.lastChecked : keysQ.state === "error" ? keysQ.lastChecked : null}
+      onRefresh={keysQ.refresh}
+      refreshing={keysQ.refreshing}
+      actions={
+        authenticated === null ? (
+          <Badge tone="neutral">…</Badge>
+        ) : authenticated ? (
+          <Badge tone="ok" title={actor ?? undefined}>מחובר ✓ {actor && actor !== "cookie" ? `· ${actor}` : ""}</Badge>
+        ) : (
+          <Badge tone="warn">לא מחובר</Badge>
+        )
+      }
+    >
+      {keysQ.state === "error" ? (
+        <div className="space-y-2">
+          <p className="text-xs text-rose-300">{errText(keysQ.err)}</p>
+          <Btn variant="outline" size="sm" onClick={keysQ.refresh} ariaLabel="נסה שוב לטעון את מפת-המפתחות">נסה שוב</Btn>
+        </div>
+      ) : keysQ.state !== "ready" || !keysQ.data.admin ? (
+        <p className="flex items-center gap-2 text-xs text-zinc-500"><span className="pulse-dot inline-block size-1.5 rounded-full bg-emerald-400" aria-hidden /> טוען מפת-מפתחות…</p>
+      ) : (
+        <div className="space-y-4">
+          {/* ── 1. כניסה — one screen, zero files ── */}
+          <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.04] p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-200">
+                <LogIn className="size-3.5" aria-hidden /> כניסה
+              </span>
+              {keysQ.data.login?.devAutoSession && <Badge tone="info">כניסה-אוטומטית פעילה (dev)</Badge>}
+              <div className="ms-auto">
+                {authenticated ? (
+                  <Btn variant="outline" size="sm" onClick={quickLogin} loading={loggingIn} ariaLabel="רענן את ההתחברות">רענן התחברות</Btn>
+                ) : (
+                  <Btn size="sm" onClick={quickLogin} loading={loggingIn} ariaLabel="התחברות מהירה בלחיצה אחת">
+                    <LogIn className="size-3.5" aria-hidden /> התחברות בלחיצה
+                  </Btn>
+                )}
+              </div>
+            </div>
+            <p className="mt-2 text-[11px] leading-relaxed text-zinc-400">
+              נתיבי-כניסה (שלושתם פעילים): {keysQ.data.login?.hint ?? "—"} · ההתחברות מזהה אוטומטית איזה מפתח הוזן.
+            </p>
+          </div>
+
+          {/* ── 2. מפתח-אדמין — the key itself, on the main screen ── */}
+          <div className="rounded-xl border border-amber-400/25 bg-amber-400/[0.05] p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="flex items-center gap-1.5 text-xs font-bold text-amber-200">
+                <KeyRound className="size-3.5" aria-hidden /> מפתח-אדמין (המפתח של הקונסולה)
+              </span>
+              {keysQ.data.admin.hashMatch === true ? (
+                <Badge tone="ok">hash תואם — עובד מול הכניסה</Badge>
+              ) : keysQ.data.admin.hashMatch === false ? (
+                <Badge tone="danger">hash לא תואם</Badge>
+              ) : (
+                <Badge tone="danger">המפתח לא נמצא</Badge>
+              )}
+              {keysQ.data.admin.source && <span className="text-[10px] text-zinc-500" dir="ltr">מקור: {keysQ.data.admin.source}</span>}
+              <div className="ms-auto flex gap-1.5">
+                <Btn variant="outline" size="sm" onClick={() => setRevealed((v) => !v)} ariaLabel={revealed ? "הסתר את מפתח-האדמין" : "גלה את מפתח-האדמין"}>
+                  {revealed ? <EyeOff className="size-3.5" aria-hidden /> : <Eye className="size-3.5" aria-hidden />}
+                  {revealed ? "הסתר" : "גלה"}
+                </Btn>
+                <Btn
+                  variant="outline"
+                  size="sm"
+                  onClick={() => keysQ.data.admin?.material && copyText(keysQ.data.admin.material, "מפתח-האדמין")}
+                  ariaLabel="העתק את מפתח-האדמין"
+                  disabled={!keysQ.data.admin.material}
+                >
+                  <Copy className="size-3.5" aria-hidden /> העתק
+                </Btn>
+              </div>
+            </div>
+            <div className="mt-2 rounded-lg border border-zinc-800 bg-zinc-950/70 p-2.5" dir="ltr">
+              {keysQ.data.admin.material ? (
+                revealed ? (
+                  <Mono className="block select-all break-all text-[11px] leading-relaxed text-amber-200">{keysQ.data.admin.material}</Mono>
+                ) : (
+                  <Mono className="block text-[11px] tracking-widest text-zinc-400">{keysQ.data.admin.masked}</Mono>
+                )
+              ) : (
+                <span className="text-[11px] text-zinc-500">אין חומר-מפתח — דרוש הקצאה מחדש (רוטציה)</span>
+              )}
+            </div>
+            <p className="mt-1.5 text-[10px] leading-relaxed text-zinc-500">
+              זה המפתח שנוצר בשחזור — עכשיו פה על הראשי, בלי קבצים. ניתן לרוטציה בכל רגע (אבטחה → ביטול כל ההפעלות).
+            </p>
+          </div>
+
+          {/* ── 3. מפתחות-שרשרת — verdicts only, never material ── */}
+          <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="flex items-center gap-1.5 text-xs font-bold text-zinc-200">
+                <Wallet className="size-3.5 text-emerald-300" aria-hidden /> מפתחות-שרשרת (STEEM · HIVE · BLURT)
+              </span>
+              {chain?.reachable ? (
+                <Badge tone="ok" title={chain.sealedAt ? `מעטפת נאטמה ${chain.sealedAt}` : undefined}>
+                  חותם חי · {chain.account ?? "headcorner"}
+                </Badge>
+              ) : (
+                <Badge tone="warn">חותם לא נגיש{chain?.error ? `: ${chain.error}` : ""}</Badge>
+              )}
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {chain?.reachable && Object.keys(networks).length > 0 ? (
+                Object.entries(networks).map(([net, slots]) => (
+                  <span key={net} className="flex flex-wrap items-center gap-1 rounded-lg border border-zinc-800 bg-zinc-950/60 px-2 py-1">
+                    <span className="font-mono text-[10px] font-bold text-zinc-300">{net}</span>
+                    <KeySlotBadge label="owner" slot={slots.owner} />
+                    <KeySlotBadge label="active" slot={slots.active} />
+                    <KeySlotBadge label="posting" slot={slots.posting} />
+                  </span>
+                ))
+              ) : (
+                <span className="text-[11px] text-zinc-500">אין נתוני-חריצים — הפעל את החותם החיצוני (:3033)</span>
+              )}
+            </div>
+            <p className="mt-1.5 text-[10px] leading-relaxed text-zinc-500">
+              חומר-מפתח פרטי (WIF) לעולם לא מוצג — רק פסקי-דין מול רשויות-החיה בשרשרת.
+            </p>
+          </div>
+
+          {/* ── 4. ארנקים — public addresses, copy-ready ── */}
+          {keysQ.data.wallets && (
+            <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="flex items-center gap-1.5 text-xs font-bold text-zinc-200">
+                  <Wallet className="size-3.5 text-sky-300" aria-hidden /> כתובות ארנק (ציבורי — יתרות חיות ב&quot;קופה חיה&quot;)
+                </span>
+              </div>
+              <div className="scroll-slim mt-2 max-h-72 space-y-3 overflow-y-auto pl-1">
+                <AddressGroup label="TRON — משפחת הצירוף" rows={keysQ.data.wallets.tron} />
+                <AddressGroup label="ETH" rows={keysQ.data.wallets.eth} />
+                <AddressGroup label="SOL" rows={keysQ.data.wallets.sol} />
+                <AddressGroup label="יעדי-יציאה שאומתו על השרשרת" rows={keysQ.data.wallets.outflows} />
+              </div>
+              <p className="mt-1.5 text-[10px] leading-relaxed text-zinc-500">{keysQ.data.wallets.derivation}</p>
+            </div>
+          )}
+
+          {/* ── 5. קבצי-מפתח — paths only (the key itself is above) ── */}
+          {keysQ.data.files && keysQ.data.files.length > 0 && (
+            <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="flex items-center gap-1.5 text-xs font-bold text-zinc-200">
+                  <FileLock2 className="size-3.5 text-zinc-400" aria-hidden /> קבצי-מפתח (נתיבים בלבד — התוכן לעולם לא נחשף)
+                </span>
+              </div>
+              <ul className="scroll-slim mt-2 max-h-56 space-y-1.5 overflow-y-auto pl-1">
+                {keysQ.data.files.map((f) => (
+                  <li key={f.path} className="flex flex-wrap items-center gap-2 rounded-lg border border-zinc-800/70 bg-zinc-950/60 px-2.5 py-1.5">
+                    <Badge tone={f.exists ? "ok" : "danger"}>{f.exists ? "קיים" : "חסר"}</Badge>
+                    <span className="min-w-0 flex-1 truncate" dir="ltr"><Mono className="text-[10px] text-zinc-300" title={f.path}>{f.path}</Mono></span>
+                    {f.exists && f.bytes > 0 && <span className="shrink-0 text-[10px] tabular-nums text-zinc-500">{f.bytes} B</span>}
+                    <span className="w-full truncate text-[10px] text-zinc-500" title={f.note}>{f.note}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+function AddressGroup({ label, rows }: { label: string; rows: Array<{ label: string; address: string }> }) {
+  if (!rows.length) return null;
+  return (
+    <div>
+      <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-zinc-500">{label}</div>
+      <div className="space-y-1">
+        {rows.map((r) => (
+          <AddrRow key={r.address} label={r.label} address={r.address} />
+        ))}
+      </div>
+    </div>
   );
 }

@@ -552,6 +552,53 @@ export interface OwnerKeysIngestResponse {
   sealedAt?: string | null;
 }
 
+// ─── /keys-map (Task 45) — every key, organized, ON the main screen ──────────
+
+export interface KeysMapFileRow {
+  path: string;
+  exists: boolean;
+  bytes: number;
+  note: string;
+}
+
+export interface KeysMapAddressRow {
+  label: string;
+  address: string;
+}
+
+export interface KeysMapChainKeys {
+  reachable: boolean;
+  error?: string;
+  sealedAt?: string | null;
+  account?: string;
+  networks?: Record<string, { posting: OwnerKeySlot; active: OwnerKeySlot; owner?: OwnerKeySlot }> | null;
+  fleet?: Array<{ username: string; posting: { loaded: boolean }; active: { loaded: boolean } }>;
+}
+
+export interface KeysMapResponse {
+  ok: boolean;
+  error?: string;
+  generatedAt?: string;
+  directive?: string;
+  admin?: {
+    configured: boolean;
+    material: string | null;
+    masked: string | null;
+    hashMatch: boolean | null;
+    source: string | null;
+  };
+  login?: { devAutoSession: boolean; hint: string };
+  chainKeys?: KeysMapChainKeys;
+  wallets?: {
+    derivation: string;
+    tron: KeysMapAddressRow[];
+    eth: KeysMapAddressRow[];
+    sol: KeysMapAddressRow[];
+    outflows: KeysMapAddressRow[];
+  };
+  files?: KeysMapFileRow[];
+}
+
 export interface VerifyLiveResponse {
   ok: boolean;
   error?: string;
