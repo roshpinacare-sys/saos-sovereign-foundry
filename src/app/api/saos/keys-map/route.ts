@@ -228,45 +228,49 @@ export async function GET(req: Request) {
     );
     const ynetRow = planeAccounts.find((r) => r.name === "ynet");
     const ynetUnchanged = ynetRow?.divergence ? Object.values(ynetRow.divergence).every((v) => v === "same") : false;
-    const openGaps0 = fleetAllConnected
-      ? [
-          {
-            id: "tov-rot1",
-            title: "tov-STEEM/HIVE — יתום-ROT1 (נכסים זעירים, לא חוסם דבר)",
-            detail: "המפתחות סובבו חיצונית (SETTLE-10) והסיד של עץ-ROT1 לא נמצא. יתרה ציבורית: 0.449 STEEM + ווסטינג-זעיר. לא חוסם שום צינור. tov-BLURT חי ומאומת (4/4).",
-            oneStep: "אם סיד-ROT1 (64-hex) ימצא אי-פעם — הדבקה אחת במסך-אבטחה → כל-העץ נגזר ונאומת אוטומטית.",
-            state: "blocked-external" as const
-          }
-        ]
-      : [
-          {
-            id: "fleet-slots",
-            title: `סלוטי-צי — ${emptyVaultAccounts.length} חשבונות בכספת בלי מפתחות`,
-            detail: `חשבונות-כספת ללא חומר: ${emptyVaultAccounts.join(" · ") || "—"}. שאר-הכספת חיה ומאומתת.`,
-            oneStep: "הדבקת סיסמת-אב/WIF במסך-אבטחה → החותם מאמת מול רשויות-חיות וכותב fail-closed.",
-            state: "waiting-owner" as const
-          },
-          {
-            id: "tov-rot1",
-            title: "tov-STEEM/HIVE — יתום-ROT1 (נכסים זעירים, לא חוסם דבר)",
-            detail: "המפתחות סובבו חיצונית (SETTLE-10) והסיד של עץ-ROT1 לא נמצא. יתרה ציבורית: 0.449 STEEM + ווסטינג-זעיר. לא חוסם שום צינור.",
-            oneStep: "אם סיד-ROT1 (64-hex) ימצא אי-פעם — הדבקה אחת במסך-אבטחה → כל-העץ נגזר ונאומת אוטומטית.",
-            state: "blocked-external" as const
-          }
-        ];
+    // Task 69 (2026-09-10): the ROT1 seed was RECOVERED from the owner's agent-chat
+    // export and the whole tree was ingested via the signer (52 keys, verify-then-write)
+    // — tov is no longer an orphan (STEEM+HIVE+BLURT all match). The tov-rot1 gap
+    // stays DERIVED, not deleted: it re-appears only if tov ever loses connectivity
+    // again (derived-or-silence, never frozen text).
+    const tovRow = planeAccounts.find((r) => r.name === "tov");
+    const tovRolesOk = tovRow?.exists ? Object.values(tovRow.roles ?? {}).every((s) => s.match === true) : false;
+    const tovOrphan = !(tovRolesOk && withKeys.has("tov"));
+    type OpenGap = { id: string; title: string; detail: string; oneStep: string; state: "waiting-owner" | "blocked-external" };
+    const tovRot1Gap: OpenGap = {
+      id: "tov-rot1",
+      title: "tov-STEEM/HIVE — יתום-ROT1 (נכסים זעירים, לא חוסם דבר)",
+      detail: "המפתחות סובבו חיצונית (SETTLE-10) והסיד של עץ-ROT1 לא נמצא. יתרה ציבורית: 0.449 STEEM + ווסטינג-זעיר. לא חוסם שום צינור. tov-BLURT חי ומאומת (4/4).",
+      oneStep: "אם סיד-ROT1 (64-hex) ימצא אי-פעם — הדבקה אחת במסך-אבטחה → כל-העץ נגזר ונאומת אוטומטית.",
+      state: "blocked-external" as const
+    };
+    const openGaps0: OpenGap[] = [
+      ...(fleetAllConnected
+        ? []
+        : [
+            {
+              id: "fleet-slots",
+              title: `סלוטי-צי — ${emptyVaultAccounts.length} חשבונות בכספת בלי מפתחות`,
+              detail: `חשבונות-כספת ללא חומר: ${emptyVaultAccounts.join(" · ") || "—"}. שאר-הכספת חיה ומאומתת.`,
+              oneStep: "הדבקת סיסמת-אב/WIF במסך-אבטחה → החותם מאמת מול רשויות-חיות וכותב fail-closed.",
+              state: "waiting-owner" as const
+            }
+          ]),
+      ...(tovOrphan ? [tovRot1Gap] : [])
+    ];
     if (planeSummary && planeMissing.length > 0) {
       openGaps0.push({
         id: "steem-plane",
         title: `מישור-STEEM (steemit) — ${planeMissing.length} חשבונות קיימים-על-השרשרת בלי מפתח-תואם`,
-        detail: `נמדד-חי ${planeBody.measuredAt?.slice(0, 16) ?? ""}: כל ${planeSummary.accountsTotal ?? planeAccounts.length} החשבונות קיימים ב-steemit (נוצרו 2018, לפני-הפיצול) עם יתרות אמיתיות — סה"כ ${planeSummary.totalLiquid ?? "?"} STEEM + ${planeSummary.totalSbd ?? "?"} SBD + ${planeSummary.totalHp ?? "?"} HP. רשויות-ה-STEEM שלהם סובבו חיצונית אחרי-2018 (סיסמאות-הצ'אט תואמות HIVE/BLURT — לא STEEM, ${planeSummary.probed ?? 0} WIF-ים נבדקו). מחוברים כרגע: ${planeSummary.accountsWithMatch ?? 0}.${ynetUnchanged ? " יוצא-מן-הכלל: ynet — רשויות-ה-STEEM שלו זהות ל-HIVE (לא סובבו מאז-2018); הסיסמה-המקורית שלו תחבר את שתי-השרשראות בבת-אחת." : ""}`,
-        oneStep: "שני-מסלולים: (1) סיסמת-הגיבוי 09-09 (אצל הבעלים, צ'אט 09-09) — גיבוי-עידן-הצי שב-backups מחזיק את מפתחות-ה-STEEM של הצי מאז-שנבנה; (2) הדבקת מפתח/סיסמת-STEEM נוכחית לכל חשבון במסך-אבטחה → verify-then-write fail-closed.",
+        detail: `נמדד-חי ${planeBody.measuredAt?.slice(0, 16) ?? ""}: כל ${planeSummary.accountsTotal ?? planeAccounts.length} החשבונות קיימים ב-steemit (נוצרו 2018, לפני-הפיצול) עם יתרות אמיתיות — סה"כ ${planeSummary.totalLiquid ?? "?"} STEEM + ${planeSummary.totalSbd ?? "?"} SBD + ${planeSummary.totalHp ?? "?"} HP. ${planeSummary.probed ?? 0} מפתחות-כספת נבדקו מול רשויות-ה-STEEM החיות. מחוברים כרגע: ${planeSummary.accountsWithMatch ?? 0} — עץ-ROT1 מלא (הזרע שוחזר-מהצ'אט של הבעלים והוזרק, Task 69).${ynetUnchanged ? " יוצא-מן-הכלל: ynet — רשויות-ה-STEEM שלו זהות ל-HIVE (לא סובבו מאז-2018); הסיסמה-המקורית שלו תחבר את שתי-השרשראות בבת-אחת." : ""}`,
+        oneStep: "הדבקת מפתח/סיסמת-STEEM נוכחית לכל חשבון-חסר במסך-אבטחה → verify-then-write fail-closed (ynet: הסיסמה-המקורית מחברת STEEM+HIVE יחד).",
         state: "waiting-owner" as const
       });
     }
     const openGaps = openGaps0;
 
     const ownerMaterial = [
-      { path: "upload/הד.txt", role: "ייצוא-צ'אט 2018 (Haran Titi) — 13 סיסמאות-אב של הצי והראשי", disposition: "נקלט 10-09 ערב: 84 התאמות-חי על 12 חשבונות (הצי חזר!) → גיבוי-טרי → הושמד shred — הנגזרות חיות בכספת ובגיבוי", exists: false },
+      { path: "upload/הד.txt", role: "ייצוא-שיחת-סוכן (ארכיאולוגיה) — ובתוכו הודעת-הגיבוי האבודה של SETTLE-10: זרע-ROT1 (64-hex) + 8 ה-WIF-ים של headcorner", disposition: "Task 69 10-09 לילה: הזרע זוהה (גזירה-מדויקת 8/8) → עץ-ROT1 המלא הוזרק דרך-החותם (52 מפתחות, מישור-STEEM 11/12) → נשמר — מקור-הזרע מחוץ-למעטפת. (ההעלאות-הקודמות-שלו: סיסמאות-2018 — נבלעו והושמדו)", exists: true },
       { path: "upload/הדקור.txt", role: "ערכת STEEM/HIVE של headcorner", disposition: "הושמד 10-09 (shred ×3, פריצדנט-32) — 8/8 נבלעו ומאומתים-חי", exists: false },
       { path: "upload/בלורט.evm", role: "סיסמת-אב BLURT של headcorner", disposition: "הושמד 10-09 — הוכח מקומית שהוא שכפול-מדויק של סיסמת-headcorner בהד.txt (אותו מפתח-ציבורי נגזר)", exists: false },
       { path: "upload/photo_2026-09-10_01-12-28.jpg", role: "צירוף-מילים (מקור משפחת-TRON והארנקים)", disposition: "נשמר — עותק-המערכת היחיד של הנגזרת; נגזר ונמפה במלואו (FUNDS-RECON)", exists: true },
