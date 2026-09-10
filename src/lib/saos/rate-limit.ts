@@ -62,6 +62,7 @@ export const RATE_RULES = {
   "agent-bridge": { name: "agent-bridge", perMinute: envLimit("agent-bridge", 30) },
   "verify-live": { name: "verify-live", perMinute: envLimit("verify-live", 10) },
   "anchor-pulse": { name: "anchor-pulse", perMinute: envLimit("anchor-pulse", 4) },
+  "anchor-reverify": { name: "anchor-reverify", perMinute: envLimit("anchor-reverify", 6) },
   treasury: { name: "treasury", perMinute: envLimit("treasury", 20) }
 } as const satisfies Record<string, RateLimitRule>;
 

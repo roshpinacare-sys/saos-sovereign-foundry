@@ -574,7 +574,14 @@ function chainIdFor(network) {
   return network === "HIVE" ? HIVE_CHAIN_ID : network === "BLURT" ? BLURT_CHAIN_ID : null; // steem lib default = STEEM chain_id
 }
 function nodesFor(network) {
-  return network === "HIVE" ? [HIVE_RPC] : network === "BLURT" ? BLURT_NODES : [STEEM_RPC];
+  // roast 52: the BLURT resilience doctrine applied to ALL chains — a single
+  // hardcoded STEEM/HIVE endpoint made "authority-unverifiable" an intermittent
+  // lie (hive.blog/steemit.com 403/429 proven on this env). All added candidates
+  // live-verified 2026-09-10 (fresh heads: steem 109449504/505, hive 109784074/75).
+  // Graphene broadcast is stateless — any node relays a signed tx, rotation is safe.
+  if (network === "HIVE") return [HIVE_RPC, "https://api.deathwing.me", "https://api.openhive.network"].filter((v, i, a) => a.indexOf(v) === i);
+  if (network === "BLURT") return BLURT_NODES;
+  return [STEEM_RPC, "https://api.steem.fans", "https://api.justyy.com", "https://steemapi.boylikegirl.club"].filter((v, i, a) => a.indexOf(v) === i);
 }
 /** resilient rpc across a network's node list (BLURT has 3 candidates) */
 async function rpcCallNet(network, method, params) {

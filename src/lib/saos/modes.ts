@@ -25,7 +25,21 @@ const VALID_MODES: SaosMode[] = ["dry-run", "safe", "live", "maintenance"];
 
 export function saosMode(): ModeState {
   const raw = (process.env.SAOS_MODE ?? "dry-run").trim().toLowerCase();
-  const mode: SaosMode = (VALID_MODES as string[]).includes(raw) ? (raw as SaosMode) : "dry-run";
+  const known = (VALID_MODES as string[]).includes(raw);
+  const mode: SaosMode = known ? (raw as SaosMode) : "dry-run";
+
+  // roast 52: an unrecognized SAOS_MODE value is never silent — the operator
+  // set something the system refused to honor; hiding the coercion would make
+  // the UI claim "dry-run (ברירת-מחדל)" while env says otherwise (truth gap).
+  if (!known && raw !== "") {
+    return {
+      mode: "dry-run",
+      writesEnabled: true,
+      liveArmed: false,
+      broadcastCapable: false,
+      detail: `SAOS_MODE="${raw.slice(0, 32)}" אינו מצב מוכר (dry-run/safe/live/maintenance) — מוצמד ל-dry-run בכנות: חישוב מלא, אפס שידור`
+    };
+  }
 
   if (mode === "safe") {
     return { mode, writesEnabled: false, liveArmed: false, broadcastCapable: false, detail: "safe-mode: כתיבה נדחית — קריאה וחישוב בלבד" };

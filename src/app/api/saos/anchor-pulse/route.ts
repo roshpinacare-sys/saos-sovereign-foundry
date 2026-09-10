@@ -66,10 +66,14 @@ export async function POST(req: Request) {
     );
   }
 
-  // BLURT cooldown — anti-spam over the measured fee law
+  // BLURT cooldown — anti-spam over the measured fee law.
+  // roast 52: counts REAL BROADCASTS (txid != null) — not status:"anchored".
+  // The fee is spent on-chain the moment the tx lands, verified or not; an
+  // unverified row (status transit) must cool down exactly the same, or one
+  // unverified pulse could unlock a spam window.
   if (network === "BLURT") {
     const lastAnchor = await db.anchorTx.findFirst({
-      where: { network, status: "anchored" },
+      where: { network, txid: { not: null } },
       orderBy: { createdAt: "desc" }
     });
     if (lastAnchor) {
@@ -78,7 +82,7 @@ export async function POST(req: Request) {
         return NextResponse.json(
           {
             ok: false,
-            error: `cooldown: עיגון BLURT מאומת אחרון לפני ${mins.toFixed(1)} דק' — סף-הקל ${BLURT_COOLDOWN_MIN} דק'`,
+            error: `cooldown: שידור BLURT אחרון לפני ${mins.toFixed(1)} דק' — סף-הקל ${BLURT_COOLDOWN_MIN} דק' (העמלה נשרפה גם אם האימות טרם אושר)`,
             retryAfterMin: Math.ceil(BLURT_COOLDOWN_MIN - mins)
           },
           { status: 429, headers: { "Retry-After": String(Math.ceil((BLURT_COOLDOWN_MIN - mins) * 60)) } }
@@ -118,14 +122,19 @@ export async function POST(req: Request) {
   // (Task 47: blockHint lets the verifier use get_block when account_history lags)
   const verification = await verifyTxidPublic(network, exec.txid, exec.confirmedBlock ?? null);
 
+  // roast 52 — truth contract kept END-TO-END: "anchored" is written ONLY when
+  // the public network itself confirmed the txid. An unverified broadcast is
+  // honest evidence (txid kept) but lands as "transit" with the gate reason —
+  // the old unconditional anchored row lied twice: DB status vs meta.verified,
+  // and schema contract ("anchored = live verified txid") vs reality.
   const row = await db.anchorTx.create({
     data: {
       sealId: seal.id,
       network,
       kind: "weave",
       txid: exec.txid,
-      status: "anchored",
-      gate: null,
+      status: verification.verified ? "anchored" : "transit",
+      gate: verification.verified ? null : "unverified-txid: שודר ונרשם, אך הרשת הציבורית טרם אישרה — ייחשב anchored רק לאחר אימות-קריאה עצמאי",
       meta: JSON.stringify({
         requestId,
         authLevel,
@@ -159,6 +168,7 @@ export async function POST(req: Request) {
       sealHeight: seal.height,
       sealRoot: seal.root,
       account: exec.account ?? null,
+      status: row.status,
       verified: verification.verified,
       verificationReason: verification.reason
     },

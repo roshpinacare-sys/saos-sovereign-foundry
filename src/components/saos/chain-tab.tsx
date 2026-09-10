@@ -31,6 +31,28 @@ export function ChainTab() {
   const [sealOpen, setSealOpen] = useState(false);
   const [sealing, setSealing] = useState(false);
   const [expandedSeal, setExpandedSeal] = useState<string | null>(null);
+  const [reverifying, setReverifying] = useState<string | null>(null);
+
+  /** roast 52: promote an honestly-unverified (transit) anchor once the public chain confirms it */
+  async function reverifyAnchor(network: string) {
+    setReverifying(network);
+    try {
+      const res = await fetch(EP.anchorReverify, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ network })
+      });
+      const body = (await res.json()) as { ok: boolean; promoted?: boolean; reason?: string; error?: string };
+      if (body.ok && body.promoted) toast.success(`${network}: קוּדֵם לנעוגן — הרשת אישרה את ה-txid`);
+      else if (body.ok) toast.info(`${network}: עדיין לא מאומת — ${body.reason ?? "הרשת טרם אישרה"}`);
+      else toast.error(`אימות-חוזר נדחה: ${body.error ?? "שגיאה לא ידועה"}`);
+      void refreshKey("status", () => fetch(EP.status).then((r) => r.json()));
+    } catch {
+      toast.error("שגיאת רשת — האימות-החוזר לא בוצע");
+    } finally {
+      setReverifying(null);
+    }
+  }
 
   async function runSeal() {
     setSealing(true);
@@ -211,11 +233,25 @@ export function ChainTab() {
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {s.anchors.map((a, ai) => {
                         const info = ANCHOR_STATUS[a.status] ?? ANCHOR_STATUS.pending;
+                        const canReverify = Boolean(a.txid) && a.status !== "anchored";
                         return (
-                          <Badge key={`${a.network}:${ai}`} tone={info.tone} title={a.gate ?? a.txid ?? undefined}>
-                            {a.network}: {info.label}
-                            {a.txid ? ` · ${a.txid.slice(0, 10)}…` : ""}
-                          </Badge>
+                          <span key={`${a.network}:${ai}`} className="inline-flex items-center gap-1">
+                            <Badge tone={info.tone} title={a.gate ?? a.txid ?? undefined}>
+                              {a.network}: {info.label}
+                              {a.txid ? ` · ${a.txid.slice(0, 10)}…` : ""}
+                            </Badge>
+                            {canReverify ? (
+                              <button
+                                type="button"
+                                onClick={() => void reverifyAnchor(a.network)}
+                                disabled={reverifying !== null}
+                                aria-label={`אמת את עוגן ה-${a.network} מול הרשת הציבורית`}
+                                className="rounded-md border border-zinc-700 px-1.5 py-0.5 text-[10px] text-zinc-400 hover:border-amber-400/60 hover:text-amber-300 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-amber-400"
+                              >
+                                {reverifying === a.network ? "בודק…" : "אמת מול הרשת"}
+                              </button>
+                            ) : null}
+                          </span>
                         );
                       })}
                     </div>
