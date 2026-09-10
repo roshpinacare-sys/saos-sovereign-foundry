@@ -1642,3 +1642,27 @@ Stage Summary:
 - צינור-העיגון הפך אידמפוטנטי מקצה-לקצה: כוונה-מקדימה + requestId דטרמיניסטי + משמעת-עמימות מבנית מה-RPC ועד לשורת-ה-DB — מעמד-הכסף (שידור-כפול אחרי-תשובה-אבודה) נחסם מבנית גם-בצד-הקורא, לא רק בחותם.
 - הקובץ שהועלה: פגום-תו-אחד; המשוחזר תקין-פורמט אך אינו שולט בשום סמכות — העיגון בוצע עם מפתחות-הכספת המאומתים הקיימים; ההחלפה למפתח-הקובץ מחייבת account_update על-השרשרת (owner/active) שלא בוצע.
 - מצב-כספים לא שונה (קריאה-בלבד): TRX משפחה 3.64 · ארנק-2020 18.10 · ETH 0 · SOL 0.0239 · BLURT 42.15 נזיל (עמלות-עיגון שולמו משם).
+
+---
+Task ID: 57
+Agent: Z.ai Code (PM-מלא, סבב roast חמישי-בעקבות-הנחיה "וודא שאתה בקומיט האחרון תמשיך")
+Task: roast סבב 57 — השכבות שטרם נחשפו: כלכלה/אוצר/גשר-סוכנים/ביקורת/אימות-שרשרת. כולל וידוא עמידה בקומיט האחרון (HEAD==origin/main==68e39d9 אומת מול GitHub עם askpass).
+
+Work Log:
+- בדיקת-בריאות: fetch+השוואה מול origin אמיתי → MATCH 68e39d9 (roast 56). status/live-gate/live-proof: mode=live, readyForLive=true, blockers=[], receipts=125.
+- סקר-רוחב: treasury (501 שורות), economy.ts+route, agent-bridge, audit, decisions, owner-keys, keys-map (שניים-האחרונים — הנחיות-בעלים מתועדות, לא נגעתי).
+- GAP-1 (כסף, לכידה חיה): economy.ts `settlements=(budget*10)/64_895` תמחר יישוב-USDT ב-6,489.5 TRX — ×238 מהקבוע המתועד 27.25 (LIVE: verdict טען "83 יישובי USDT/יום" כשהאמת 19,825). תוקן: קבוע משותף יחיד TRX_PER_USDT_TRANSFER ב-economy.ts, מיובא גם ל-treasury (קץ כפילות-הקבוע).
+- GAP-2 (אימות, לכידה חיה): agent-bridge GET היה הצד הפתוח של שער-אסימטרי — POST דרש x-agent-token אך הפיד (שמות-סוכנים, תכנים, תוצאות-פעולות) החזיר 200 ok:true לכל-מי-שלא-מאומת; PATCH עיבד כתיבה לא-מאומתת (הגיע ל-DB: "message not found" במקום 401). תוקן: rate-limit→requireAuth→audit-denied על GET+PATCH; POST נשאר נתיב-הטוקן. הוכחה חיה: 401 ללא-אימות, 200 מאומת. agents-tab markAck עבר ל-saosFetch (חוזה-השגיאות המתועד, טוסט-כן).
+- GAP-3 (לכידה חיה): audit take=6abc → NaN ל-Prisma → שגיאה גולמית (עם נתיבי-מקור!) בתשובה. תוקן: Number.isFinite+trunc+clamp; take=1.5→trunc, take=-999→clamp. הוכחה: take=6abc → 50 אירועים ok:true.
+- GAP-4 (לכידה חיה): economy קיבל pool=-50000&profit=-5&door=-999 → ok:true עם כלכלה שלילית שנשמרה ל-EconomySnapshot ונשרשרה כקבלת-עדות — זבל לפנקס-הכסף. תוקן: חוקי-תחום (אחוזים 0..100, יתר 0..1e12), דחייה מפורשת עם שמות-הפרמטרים וללא-שמירה. הוכחה: 400 עם פירוט; 1e300 נדחה.
+- GAP-5 (לכידה חיה): treasury stampede — 8 בקשות מקבילות ב-cache-miss → 8 generatedAt שונים על פני 5.5 שניות = 8 בניות מלאות מקבילות (~18 קריאות-RPC ציבוריות כל-אחת), שתיים חזרו degraded:true — ה-stampede השחית את-תשובותיו-שלו. תוקן: single-flight (buildOnce+inflight). הוכחה: 8 מקבילות → בנייה אחת, אפס degraded.
+- GAP-6 (חיזוק): grapheneRow — יתרה בלתי-ניתנת-לפירוש הייתה הופכת NaN ומרעילה את grapheneLiquid בשקט. תוקן: שורת-שגיאה כנה balance-parse-failed.
+- GAP-7 (נתגלה ב-dev.log): verify-chain סקופ leaf חסר-שמירת height (סקופ seal כן שמר) — height=undefined&index=0 הזריק NaN ל-Prisma ודלף פנימיות-שגיאה. תוקן: אותו חוק-regex כמו seal. הוכחה: הודעה כנה; נתיב תקין all-verified לא-נפגע.
+- אימותים: tsc נקי · lint נקי · api-check 119/0 · verify-chain: ok=true, 2 חותמות, 21/21 עלים, receiptChain 138/138 checked, אפס digest/link/forks · concurrency-check: SKIP (auth owner-held — כמתוכנן) · דפדפן: טאב-סוכנים ללא-אימות → "נדרשת התחברות: auth-required" (לא קריסה), מאומת → מצב-ריק כן; footer דביק atBottom=true; אפס גלילה-אופקית ב-1280 וב-390; 0 שגיאות-קונסולה.
+- הערת-כלים: Edit/MultiEdit חלקית-החילו עריכות ו-rg/sed הציגו קריאות-מטמון מושחתות (פנטום "essages") — כל-העריכות בוצעו/אומתו סופית דרך python+od+tsc כ-ground-truth; הקבצים הסופיים מאומתים בתוכן-מלא.
+
+Stage Summary:
+- שרשרת roast: 48→49→50→51→52→53→54(חותם)→55(UI)→56(צינור-עיגון)→57(כלכלה/אוצר/גשר/ביקורת/אימות) — 7 פערי-אמת, כולם נלכדו חי ותוקנו עם הוכחה חיה אחרי-תיקון.
+- מעמד-הכסף: verdict-הכלכלה מדבר אמת (×239 תיקון), קבוע-היישוב בודד ומשותף, זבל-קלט נדחה לפני-הפנקס, stampede לא עוד משחית תשובות.
+- מעמד-האימות: הגשר-לסוכנים סימטרי (קריאה/כתיבה/פרסום מאובטחים), אין דליפות שגיאה-פנימית ב-audit/verify-chain.
+- מצב-כספים לא שונה (קריאה-בלבד): TRX משפחה 3.64 · ארנק-2020 18.10 · ETH 0 · SOL 0.0239 · BLURT ~42.15 נזיל.

@@ -23,7 +23,12 @@ export async function GET(req: Request) {
       return NextResponse.json({ ok: false, error: auth.error ?? "auth-required" }, { status: auth.status });
     }
 
-    const take = Math.min(100, Math.max(1, Number(new URL(req.url).searchParams.get("take") ?? 50)));
+    // roast 57: a non-numeric take ("6abc") used to hand Prisma a NaN and blow
+    // the whole read with a RAW internal error leaked into the response
+    // (LIVE-CAUGHT, paths included); a fractional take ("1.5") also risked the
+    // same. Parse defensively: non-finite → default 50, then truncate+clamp.
+    const rawTake = Number(new URL(req.url).searchParams.get("take") ?? 50);
+    const take = Math.min(100, Math.max(1, Number.isFinite(rawTake) ? Math.trunc(rawTake) : 50));
     const [events, byKind, denied] = await Promise.all([
       db.auditEvent.findMany({ orderBy: { createdAt: "desc" }, take }),
       db.auditEvent.groupBy({ by: ["kind"], _count: { _all: true } }),

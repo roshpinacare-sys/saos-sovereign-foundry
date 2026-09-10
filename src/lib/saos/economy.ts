@@ -5,6 +5,15 @@
  * plus the flywheel: profit → RC/energy funding → more anchoring work.
  */
 
+/**
+ * THE single money constant — one USDT settlement on TRON costs ≈ 64,895
+ * energy × 420 sun/energy ≈ 27.25 TRX (roast 57: previously DUPLICATED here and
+ * in the treasury route, and the economy formula inverted the units —
+ * `budget*10/64_895` priced a settlement at 6,489.5 TRX, understating the
+ * flywheel's settlements ~239×. One constant, imported by both files.
+ */
+export const TRX_PER_USDT_TRANSFER = 27.25;
+
 export interface EconomyInput {
   poolVolumePerDay: number; // SAOS-equivalent daily volume through grid pools
   poolFeePct: number; // e.g. 0.3
@@ -84,7 +93,11 @@ export function simulateEconomy(input: EconomyInput): EconomyResult {
 
   // flywheel: reinvestment buys TRX energy + Hive RC — more anchoring capacity
   const energyTrxBudget = Math.floor(reinvestedPerDay * 0.6); // 60% to TRON energy
-  const settlements = Math.floor((energyTrxBudget * 10) / 64_895);
+  // roast 57: settlements = budget ÷ TRX-per-settlement (the OLD formula
+  // `budget*10/64_895` implied 6,489.5 TRX per USDT settlement — 238× the real
+  // 27.25 TRX burn documented in the treasury route — LIVE-CAUGHT: defaults
+  // showed "83 יישובי USDT/יום" while honest math gives ~19,825).
+  const settlements = Math.floor(energyTrxBudget / TRX_PER_USDT_TRANSFER);
 
   const verdict =
     totalPerDay > 0

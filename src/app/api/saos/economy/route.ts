@@ -4,15 +4,34 @@ import { simulateEconomy, DEFAULT_ECONOMY, type EconomyInput } from "@/lib/saos/
 import { appendReceipt } from "@/lib/saos/receipt-store";
 import { db } from "@/lib/db";
 
-export const dynamic = "force-dynamic";
-
 /**
  * GET /api/saos/economy — flywheel simulation + persistence.
  * Every call:
  *   1. computes the 4-stream economy simulation (pure math)
  *   2. persists an EconomySnapshot row (the previously write-less entity)
  *   3. chains an evidence receipt (money as micro-units — integers only)
+ *
+ * roast 57 input discipline (LIVE-CAUGHT: pool=-50000&profit=-5&door=-999 →
+ * ok:true with NEGATIVE economics persisted into EconomySnapshot AND chained
+ * as an evidence receipt — garbage into the money ledger). Now: every input is
+ * bounded — percentages 0..100, volumes/rates/amounts 0..1e12 — and a violation
+ * is REFUSED with the offending parameter names (errors are data; nothing is
+ * simulated and nothing is persisted when the input is nonsense).
  */
+const MAX_MAGNITUDE = 1e12;
+const PCT_BOUNDS: Array<keyof EconomyInput> = ["poolFeePct", "flywheelPct"];
+
+function validateEconomyInput(input: EconomyInput): string[] {
+  const bad: string[] = [];
+  for (const k of Object.keys(input) as Array<keyof EconomyInput>) {
+    const v = input[k];
+    if (!Number.isFinite(v)) bad.push(`${k}: not-finite`);
+    else if (v < 0) bad.push(`${k}: negative (${v})`);
+    else if (PCT_BOUNDS.includes(k) ? v > 100 : v > MAX_MAGNITUDE) bad.push(`${k}: out-of-range (${v})`);
+  }
+  return bad;
+}
+
 export async function GET(req: Request) {
   const rl = enforceRateLimit("economy", req);
   if (!rl.allowed) {
@@ -35,6 +54,14 @@ export async function GET(req: Request) {
       doorFee: num(q.get("doorFee"), DEFAULT_ECONOMY.doorFee),
       flywheelPct: num(q.get("fly"), DEFAULT_ECONOMY.flywheelPct)
     };
+
+    const invalid = validateEconomyInput(input);
+    if (invalid.length) {
+      return NextResponse.json(
+        { ok: false, error: `invalid-economy-input (nothing simulated, nothing persisted): ${invalid.join(" · ")}` },
+        { status: 400 }
+      );
+    }
 
     const result = simulateEconomy(input);
 

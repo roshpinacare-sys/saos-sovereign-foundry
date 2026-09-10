@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { readFileSync } from "fs";
 import path from "path";
 
-import { audit } from "@/lib/saos/auth";
+import { audit, requireAuth } from "@/lib/saos/auth";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
 import { db } from "@/lib/db";
 
@@ -27,6 +27,14 @@ export const dynamic = "force-dynamic";
  *     (agents are instructed to push keys ONLY through the encrypted-backup
  *     path — the bridge is for coordination, never for key transit);
  *   - rate-limited hard (10/min) + audited.
+ *
+ * roast 57 gate symmetry (LIVE-CAUGHT): POST demanded the x-agent-token, but
+ * GET (the feed itself — agent names, message content, action results) answered
+ * 200 ok:true to ANY unauthenticated caller, and PATCH processed unauthenticated
+ * status writes (reaching the DB and answering "message not found" instead of
+ * "unauthorized"). The token discipline above clearly intends a gated resource.
+ * Now GET/PATCH carry the same gate as every sensitive read (rate-limit →
+ * requireAuth → audit-denied); the agent POST keeps its token path.
  */
 
 const SIGNER_URL = process.env.SAOS_SIGNER_URL ?? "http://127.0.0.1:3033";
@@ -87,7 +95,16 @@ async function executeAction(action: string): Promise<{ ok: boolean; result: unk
 }
 
 // ── GET: the owner's live feed (latest messages + counters) ──────────────────
-export async function GET() {
+export async function GET(req: Request) {
+  const rl = enforceRateLimit("agent-bridge", req);
+  if (!rl.allowed) {
+    return NextResponse.json({ ok: false, error: "rate-limited", retryAfterSec: rl.retryAfterSec }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } });
+  }
+  const auth = await requireAuth(req);
+  if (!auth.ok) {
+    await audit({ kind: "sensitive-denied", actor: auth.actorRef, action: "GET /agent-bridge", allowed: false, req, detail: auth.error });
+    return NextResponse.json({ ok: false, error: auth.error ?? "auth-required" }, { status: auth.status });
+  }
   try {
     const [messages, total, fresh] = await Promise.all([
       db.agentMessage.findMany({ orderBy: { createdAt: "desc" }, take: 100 }),
@@ -100,8 +117,17 @@ export async function GET() {
   }
 }
 
-// ── PATCH: owner marks a message read (ack) ──────────────────────────────────
+// ── PATCH: owner marks a message read (ack) — AUTH REQUIRED (roast 57) ───────
 export async function PATCH(req: Request) {
+  const rl = enforceRateLimit("agent-bridge", req);
+  if (!rl.allowed) {
+    return NextResponse.json({ ok: false, error: "rate-limited", retryAfterSec: rl.retryAfterSec }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } });
+  }
+  const auth = await requireAuth(req);
+  if (!auth.ok) {
+    await audit({ kind: "sensitive-denied", actor: auth.actorRef, action: "PATCH /agent-bridge", allowed: false, req, detail: auth.error });
+    return NextResponse.json({ ok: false, error: auth.error ?? "auth-required" }, { status: auth.status });
+  }
   let body: { id?: string; status?: string } = {};
   try {
     body = await req.json();

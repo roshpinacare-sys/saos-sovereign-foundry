@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
+import { TRX_PER_USDT_TRANSFER } from "@/lib/saos/economy";
 import { ethereumReadRpcCandidates } from "@/lib/saos/networks/ethereum";
 import type { TreasuryOutflowRow } from "@/components/saos/types";
 
@@ -116,8 +117,8 @@ const USDT_ERC20 = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
 // "ETH unreachable" intermittent (Task 49 caught it 403ing alone)
 const USDT_SPL = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"; // native USDT mint on Solana
 const USDC_SPL = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // native USDC mint on Solana
-/** USDT TRC20 transfer ≈ 64,895 energy; burn price 420 sun/energy → ≈ 27.25 TRX per settlement */
-const TRX_PER_USDT_TRANSFER = 27.25;
+// roast 57: TRX_PER_USDT_TRANSFER now lives in ONE place (lib/saos/economy.ts)
+// — the economy simulation previously priced the SAME settlement 238× cheaper.
 
 interface BalanceRow {
   label: string;
@@ -315,12 +316,18 @@ async function grapheneRow(label: string, chain: "BLURT" | "STEEM" | "HIVE", url
       const r = (await rpc(url, "condenser_api.get_accounts", [[GRAPHENE_ACCOUNT]])) as Array<Record<string, string>>;
       const a = r?.[0];
       if (!a) return { label, chain, status: "error", error: "account-not-found" };
+      // roast 57: an unparseable balance is an honest ERROR row, never NaN —
+      // NaN used to poison the grapheneLiquid total (NaN + x = NaN) silently.
+      const liquidNum = Number(a.balance.split(" ")[0].replace(/,/g, ""));
+      if (!Number.isFinite(liquidNum)) {
+        return { label, chain, status: "error", error: `balance-parse-failed: ${String(a.balance).slice(0, 40)}` };
+      }
       return {
         label,
         chain,
         status: "ok",
         liquid: a.balance,
-        liquidNum: Number(a.balance.split(" ")[0].replace(/,/g, "")),
+        liquidNum,
         debt: a.sbd_balance ?? a.hbd_balance,
         vested: a.vesting_shares,
         created: a.created
@@ -450,6 +457,27 @@ async function buildTreasury() {
   };
 }
 
+// roast 57 single-flight (LIVE-CAUGHT: 8 concurrent cache-miss requests → 8
+// DIFFERENT generatedAt across 5.5s = 8 parallel full builds hammering ~18
+// public RPC endpoint calls; two answers came back degraded:true — the
+// stampede degraded ITS OWN ANSWERS). One shared build promise: every
+// cache-miss caller awaits the SAME build, the cache is written exactly once.
+let inflight: Promise<Awaited<ReturnType<typeof buildTreasury>>> | null = null;
+
+function buildOnce(): Promise<Awaited<ReturnType<typeof buildTreasury>>> {
+  if (!inflight) {
+    inflight = buildTreasury()
+      .then((body) => {
+        cache = { at: Date.now(), body };
+        return body;
+      })
+      .finally(() => {
+        inflight = null;
+      });
+  }
+  return inflight;
+}
+
 export async function GET(req: Request) {
   const rl = enforceRateLimit("treasury", req);
   if (!rl.allowed) {
@@ -462,8 +490,7 @@ export async function GET(req: Request) {
     return NextResponse.json(cache.body);
   }
   try {
-    const body = await buildTreasury();
-    cache = { at: Date.now(), body };
+    const body = await buildOnce();
     return NextResponse.json(body);
   } catch (e) {
     // never 500: a total failure is still honest data

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { Badge, Btn, ErrorState, LoadingPanel, Mono, Panel, fmtDateTime } from "@/components/ui/kit";
-import { EP, errText, saosFetch, useSaos } from "./api";
+import { EP, errText, saosFetch, useSaos, type SaosError } from "./api";
 import type { AgentBridgeResponse } from "./types";
 
 /**
@@ -23,16 +23,14 @@ export function AgentsTab() {
   async function markAck(id: string) {
     setMarkingBusy(id);
     try {
-      const res = await fetch(EP.agentBridge, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status: "ack" }) });
-      const body = (await res.json()) as { ok?: boolean; error?: string };
-      if (body.ok) {
-        toast.success("סומן כנקרא");
-        void bridgeQ.refresh();
-      } else {
-        toast.error(body.error ?? "הסימון נכשל");
-      }
-    } catch {
-      toast.error("שגיאת רשת");
+      // roast 57: route through saosFetch — the documented error contract
+      // (401→auth toast, 429→rate toast) instead of raw-fetch ad-hoc handling;
+      // the PATCH endpoint is now owner-gated so the 401 path is REAL.
+      await saosFetch(EP.agentBridge, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status: "ack" }) });
+      toast.success("סומן כנקרא");
+      void bridgeQ.refresh();
+    } catch (e) {
+      toast.error(errText(e as SaosError));
     } finally {
       setMarkingBusy(null);
     }

@@ -235,6 +235,12 @@ export async function GET(req: Request) {
       if (indexParam === null || !/^\d+$/.test(indexParam)) {
         return NextResponse.json({ ok: false, scope, error: "missing/invalid index — expected non-negative integer" }, { status: 200 });
       }
+      // roast 57: the seal scope validates heightParam (regex) but the leaf
+      // scope did NOT — "height=undefined&index=0" handed Prisma a NaN and the
+      // raw internal error text leaked into the response (LIVE-CAUGHT in dev.log).
+      if (heightParam !== null && (!/^\d+$/.test(heightParam) || Number(heightParam) > 2 ** 31 - 1)) {
+        return NextResponse.json({ ok: false, scope, error: "invalid height format — expected positive integer" }, { status: 200 });
+      }
       const idx = Number(indexParam);
       const seal = await db.sealRecord.findFirst({
         where: rootParam !== null ? { root: rootParam.toLowerCase() } : { height: Number(heightParam) },
