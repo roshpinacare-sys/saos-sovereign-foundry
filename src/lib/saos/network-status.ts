@@ -92,6 +92,21 @@ export function networkStatuses(rcPct: number, tronEnergy: number, keys?: Signer
   // the 9 fleet accounts' posting keys verify live, and the fleet-cure daemon
   // auto-executes the pending weave at the first RC window.
   const fc = fleetCureStatus();
+  // Roast 2026-09-10: fleet promises are only made from a FRESH daemon status —
+  // a stale file is evidence, not a schedule (the daemon had been dead ~4.7h
+  // while the UI kept promising "מתוזמן אוטומטית" from a frozen snapshot, and
+  // the daemon's own last note was "nothing to execute"). Durations are
+  // humanized so "~0.0 שע'" can never appear again.
+  const fleetScheduled = Boolean(fc.best && fc.isFresh);
+  const fleetEtaMin = fleetScheduled && fc.best ? fc.best.etaMin : null;
+  const fleetEtaLabel = fleetEtaMin === null
+    ? null
+    : fleetEtaMin < 90
+      ? `בעוד ~${Math.max(1, Math.round(fleetEtaMin))} דק'`
+      : `בעוד ~${(fleetEtaMin / 60).toFixed(1)} שע'`;
+  const fleetStaleNote = fc.best && !fc.isFresh
+    ? `סטטוס-הצי לא-עדכני — קובץ בן ${Math.round(fc.fileAgeMin ?? 0)} דק', הדמון :3034 לא כותב`
+    : null;
   const steemReady = netReady("STEEM");
   const hiveReady = netReady("HIVE");
   const blurtReady = netReady("BLURT");
@@ -189,7 +204,6 @@ export function networkStatuses(rcPct: number, tronEnergy: number, keys?: Signer
   const heavyH = hiveRcHoursToTarget(rcPct, HIVE_RC_FLOOR_HEAVY);
   // Task 26-c: the fleet-cure daemon schedules the first REAL HIVE anchor
   // automatically (fleet keys verified 9/9; op-cost 225M RC measured).
-  const fleetWindowH = fc.best ? fc.best.etaMin / 60 : null;
   const fleetLanded = Boolean(fc.lastTxid);
   // Task 34: MAIN-account readiness is LIVE-DERIVED — keys verified against the
   // chain AND measured RC above the light floor ⇒ the main path genuinely
@@ -204,9 +218,9 @@ export function networkStatuses(rcPct: number, tronEnergy: number, keys?: Signer
   const rcAboveLight = rcPct >= HIVE_RC_FLOOR_LIGHT;
   const hiveBlocker = fleetLanded || mainReady
     ? null
-    : fc.best
-      ? `rc-floor לחשבון-הראשי: נוכחי ${rcPct}% מתחת לסף-הקל ${HIVE_RC_FLOOR_LIGHT}% — אך זה כבר לא חוסם: חלון-עוגן-צי ראשון בעוד ~${fleetWindowH?.toFixed(1)} שע' (${fc.best.account}) מתוזמן אוטומטית; ${keysNote}`
-      : `rc-floor: נוכחי ${rcPct}% מתחת לסף-הקל ${HIVE_RC_FLOOR_LIGHT}% / סף-הכבד ${HIVE_RC_FLOOR_HEAVY}% — ואין חלון צי פעיל; ${keysNote}`;
+    : fleetScheduled
+      ? `rc-floor לחשבון-הראשי: נוכחי ${rcPct}% מתחת לסף-הקל ${HIVE_RC_FLOOR_LIGHT}% — חסום לעיגון-ראשי עכשיו; עוגן-צי אוטומטי ${fleetEtaLabel ?? ""} (${fc.best?.account} · סטטוס טרי); ${keysNote}`
+      : `rc-floor: נוכחי ${rcPct}% מתחת לסף-הקל ${HIVE_RC_FLOOR_LIGHT}% / סף-הכבד ${HIVE_RC_FLOOR_HEAVY}% — אין עוגן-צי מתוזמן${fleetStaleNote ? ` (${fleetStaleNote})` : " (הדמון לא רץ)"}; ${keysNote}`;
   const hive: NetworkStatusView = {
     network: "HIVE",
     status: mainReady ? "anchored" : fleetLanded || rcAboveLight ? "pending" : "gated",
@@ -221,10 +235,10 @@ export function networkStatuses(rcPct: number, tronEnergy: number, keys?: Signer
     nextAction: fleetLanded
       ? `עוגן-צי בוצע (txid ${String(fc.lastTxid).slice(0, 12)}…) — המשך קצב עם backoff לפי חלונות RC`
       : mainReady
-        ? `הראשי (headcorner) מוכן לעגן עכשיו — RC מדוד ${rcPct}% מעל סף-הקל ${HIVE_RC_FLOOR_LIGHT}% ומפתחות מאומתים חי; ה-weave מוכן לשידור דרך החותם${fc.best ? `; עוגן-צי אוטומטי נמשך בחלון הראשון (~${Math.round(fc.best.etaMin)} דק', ${fc.best.account})` : ""}`
-        : fc.best
-          ? `fleet-cure מבצע אוטומטית את ה-weave הממתין בחלון הראשון (~${Math.round(fc.best.etaMin)} דק', ${fc.best.account}) — ריצה אוטומטית, ללא פעולת בעלים${hiveReady ? "; נתיב-ראשי (headcorner) פתוח ומאומת לעיגון מיידי ברגע שה-RC מגיע לסף" : ""}`
-          : "המתנה לרגן או power-up; אין פעולה חיה עד לסף",
+        ? `הראשי (headcorner) מוכן לעגן עכשיו — RC מדוד ${rcPct}% מעל סף-הקל ${HIVE_RC_FLOOR_LIGHT}% ומפתחות מאומתים חי; ה-weave מוכן לשידור דרך החותם${fleetScheduled ? `; עוגן-צי אוטומטי נמשך בחלון הראשון (${fleetEtaLabel}, ${fc.best?.account})` : ""}`
+        : fleetScheduled
+          ? `fleet-cure מבצע אוטומטית את ה-weave הממתין בחלון הראשון (${fleetEtaLabel}, ${fc.best?.account}) — ריצה אוטומטית, ללא פעולת בעלים${hiveReady ? "; נתיב-ראשי (headcorner) פתוח ומאומת לעיגון מיידי ברגע שה-RC מגיע לסף" : ""}`
+          : `אין עוגן-צי פעיל${fleetStaleNote ? ` — ${fleetStaleNote}` : ""}; המתנה לרגן או power-up; אין פעולה חיה עד לסף`,
     blocker: hiveBlocker,
     requiredResource: fleetLanded
       ? null
@@ -238,7 +252,7 @@ export function networkStatuses(rcPct: number, tronEnergy: number, keys?: Signer
           "3. מעקב rc-floor ב-/api/saos/energy?net=hive"
         ]
       : [
-          `1. אוטומטי: fleet-cure משדר את ה-weave בחלון הצי הראשון (~${fleetWindowH !== null ? fleetWindowH.toFixed(1) : "?"} שע')`,
+          `1. אוטומטי: fleet-cure משדר את ה-weave בחלון הצי הראשון${fleetScheduled ? ` (${fleetEtaLabel})` : " (דורש דמון-צי חי — כרגע לא רץ)"}`,
           "2. אוטומטי: רישום txid חזרה ל-SignRequest + עדכון סטטוס",
           hiveReady
             ? "3. owner (אופציונלי): power-up 9.682 HIVE — המפתח-ראשי כבר מחובר ומאומת (נתיב ה-DEX, authority-gate מאמת)"
@@ -250,7 +264,9 @@ export function networkStatuses(rcPct: number, tronEnergy: number, keys?: Signer
     ownerOptions: [
       mainReady
         ? `עגינה-ראשית עכשיו — RC מדוד ${rcPct}% ≥ סף-הקל ${HIVE_RC_FLOOR_LIGHT}% והמפתח מאומת חי (ה-weave נשלח דרך החותם, ללא עמלה)`
-        : `אוטומטי (ברירת-מחדל): עיגון-צי בחלון הראשון (~${fleetWindowH !== null ? fleetWindowH.toFixed(1) : "?"} שע')`,
+        : fleetScheduled
+          ? `אוטומטי (ברירת-מחדל): עיגון-צי בחלון הראשון (${fleetEtaLabel})`
+          : "אוטומטי: עיגון-צי — דורש דמון fleet-cure (:3034) חי; כרגע אין חלון פעיל",
       hiveReady
         ? "power-up 9.682 HIVE של הראשי — המפתח כבר מחובר ומאומת חי (האצה ×~1.6, מוכן לביצוע)"
         : "טעינת מפתח-בעלים למעטפת → power-up 9.682 HIVE של הראשי (האצה ×~1.6)",
@@ -261,7 +277,7 @@ export function networkStatuses(rcPct: number, tronEnergy: number, keys?: Signer
       : hiveReady
         ? "אין פעולה נדרשת — התור האוטומטי מבצע; נתיב-הראשי מאומת ופתוח (power-up אופציונלי להאצה)"
         : "אין פעולה נדרשת — התור האוטומטי מבצע; טעינת מפתח-הבעלים (fleet_vault --seal) מהירה את הקצב דרך power-up",
-    estimatedTime: fleetLanded ? "מיידי (עוגן בוצע)" : `חלון-צי ~${fleetWindowH !== null ? fleetWindowH.toFixed(1) : "?"} שע' · סף-קל 8% ~${lightH.toFixed(1)} שע' · סף-כבד 12% ~${heavyH.toFixed(1)} שע'`,
+    estimatedTime: fleetLanded ? "מיידי (עוגן בוצע)" : `${fleetScheduled ? `חלון-צי ${fleetEtaLabel}` : "אין חלון-צי פעיל"} · סף-קל 8% ~${lightH.toFixed(1)} שע' · סף-כבד 12% ~${heavyH.toFixed(1)} שע'`,
     estimatedCost: null,
     resourceLiveChecked: true
   };
@@ -282,7 +298,9 @@ export function networkStatuses(rcPct: number, tronEnergy: number, keys?: Signer
       tronEnergy > 0
         ? "מסלול ישיר פתוח: TriggerSmartContract עם stateRoot בנתוני הקריאה"
         : "הישארות ברכבת tronbridge היומית (root בתוך stateRoot) עד מימון ההימור",
-    blocker: tronEnergy > 0 ? keysPendingBlocker : "transit לפי החלטת בעלים (decided-custom 2026-09-09): המשך רכבת tronbridge היומית — energy=0 מדידה חיה 2026-09-08T22:05Z, יתרה מרבית 17.6 TRX מתחת לסף-שריפה",
+    blocker: tronEnergy > 0
+      ? keysPendingBlocker
+      : "transit לפי החלטת בעלים (decided-custom 2026-09-09): המשך רכבת tronbridge היומית · energy=0 (מדידת-שדה 08.09) · יתרות-המעבר נמדדות חי מול סף-השריפה ב'קופה חיה' — המספרים החיים שם, לא כאן (roast 10.09: מספר-מעבר מקודד ידנית התיישן תוך שעות)",
     requiredResource: `TRX stake ≥ ${minStake.toLocaleString()} TRX ל-4 יישובי USDT/יום (או שריפה ~27.26 TRX/tx)`,
     unblockPlan: [
       `1. מימון הימור: ≥ ${minStake.toLocaleString()} TRX`,

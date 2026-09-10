@@ -681,6 +681,8 @@ export interface TreasuryResponse {
     totalSol: number | null;
     totalSolUsdt: number | null;
     grapheneLiquid: number | null;
+    /** roast 2026-09-10: row-level probe honesty — failed rows used to silently shrink totals */
+    probes?: { ok: number; failed: number; failedList?: string[] };
     gapToUsdtSettlement: number | null;
   };
   constants: { trxPerUsdtTransfer: number };

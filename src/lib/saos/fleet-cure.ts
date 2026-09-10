@@ -30,13 +30,20 @@ export interface FleetCureStatus {
   best: { account: string; etaMin: number; mana: number } | null;
   accounts: FleetCureAccount[];
   fileAgeMin: number | null;
+  /** true only when the status file was written by a live daemon recently (≤ FRESH_MAX_MIN) — stale files are EVIDENCE, not schedules */
+  isFresh: boolean;
 }
+
+/** Roast 2026-09-10: the daemon was dead ~4.7h while the UI kept promising
+ * "עוגן-צי מתוזמן" from a frozen file. A status file older than this is
+ * treated as NO scheduled window — honest gates only. */
+export const FLEET_STATUS_FRESH_MAX_MIN = 15;
 
 let cache: { at: number; value: FleetCureStatus } | null = null;
 
 export function fleetCureStatus(): FleetCureStatus {
   if (cache && Date.now() - cache.at < CACHE_TTL_MS) return cache.value;
-  const empty: FleetCureStatus = { updatedAt: null, lastTxid: null, recordedAt: null, note: null, best: null, accounts: [], fileAgeMin: null };
+  const empty: FleetCureStatus = { updatedAt: null, lastTxid: null, recordedAt: null, note: null, best: null, accounts: [], fileAgeMin: null, isFresh: false };
   try {
     if (!existsSync(STATUS_PATH)) {
       cache = { at: Date.now(), value: empty };
@@ -61,7 +68,8 @@ export function fleetCureStatus(): FleetCureStatus {
       note: j.note ?? null,
       best: waiting ? { account: waiting.account, etaMin: waiting.etaToWindowMin as number, mana: waiting.mana } : null,
       accounts,
-      fileAgeMin: ageMin
+      fileAgeMin: ageMin,
+      isFresh: ageMin <= FLEET_STATUS_FRESH_MAX_MIN
     };
     cache = { at: Date.now(), value };
     return value;

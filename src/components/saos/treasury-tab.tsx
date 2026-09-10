@@ -50,9 +50,16 @@ function TreasuryBody({ data, onRefresh, refreshing }: { data: TreasuryResponse;
   return (
     <div className="space-y-4">
       {data.degraded && (
-        <div role="alert" className="flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-xs text-amber-300">
-          <TriangleAlert className="size-4 shrink-0" aria-hidden />
-          מצב מופחת — חלק מהמקורות לא השיבו בזמן. הנתונים שכן הושגו מוצגים כנה.
+        <div role="alert" className="rounded-xl border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-xs text-amber-300">
+          <div className="flex items-center gap-2">
+            <TriangleAlert className="size-4 shrink-0" aria-hidden />
+            <span>מצב מופחת — הסכומים למטה <strong>חלקיים</strong>: שורות שלא השיבו נשמטות מהסכום (roast 10.09: פעם זה היה מושתק). רעננו עד שכל המקורות עונים.</span>
+          </div>
+          {s.probes && s.probes.failed > 0 && (
+            <div className="mt-1 text-[11px] text-amber-200/90">
+              לא השיבו ({s.probes.failed}/{s.probes.ok + s.probes.failed}): {s.probes.failedList?.join(" · ") ?? "—"}
+            </div>
+          )}
         </div>
       )}
 

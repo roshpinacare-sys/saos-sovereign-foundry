@@ -333,12 +333,12 @@ async function buildTreasury() {
       note: "רוקן את idx0+idx1+idx2 בדקה אחת (2026-09-08 13:23) והעביר הלאה — כתובת לא נגזרת מהצירוף שלנו"
     });
     await sleep(350);
-    const t17 = await tronRow("יעד 17.10 TRX (ארנק 2020)", FLOW_OUT_TARGETS.tron17);
+    const t17 = await tronRow("יעד 18.10 TRX (ארנק 2020)", FLOW_OUT_TARGETS.tron17);
     outflows.push({
       label: t17.label, address: FLOW_OUT_TARGETS.tron17, chain: "TRON", status: t17.status,
       error: t17.error, native: t17.native, nativeSymbol: "TRX",
       receivedFromUs: 17.099234,
-      note: "קיבל 17.099234 TRX ב-2026-09-09 09:23 — ארנק מ-2020-09-15 שהיה רדום מ-2023; הסכום יושב שם מאז. דורש אימות בעלים שזה ארנק שלו"
+      note: "קיבל 17.099234 TRX ב-2026-09-09 09:23 ואז +1.0 TRX ב-2026-09-10 02:30 מאותו-מקור (41432f3c…) — 18.099245 יושבים שם (roast 10.09: הטענה '17.09 יושב מאז' התיישנה). ארנק מ-2020-09-15 רדום מ-2023; דורש אימות בעלים שזה ארנק שלו"
     });
     await sleep(350);
     const solOut = await solRow("יעד SOL (ניקוז סולנה)", FLOW_OUT_TARGETS.sol);
@@ -366,6 +366,11 @@ async function buildTreasury() {
   const totalSol = solana.reduce((s, r) => s + (r.status === "ok" ? (r.native ?? 0) : 0), 0);
   const totalSolUsdt = solana.reduce((s, r) => s + (r.status === "ok" ? (r.usdt ?? 0) : 0), 0);
   const grapheneLiquid = graphene.reduce((s, g) => s + (g.status === "ok" ? (g.liquidNum ?? 0) : 0), 0);
+  // Roast 2026-09-10: a provider 429 used to SILENTLY shrink the totals (family
+  // showed 1.200548 while live truth was 3.639141 — failed rows just fell out
+  // of the reduce). Now every row-failure surfaces: degraded + probes counts.
+  const failedRows = [...tronRows, ...evm, ...solana, ...graphene].filter((r) => r.status !== "ok");
+  const probeTotal = tronRows.length + evm.length + solana.length + graphene.length;
   // residual fees: balanced ledger residual (external in − swept out − live family) — honest, labeled as residual
   const burnedFees = FLOW_EXTERNAL_IN_TRX - FLOW_SWEPT_OUT_TRX - totalTrxFamily;
 
@@ -374,6 +379,7 @@ async function buildTreasury() {
     generatedAt: new Date().toISOString(),
     cache: "60s",
     account: GRAPHENE_ACCOUNT,
+    degraded: failedRows.length > 0,
     summary: {
       totalTrx,
       totalTrxFamily,
@@ -383,6 +389,7 @@ async function buildTreasury() {
       totalSol,
       totalSolUsdt,
       grapheneLiquid,
+      probes: { ok: probeTotal - failedRows.length, failed: failedRows.length, failedList: failedRows.map((r) => r.label) },
       /** הפער לישוב USDT אחד על TRON (שריפת אנרגיה) — המספר שחוסם את ה-TRC20 */
       gapToUsdtSettlement: Math.max(0, TRX_PER_USDT_TRANSFER - totalTrx)
     },
@@ -395,7 +402,7 @@ async function buildTreasury() {
         "2026-09-05 19:39 — ארנק idx0 הופעל עם 29.943347 TRX ממקור חיצוני",
         "2026-09-05..07 — הכסף נע בתוך משפחת הארנקים (idx0↔idx1↔idx2↔idx3↔idx5) — 7 כתובות חדשות נפתחו ונשרפו ~1.1 TRX עמלת-הפעלה לכל אחת",
         "2026-09-08 13:23 — ריקון מתואם: idx0+idx1+idx2 שלחו 18.704323 TRX בדקה אחת לכתובת חיצונית (צומת-היציאה)",
-        "2026-09-09 09:23 — הצומת העביר 17.099234 TRX לארנק מ-2020 — הסכום יושב שם עד היום (" + FLOW_OUT_TARGETS.tron17.slice(0, 10) + "…)",
+        "2026-09-09 09:23 — הצומת העביר 17.099234 TRX לארנק מ-2020; 2026-09-10 02:30 — עוד 1.0 TRX מאותו-מקור — 18.099245 יושב שם עד היום (" + FLOW_OUT_TARGETS.tron17.slice(0, 10) + "…)",
         "2026-09-09 09:25 — גם סולנה נוקזה: 0.023976 SOL מהכספת הפורנזית לכתובת חיצונית — לא זזה מאז",
         "מה שנשאר אצלנו: " + totalTrxFamily.toFixed(4) + " TRX פרוסים על idx0..idx5 — כל שאר היתרות של ETH/SOL/USDT = 0"
       ],

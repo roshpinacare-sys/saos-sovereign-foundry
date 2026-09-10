@@ -104,7 +104,7 @@ const ETH_ADDRESSES: Array<[string, string]> = [
 const SOL_FORENSIC = "9knfnFMLmhUNjKRDbR1BmVnVkq4BRczyYjJ7BqiZSgiL";
 const OUTFLOWS: Array<[string, string]> = [
   ["ריכוז 18.70 TRX (08-09)", "TG6SrsMJjRqnqAyYM8kGZu1rgkpsgizKEn"],
-  ["ארנק 2020 — 17.09 TRX יושב", "TMXHfFQdG6BB8kwVfbMYuiXWqr9P5S4VAU"],
+  ["ארנק 2020 — 18.10 TRX יושב (17.099 + 1.0 מאותו-מקור 10.09)", "TMXHfFQdG6BB8kwVfbMYuiXWqr9P5S4VAU"],
   ["SOL יעד יציאה — 0.0239 SOL", "A2Y1d3vefh81Ta2DcpazmLaZT4EHdbUX8XjZxigNdVyj"],
   ["מממן חיצוני (מקור)", "TGUYnMLufLM19NoJcyWkaU32kVjQso2bpQ"]
 ];
