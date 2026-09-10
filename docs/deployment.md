@@ -56,13 +56,13 @@ dry-run (ברירת-מחדל)  ──restart(SAOS_MODE=safe)──────�
 
 - אין קיצור-דרך בראנטיים ל-live — כל מעבר דורש הפעלה-מחדש של התהליך.
 - `POST /api/saos/live-gate` (מחייב הרשאה) מדווח בדיוק מה חסר; הוא **לא** מדליק כלום.
-- גם ב-live: `broadcastCapable:false` עד חיבור כספת חתימה חיצונית.
+- **roast 63 עדכון:** ב-live עם חותם-חיצוני מחובר + `SAOS_BROADCAST_ENABLE=YES` — `broadcastCapable:true` (נמדד חי; המגבלה הקבועה: custom_json בלבד).
 
 ## 5. מה אסור לעשות בלי אישור מפורש
 
 1. העברה ל-live (דורש אישור בעלים + live-gate נקי).
-2. חיבור כספת/חותם אמיתי — רק מחוץ למערכת; המערכת מקבלת txid בלבד.
-3. עסקאות אמיתיות / שידורים / העברות נכסים — אין לקוד שום יכולת כזו, ואין להוסיף אותה בלב דיון מתועד.
+2. חיבור כספת/חותם אמיתי — רק מחוץ למערכת; המערכת מקבלת txid בלבד. (roast 63: המעטפת המוצפנת ב-~/.secrets/fleet-envelope נפתחת רק ע"י החותם-החיצוני — עדיין לא בתוך ה-Next)
+3. עסקאות-העברות-נכסים — **אסור מבנית בחותם** (custom_json בלבד); הוספת יכולת כזו דורשת דיון מתועד + אישור-בעלים.
 4. מחיקת נתונים — רק דרך `bun run cleanup --yes` עם גיבוי מאומת <24h (אחרת נדחה).
 
 ## 6. פרודקשן אמיתי (מעבר ל-dev)
@@ -99,3 +99,24 @@ live-gate דורש גיבוי מאומת בן פחות מ-7 ימים; cleanup ד
 - אין סודות ב-CI: `DATABASE_URL` הוא נתיב קובץ מקומי; מפתח-אדמין חד-פעמי מיוצר בזמן-ריצה ונעלם עם ה-runner.
 - אין פעולות חיות, אין שידורים, אין גישה לרשתות-בלוקצ'יין.
 - הריצה המרוחקת הראשונה תאומת את ה-workflow עצמו (לא ניתן לאמת מהסנדבוקס — מתועד כנה).
+
+---
+
+## 7. שכבת מיני-השירותים והמפקח (roast 63 — השכבה שלא תועדה עד היום)
+
+מאז Tasks 26-61 המערכת מורכבת מתהליך-Next **ומ-4 מיני-שירותים** — השכבה שרוסטים 61-62 הוכיחו שהיא סיכון-התפעול המרכזי:
+
+| שירות | פורט | תפקיד | טוקן |
+|---|---|---|---|
+| `mini-services/external-signer` | :3033 | **היחיד שמחזיק מפתחות** (מעטפת מוצפנת); חותם custom_json; פנקס-אידמפוטנטיות | Bearer `~/.secrets/external-signer-token` |
+| `mini-services/fleet-cure` | :3034 | מודד RC חי של הצי; מבצע weave ממתין בחלון; כותב `docs/evidence/fleet-cure-status.json` (gitignored) | Bearer + admin (per-use, roast 63) |
+| `mini-services/vault-guardian` | :3031 | גיבוי/שמירת-מעטפת; TOKEN-MISSING = השהיה כנה | GitHub token |
+| `mini-services/chief-of-staff` | :3032 | בריף-LLM תקופתי (`docs/briefings/latest.md`) | ללא (localhost) |
+
+**המפקח-הפנימי (הקנוני):** `src/instrumentation.ts` = קליפה נקיית-Edge; `src/instrumentation-node.ts` = המפקח בפועל (TCP-probes, race-hardened, spawn כילדי-תהליך-ה-Next); `src/lib/saos/supervisor-bridge.ts` = healNow() על נתיבים-חמים (throttle 30ש). **האמת על השירותים מוצגת רק מ-`GET /api/saos/status` ← `supervisor`** (roast 63 מציג אותה במסך). `mini-services/keepalive.sh` = כלי-אופס ידני בלבד — לא מנגנון.
+
+**דגלי-סביבה:**
+- `SAOS_NO_GUARDIAN=1` / `SAOS_NO_CHIEF=1` — ניטרול-שירות; **מקור-האמת = ה-.env בדיסק כרגע** (לא env-עת-עלייה — roast 62); `GUARDIAN_DEV_MODE=1` = מצב-פיתוח ל-guardian.
+- `SAOS_BROADCAST_ENABLE=YES` + `SAOS_LIVE_CONFIRM=YES` + `SAOS_MODE=live` — שלשת-השידור (חסר אחד → dry-run).
+- `SAOS_DEV_AUTOSESSION=1` — סשן-מנוהל לדפדפן-התצוגה (dev בלבד, NODE_ENV!==production).
+- `SAOS_EXTERNAL_SIGNER_URL` / `SAOS_SIGNER_URL` + טוקן-מקובץ — ללקוח-החותם.

@@ -21,12 +21,13 @@
  *   4. writes docs/evidence/fleet-cure-status.json (public data only:
  *      account names, mana per-mille, ETAs, txids) for the control screen.
  *
- * Safety: no keys here (signer holds them); tokens read from ~/.secrets at
- * boot into memory, never logged; every failure is logged and retried next
- * cycle; the signer itself refuses anything the chain/authority gates reject.
+ * Safety: no keys here (signer holds them); tokens re-read from ~/.secrets on
+ * every use (roast 63 — a rotation can never strand the service); never logged;
+ * every failure is logged and retried next cycle; the signer itself refuses
+ * anything the chain/authority gates reject.
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
+import { appendFileSync, readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import path from "path";
 
 const PORT = Number(process.env.FLEET_CURE_PORT ?? 3034);
@@ -38,8 +39,16 @@ const FOUNDRY = process.env.SAOS_FOUNDRY_URL ?? "http://127.0.0.1:3000";
 const FLEET = ["cashmachine", "haran", "israelnews", "lsa", "macrame", "siq", "wic", "wog", "woq"];
 const OP_COST_RC = 230_000_000; // 225M measured live + ~2% buffer
 const CYCLE_MS = 5 * 60_000;
-const HIVE_RPC = "https://api.hive.blog";
+// roast 63: a single hardcoded endpoint violated the rotation doctrine
+// (roast 51/52: signer nodesFor, live-probes) — one dead RPC = blind RC probes.
+// Rotated live-first, matching src/lib/saos/networks/live-probes.ts.
+const HIVE_RPCS = ["https://api.hive.blog", "https://api.deathwing.me", "https://any.openhive.network"];
+let rpcIdx = 0;
 const WEAVE_ID = "saos.weave.v1";
+// roast 63: persistent log — the canonical supervisor (instrumentation-node)
+// spawns with stdio:"ignore", so console-only evidence vanished. Same
+// convention as the other three services (guardian.log/chief.log/signer.log).
+const LOG_PATH = path.join(import.meta.dir, "fleet-cure.log");
 
 function readSecret(file: string): string {
   try {
@@ -48,23 +57,40 @@ function readSecret(file: string): string {
     return "";
   }
 }
-const SIGNER_TOKEN = readSecret("external-signer-token");
-const ADMIN_KEY = readSecret("saos-admin-key");
+// roast 63: secrets re-read per use — boot-time capture meant a token rotation
+// (which happened in tasks 36/41) left the service 401-ing until a manual
+// restart; roast-62 established disk-beats-boot-env as the config truth.
+const signerToken = () => readSecret("external-signer-token");
+const adminKey = () => readSecret("saos-admin-key");
 
 function log(level: string, msg: string) {
-  console.log(`${new Date().toISOString()} [${level}] ${msg}`);
+  const line = `${new Date().toISOString()} [${level}] ${msg}`;
+  try { console.log(line); } catch {}
+  try { appendFileSync(LOG_PATH, line + "\n"); } catch {}
 }
 
 async function rpc<T>(method: string, params: unknown): Promise<T> {
-  const res = await fetch(HIVE_RPC, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", method, params, id: 1 }),
-    signal: AbortSignal.timeout(15_000)
-  });
-  const j = (await res.json()) as { result?: T; error?: { message?: string } };
-  if (j.error) throw new Error(j.error.message ?? "rpc error");
-  return j.result as T;
+  // rotation with failover: try the live-first list in order from the current
+  // index; a dead endpoint no longer blinds the whole probe cycle.
+  let lastErr: unknown = null;
+  for (let i = 0; i < HIVE_RPCS.length; i++) {
+    const url = HIVE_RPCS[(rpcIdx + i) % HIVE_RPCS.length];
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", method, params, id: 1 }),
+        signal: AbortSignal.timeout(15_000)
+      });
+      const j = (await res.json()) as { result?: T; error?: { message?: string } };
+      if (j.error) throw new Error(j.error.message ?? "rpc error");
+      rpcIdx = (rpcIdx + i) % HIVE_RPCS.length; // stick to the working node
+      return j.result as T;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error("all HIVE RPC endpoints failed");
 }
 
 interface RcRow { account: string; rc_manabar: { current_mana: number; last_update_time: number }; max_rc: string | number }
@@ -102,10 +128,11 @@ async function pendingHiveWeave(): Promise<PendingReq | null> {
 interface SignOutcome { ok: boolean; txid?: string; error?: string; status?: number; failureClass?: string | null }
 
 async function signWeave(account: string, requestId: string, payload: unknown): Promise<SignOutcome> {
-  if (!SIGNER_TOKEN) return { ok: false, error: "signer-token-missing (fail-closed)" };
+  const token = signerToken();
+  if (!token) return { ok: false, error: "signer-token-missing (fail-closed)" };
   const res = await fetch(`${SIGNER_URL}/sign`, {
     method: "POST",
-    headers: { authorization: `Bearer ${SIGNER_TOKEN}`, "content-type": "application/json" },
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
     body: JSON.stringify({ requestId, network: "HIVE", kind: "custom_json", account, id: WEAVE_ID, payload }),
     signal: AbortSignal.timeout(45_000)
   });
@@ -114,14 +141,15 @@ async function signWeave(account: string, requestId: string, payload: unknown): 
 }
 
 async function recordTxid(requestId: string, txid: string): Promise<boolean> {
-  if (!ADMIN_KEY) {
+  const admin = adminKey();
+  if (!admin) {
     log("ERROR", "admin-key missing — cannot record txid (fail-closed); txid stays in status file");
     return false;
   }
   try {
     const res = await fetch(`${FOUNDRY}/api/saos/signer`, {
       method: "PATCH",
-      headers: { authorization: `Bearer ${ADMIN_KEY}`, "content-type": "application/json" },
+      headers: { authorization: `Bearer ${admin}`, "content-type": "application/json" },
       body: JSON.stringify({ id: requestId, txid, proofRef: `hive:${txid}`, verify: true }),
       signal: AbortSignal.timeout(15_000)
     });
@@ -298,6 +326,6 @@ Bun.serve({
   }
 });
 
-log("INFO", `fleet-cure listening on :${PORT} (signer=${SIGNER_URL}, opCost=${OP_COST_RC} RC, fleet=${FLEET.length}, admin=${ADMIN_KEY ? "token" : "MISSING-record-fail-closed"})`);
+log("INFO", `fleet-cure listening on :${PORT} (signer=${SIGNER_URL}, opCost=${OP_COST_RC} RC, fleet=${FLEET.length}, admin=${adminKey() ? "token" : "MISSING-record-fail-closed"})`);
 void loop();
 setInterval(() => void loop(), CYCLE_MS);

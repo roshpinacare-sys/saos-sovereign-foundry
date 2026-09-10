@@ -22,6 +22,7 @@ import { buildSignRequest, verifyTxidPublic } from "@/lib/saos/signer";
 import { externalSignerExecute } from "@/lib/saos/external-signer-client";
 import { BLURT_COOLDOWN_MIN } from "@/lib/saos/anchor-gates";
 import { withWriteLock } from "@/lib/saos/receipt-store";
+import { coarseError } from "@/lib/saos/api-errors";
 
 /**
  * roast 56 — the money-class fix on the CALLER side (the 54-1 class, resurrected
@@ -85,7 +86,21 @@ function anchorView(row: {
 
 type PulseNetwork = "STEEM" | "BLURT" | "HIVE";
 
+/** roast 63: the money path itself had NO outer catch — an unexpected DB error
+ * below requireAuth would have escaped as a raw 500 and broken the never-500
+ * contract ("errors are data"). Wrapped: every throw lands as honest JSON. */
 export async function POST(req: Request) {
+  try {
+    return await pulsePost(req);
+  } catch (e) {
+    return NextResponse.json(
+      { ok: false, error: coarseError(e, "anchor-pulse-failed") },
+      { status: 200 } // the API never 500s — errors are data
+    );
+  }
+}
+
+async function pulsePost(req: Request) {
   const auth = await requireAuth(req);
   if (!auth.authenticated) {
     return NextResponse.json(
@@ -323,6 +338,17 @@ export async function POST(req: Request) {
 
 /** GET — honest state: mode, latest seal, last anchors per network (no side effects) */
 export async function GET(req: Request) {
+  try {
+    return await pulseGet(req);
+  } catch (e) {
+    return NextResponse.json(
+      { ok: false, error: coarseError(e, "anchor-pulse-state-failed") },
+      { status: 200 } // the API never 500s — errors are data
+    );
+  }
+}
+
+async function pulseGet(req: Request) {
   const auth = await requireAuth(req);
   if (!auth.authenticated) {
     return NextResponse.json(

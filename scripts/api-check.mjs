@@ -271,6 +271,12 @@ async function main() {
   report("sensitive op without auth → 401", sigNoAuth.status === 401 && sigNoAuth.body.ok === false);
   const auditNoAuth = await j("/api/saos/audit");
   report("audit without auth → 401", auditNoAuth.status === 401);
+  // roast 63: key ingestion (the vault WRITE surface) used to be anonymous —
+  // a free "does this WIF match live authority" oracle. Now: 401 unauthed.
+  const ownerKeysNoAuth = await j("/api/saos/owner-keys", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ network: "STEEM", wif: "5" + "K".repeat(50) }) });
+  report("owner-keys ingest without auth → 401 (roast 63)", ownerKeysNoAuth.status === 401 && ownerKeysNoAuth.body.ok === false, `status=${ownerKeysNoAuth.status}`);
+  const ownerKeysGet = await j("/api/saos/owner-keys");
+  report("owner-keys GET still public (status verdicts) — rate-limited 30/min (roast 63)", ownerKeysGet.status === 200 || ownerKeysGet.status === 502 || ownerKeysGet.status === 429, `status=${ownerKeysGet.status} (200 verdicts / 502 signer-down / 429 budget)`);
   const badLogin = await loginWithRetry("definitely-wrong-key");
   report("login wrong key → 401", badLogin.status === 401 && badLogin.body.ok === false);
   let cookie = "";

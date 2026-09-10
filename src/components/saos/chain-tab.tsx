@@ -139,7 +139,7 @@ export function ChainTab() {
             <div className="rounded-lg border border-zinc-800 bg-zinc-900/70 p-3">
               <div className="text-xs font-bold text-zinc-200">הרץ אימות מלא (verify-chain)</div>
               <p className="mt-1 text-[11px] leading-relaxed text-zinc-500">
-                בודק את כל שרשרת הקבלות (דיג&apos;סטים וקישורים), מקומפל מחדש ומאמת כל עלה מרקל בכל חותמה. הריצה עצמה מוסיפה קבלת verify-chain לשרשרת — מדווח בתוצאה.
+                בודק את שרשרת הקבלות (דיג&apos;סטים וקישורים, עד 1000 קבלות ו-25 חותמות בריצה — ה-API מדווח בכנות כשחותך), מקומפל מחדש ומאמת כל עלה מרקל בכל חותמה. הריצה עצמה מוסיפה קבלת verify-chain לשרשרת — מדווח בתוצאה.
               </p>
               <Btn
                 variant="outline"
@@ -268,7 +268,7 @@ export function ChainTab() {
             <Dialog.Title className="text-sm font-bold text-zinc-100">אישור הרצת פעימה</Dialog.Title>
             <Dialog.Description className="mt-2 text-xs leading-relaxed text-zinc-400">
               הפעולה תיצור חותמה חדשה בשרשרת (height+1) עם 5 עלים, שורש מרקל וקבלת-ראיה. זו כתיבה מקומית בלבד:
-              במצב dry-run אין שידור לשום רשת, והעגינה מסומנת advisory. הפעולה אינה הפיכה (החותמה נכנסת לשרשרת).
+              הפעימה עצמה לא משדרת לשום רשת (השידור נפרד — עוגן-פעימה) והפעולה אינה הפיכה (החותמה נכנסת לשרשרת).
             </Dialog.Description>
             <div className="mt-4 flex justify-start gap-2">
               <Btn onClick={runSeal} loading={sealing} ariaLabel="אשר והרץ פעימה">

@@ -99,7 +99,7 @@
 **קלט** (JSON body, כולו אופציונלי):
 | שדה | טיפוס | ברירת-מחדל | משמעות |
 |---|---|---|---|
-| `stamps` | number | 6 | 3..24 (מחוץ לטווח נחתך) |
+| `stamps` | number | 6 | 3..24 (**roast 60: מחוץ לטווח = 400 `invalid-stamps`, שום דבר לא נחתך/נשמר** — validate, don't degrade) |
 | `memo` | string | "פעימת עגינה מהמגדל" | note |
 | `batchId` | string (≤64, `[\w.-]`) | randomUUID | **מפתח-idempotency**: אותו batchId+stamps ⇒ אותו root; שליחה חוזרת מחזירה את החותם הקיים (`idempotent:true`), לא יוצרת כפילות |
 
@@ -533,3 +533,21 @@
 **אכיפת-סודות:** אפס ערכי-סוד בפלט (רק נתוני-שרשרת ציבוריים + digests + hostnames); assertion קבוע ב-api-check §29 סורק את ה-payload כולו.
 
 **כתיבה יחידה:** קבלת `breakthrough-demo` בשרשרת-הראיות (`appendReceipt`, prevDigest ← אחרון; `productionAuthority: NONE` נאכף ב-store) — בלי שמירה במצבים ללא persistence. בדיקות: api-check §29 ×15 (מבנה, 6 עדים, זמן-חסום, הוכחה <1KB, אימות-עצמאי, $0.00 keyless, טבלת-השוואה כנה, ביטחון ללא-fake-bits, מדריך אימות, checkpoint chaining, כישלון-אפס-עדים כן, digests טריים לכל ריצה).
+
+---
+
+## מפה-מרוכזת: 7 משטחי-כסף/מפתחות שלא תועדו (roast 63)
+
+עודכן roast 63: ה-API מונה **25 routes**; הסעיפים לעיל כיסו 13. המשטחים הכספיים/רגישים שחסרו — מתועדים עכשיו (חוזים מקוצרים; המקור-הכובל הוא הקוד + api-check):
+
+| Route | Method | Auth | Rate | חוזה-מרכזי |
+|---|---|---|---|---|
+| `/anchor-pulse` | GET/POST | requireAuth | 4/min | **שער-השידור החי**: mode fresh (saosModeFresh) → intent-row לפני שידור (status=transit, txid=null) → requestId דטרמיניסטי `pulse-<net>-<sealId>` → חותם-חיצוני → verifyTxidPublic עצמאי; "anchored" נכתב רק לאחר אישור-הרשת. עמימות (>55דק' בלי txid) → 409 עד confirmFresh:true אנושי. BLURT cooldown 30דק' משידור אמיתי |
+| `/anchor-reverify` | POST | requireAuth | 6/min | קידום transit→anchored: מריץ verifyTxidPublic על ה-txid האחרון הלא-מאומת; כל תוצאה אחרת מוחזרת בכנות והשורה נשארת transit — אין קידום-זמן-אוטומטי |
+| `/owner-keys` | GET/POST | POST: requireAuth (roast 63) · GET: ללא | GET 30/min · POST 6/min | נקודת-חיבור מפתח-בעלים: ה-WIF עובר ישירות לחותם (:3033 /keys/ingest) — לעולם לא נשמר/נרשם; מפתח זר נדחה מול רשויות-השרשרת (לא נכתב דבר); פלט: verdicts + מפתחות-ציבוריים בלבד |
+| `/keys-map` | GET | ללא (מפת-כתובות ציבורית — הנחיית-בעלים) | 20/min | מפת-כתובות-מאגר + live-balance probe; **labels ללא מספרים מתיישנים** (roast 63); XFF-מודע ל-rate |
+| `/treasury` | GET | ללא | 20/min | 'קופה חיה': יתרות חיות (TRX/HIVE/BLURT/ETH/SOL) בקריאה-בלבד; single-flight; degraded כנה כש-RPC נכשל; מספרים חיים בלבד — אף מספר מקודד |
+| `/agent-bridge` | GET/POST | POST: requireAuth (roast 57) | 30/min | מסילת-הודעות-סוכנים (AgentMessage); סימטריית-auth כמו שאר הפעולות הרגישות |
+| `/verify-live` | POST | ללא | 10/min | בדיקת-חיבור-חי לכל סלוטי המעטפת מול הרשויות-בשרשרת (מקור-האמת של "הכל מחובר?"); fail-closed כשאין טוקן-חותם |
+
+**כלל-המפה:** כל route מחזיר JSON; שגיאות לעולם לא 500 (`coarseError` → 200 `{ok:false}`, אלא אם צוין); כל כתיבה מאומתת ב-AuditEvent; ה-API מדווח רק מה שנמדד — טענה בלי ראיה = באג (ה-harness אוכף).

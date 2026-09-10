@@ -2,16 +2,16 @@
 
 > מפתח-התיעוד. כל קובץ כאן נכתב לפי עקרון אחד: **מה שחשוב — כתוב בריפו**, לא בצ'אט ולא בזיכרון.
 
-- **גרסה**: 2.3.0 (Task 10 — Product-Grade UI Rebuild: מרכז-שליטה מבצעי ב-7 מסכים)
-- **שכבת אבטחה**: auth (hash+cookie חתום) · rate-limit · AuditEvent · live-gate · תור-חתימה keyless · backup/restore/cleanup מאומתים · bun audit = 0
+- **גרסה**: 2.4.x (roast 63 — עדכון-אמת: ספירות/מצבים מול ראיות-חיות)
+- **שכבת אבטחה**: auth (hash+cookie חתום) · rate-limit (כל ה-routes, לרבות owner-keys-GET roast 63) · AuditEvent · live-gate · תור-חתימה keyless · backup/restore/cleanup מאומתים · bun audit = 0
 - **מוטו**: אנחנו מנצחים את הבלוקצ'יין
-- **מצבי פעולה**: dry-run (ברירת-מחדל) / safe / live (דורש אישור-כפול) / maintenance — ר' runbook. **מ-Task 13: הסנדבוקס רץ live ללא-שידור (safe-live)** — הוכחה: docs/live-proof.md
-- **מצב עגינה ציבורית (נכון ל-2026-09-07)**:
-  - STEEM ✅ עוגן — רפרנס חלקי `3452e62bc3bf5b…dee9ee1003` (custom_json `saos.weave.v1`)
-  - BLURT ✅ עוגן — רפרנס חלקי `50a857ccaf49bd…5c4c3e6a9c` (חתימה קנונית ידנית)
-  - HIVE ⏳ gated — rc-floor(0.6%<8%) — המתנה כנה, לא מבוימת
+- **מצבי פעולה**: dry-run (ברירת-מחדל) / safe / live (דורש אישור-כפול) / maintenance — ר' runbook. **מ-Task 26/47: live עם חותם-חיצוני מחובר (:3033) ועגינות-חיות** — ההגבלה: custom_json בלבד, ללא העברות-נכסים
+- **מצב עגינה ציבורית (נכון ל-roast 63, 2026-09-10)**:
+  - STEEM ✅ עגינות-חיות מרובות — custom_json `saos.weave.v1`, txid מאומת חי (ר' docs/evidence/ANCHOR-PULSE-2026-09-10.md)
+  - BLURT ✅ עגינות-חיות מרובות — חתום headcorner (מפתח-הבעלים) ואומת על mainnet (rpc.beblurt.com)
+  - HIVE ⏳ gated — rc-floor; מעטפת-הצי 9/9 מאומתת חי; weave ממתין לחלון-RC (ר' fleet-cure)
   - TRON 🚧 transit — root נישא בתוך stateRoot דרך רכבת tronbridge היומית
-- **מצב חתימה בסנדבוקס**: `advisory-mode` — אין מפתחות חתימה; הפלטפורמה מחשבת שורשים ותוכניות ומדווחת בכנות. שידור אמיתי דורש שחזור כספת.
+- **מצב חתימה בסנדבוקס**: `live-external-signer` — החותם-החיצוני (:3033) מחזיק מעטפת מוצפנת מאומתת; האפליקציה מקבלת txid ציבורי בלבד (Task 26, הנחיית-בעלים); מפתחות headcorner/tov בחזקת-הבעלים
 
 ## מפת הקבצים
 
@@ -19,7 +19,7 @@
 |---|---|
 | [architecture.md](./architecture.md) | מטרת המערכת, רכיבים, זרימה, תלויות, נקודות כשל, אימות ואבטחה, מצבי עבודה |
 | [ui.md](./ui.md) (חדש Task 10) | מרכז השליטה: 7 מסכים, רכיבים, מצבי שגיאה/ריק/חסום, מקורות נתונים, נגישות, RTL |
-| [api.md](./api.md) | כל 16 ה-endpoints: method, קלט, פלט, שגיאות, דוגמאות, סטטוס, 401/403/429 |
+| [api.md](./api.md) | ה-endpoints המתועדים בפירוט (25 בפועל — roast 63 הוסיף סעיף מפה-מרוכזת ל-7 המשטחים הכספיים שלא תועדו) |
 | [database.md](./database.md) | סכמה, טבלאות, אינדקסים, אילוצים, גיבוי ושחזור, נקודות תורפה |
 | [testing.md](./testing.md) | איך מריצים בדיקות, תוצאות אחרונות, מה לא מכוסה |
 | [security.md](./security.md) | מודל איומים, סודות, גבולות אמת, מה מוגן ומה לא |
@@ -38,7 +38,7 @@
 
 ```bash
 bun run dev        # שרת פיתוח (פורט 3000)
-bun run check      # lint + typecheck + test (147 בדיקות API) + verify (8 פעימות מקבילות)
+bun run check      # lint + typecheck + test (136+ assertions API; 177 כשמריצים מאומת-מפתח-בעלים) + verify (8 פעימות מקבילות)
 bun run backup     # גיבוי מאומת (integrity+counts+manifest)
 bun run restore    # שחזור מאומת — dry-run ברירת-מחדל, --yes לביצוע
 bun run cleanup    # רטנשן — dry-run ברירת-מחדל, --yes דורש גיבוי <24h

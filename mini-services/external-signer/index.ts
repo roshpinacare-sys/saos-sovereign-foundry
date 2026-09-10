@@ -1091,7 +1091,11 @@ const server = Bun.serve({
         return Response.json({ ok: false, error: "passphrase must be 10-200 chars" }, { status: 400 });
       }
       try {
-        const payload = { exportedAt: new Date().toISOString(), version: "2.4.0", main: { account: STATE.main.account, keys: { generic: { posting: STATE.main.postingWif ?? null, active: STATE.main.activeWif ?? null, memo: STATE.main.memoWif ?? null, owner: STATE.main.ownerWif ?? null }, net: { STEEM: STATE.main.net?.STEEM ?? null, HIVE: STATE.main.net?.HIVE ?? null } } }, fleet: STATE.fleet.map((f) => ({ username: f.username, generic: { posting: f.postingWif ?? null, active: f.activeWif ?? null, owner: f.ownerWif ?? null }, net: { STEEM: f.net?.STEEM ?? null, HIVE: f.net?.HIVE ?? null } })) };
+        // roast 63: the payload used to export net STEEM+HIVE only while STATE
+        // fully carries BLURT — the backup lied about what it holds, and exactly
+        // the BLURT plane (the live-anchored chain, HEADCORNER master-key roles)
+        // would have been missing from a wipe-recovery. All three planes now.
+        const payload = { exportedAt: new Date().toISOString(), version: "2.4.1", main: { account: STATE.main.account, keys: { generic: { posting: STATE.main.postingWif ?? null, active: STATE.main.activeWif ?? null, memo: STATE.main.memoWif ?? null, owner: STATE.main.ownerWif ?? null }, net: { STEEM: STATE.main.net?.STEEM ?? null, HIVE: STATE.main.net?.HIVE ?? null, BLURT: STATE.main.net?.BLURT ?? null } } }, fleet: STATE.fleet.map((f) => ({ username: f.username, generic: { posting: f.postingWif ?? null, active: f.activeWif ?? null, owner: f.ownerWif ?? null }, net: { STEEM: f.net?.STEEM ?? null, HIVE: f.net?.HIVE ?? null, BLURT: f.net?.BLURT ?? null } })) };
         const salt = randomBytes(16), iv = randomBytes(12);
         const key = scryptSync(passphrase, salt, 32);
         const cipher = createCipheriv("aes-256-gcm", key, iv);

@@ -16,6 +16,7 @@ import { minStakeForSettlements } from "./tron-energize";
 import { HISTORIC_ANCHORS } from "./historic";
 import { externalSignerKeyMatchesCached, type SignerKeyMatches } from "./external-signer-client";
 import { fleetCureStatus } from "./fleet-cure";
+import { TRX_PER_USDT_TRANSFER } from "./economy";
 import { ethereumStatus } from "./networks/ethereum";
 import { solanaStatus } from "./networks/solana";
 import type { ChainType, RpcStatus } from "./networks/types";
@@ -248,19 +249,19 @@ export function networkStatuses(rcPct: number, tronEnergy: number, keys?: Signer
       ? null
       : mainReady
         ? `אין משאב חוסם — RC מדוד ${rcPct}% ≥ סף-הקל ${HIVE_RC_FLOOR_LIGHT}% לחשבון-הראשי (עלות-op ~225M RC ≈ 0.9% מהמקסימום המדוד)`
-        : `מנועת-עלות: RC ≥ 225M ל-op (מדוד) — רגן צי אוטומטי; לחשבון הראשי RC ≥ ${HIVE_RC_FLOOR_LIGHT}% (כ-${lightH.toFixed(1)} שע') או power-up 9.682 HIVE${hiveReady ? " (מפתח-ראשי כבר מחובר ומאומת — הנתיב מוכן)" : " (דורש מפתח-בעלים)"}`,
+        : `מנועת-עלות: RC ≥ 225M ל-op (מדוד) — רגן צי אוטומטי; לחשבון הראשי RC ≥ ${HIVE_RC_FLOOR_LIGHT}% (כ-${lightH.toFixed(1)} שע') או power-up מלוא-ה-HIVE-הנזיל${hiveReady ? " (מפתח-ראשי כבר מחובר ומאומת — הנתיב מוכן)" : " (דורש מפתח-בעלים)"}`,
     unblockPlan: fleetLanded
       ? [
           "1. קצב עיגון-צי קבוע עם backoff כלכלי (כמו relay ה-DEX)",
-          "2. power-up 9.682 HIVE של הראשי בטעינת מפתח-בעלים (max_rc ×~1.6)",
+          "2. power-up מלוא-ה-HIVE-הנזיל של הראשי בטעינת מפתח-בעלים (max_rc ×~1.6)",
           "3. מעקב rc-floor ב-/api/saos/energy?net=hive"
         ]
       : [
           `1. אוטומטי: fleet-cure משדר את ה-weave בחלון הצי הראשון${fleetScheduled ? ` (${fleetEtaLabel})` : " (דורש דמון-צי חי — כרגע לא רץ)"}`,
           "2. אוטומטי: רישום txid חזרה ל-SignRequest + עדכון סטטוס",
           hiveReady
-            ? "3. owner (אופציונלי): power-up 9.682 HIVE — המפתח-ראשי כבר מחובר ומאומת (נתיב ה-DEX, authority-gate מאמת)"
-            : "3. owner (אופציונלי): טעינת מפתח-בעלים → power-up 9.682 HIVE דרך נתיב ה-DEX (authority-gate מאמת)",
+            ? "3. owner (אופציונלי): power-up מלוא-ה-HIVE-הנזיל — המפתח-ראשי כבר מחובר ומאומת (נתיב ה-DEX, authority-gate מאמת)"
+            : "3. owner (אופציונלי): טעינת מפתח-בעלים → power-up מלוא-ה-HIVE-הנזיל דרך נתיב ה-DEX (authority-gate מאמת)",
           `4. רגן טבעי: סף-קל 8% בעוד ~${lightH.toFixed(1)} שע'`
         ],
     isReadyForAnchor: mainReady,
@@ -272,8 +273,8 @@ export function networkStatuses(rcPct: number, tronEnergy: number, keys?: Signer
           ? `אוטומטי (ברירת-מחדל): עיגון-צי בחלון הראשון (${fleetEtaLabel})`
           : "אוטומטי: עיגון-צי — דורש דמון fleet-cure (:3034) חי; כרגע אין חלון פעיל",
       hiveReady
-        ? "power-up 9.682 HIVE של הראשי — המפתח כבר מחובר ומאומת חי (האצה ×~1.6, מוכן לביצוע)"
-        : "טעינת מפתח-בעלים למעטפת → power-up 9.682 HIVE של הראשי (האצה ×~1.6)",
+        ? "power-up מלוא-ה-HIVE-הנזיל של הראשי — המפתח כבר מחובר ומאומת חי (האצה ×~1.6, מוכן לביצוע)"
+        : "טעינת מפתח-בעלים למעטפת → power-up מלוא-ה-HIVE-הנזיל של הראשי (האצה ×~1.6)",
       "המתנה לרגן טבעי לסף-הקל (8%)"
     ],
     ownerAction: mainReady
@@ -305,7 +306,7 @@ export function networkStatuses(rcPct: number, tronEnergy: number, keys?: Signer
     blocker: tronEnergy > 0
       ? keysPendingBlocker
       : "transit לפי החלטת בעלים (decided-custom 2026-09-09): המשך רכבת tronbridge היומית · energy=0 (מדידת-שדה 08.09) · יתרות-המעבר נמדדות חי מול סף-השריפה ב'קופה חיה' — המספרים החיים שם, לא כאן (roast 10.09: מספר-מעבר מקודד ידנית התיישן תוך שעות)",
-    requiredResource: `TRX stake ≥ ${minStake.toLocaleString()} TRX ל-4 יישובי USDT/יום (או שריפה ~27.26 TRX/tx)`,
+    requiredResource: `TRX stake ≥ ${minStake.toLocaleString()} TRX ל-4 יישובי USDT/יום (או שריפה ~${TRX_PER_USDT_TRANSFER} TRX/tx — הקבוע הכלכלי הקנוני)`,
     unblockPlan: [
       `1. מימון הימור: ≥ ${minStake.toLocaleString()} TRX`,
       "2. freezeBalanceV2(resource=ENERGY) + delegateResource לכתובת המשדר",
@@ -322,7 +323,7 @@ export function networkStatuses(rcPct: number, tronEnergy: number, keys?: Signer
     ],
     ownerAction: "transit אושר כברירת-מחדל הכלכלית (החלטת בעלים); מימון TRX לעיגון-ישיר נשאר אופציונלי — פעולה כלכלית באישור בעלים בלבד",
     estimatedTime: "מיידי אחרי מימון האנרגיה",
-    estimatedCost: `הימור ≥ ${minStake.toLocaleString()} TRX ל-4 יישובי USDT/יום · שריפה ~27.26 TRX/tx`,
+    estimatedCost: `הימור ≥ ${minStake.toLocaleString()} TRX ל-4 יישובי USDT/יום · שריפה ~${TRX_PER_USDT_TRANSFER} TRX/tx`,
     resourceLiveChecked: false
   };
 

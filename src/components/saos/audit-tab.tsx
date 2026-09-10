@@ -17,7 +17,7 @@ import {
 import { EP, errText, refreshKey, saosFetch, useSaos } from "./api";
 import type { AuditResponse, KernelResponse } from "./types";
 
-/** documented bug registry — source: docs/testing.md (never invented) */
+/** documented bug registry — source: docs/testing.md + worklog.md (never invented) */
 const BUGS = [
   { id: "BUG-001", title: "התנגשות unique על height ב-seal", status: "fixed", detail: "קרנל לא הקדם height → אילוץ unique נפל. תוקן: הקדמת height לכל op + גזירה מונוטונית מ-DB max." },
   { id: "BUG-002", title: "סקריפט lint שבור (next lint הוסר ב-Next 16)", status: "fixed", detail: "הוחלף ל-eslint . ישירות; תועד גם תיקון הדיווח השגוי ב-worklog." },
@@ -26,15 +26,20 @@ const BUGS = [
   { id: "BUG-005", title: "פיצול אמיתי בשרשרת (אינדקס 17)", status: "disclosed", detail: "תוקן מבנית (קבלה בתוך טרנזקציית seal) + מדווח לנצח ב-forks[] — לעולם לא נשכתב." },
   { id: "BUG-006", title: "סטיית ארגומנטים ב-applyTx", status: "fixed", detail: "נתפס על-ידי tsc בשער לפני ריצה." },
   { id: "BUG-007", title: "bun run לא העביר .env ל-child process של node", status: "fixed", detail: "רץ הבדיקות עבר ל-bun; api-check הצליח 45/45 לאחר התיקון." },
-  { id: "BUG-008", title: "אובדן .env אחרי rebase (מתועד)", status: "recovered", detail: "שוחזר bit-identical מגיבוי המפתח המקומי; הלקחים תועדו ב-worklog." }
+  { id: "BUG-008", title: "אובדן .env אחרי rebase (מתועד)", status: "recovered", detail: "שוחזר bit-identical מגיבוי המפתח המקומי; הלקחים תועדו ב-worklog." },
+  // roast-era bugs (48-63) — documented with live proof in worklog.md:
+  { id: "BUG-009", title: "שידור-כפול אפשרי (requestId טרי לכל ניסיון)", status: "fixed", detail: "roast 54/56/61: anchor-pulse ו-fleet-cure טבעו requestId חדש לכל ניסיון — פנקס-האידמפוטנטיות לא ראה ניסיון-חוזר. תוקן: requestId דטרמיניסטי לכוונה + סיווג סירובים + TTL-guard." },
+  { id: "BUG-010", title: "דלף פרטי-שרת בהודעות-שגיאה", status: "fixed", detail: "roast 58: ~33 catch-siteים החזירו מסלולי-קבצים/פנים-Prisma. תוקן: coarseError בכל ה-routes — פרטים-פנימיים לוג-בלבד, 200 תמיד." },
+  { id: "BUG-011", title: "אי-שינויות קריא-ואז-כתוב (CAS חסר)", status: "fixed", detail: "roast 60: שני PATCH מקבילים עם txid שונים עברו בדיקת null והשני דרס את הראשון. תוקן: updateMany תנאי — הראשון מנצח, הוכח חי." },
+  { id: "BUG-012", title: "הדמונים מתים בזמן שהמסך מבטיח מהם", status: "fixed", detail: "roast 61/62: 3/4 שירותים מתים 39 שעות, המפקח-הפנימי מת 13 שעות, והמסך הבטיח 'עוגן מתוזמן' מקובץ קפוא. תוקן: supervisor-truth + isFresh + pendingWeave — כשירות ≠ תזמון." }
 ] as const;
 
-/** documented open non-bug items — source: docs/next-steps.md */
+/** documented open non-bug items — source: docs/next-steps.md (roast 63: עודכן — session revocation נסגר ב-roast 60 עם epoch+secret mixing והוכח חי) */
 const OPEN_ITEMS = [
   "GitHub Actions CI — אין runner; הרצה ידנית בלבד",
   "bun run build — חסום-סביבה (לא נבדק מחוץ לסנדבוקס)",
   "SH-3 — קובץ היסטורי לא מסווג בהיסטוריית git (החלטת בעלים)",
-  "session revocation גלובלי — סיבוב secret בלבד"
+  "RC מחסור ב-HIVE (0.003%) — מגביל עיבוד עגנים לכל ~25 דק' (בריף ראש-המטה 2026-09-10)"
 ];
 
 const SUITE = [

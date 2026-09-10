@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { audit, requireAuth } from "@/lib/saos/auth";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
 import { verifyTxidPublic, parseNetwork, type SignRequest } from "@/lib/saos/signer";
+import { coarseError } from "@/lib/saos/api-errors";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,20 @@ export const dynamic = "force-dynamic";
  * chain itself confirms it. Every other outcome is returned honestly and
  * the row stays transit — no fabrication, no time-based auto-promotion.
  */
+/** roast 63: outer catch — an unexpected DB error used to escape as a raw 500
+ * (the never-500 contract is "errors are data"). Every throw lands as JSON. */
 export async function POST(req: Request) {
+  try {
+    return await reverifyPost(req);
+  } catch (e) {
+    return NextResponse.json(
+      { ok: false, error: coarseError(e, "anchor-reverify-failed") },
+      { status: 200 } // the API never 500s — errors are data
+    );
+  }
+}
+
+async function reverifyPost(req: Request) {
   const auth = await requireAuth(req);
   if (!auth.authenticated) {
     return NextResponse.json(

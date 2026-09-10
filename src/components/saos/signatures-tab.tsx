@@ -286,6 +286,7 @@ export function SignaturesTab() {
       <CreateDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
+        registry={data?.registry ?? []}
         onDone={() => {
           void refreshKey("signer", () => saosFetch(EP.signer));
           void refreshKey("preflight", () => saosFetch(EP.preflight));
@@ -317,7 +318,7 @@ function authToast(): void {
   toast.error("נדרשת התחברות — התחבר במסך אבטחה ומאגר ואז נסה שוב", { duration: 6000 });
 }
 
-function CreateDialog({ open, onOpenChange, onDone }: { open: boolean; onOpenChange: (o: boolean) => void; onDone: () => void }) {
+function CreateDialog({ open, onOpenChange, onDone, registry }: { open: boolean; onOpenChange: (o: boolean) => void; onDone: () => void; registry: { signer: string; status: string; detail: string }[] }) {
   const [network, setNetwork] = useState("STEEM");
   const [signer, setSigner] = useState("manual");
   const [busy, setBusy] = useState(false);
@@ -385,8 +386,11 @@ function CreateDialog({ open, onOpenChange, onDone }: { open: boolean; onOpenCha
                 className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus-visible:outline-2 focus-visible:outline-amber-400"
               >
                 <option value="manual">manual — חתימה ידנית מחוץ למערכת (מוכן)</option>
-                <option value="external">external — שירות חיצוני (מנותק — הבקשה תישאר pending)</option>
-                <option value="hardware">hardware — מכשיר חומרה (מנותק)</option>
+                {/* roast 63: the label used to hardcode "מנותק" while the live registry
+                    20 lines above showed external=ready (mode=live, broadcastCapable).
+                    The label now derives from the same live registry — no frozen lies. */}
+                <option value="external">external — שירות חיצוני ({registry.find((r) => r.signer === "external")?.status === "ready" ? "מחובר — הבקשה תבוצע אוטומטית" : "טרם-מחובר — הבקשה תישאר pending"})</option>
+                <option value="hardware">hardware — מכשיר חומרה ({registry.find((r) => r.signer === "hardware")?.status === "ready" ? "מחובר" : "לא מחובר"})</option>
               </select>
             </label>
           </div>

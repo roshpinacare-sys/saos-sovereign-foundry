@@ -34,11 +34,12 @@
 
 | סוד | מיקום | חשיפה בריפו | נוהל |
 |---|---|---|---|
-| טוקן GitHub (`roshpinacare-sys`) | `upload/Roshcaregt.txt` | **לא** — gitignored | שימוש חולף דרך env var; אסור להדפיס; remotes נרמטו |
-| מפתח מנהל (`SAOS_ADMIN_KEY`) | `.env` + `upload/saos-admin-key.txt` | **לא** — שניהם gitignored | בשרת נשמר רק `SAOS_ADMIN_KEY_HASH` (sha256-hex); ההתחברות משווה hash-ל-hash בזמן-קבוע; `SAOS_ADMIN_KEY` ב-.env נועד לסקריפט הבדיקות בלבד (לעולם לא נכנס לקוד/ללוג/לריפו). **SH-7 (Task 11)**: עותק ה-key בתוך עץ הפרויקט אינו נוהל-קבע — נדרשת העברה ל-`~/.secrets/` עם 600 + רוטציה במקרה חשש (docs/secret-hygiene.md §6); נבדק קיום-בלבד ב-repo-status |
+| טוקן GitHub (`roshpinacare-sys`) | `upload/Roshcaregt.txt` (gitignored; מחוץ-לעץ שימוש חולף) | **לא** | שימוש חולף דרך env var; אסור להדפיס; remotes נרמטו |
+| מפתח מנהל (`SAOS_ADMIN_KEY`) | **`~/.secrets/saos-admin-key` (600)** — SH-7 סגור; ב-.env רק `SAOS_ADMIN_KEY_HASH` | **לא** | בשרת נשמר רק hash (sha256-hex); ההתחברות משווה hash-ל-hash בזמן-קבוע; המפתח-הגלם לעולם לא בעץ הפרויקט ולא בריפו |
+| טוקן חותם-חיצוני | `~/.secrets/external-signer-token` | **לא** | Bearer ל-:3033 בלבד (localhost); נקרא per-use (roast 63) |
+| מעטפת מפתחות-צי (STEEM/HIVE/BLURT) | `~/.secrets/fleet-envelope` (מוצפן) | **לא** | רק החותם-החיצוני (:3033) פותח אותה; נבדקת חי מול רשויות-השרשרת (11 סלוטים, roast 61); האפליקציה מקבלת txid בלבד |
 | `DATABASE_URL` | `.env` | **לא** | `file:./custom.db` — לא רגיש |
-| `SAOS_SESSION_SECRET` | אופציונלי ב-.env | **לא** | ברירת-מחדל: נגזר מ-hash המפתח **+ session epoch (Task 11)** — לא נשמר ולא מודפס; רוטציית epoch (revoke-all) מבטלת את כל הסשנים מיידית |
-| מפתחות חתימה (STEEM/BLURT/HIVE/TRON) | **לא קיימים בסנדבוקס** | — | מכוון; כשישוחזרו — מחוץ למערכת בלבד (ר' §5) |
+| `SAOS_SESSION_SECRET` | אופציונלי ב-.env | **לא** | roast 60: מוזרק **יחד עם** ה-epoch (sha256(secret:epoch)) — רוטציית epoch (revoke-all) מבטלת את כל הסשנים מיידית גם עם סוד מפורש |
 
 ## 4. שכבת ההרשאות (Task 5, מיסיון 1)
 

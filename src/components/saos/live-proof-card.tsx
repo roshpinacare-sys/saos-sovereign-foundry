@@ -121,7 +121,7 @@ export function LiveProofCard() {
           rows={[
             { label: "זמן בדיקה", value: fmtDateTime(d.timestamp) },
             { label: "מסד נתונים", value: d.database.ok ? `תקין · ${d.database.counts.seals} חותמות · ${d.database.counts.auditEvents} אירועי ביקורת` : "לא נגיש" },
-            { label: "הרשאות", value: d.auth.configured ? "מוגדרות (hash בלבד) · ביטול-סשנים זמין" : "לא מוגדרות — fail-closed" },
+            { label: "הרשאות", value: d.auth.configured ? `מוגדרות (hash בלבד) · ביטול-סשנים ${d.auth.revocationReady ? "זמין" : "לא-מוכן"}` : "לא מוגדרות — fail-closed" },
             { label: "הגבלת קצב", value: d.rateLimit.active ? `פעילה · live-proof ${d.rateLimit.liveProofPerMinute}/דק'` : "כבויה" },
             { label: "גיבוי", value: d.backups.fresh && d.backups.lastVerified ? `טרי ומאומת · ${fmtDateTime(d.backups.lastBackupAt)}` : d.backups.lastBackupAt ? `קיים אך לא טרי/מאומת · ${fmtDateTime(d.backups.lastBackupAt)}` : "אין גיבוי" },
             { label: "ריפו", value: d.repo.available ? `${d.repo.branch} · ${d.repo.sync === "synced" ? "מסונכרן" : `${d.repo.unpushedCommits} לא-דחופים`}` : "git לא זמין" },

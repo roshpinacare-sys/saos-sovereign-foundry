@@ -58,6 +58,7 @@ export const RATE_RULES = {
   "live-proof": { name: "live-proof", perMinute: envLimit("live-proof", 6) },
   "breakthrough-demo": { name: "breakthrough-demo", perMinute: envLimit("breakthrough-demo", 10) },
   "owner-keys": { name: "owner-keys", perMinute: envLimit("owner-keys", 6) },
+  "owner-keys-read": { name: "owner-keys-read", perMinute: envLimit("owner-keys-read", 30) },
   "keys-map": { name: "keys-map", perMinute: envLimit("keys-map", 20) },
   "agent-bridge": { name: "agent-bridge", perMinute: envLimit("agent-bridge", 30) },
   "verify-live": { name: "verify-live", perMinute: envLimit("verify-live", 10) },

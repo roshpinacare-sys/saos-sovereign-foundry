@@ -13,6 +13,8 @@ export interface StatusResponse {
   modeDetail: string;
   writesEnabled: boolean;
   broadcastCapable: boolean;
+  /** roast 63: supervisor truth (Task 62) finally rendered — per-service live/disabled/attempts from /status */
+  supervisor?: { name: string; port: number; alive: boolean; disabled: boolean; attempts: number }[];
   security: {
     authConfigured: boolean;
     rateLimit: { active: boolean; status: number; seal: number; auth: number };

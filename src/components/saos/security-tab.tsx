@@ -15,7 +15,7 @@ import {
   Panel,
   fmtDateTime
 } from "@/components/ui/kit";
-import { EP, errText, refreshKey, saosFetch, useSaos } from "./api";
+import { EP, errText, refreshKey, saosAction, saosFetch, useSaos } from "./api";
 import type { AuthStateResponse, LiveGateResponse, OwnerKeysIngestResponse, OwnerKeysStatusResponse, RepoStatusResponse, RevokeAllResponse, VerifyLiveResponse } from "./types";
 
 export function SecurityTab() {
@@ -49,7 +49,11 @@ export function SecurityTab() {
         loading={authQ.state === "loading"}
         onChanged={() => {
           void refreshKey("auth", () => saosFetch(EP.auth));
-          void refreshKey("audit", () => fetch(`${EP.audit()}&x=${Date.now()}`).then((r) => r.json()));
+          // roast 63: raw fetch stored a 401 {ok:false} body as READY data for
+          // the "audit" key — opening the audit tab after logout then crashed
+          // on data.counts.total (the roast-55-6 crash class, via the logout
+          // path). saosFetch classifies 401 as an error state instead.
+          void refreshKey("audit", () => saosFetch(EP.audit()));
           void refreshKey("preflight", () => saosFetch(EP.preflight));
         }}
         refresh={authQ.refresh}
@@ -115,6 +119,9 @@ function AuthCard({
       await fetch(EP.auth, { method: "DELETE" });
       toast.success("התנתקת — הפעלה-מחדש של פעולות רגישות דורשת התחברות");
       onChanged();
+    } catch {
+      // roast 63: a network failure here used to be an unhandled rejection
+      toast.error("שגיאת רשת — ההתנתקות לא אושרה, נסה שוב");
     } finally {
       setBusy(false);
     }
@@ -220,7 +227,7 @@ function SecretHygieneCard({ data }: { data: RepoStatusResponse }) {
       )}
       {!inTree && (
         <p className="mt-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-2.5 text-[11px] leading-relaxed text-emerald-200">
-          SH-7 סגור: הקובץ הועבר מחוץ לעץ הפרויקט (<Mono>~/.secrets/saos-admin-key</Mono>, הרשאות 600) — בוצע אוטונומית בסבב סגירת-ההחלטות, תוכן הקובץ מעולם לא נקרא. רוטציה נותרת פעולת בעלים אופציונלית אם יש חשש חשיפה: <Mono>docs/secret-hygiene.md §7</Mono>.
+          SH-7 סגור: אין קובץ מפתח בעץ הפרויקט. רוטציה נותרת פעולת בעלים אופציונלית אם יש חשש חשיפה: <Mono>docs/secret-hygiene.md §7</Mono>.
         </p>
       )}
       {s.scanMatches.length > 0 && (
@@ -490,8 +497,13 @@ function OwnerKeysCard({
     }
     setBusy(true);
     try {
-      const res = await fetch(EP.ownerKeys, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ entries }) });
-      const body = (await res.json()) as OwnerKeysIngestResponse;
+      const r = await saosAction<OwnerKeysIngestResponse>(EP.ownerKeys, { method: "POST", body: JSON.stringify({ entries }) });
+      if (!r.ok) {
+        // roast 63: 401/429 now classified instead of being shown as a verdict
+        toast.error(r.err.kind === "auth" ? "נדרשת התחברות — התחבר במסך זה ואז חבר את המפתח" : `החיבור נכשל: ${errText(r.err)}`);
+        return;
+      }
+      const body = r.data;
       setVerdict(body);
       if (body.ok) {
         toast.success(`המפתח חובר, אומת מול השרשרת ונאטם בכספת (${(body.ingested ?? []).map((i) => `${i.network}→${i.account}`).join(", ")})`);
@@ -517,8 +529,12 @@ function OwnerKeysCard({
     }
     setBusy(true);
     try {
-      const res = await fetch(EP.ownerKeys, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
-      const body = (await res.json()) as OwnerKeysIngestResponse;
+      const r = await saosAction<OwnerKeysIngestResponse>(EP.ownerKeys, { method: "POST", body: JSON.stringify({ text }) });
+      if (!r.ok) {
+        toast.error(r.err.kind === "auth" ? "נדרשת התחברות — התחבר במסך זה ואז חבר את המפתח" : `החיבור נכשל: ${errText(r.err)}`);
+        return;
+      }
+      const body = r.data;
       setVerdict(body);
       if (body.ok) {
         toast.success(`חובר! ${(body.ingested ?? []).length} מפתח/ות אומתו מול השרשרת ונכתבו לתפקידיהם`);
@@ -539,6 +555,12 @@ function OwnerKeysCard({
     try {
       const res = await fetch(EP.verifyLive, { method: "POST" });
       const body = (await res.json()) as VerifyLiveResponse;
+      // roast 63: a 401/429 body ({ok:false, no summary}) used to render the
+      // success line "✓ מחוברים-חי: 0 סלוטים" — failure rendered as success.
+      if (body.ok === false) {
+        toast.error(res.status === 401 ? "נדרשת התחברות לבדיקת-החיבור" : body.error ?? "הבדיקה נכשלה");
+        return;
+      }
       setLiveCheck(body);
       const s = body.summary;
       if (s && (s.drift ?? 0) === 0 && (s.errors ?? 0) === 0) toast.success(`הכל מחובר — ${s.slots ?? 0} סלוטים מאומתים-חי מול השרשרת`);
@@ -620,7 +642,7 @@ function OwnerKeysCard({
           )}
           {status?.drift?.lastCheck && (
             <p className="mt-1.5 text-[10px] text-zinc-500">
-              מוניטור-סטייה רץ אוטומטית כל 10 דקות · בדיקה אחרונה: {fmtDateTime(status.drift.lastCheck)} · סטיות פתוחות: {status.drift.openDrifts}
+              בדיקת-סטייה אחרונה: {fmtDateTime(status.drift.lastCheck)} · סטיות פתוחות: {status.drift.openDrifts}
             </p>
           )}
         </div>
@@ -699,8 +721,8 @@ function OwnerKeysCard({
         )}
 
         <p className="text-[10px] leading-relaxed text-zinc-500">
-          לאחר חיבור מוצלח: המסילה (DEX → חותם) מאומתת אוטומטית, ופעולות ההמרה — power-up של 9.682 HIVE ל-HP, מכירת BEE
-          והעיגונים — ירוצו דרך השערים הקיימים. הגבלה: 6 ניסיונות/דקה.
+          לאחר חיבור מוצלח: המסילה (DEX → חותם) מאומתת אוטומטית, ופעולות ההמרה והעגינות ירוצו דרך השערים הקיימים
+          (החוזים והמגבלות החיים מדווחים ב&apos;קופה חיה&apos; ובשערים — לא מקודדים כאן).
         </p>
       </div>
     </Panel>

@@ -183,7 +183,7 @@ export function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void 
       >
         {blockers.length === 0 && warnings.length === 0 ? (
           <div className="flex items-center gap-2 text-sm text-emerald-400">
-            <CheckCircle2 className="size-4" aria-hidden /> אין חסימות ואין אזהרות — כל 10 בדיקות ה-preflight עברו.
+            <CheckCircle2 className="size-4" aria-hidden /> אין חסימות ואין אזהרות — כל {preflight.checks.length} בדיקות ה-preflight עברו.
           </div>
         ) : (
           <div className="space-y-2">
@@ -213,23 +213,44 @@ export function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void 
               { label: "שכבת הרשאות", value: status.security.authConfigured ? "מוגדרת (hash בלבד)" : "לא מוגדרת — fail-closed" },
               { label: "הגבלת קצב", value: status.security.rateLimit.active ? `פעילה · status ${status.security.rateLimit.status}/דק' · seal ${status.security.rateLimit.seal}/דק'` : "כבויה" },
               { label: "כתיבה", value: status.writesEnabled ? "מאושרת (dry-run)" : "נדחית במצב הנוכחי" },
-              { label: "שידור חיצוני", value: status.broadcastCapable ? "אפשרי" : "לא אפשרי — אין חותם מחובר" }
+              { label: "שידור חיצוני", value: status.broadcastCapable ? "אפשרי" : "לא אפשרי — אין חותם מחובר" },
+              // roast 63: supervisor truth (served since Task 62) finally rendered —
+              // the screen may only claim service liveness from the supervisor itself.
+              ...(status.supervisor && status.supervisor.length > 0
+                ? [{
+                    label: "מפקח-שירותים",
+                    value: `${status.supervisor.filter((s) => s.alive && !s.disabled).length}/${status.supervisor.length} חיים — ${status.supervisor.map((s) => `${s.name} ${s.disabled ? "(מנוטרל)" : s.alive ? "✓" : "✗"}`).join(" · ")}`
+                  }]
+                : [])
             ]}
           />
           <div className="mt-3 flex items-center gap-2">
             <Btn
               variant="outline"
               size="sm"
-              ariaLabel="הרץ selftest של הקרנל — בדיקה חיה של 7 תכונות"
+              ariaLabel="הרץ selftest של הקרנל — בדיקה חיה"
               onClick={async () => {
-                toast.info("מריץ selftest…");
-                const res = await fetch(EP.kernel).then((r) => r.json() as Promise<{ ok: boolean; result?: { checks?: { pass: boolean }[] }; error?: string }>);
-                if (res.ok && res.result?.checks?.every((c) => c.pass)) toast.success("selftest 7/7 עבר — הקרנל דטרמיניסטי ותקין");
-                else toast.error(`selftest נכשל: ${res.error ?? "תשובה לא תקינה"}`);
+                // roast 63: raw fetch with no catch — a network failure left the
+                // "מריץ selftest…" toast hanging forever. Wrapped + honest count
+                // derived from result.checks.length (the suite grows; "7/7" was
+                // a frozen number like the rest of this class).
+                const tid = toast.info("מריץ selftest…");
+                try {
+                  const res = await saosFetch<{ ok: boolean; result?: { checks?: { pass: boolean }[] }; error?: string }>(EP.kernel);
+                  const checks = res.result?.checks ?? [];
+                  const passed = checks.filter((c) => c.pass).length;
+                  if (checks.length > 0 && passed === checks.length) toast.success(`selftest ${passed}/${checks.length} עבר — הקרנל דטרמיניסטי ותקין`);
+                  else toast.error(`selftest נכשל: ${passed}/${checks.length} עברו${res.error ? ` — ${res.error}` : ""}`);
+                } catch (e) {
+                  const err = e as { kind?: string; message?: string };
+                  toast.error(`selftest נכשל: ${err?.kind === "auth" ? "נדרשת התחברות" : err?.message ?? "שגיאת רשת"}`);
+                } finally {
+                  toast.dismiss(tid);
+                }
               }}
             >
               <ListChecks className="size-3.5" aria-hidden />
-              הרץ selftest קרנל (7 תכונות)
+              הרץ selftest קרנל
             </Btn>
           </div>
         </Panel>
@@ -290,7 +311,7 @@ export function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void 
               nextAction="מסך שרשרת ואימות → הרץ פעימה (POST /seal) כדי ליצור את החותמה הראשונה."
             />
           ) : (
-            <ul className="space-y-2" aria-label="שמונה חותמות אחרונות">
+            <ul className="space-y-2" aria-label="ארבע חותמות אחרונות">
               {status.seals.slice(0, 4).map((s) => (
                 <li key={s.id} className="rounded-lg border border-zinc-800 bg-zinc-900/70 p-2.5">
                   <div className="flex flex-wrap items-center gap-2">
@@ -330,7 +351,7 @@ export function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void 
               nextAction="הרץ selftest או פעימה כדי ליצור את הקבלה הראשונה."
             />
           ) : (
-            <ul className="scroll-slim max-h-64 space-y-1.5 overflow-y-auto pl-1" aria-label="עשר קבלות אחרונות">
+            <ul className="scroll-slim max-h-64 space-y-1.5 overflow-y-auto pl-1" aria-label="שמונה קבלות אחרונות">
               {status.receipts.slice(0, 8).map((r, i) => (
                 <li key={r.digest} className="flex items-center gap-2 rounded-lg border border-zinc-800/70 bg-zinc-900/60 px-2.5 py-1.5">
                   <Badge tone="neutral">{r.kind}</Badge>
@@ -456,10 +477,14 @@ function AddrRow({ label, address }: { label: string; address: string }) {
 
 function KeySlotBadge({ label, slot }: { label: string; slot: { loaded: boolean; match?: boolean | null } | undefined }) {
   if (!slot) return <Badge tone="neutral">{label}: —</Badge>;
-  const ok = slot.loaded && slot.match !== false;
+  // roast 63: match===null means "never verified live" — it used to render the
+  // same green ok tone as a verified match (with a tooltip claiming live
+  // match). Unverified is its own honest state (mirrors security-tab).
+  const tone = slot.match === true ? "ok" : slot.match === false ? "danger" : "neutral";
+  const title = slot.match === true ? "טעון ותואם לרשות-החיה בשרשרת" : slot.match === false ? "לא תואם — מפתח ישן" : "טעון — טרם אומת מול השרשרת";
   return (
-    <Badge tone={ok ? "ok" : "danger"} title={ok ? "טעון ותואם לרשות-החיה בשרשרת" : "לא טעון או לא תואם"}>
-      {label}: {slot.loaded ? (slot.match === true ? "טעון+תואם" : "טעון") : "לא טעון"}
+    <Badge tone={tone} title={title}>
+      {label}: {slot.loaded ? (slot.match === true ? "טעון+תואם" : slot.match === false ? "סוטה" : "טעון (לא-אומת)") : "לא טעון"}
     </Badge>
   );
 }
@@ -539,7 +564,7 @@ export function MyKeysPanel() {
               </div>
             </div>
             <p className="mt-2 text-[11px] leading-relaxed text-zinc-400">
-              נתיבי-כניסה (שלושתם פעילים): {keysQ.data.login?.hint ?? "—"} · ההתחברות מזהה אוטומטית איזה מפתח הוזן.
+              נתיבי-כניסה: {keysQ.data.login?.hint ?? "—"} · ההתחברות מזהה אוטומטית איזה מפתח הוזן.
             </p>
           </div>
 
@@ -585,7 +610,7 @@ export function MyKeysPanel() {
               )}
             </div>
             <p className="mt-1.5 text-[10px] leading-relaxed text-zinc-500">
-              זה המפתח שנוצר בשחזור — עכשיו פה על הראשי, בלי קבצים. ניתן לרוטציה בכל רגע (אבטחה → ביטול כל ההפעלות).
+              מקור המפתח: {chain?.account ?? "—"} (verdict בלבד — חומר-המפתח לעולם לא מוצג). ניתן לרוטציה בכל רגע (אבטחה → ביטול כל ההפעלות).
             </p>
           </div>
 

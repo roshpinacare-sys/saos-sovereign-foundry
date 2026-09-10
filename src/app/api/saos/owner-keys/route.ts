@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { readFileSync } from "fs";
 import path from "path";
 
-import { audit } from "@/lib/saos/auth";
+import { audit, requireAuth } from "@/lib/saos/auth";
 import { coarseError } from "@/lib/saos/api-errors";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
 
@@ -54,7 +54,16 @@ async function signerFetch(pathname: string, init?: RequestInit): Promise<Respon
   }
 }
 
-export async function GET(_req: Request) {
+export async function GET(req: Request) {
+  // roast 63: GET was the only /api/saos route with NO rate limit at all — now
+  // budgeted (separate bucket so read traffic never eats the ingest budget).
+  const rl = enforceRateLimit("owner-keys-read", req);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { ok: false, error: "rate-limited: ניסיונות רבים מדי — המתן רגע", retryAfterSec: rl.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+    );
+  }
   try {
     const res = await signerFetch("/keys/status", { method: "GET" });
     const body = await res.json().catch(() => ({ ok: false, error: "signer returned non-JSON" }));
@@ -65,6 +74,20 @@ export async function GET(_req: Request) {
 }
 
 export async function POST(req: Request) {
+  // roast 63: key ingestion is the most sensitive WRITE surface and used to be
+  // anonymous — a free "does this WIF match the live authority" oracle for
+  // anyone with the URL. Symmetry with anchor-pulse (roast 57 principle):
+  // requireAuth first; the panel always calls this with the session cookie.
+  // Self-protecting design (Task 29) stays: only keys matching LIVE chain
+  // authority can ever be written.
+  const auth = await requireAuth(req);
+  if (!auth.authenticated) {
+    return NextResponse.json(
+      { ok: false, error: auth.error ?? "auth-required: חיבור מפתחות דורש התחברות" },
+      { status: auth.authConfigured ? 401 : 403 }
+    );
+  }
+
   const rl = enforceRateLimit("owner-keys", req);
   if (!rl.allowed) {
     return NextResponse.json(

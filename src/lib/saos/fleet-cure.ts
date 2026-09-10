@@ -72,15 +72,22 @@ export function fleetCureStatus(): FleetCureStatus {
     const waiting = accounts
       .filter((a) => typeof a.etaToWindowMin === "number" && a.etaToWindowMin !== null)
       .sort((a, b) => (a.etaToWindowMin ?? Infinity) - (b.etaToWindowMin ?? Infinity))[0];
-    // Task 62: the machine flag wins; legacy files (no flag) fall back to the
-    // daemon's note — "no pending…" / definitive-stop pages mean NOT scheduled.
+    // Task 62: the machine flag wins. roast 63 tightened the legacy fallback:
+    // the old default treated ANY note that didn't start "no pending|sig=" as
+    // pendingWeave=true — arbitrary text ("probe failed", "starting up…") would
+    // have resurrected the "מתוזמן" screen-lie. Now: only an explicit positive
+    // signal (a live sig reference) schedules; explicit stop pages deny; and
+    // UNKNOWN text ⇒ null (never scheduled, honestly "not known").
     const rawFlag = (j as { pendingWeave?: unknown }).pendingWeave;
+    const noteText = j.note?.trim() ?? "";
     const pendingWeave: boolean | null =
       typeof rawFlag === "boolean"
         ? rawFlag
-        : j.note
-          ? !/^(no pending|sig=)/i.test(j.note.trim())
-          : null;
+        : /no pending|nothing to execute/i.test(noteText)
+          ? false
+          : /sig-[a-z0-9]/i.test(noteText)
+            ? true
+            : null;
     const isFresh = ageMin <= FLEET_STATUS_FRESH_MAX_MIN;
     const value: FleetCureStatus = {
       updatedAt: j.updatedAt ?? null,

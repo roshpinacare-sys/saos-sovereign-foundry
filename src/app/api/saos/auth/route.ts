@@ -10,6 +10,7 @@ import {
 } from "@/lib/saos/auth";
 import { verifyOwnerLoginKey } from "@/lib/saos/external-signer-client";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
+import { coarseError } from "@/lib/saos/api-errors";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,18 @@ export const dynamic = "force-dynamic";
  * session epoch — every cookie issued before it becomes invalid instantly.
  */
 
+/** roast 63: the login path itself had no outer catch — a thrown issueSession()
+ * or signer outage in verifyOwnerLoginKey escaped as a raw 500 (never-500 contract:
+ * errors are data). All three verbs wrapped. */
 export async function POST(req: Request) {
+  try {
+    return await authPost(req);
+  } catch (e) {
+    return NextResponse.json({ ok: false, error: coarseError(e, "auth-failed") }, { status: 200 });
+  }
+}
+
+async function authPost(req: Request) {
   const rl = enforceRateLimit("auth", req);
   if (!rl.allowed) {
     return NextResponse.json(
@@ -97,6 +109,14 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
+  try {
+    return await authGet(req);
+  } catch (e) {
+    return NextResponse.json({ ok: false, error: coarseError(e, "auth-state-failed") }, { status: 200 });
+  }
+}
+
+async function authGet(req: Request) {
   const rl = enforceRateLimit("auth", req);
   if (!rl.allowed) {
     return NextResponse.json({ ok: false, error: "rate-limited", retryAfterSec: rl.retryAfterSec }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } });
@@ -129,6 +149,14 @@ export async function GET(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  try {
+    return await authDelete(req);
+  } catch (e) {
+    return NextResponse.json({ ok: false, error: coarseError(e, "auth-logout-failed") }, { status: 200 });
+  }
+}
+
+async function authDelete(req: Request) {
   const rl = enforceRateLimit("auth", req);
   if (!rl.allowed) {
     return NextResponse.json({ ok: false, error: "rate-limited", retryAfterSec: rl.retryAfterSec }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } });
