@@ -125,6 +125,35 @@ async function signerSteemPlane(): Promise<{ reachable: boolean; error?: string;
   }
 }
 
+// ── roast-73: the SOVEREIGN plane via key-broker :3040 — the gate the audit ──
+// (SYSTEM-AUDIT §F5) declared missing: 12 agents × EVM-7nets+TRON+SOL+BTC-watchonly.
+// PUBLIC fields only (addresses/paths/nets + integrity verdicts) — the broker
+// strips pk/pub server-side and this proxy passes the plane through as-is.
+function keyBrokerToken(): string {
+  return readTrim(path.join(SECRETS_DIR, "key-broker.token")) ?? "";
+}
+async function keyBrokerSovereignPlane(): Promise<{ reachable: boolean; error?: string; body?: Record<string, unknown> }> {
+  const token = keyBrokerToken();
+  if (!token) return { reachable: false, error: "key-broker-token-unavailable" };
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), 8000);
+  try {
+    const url = process.env.SAOS_KEY_BROKER_URL ?? "http://127.0.0.1:3040";
+    const res = await fetch(`${url.replace(/\/$/, "")}/keys/sovereign-plane`, {
+      headers: { authorization: `Bearer ${token}` },
+      signal: ctl.signal,
+      cache: "no-store"
+    });
+    const body = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+    if (!res.ok || !body) return { reachable: false, error: `key-broker HTTP ${res.status}` };
+    return { reachable: true, body };
+  } catch (e) {
+    return { reachable: false, error: coarseError(e, "sovereign-plane-failed") };
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 // ── public wallet addresses (source of truth: treasury route + Task-44 recon) ─
 const TRON_FAMILY: Array<[string, string]> = [
   ["משפחה idx0 (ראשי)", "TAzZZkrwBXk59iRya7esnKVJeV1xLtqkGr"],
@@ -183,6 +212,8 @@ export async function GET(req: Request) {
       accounts?: SteemPlaneRow[];
       summary?: { onSteem?: number; accountsTotal?: number; probed?: number; matchedRoles?: number; accountsWithMatch?: number; totalLiquid?: number; totalSbd?: number; totalHp?: number; invalidHeld?: number };
     };
+    // roast-73: the SOVEREIGN plane — measured live from the key-broker gate :3040
+    const kbPlane = await keyBrokerSovereignPlane();
 
     // ── 3. key files (paths + sizes only, NEVER content) ──
     const files = [
@@ -333,7 +364,21 @@ export async function GET(req: Request) {
                 summary: planeSummary,
                 accounts: planeAccounts
               }
-            : { reachable: false, error: plane.error ?? "steem-plane-unreachable" }
+            : { reachable: false, error: plane.error ?? "steem-plane-unreachable" },
+          sovereignPlane: (() => {
+            const kb = kbPlane.body as { plane?: Record<string, unknown> } | undefined;
+            const p = kb?.plane as
+              | { generatedAt?: string; accounts?: unknown; integrity?: unknown }
+              | undefined;
+            if (!kbPlane.reachable || !p) return { reachable: false, error: kbPlane.error ?? "key-broker-unreachable" };
+            return {
+              reachable: true,
+              measuredAt: p.generatedAt ?? null,
+              version: "1.0.0",
+              integrity: p.integrity ?? null,
+              accounts: p.accounts ?? []
+            };
+          })()
         },
         openGaps,
         material: ownerMaterial,

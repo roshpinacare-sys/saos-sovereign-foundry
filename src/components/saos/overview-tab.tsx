@@ -660,6 +660,58 @@ export function MyKeysPanel() {
             );
           })()}
 
+          {/* ── 0-a2. מישור-הריבונות — roast-73: השער החי :3040 (key-broker) ──
+              The audit's declared single architectural gap (SYSTEM-AUDIT §F5):
+              the sovereign plane lived on disk with no live interface. Now it is
+              measured from the gate. Derived-or-silence: gate down → no section.
+              Public fields only — the broker strips pk/pub server-side. */}
+          {(() => {
+            const sov = keysQ.data.connection?.sovereignPlane;
+            if (!sov?.reachable) return null;
+            const rows = sov.accounts ?? [];
+            const integ = sov.integrity;
+            const fullyConsistent =
+              !!integ && integ.evm === "12/12" && integ.tron === "12/12" && integ.sol === "12/12";
+            const netsOf = (a: NonNullable<typeof sov.accounts>[number]) => {
+              const planes: string[] = [];
+              if (a.evm) planes.push(`EVM (${(a.evm.nets ?? []).length} רשתות)`);
+              if (a.tron) planes.push("TRON");
+              if (a.sol) planes.push("SOL");
+              if (a.btc) planes.push(a.btc.watchOnly ? "BTC (צפייה)" : "BTC");
+              return planes;
+            };
+            return (
+              <div className="rounded-xl border border-violet-400/20 bg-violet-400/[0.04] p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-violet-200">
+                    <KeyRound className="size-3.5" aria-hidden /> מישור-הריבונות — השער החי :3040 (key-broker)
+                  </span>
+                  <Badge tone={fullyConsistent ? "ok" : "warn"} title={sov.measuredAt ? `נמדד ${sov.measuredAt}` : undefined}>
+                    {fullyConsistent ? `12/12 ארנקים עקביים (EVM ${integ?.evm} · TRON ${integ?.tron} · SOL ${integ?.sol})` : "עקביות-חלקית — נדרשת-בדיקה"}
+                  </Badge>
+                  <Badge tone="info" title="השער חותם EVM (EIP-191) · TRON · SOL — ומשיב אפס חומר-מפתח, fail-closed מאומת">
+                    חתימה-חיה: EVM · TRON · SOL
+                  </Badge>
+                </div>
+                <p className="mt-1.5 text-[11px] leading-relaxed text-zinc-400">
+                  {rows.length} סוכנים ריבוניים × מישורי-ארנק (EVM-7רשתות + TRON + SOL + BTC-צפייה). כל נתון נשאב חי מהשער; אפס מפתח-פרטי עובר בתגובות — נמדד בבדיקות-הרגרסיה.
+                </p>
+                <div className="scroll-slim mt-2 max-h-64 space-y-1.5 overflow-y-auto pl-1">
+                  {rows.map((a) => (
+                    <div key={a.agent} className="flex flex-wrap items-center gap-1.5 rounded-lg border border-zinc-800/70 bg-zinc-950/60 px-2.5 py-1.5">
+                      <span dir="ltr" className="text-left"><Mono className="text-[11px] font-bold text-zinc-100">{a.agent}</Mono></span>
+                      <Badge tone="neutral">idx {a.idx}</Badge>
+                      {netsOf(a).map((p) => (
+                        <Badge key={p} tone={p.startsWith("BTC") ? "neutral" : "info"}>{p}</Badge>
+                      ))}
+                      {a.evm ? <span dir="ltr" className="text-[10px] text-zinc-500"><Mono>{a.evm.address.slice(0, 10)}…{a.evm.address.slice(-6)}</Mono></span> : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* ── 0-b. פערים-פתוחים — כל פער עם סגירה בצעד-אחד ── */}
           {keysQ.data.openGaps && keysQ.data.openGaps.length > 0 && (
             <div className="rounded-xl border border-amber-400/25 bg-amber-400/[0.05] p-3">

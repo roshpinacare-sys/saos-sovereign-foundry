@@ -611,6 +611,23 @@ export interface KeysMapSteemPlane {
   accounts?: SteemPlaneAccountRow[];
 }
 
+/** roast-73: מישור-הריבונות — מהשער החי :3040 (key-broker) · פומבי-בלבד, אפס חומר-מפתח */
+export interface KeysMapSovereignPlane {
+  reachable: boolean;
+  error?: string;
+  measuredAt?: string | null;
+  version?: string | null;
+  integrity?: { evm: string; tron: string; sol: string; computedAt: string } | null;
+  accounts?: Array<{
+    agent: string;
+    idx: number;
+    evm?: { address: string; nets?: string[]; path?: string } | null;
+    tron?: { address: string; path?: string } | null;
+    sol?: { address: string } | null;
+    btc?: { address: string; path?: string; watchOnly: boolean } | null;
+  }>;
+}
+
 export interface KeysMapResponse {
   ok: boolean;
   error?: string;
@@ -637,6 +654,7 @@ export interface KeysMapResponse {
     };
     services: Array<{ name: string; port: number; alive: boolean; disabled: boolean }>;
     steemPlane?: KeysMapSteemPlane;
+    sovereignPlane?: KeysMapSovereignPlane;
   };
   openGaps?: Array<{ id: string; title: string; detail: string; oneStep: string; state: "waiting-owner" | "blocked-external" }>;
   material?: Array<{ path: string; role: string; disposition: string; exists: boolean }>;

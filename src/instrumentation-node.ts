@@ -17,7 +17,10 @@
  * אצל המפקח הפנימי; spawn דרך `bun run dev` של כל-שירות (package.json — כבוד
  * לבחירת --hot/לא---hot של כל-שירות, למשל chief ללא --hot).
  *
- * כיבוי-ידני פר-שירות: SAOS_NO_GUARDIAN=1 · SAOS_NO_CHIEF=1 · SAOS_NO_SIGNER=1 · SAOS_NO_FLEET_CURE=1
+ * sovereign-takeover (roast 73, 2026-09-10): key-broker (:3040) — שער-החתימה של
+ * מישור-הריבונות — נבנה ונרשם במפקח (probe /ping פומבי-מינימלי, כמו signer/fleet-cure).
+ *
+ * כיבוי-ידני פר-שירות: SAOS_NO_GUARDIAN=1 · SAOS_NO_CHIEF=1 · SAOS_NO_SIGNER=1 · SAOS_NO_FLEET_CURE=1 · SAOS_NO_KEY_BROKER=1
  */
 import { spawn } from "child_process";
 import fs from "fs";
@@ -79,6 +82,8 @@ const SERVICES: Watched[] = [
   mk("external-signer", 3033, "signer-dev.log", "SAOS_NO_SIGNER", 35_000, "/ping"),
   // Task 62: fleet-cure — /ping ללא-אימות (ה-/status דורש admin-token)
   mk("fleet-cure", 3034, "fleet-cure-dev.log", "SAOS_NO_FLEET_CURE", 45_000, "/ping"),
+  // roast 73: key-broker — שער-החתימה הריבוני (:3040) — /ping ללא-אימות
+  mk("key-broker", 3040, "key-broker-dev.log", "SAOS_NO_KEY_BROKER", 55_000, "/ping"),
 ];
 
 const logFor = (s: Watched, msg: string) => {

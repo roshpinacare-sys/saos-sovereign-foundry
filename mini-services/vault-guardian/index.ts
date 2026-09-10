@@ -321,6 +321,9 @@ try {
 }
 
 log("INFO", `vault-guardian up on :${PORT} — steem every ${STEEM_INTERVAL_MS / 1000}s, others every ${DEFAULT_INTERVAL_MS / 60000}min, no-overlap lock on`);
+// roast 73: TEMP HATCH (key-broker birth via spawn-detached-unref) used once at
+// 23:34:47Z and reverted — marker /tmp/.kb-hatch-done retained; supervisor now
+// registers key-broker (:3040) permanently in instrumentation-node.ts.
 // סריקה ראשונית אחרי 5 שניות, ואז טיק כל 30 שניות שמריץ כל ריפו לפי-קצבו
 setTimeout(cycle, 5000);
 setInterval(() => {

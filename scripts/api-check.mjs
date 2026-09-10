@@ -120,7 +120,7 @@ async function main() {
   // regressions here were invisible for 13h (register() never ran, fleet-cure
   // was never in the list, boot-env drift silently disabled guardian+chief).
   const sup = Array.isArray(s.body.supervisor) ? s.body.supervisor : [];
-  report("task-62: /status exposes supervisor truth (4 services incl. fleet-cure)", sup.length === 4 && sup.some((x) => x.name === "fleet-cure"), `got=${sup.map((x) => x.name).join(",") || "none"}`);
+  report("task-62: /status exposes supervisor truth (5 services incl. fleet-cure + key-broker)", sup.length === 5 && sup.some((x) => x.name === "fleet-cure") && sup.some((x) => x.name === "key-broker"), `got=${sup.map((x) => x.name).join(",") || "none"}`);
   report("task-62: supervisor entries carry alive+disabled verdicts", sup.every((x) => typeof x.alive === "boolean" && typeof x.disabled === "boolean"), sup.map((x) => `${x.name}:${x.alive ? "up" : "DOWN"}${x.disabled ? "(disabled)" : ""}`).join(" "));
 
   // Task 62: the fleet-schedule claim must match the executor's own evidence —
@@ -777,6 +777,19 @@ async function main() {
   const connectedAccounts = sp?.accounts?.filter((a) => a.exists && Object.values(a.roles ?? {}).every((s) => s.match === true)).length ?? 0;
   report("steem-plane: derived gap present iff accounts hold no matching key (heals itself)", (gapSteem !== undefined) === (connectedAccounts < (sp?.accounts?.filter((a) => a.exists).length ?? 0)), `gap=${gapSteem !== undefined} connected=${connectedAccounts}`);
   report("steem-plane: gap carries a one-step close", gapSteem === undefined || (typeof gapSteem.oneStep === "string" && gapSteem.oneStep.length > 20 && gapSteem.state === "waiting-owner"), gapSteem ? `state=${gapSteem.state}` : "no gap (all connected)");
+}
+// roast-73: THE SOVEREIGN PLANE via key-broker :3040 — the gate the audit (§F5)
+// declared missing. The map must carry it live: reachable, 12 agents, integrity
+// verdicts 12/12 on every plane, and ZERO key material (pk/pub/seed keys or
+// 64-hex private-key shapes) anywhere in the payload.
+{
+  const km = await j("/api/saos/keys-map");
+  const sov = km.body?.connection?.sovereignPlane;
+  report("sovereign-plane: keys-map carries the live gate plane (reachable)", sov?.reachable === true, `reachable=${sov?.reachable} err=${sov?.error ?? "-"}`);
+  report("sovereign-plane: all 12 sovereign agents present", Array.isArray(sov?.accounts) && sov.accounts.length === 12, `accounts=${sov?.accounts?.length}`);
+  report("sovereign-plane: integrity verdicts measured on every plane", sov?.integrity?.evm === "12/12" && sov?.integrity?.tron === "12/12" && sov?.integrity?.sol === "12/12", `evm=${sov?.integrity?.evm} tron=${sov?.integrity?.tron} sol=${sov?.integrity?.sol}`);
+  report("sovereign-plane: public data only — no pk/pub/seed fields in the whole keys-map body", !/"(pk|pub|seed)"\s*:/.test(JSON.stringify(km.body)), "regex sweep over the whole keys-map body");
+  report("sovereign-plane: btc carried watch-only (no signing claim)", Array.isArray(sov?.accounts) && sov.accounts.every((a) => a.btc?.watchOnly === true), "every btc row watchOnly:true");
 }
 console.log(`\napi-check: ${pass} passed, ${fail} failed${skipped ? `, ${skipped} skipped (owner-held auth)` : ""}${fail ? ` → ${failures.join(", ")}` : ""}\n`);
   process.exit(fail === 0 ? 0 : 1);
