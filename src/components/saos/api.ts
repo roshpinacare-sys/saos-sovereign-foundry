@@ -41,6 +41,13 @@ interface Entry {
 
 const store = new Map<string, Entry>();
 const listeners = new Set<() => void>();
+/**
+ * fetcher registry (roast 55): every key that was ever fetched registers the
+ * exact fetcher that produced its data. "רענן הכול" refreshes THIS set —
+ * everything the session has actually displayed — instead of a hardcoded
+ * subset that silently skipped most panels.
+ */
+const fetchers = new Map<string, () => Promise<unknown>>();
 
 function notify() {
   for (const l of listeners) l();
@@ -73,7 +80,25 @@ export async function saosFetch<T>(path: string, init?: RequestInit): Promise<T>
   } catch {
     throw { kind: "network" } as SaosError;
   }
-  if (res.status === 401 || res.status === 403 || res.status === 429) throw classify(res.status);
+  if (res.status === 401 || res.status === 403 || res.status === 429) {
+    if (res.status !== 429) throw classify(res.status);
+    // roast 55: the API reports retryAfterSec in the body AND Retry-After header —
+    // both used to be discarded here, so callers could not honor the wait.
+    let retryAfterSec: number | undefined;
+    try {
+      const b = (await res.json()) as { retryAfterSec?: unknown } | null;
+      if (b && typeof b.retryAfterSec === "number" && Number.isFinite(b.retryAfterSec)) {
+        retryAfterSec = b.retryAfterSec;
+      }
+    } catch {
+      /* body not JSON — fall through to the header */
+    }
+    if (retryAfterSec === undefined) {
+      const h = Number(res.headers.get("retry-after"));
+      if (Number.isFinite(h) && h > 0) retryAfterSec = h;
+    }
+    throw { ...classify(res.status), retryAfterSec } as SaosError;
+  }
   let body: unknown;
   try {
     body = await res.json();
@@ -91,7 +116,12 @@ async function runFetch<T>(key: string, fetcher: () => Promise<T>): Promise<void
   entry.state = "loading";
   entry.version += 1;
   notify();
-  const p = fetcher()
+  fetchers.set(key, fetcher as () => Promise<unknown>);
+  // roast 55: a fetcher that throws SYNCHRONOUSLY used to bypass the whole
+  // chain — entry.promise never set, callers awaiting it (refresh-all button)
+  // hung forever. Pull the call inside the promise boundary.
+  const p = Promise.resolve()
+    .then(fetcher)
     .then((data) => {
       entry.data = data;
       entry.state = "ready";
@@ -171,9 +201,19 @@ export function useSaos<T>(key: string, fetcher: () => Promise<T>, enabled = tru
   return { state: "loading", refresh, refreshing: e.promise !== undefined };
 }
 
-/** refresh several keys at once (header "רענן הכול") — resolves when all done */
+/** refresh several keys at once — resolves when all done */
 export function refreshMany(jobs: { key: string; fetcher: () => Promise<unknown> }[]): Promise<void> {
   return Promise.all(jobs.map((j) => refreshKey(j.key, j.fetcher))).then(() => undefined);
+}
+
+/**
+ * roast 55: refresh EVERY key this session has actually displayed (each
+ * with its own registered fetcher) — the honest version of "רענן הכול".
+ * Returns the number of panels refreshed.
+ */
+export function refreshAllRegistered(): Promise<number> {
+  const jobs = [...fetchers.entries()];
+  return Promise.all(jobs.map(([key, fetcher]) => refreshKey(key, fetcher))).then(() => jobs.length);
 }
 
 /** helper for POST/PATCH actions with unified error toasts */

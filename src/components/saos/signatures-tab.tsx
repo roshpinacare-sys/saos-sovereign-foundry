@@ -18,7 +18,7 @@ import {
   cn,
   fmtDateTime
 } from "@/components/ui/kit";
-import { EP, errText, refreshKey, useSaos } from "./api";
+import { EP, errText, refreshKey, saosFetch, useSaos } from "./api";
 import { SIGNATURE_STATUS, VERIFICATION_STATUS } from "./labels";
 import type { SignatureRow, SignerResponse } from "./types";
 
@@ -27,7 +27,7 @@ const TERMINAL_NO_RESULT: SignatureRow["status"][] = ["expired", "cancelled", "f
 const ALL_STATUSES = ["pending", "awaiting-approval", "signed-externally", "recorded", "failed", "expired", "cancelled"] as const;
 
 export function SignaturesTab() {
-  const signerQ = useSaos<SignerResponse>("signer", () => fetch(EP.signer).then((r) => r.json() as Promise<SignerResponse>));
+  const signerQ = useSaos<SignerResponse>("signer", () => saosFetch<SignerResponse>(EP.signer));
   const [statusFilter, setStatusFilter] = useState<string>("open");
   const [createOpen, setCreateOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -49,7 +49,16 @@ export function SignaturesTab() {
     return r.status === statusFilter;
   });
 
-  const openCount = data.counts.awaitingApproval;
+  // roast 55: the "פתוחות" badge used data.counts.awaitingApproval — a WHOLE-TABLE
+  // count of signerStatus="awaiting-approval", while the filter below shows the
+  // last-20 rows whose LIFECYCLE status is pending/awaiting-approval/signed-externally.
+  // Two different dimensions + two different scopes = the number could disagree with
+  // the very list it opens. Now derived from byStatus — the exact same statusFrom()
+  // computation over the exact same last-20 rows the filter operates on.
+  const openCount =
+    (data.counts.byStatus["pending"] ?? 0) +
+    (data.counts.byStatus["awaiting-approval"] ?? 0) +
+    (data.counts.byStatus["signed-externally"] ?? 0);
 
   return (
     <div className="space-y-4">
@@ -278,8 +287,8 @@ export function SignaturesTab() {
         open={createOpen}
         onOpenChange={setCreateOpen}
         onDone={() => {
-          void refreshKey("signer", () => fetch(EP.signer).then((r) => r.json()));
-          void refreshKey("preflight", () => fetch(EP.preflight).then((r) => r.json()));
+          void refreshKey("signer", () => saosFetch(EP.signer));
+          void refreshKey("preflight", () => saosFetch(EP.preflight));
         }}
       />
       {recordRow && (
@@ -287,8 +296,8 @@ export function SignaturesTab() {
           row={recordRow}
           onClose={() => setRecordRow(null)}
           onDone={() => {
-            void refreshKey("signer", () => fetch(EP.signer).then((r) => r.json()));
-            void refreshKey("preflight", () => fetch(EP.preflight).then((r) => r.json()));
+            void refreshKey("signer", () => saosFetch(EP.signer));
+            void refreshKey("preflight", () => saosFetch(EP.preflight));
           }}
         />
       )}
@@ -296,7 +305,7 @@ export function SignaturesTab() {
         <CancelDialog
           row={cancelRow}
           onClose={() => setCancelRow(null)}
-          onDone={() => void refreshKey("signer", () => fetch(EP.signer).then((r) => r.json()))}
+          onDone={() => void refreshKey("signer", () => saosFetch(EP.signer))}
         />
       )}
     </div>

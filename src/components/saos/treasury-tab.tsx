@@ -12,7 +12,7 @@ import {
   Stat,
   cn
 } from "@/components/ui/kit";
-import { EP, errText, useSaos } from "./api";
+import { EP, errText, saosFetch, useSaos } from "./api";
 import type { TreasuryBalanceRow, TreasuryGrapheneRow, TreasuryResponse } from "./types";
 
 /**
@@ -20,7 +20,7 @@ import type { TreasuryBalanceRow, TreasuryGrapheneRow, TreasuryResponse } from "
  * קריאה-בלבד לחלוטין: כתובות ציבוריות בלבד, אף מפתח לא נוגע במסך הזה.
  */
 export function TreasuryTab() {
-  const q = useSaos<TreasuryResponse>("treasury", () => fetch(EP.treasury).then((r) => r.json() as Promise<TreasuryResponse>));
+  const q = useSaos<TreasuryResponse>("treasury", () => saosFetch<TreasuryResponse>(EP.treasury));
 
   return (
     <div className="space-y-4">

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Activity, AlertTriangle, CheckCircle2, ExternalLink, HeartPulse, RefreshCw, ShieldCheck, Wifi, WifiOff } from "lucide-react";
 
 import { Badge, Btn, Card, CardContent, CardHeader, CardTitle, MetaRows, Mono, cn, fmtDateTime } from "@/components/ui/kit";
-import { EP, useSaos } from "./api";
+import { EP, saosFetch, useSaos } from "./api";
 import type { LiveProofResponse } from "./types";
 
 /** tone per network probe outcome — honest three-state (no invented success) */
@@ -22,7 +22,7 @@ function probeCellInfo(p: LiveProofResponse["networks"][number]["probe"]): { ton
  * payload contains booleans/counts/public chain data only.
  */
 export function LiveProofCard() {
-  const liveQ = useSaos<LiveProofResponse>("live-proof", () => fetch(EP.liveProof).then((r) => r.json() as Promise<LiveProofResponse>));
+  const liveQ = useSaos<LiveProofResponse>("live-proof", () => saosFetch<LiveProofResponse>(EP.liveProof));
   const [expanded, setExpanded] = useState(false);
 
   if (liveQ.state === "loading") {

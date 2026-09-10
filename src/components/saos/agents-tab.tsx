@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { Badge, Btn, ErrorState, LoadingPanel, Mono, Panel, fmtDateTime } from "@/components/ui/kit";
-import { EP, errText, useSaos } from "./api";
+import { EP, errText, saosFetch, useSaos } from "./api";
 import type { AgentBridgeResponse } from "./types";
 
 /**
@@ -15,7 +15,7 @@ import type { AgentBridgeResponse } from "./types";
  * curl contract any agent (in any chat) needs — one token, one POST.
  */
 export function AgentsTab() {
-  const bridgeQ = useSaos<AgentBridgeResponse>("agent-bridge", () => fetch(EP.agentBridge).then((r) => r.json() as Promise<AgentBridgeResponse>));
+  const bridgeQ = useSaos<AgentBridgeResponse>("agent-bridge", () => saosFetch<AgentBridgeResponse>(EP.agentBridge));
   const [markingBusy, setMarkingBusy] = useState<string | null>(null);
 
   const data = bridgeQ.state === "ready" ? bridgeQ.data : null;

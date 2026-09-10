@@ -39,7 +39,7 @@ import {
   cn,
   fmtDateTime
 } from "@/components/ui/kit";
-import { EP, errText, refreshKey, useSaos } from "./api";
+import { EP, errText, refreshKey, saosFetch, useSaos } from "./api";
 import { LiveProofCard } from "./live-proof-card";
 import { ANCHOR_STATUS, NETWORK_STATUS } from "./labels";
 import type { AuthStateResponse, DecisionsResponse, KeysMapResponse, PreflightResponse, RepoStatusResponse, StatusResponse } from "./types";
@@ -55,10 +55,10 @@ function blockerTab(blockerIds: string[], hasOpenSignature: boolean): string {
 }
 
 export function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void }) {
-  const statusQ = useSaos<StatusResponse>("status", () => fetch(EP.status).then((r) => r.json() as Promise<StatusResponse>));
-  const preflightQ = useSaos<PreflightResponse>("preflight", () => fetch(EP.preflight).then((r) => r.json() as Promise<PreflightResponse>));
-  const repoQ = useSaos<RepoStatusResponse>("repo-status", () => fetch(EP.repoStatus).then((r) => r.json() as Promise<RepoStatusResponse>));
-  const decQ = useSaos<DecisionsResponse>("decisions", () => fetch(EP.decisions).then((r) => r.json() as Promise<DecisionsResponse>));
+  const statusQ = useSaos<StatusResponse>("status", () => saosFetch<StatusResponse>(EP.status));
+  const preflightQ = useSaos<PreflightResponse>("preflight", () => saosFetch<PreflightResponse>(EP.preflight));
+  const repoQ = useSaos<RepoStatusResponse>("repo-status", () => saosFetch<RepoStatusResponse>(EP.repoStatus));
+  const decQ = useSaos<DecisionsResponse>("decisions", () => saosFetch<DecisionsResponse>(EP.decisions));
 
   const ready = statusQ.state === "ready" && preflightQ.state === "ready" && repoQ.state === "ready" && decQ.state === "ready";
   if (!ready) {
@@ -465,8 +465,8 @@ function KeySlotBadge({ label, slot }: { label: string; slot: { loaded: boolean;
 }
 
 export function MyKeysPanel() {
-  const keysQ = useSaos<KeysMapResponse>("keys-map", () => fetch(EP.keysMap).then((r) => r.json() as Promise<KeysMapResponse>));
-  const authQ = useSaos<AuthStateResponse>("auth", () => fetch(EP.auth).then((r) => r.json() as Promise<AuthStateResponse>));
+  const keysQ = useSaos<KeysMapResponse>("keys-map", () => saosFetch<KeysMapResponse>(EP.keysMap));
+  const authQ = useSaos<AuthStateResponse>("auth", () => saosFetch<AuthStateResponse>(EP.auth));
   const [revealed, setRevealed] = useState(false);
   const [loggingIn, setLoggingIn] = useState(false);
 
@@ -479,7 +479,7 @@ export function MyKeysPanel() {
       const r = await fetch(EP.auth, { cache: "no-store" });
       const j = (await r.json()) as AuthStateResponse;
       if (j.authenticated) {
-        await refreshKey("auth", () => fetch(EP.auth).then((x) => x.json() as Promise<AuthStateResponse>));
+        await refreshKey("auth", () => saosFetch<AuthStateResponse>(EP.auth));
         toast.success(`מחובר — ${j.actor}`);
       } else {
         toast.error(j.error ? `הכניסה נדחתה: ${j.error}` : "הכניסה נדחתה");

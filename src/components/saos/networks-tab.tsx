@@ -13,13 +13,13 @@ import {
   fmtDateTime,
   fmtNum
 } from "@/components/ui/kit";
-import { EP, errText, useSaos } from "./api";
+import { EP, errText, saosFetch, useSaos } from "./api";
 import { CHAIN_TYPE_LABEL, NETWORK_STATUS, RPC_STATUS_LABEL } from "./labels";
 import type { PlansResponse, StatusResponse } from "./types";
 
 export function NetworksTab() {
-  const statusQ = useSaos<StatusResponse>("status", () => fetch(EP.status).then((r) => r.json() as Promise<StatusResponse>));
-  const plansQ = useSaos<PlansResponse>("plans", () => fetch(EP.plans).then((r) => r.json() as Promise<PlansResponse>));
+  const statusQ = useSaos<StatusResponse>("status", () => saosFetch<StatusResponse>(EP.status));
+  const plansQ = useSaos<PlansResponse>("plans", () => saosFetch<PlansResponse>(EP.plans));
 
   if (statusQ.state === "error" || plansQ.state === "error") {
     const e = statusQ.state === "error" ? statusQ : plansQ.state === "error" ? plansQ : null;

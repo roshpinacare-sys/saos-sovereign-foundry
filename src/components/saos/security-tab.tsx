@@ -15,14 +15,14 @@ import {
   Panel,
   fmtDateTime
 } from "@/components/ui/kit";
-import { EP, errText, refreshKey, useSaos } from "./api";
+import { EP, errText, refreshKey, saosFetch, useSaos } from "./api";
 import type { AuthStateResponse, LiveGateResponse, OwnerKeysIngestResponse, OwnerKeysStatusResponse, RepoStatusResponse, RevokeAllResponse, VerifyLiveResponse } from "./types";
 
 export function SecurityTab() {
-  const repoQ = useSaos<RepoStatusResponse>("repo-status", () => fetch(EP.repoStatus).then((r) => r.json() as Promise<RepoStatusResponse>));
-  const gateQ = useSaos<LiveGateResponse>("live-gate", () => fetch(EP.liveGate).then((r) => r.json() as Promise<LiveGateResponse>));
-  const authQ = useSaos<AuthStateResponse>("auth", () => fetch(EP.auth).then((r) => r.json() as Promise<AuthStateResponse>));
-  const ownerKeysQ = useSaos<OwnerKeysStatusResponse>("owner-keys", () => fetch(EP.ownerKeys).then((r) => r.json() as Promise<OwnerKeysStatusResponse>));
+  const repoQ = useSaos<RepoStatusResponse>("repo-status", () => saosFetch<RepoStatusResponse>(EP.repoStatus));
+  const gateQ = useSaos<LiveGateResponse>("live-gate", () => saosFetch<LiveGateResponse>(EP.liveGate));
+  const authQ = useSaos<AuthStateResponse>("auth", () => saosFetch<AuthStateResponse>(EP.auth));
+  const ownerKeysQ = useSaos<OwnerKeysStatusResponse>("owner-keys", () => saosFetch<OwnerKeysStatusResponse>(EP.ownerKeys));
 
   if (repoQ.state === "error" && gateQ.state === "error") {
     const e = repoQ;
@@ -39,8 +39,8 @@ export function SecurityTab() {
       <OwnerKeysCard
         statusQ={ownerKeysQ}
         onIngested={() => {
-          void refreshKey("owner-keys", () => fetch(EP.ownerKeys).then((r) => r.json()));
-          void refreshKey("signer", () => fetch(EP.signer).then((r) => r.json()));
+          void refreshKey("owner-keys", () => saosFetch(EP.ownerKeys));
+          void refreshKey("signer", () => saosFetch(EP.signer));
         }}
       />
 
@@ -48,9 +48,9 @@ export function SecurityTab() {
         state={authQ.state === "ready" ? authQ.data : null}
         loading={authQ.state === "loading"}
         onChanged={() => {
-          void refreshKey("auth", () => fetch(EP.auth).then((r) => r.json()));
+          void refreshKey("auth", () => saosFetch(EP.auth));
           void refreshKey("audit", () => fetch(`${EP.audit()}&x=${Date.now()}`).then((r) => r.json()));
-          void refreshKey("preflight", () => fetch(EP.preflight).then((r) => r.json()));
+          void refreshKey("preflight", () => saosFetch(EP.preflight));
         }}
         refresh={authQ.refresh}
       />
@@ -395,7 +395,7 @@ function GatePanel({ data, onRefresh, refreshing }: { data: LiveGateResponse; on
 }
 
 export function BackupsPanel() {
-  const repoQ = useSaos<RepoStatusResponse>("repo-status", () => fetch(EP.repoStatus).then((r) => r.json() as Promise<RepoStatusResponse>));
+  const repoQ = useSaos<RepoStatusResponse>("repo-status", () => saosFetch<RepoStatusResponse>(EP.repoStatus));
   if (repoQ.state === "error") {
     return <ErrorState kind={repoQ.err.kind} detail={errText(repoQ.err)} onRetry={repoQ.refresh} retrying={repoQ.refreshing} />;
   }

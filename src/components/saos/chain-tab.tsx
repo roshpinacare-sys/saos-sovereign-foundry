@@ -18,16 +18,13 @@ import {
   cn,
   fmtDateTime
 } from "@/components/ui/kit";
-import { EP, errText, refreshKey, useSaos } from "./api";
+import { EP, errText, refreshKey, saosFetch, useSaos } from "./api";
 import { ANCHOR_STATUS } from "./labels";
 import type { SealPostResponse, StatusResponse, VerifyChainResponse } from "./types";
 
 export function ChainTab() {
-  const statusQ = useSaos<StatusResponse>("status", () => fetch(EP.status).then((r) => r.json() as Promise<StatusResponse>));
-  const verifyQ = useSaos<VerifyChainResponse>("verify-chain:chain", () =>
-    fetch(EP.verifyChain("?scope=chain")).then((r) => r.json() as Promise<VerifyChainResponse>),
-    false
-  );
+  const statusQ = useSaos<StatusResponse>("status", () => saosFetch<StatusResponse>(EP.status));
+  const verifyQ = useSaos<VerifyChainResponse>("verify-chain:chain", () => saosFetch<VerifyChainResponse>(EP.verifyChain("?scope=chain")), false);
   const [sealOpen, setSealOpen] = useState(false);
   const [sealing, setSealing] = useState(false);
   const [expandedSeal, setExpandedSeal] = useState<string | null>(null);
@@ -46,7 +43,7 @@ export function ChainTab() {
       if (body.ok && body.promoted) toast.success(`${network}: קוּדֵם לנעוגן — הרשת אישרה את ה-txid`);
       else if (body.ok) toast.info(`${network}: עדיין לא מאומת — ${body.reason ?? "הרשת טרם אישרה"}`);
       else toast.error(`אימות-חוזר נדחה: ${body.error ?? "שגיאה לא ידועה"}`);
-      void refreshKey("status", () => fetch(EP.status).then((r) => r.json()));
+      void refreshKey("status", () => saosFetch(EP.status));
     } catch {
       toast.error("שגיאת רשת — האימות-החוזר לא בוצע");
     } finally {
@@ -68,8 +65,8 @@ export function ChainTab() {
           body.idempotent ? `פעימה זהה זוהתה (idempotent) — הוחזרה חותמה height ${body.seal.height}` : `חותמה נוצרה: height ${body.seal.height} · root ${body.seal.root.slice(0, 12)}…`
         );
         setSealOpen(false);
-        void refreshKey("status", () => fetch(EP.status).then((r) => r.json()));
-        void refreshKey("preflight", () => fetch(EP.preflight).then((r) => r.json()));
+        void refreshKey("status", () => saosFetch(EP.status));
+        void refreshKey("preflight", () => saosFetch(EP.preflight));
       } else {
         toast.error(`הפעימה נדחתה: ${body.error ?? "שגיאה לא ידועה"}`);
       }
@@ -149,7 +146,7 @@ export function ChainTab() {
                 size="sm"
                 className="mt-2"
                 loading={verifyQ.refreshing}
-                onClick={() => void refreshKey("verify-chain:chain", () => fetch(EP.verifyChain("?scope=chain")).then((r) => r.json()))}
+                onClick={() => void refreshKey("verify-chain:chain", () => saosFetch(EP.verifyChain("?scope=chain")))}
                 ariaLabel="הרץ אימות שרשרת מלא"
               >
                 <ListChecks className="size-3.5" aria-hidden />

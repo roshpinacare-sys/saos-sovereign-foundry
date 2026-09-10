@@ -18,12 +18,12 @@ import {
   cn,
   fmtDateTime
 } from "@/components/ui/kit";
-import { EP, errText, refreshKey, useSaos } from "./api";
+import { EP, errText, refreshKey, saosFetch, useSaos } from "./api";
 import { DECISION_PHASE_LABEL, DECISION_PHASE_ORDER, DECISION_RECORDED } from "./labels";
 import type { DecisionRecordedStatus, DecisionRow, DecisionsResponse } from "./types";
 
 export function DecisionsTab() {
-  const decQ = useSaos<DecisionsResponse>("decisions", () => fetch(EP.decisions).then((r) => r.json() as Promise<DecisionsResponse>));
+  const decQ = useSaos<DecisionsResponse>("decisions", () => saosFetch<DecisionsResponse>(EP.decisions));
   const [update, setUpdate] = useState<{ key: string; preset: DecisionRecordedStatus } | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -184,7 +184,7 @@ export function DecisionsTab() {
           row={updateRow}
           preset={update.preset}
           onClose={() => setUpdate(null)}
-          onDone={() => void refreshKey("decisions", () => fetch(EP.decisions).then((r) => r.json()))}
+          onDone={() => void refreshKey("decisions", () => saosFetch(EP.decisions))}
         />
       )}
     </div>

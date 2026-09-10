@@ -14,7 +14,7 @@ import {
   Panel,
   fmtDateTime
 } from "@/components/ui/kit";
-import { EP, errText, refreshKey, useSaos } from "./api";
+import { EP, errText, refreshKey, saosFetch, useSaos } from "./api";
 import type { AuditResponse, KernelResponse } from "./types";
 
 /** documented bug registry — source: docs/testing.md (never invented) */
@@ -46,8 +46,8 @@ const SUITE = [
 ];
 
 export function AuditTab() {
-  const auditQ = useSaos<AuditResponse>("audit", () => fetch(EP.audit()).then((r) => r.json() as Promise<AuditResponse>));
-  const kernelQ = useSaos<KernelResponse>("kernel", () => fetch(EP.kernel).then((r) => r.json() as Promise<KernelResponse>), false);
+  const auditQ = useSaos<AuditResponse>("audit", () => saosFetch<AuditResponse>(EP.audit()));
+  const kernelQ = useSaos<KernelResponse>("kernel", () => saosFetch<KernelResponse>(EP.kernel), false);
   const [openBug, setOpenBug] = useState<string | null>(null);
 
   return (
@@ -150,7 +150,7 @@ export function AuditTab() {
                   className="mt-2"
                   loading={kernelQ.refreshing}
                   onClick={() => {
-                    void refreshKey("kernel", () => fetch(EP.kernel).then((r) => r.json()));
+                    void refreshKey("kernel", () => saosFetch(EP.kernel));
                   }}
                   ariaLabel="הרץ selftest קרנל עכשיו"
                 >

@@ -21,7 +21,7 @@ import { Toaster, toast } from "sonner";
 import { Badge, Btn, cn } from "@/components/ui/kit";
 import { MODE_INFO } from "./labels";
 import type { AuthStateResponse, PreflightResponse, RepoStatusResponse, StatusResponse } from "./types";
-import { EP, refreshMany, useSaos } from "./api";
+import { EP, errText, refreshAllRegistered, saosFetch, useSaos } from "./api";
 
 import { OverviewTab } from "./overview-tab";
 import { BreakthroughTab } from "./breakthrough-tab";
@@ -65,10 +65,10 @@ export function CommandCenter() {
   const [refreshingAll, setRefreshingAll] = useState(false);
   const clock = useClock();
 
-  const statusQ = useSaos<StatusResponse>("status", () => fetch(EP.status).then((r) => r.json() as Promise<StatusResponse>));
-  const preflightQ = useSaos<PreflightResponse>("preflight", () => fetch(EP.preflight).then((r) => r.json() as Promise<PreflightResponse>));
-  const repoQ = useSaos<RepoStatusResponse>("repo-status", () => fetch(EP.repoStatus).then((r) => r.json() as Promise<RepoStatusResponse>));
-  const authQ = useSaos<AuthStateResponse>("auth", () => fetch(EP.auth).then((r) => r.json() as Promise<AuthStateResponse>));
+  const statusQ = useSaos<StatusResponse>("status", () => saosFetch<StatusResponse>(EP.status));
+  const preflightQ = useSaos<PreflightResponse>("preflight", () => saosFetch<PreflightResponse>(EP.preflight));
+  const repoQ = useSaos<RepoStatusResponse>("repo-status", () => saosFetch<RepoStatusResponse>(EP.repoStatus));
+  const authQ = useSaos<AuthStateResponse>("auth", () => saosFetch<AuthStateResponse>(EP.auth));
 
   const mode = statusQ.state === "ready" ? statusQ.data.mode : null;
   const modeInfo = mode ? MODE_INFO[mode] : null;
@@ -76,17 +76,12 @@ export function CommandCenter() {
 
   const refreshAll = useCallback(() => {
     setRefreshingAll(true);
-    refreshMany([
-      { key: "status", fetcher: () => fetch(EP.status).then((r) => r.json()) },
-      { key: "preflight", fetcher: () => fetch(EP.preflight).then((r) => r.json()) },
-      { key: "repo-status", fetcher: () => fetch(EP.repoStatus).then((r) => r.json()) },
-      { key: "decisions", fetcher: () => fetch(EP.decisions).then((r) => r.json()) },
-      { key: "signer", fetcher: () => fetch(EP.signer).then((r) => r.json()) },
-      { key: "auth", fetcher: () => fetch(EP.auth).then((r) => r.json()) },
-      { key: "treasury", fetcher: () => fetch(EP.treasury).then((r) => r.json()) }
-    ]).then(() => {
+    // roast 55: "רענן הכול" now refreshes EVERY panel this session has
+    // displayed (each with its own registered fetcher) — not a hardcoded
+    // subset of 7 that silently left chain/audit/keys/live-proof stale.
+    void refreshAllRegistered().then((n) => {
       setRefreshingAll(false);
-      toast.success("כל הפאנלים הראשיים רועננו");
+      toast.success(n > 0 ? `כל ${n} הפאנלים שהוצגו רועננו` : "אין פאנלים טעונים עדיין — עבור בין המסכים ורענן שוב");
     });
   }, []);
 
@@ -175,11 +170,17 @@ export function CommandCenter() {
             </div>
 
             <div className="ms-auto flex flex-wrap items-center gap-2">
-              {openCritical > 0 && (
+              {/* roast 55: preflight failure used to silently drop the badge — silence
+                  that implied safety. Now the unknown is shown as unknown. */}
+              {preflightQ.state === "error" ? (
+                <Badge tone="warn" title={`לא ניתן לדעת אם יש חסימות: ${errText(preflightQ.err)}`}>
+                  חסימות: לא ידוע
+                </Badge>
+              ) : openCritical > 0 ? (
                 <Badge tone="danger" title="בדוק את הפאנל חסימות פעילות">
                   {openCritical} חסימות
                 </Badge>
-              )}
+              ) : null}
               <span className="hidden items-center gap-1.5 rounded-lg border border-white/[0.07] bg-white/[0.03] px-2 py-1 font-display text-[11px] tabular-nums tracking-widest text-zinc-400 md:flex" dir="ltr" aria-label="שעון חי">
                 <span className="pulse-dot inline-block size-1.5 rounded-full bg-emerald-400 text-emerald-400" aria-hidden />
                 {clock || "--:--:--"}
