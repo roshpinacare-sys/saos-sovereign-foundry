@@ -28,11 +28,11 @@ const B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 /** base58check validation — a documented address that fails checksum is reported as data, never queried */
 function isValidTronAddress(addr: string): boolean {
   if (!/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(addr)) return false;
-  let n = 0n;
+  let n = BigInt(0); // no BigInt literal — tsconfig target ES2017 (typecheck gate)
   for (const ch of addr) {
     const idx = B58.indexOf(ch);
     if (idx < 0) return false;
-    n = n * 58n + BigInt(idx);
+    n = n * BigInt(58) + BigInt(idx);
   }
   const hex = n.toString(16).padStart(50, "0"); // 25 bytes
   const raw = Buffer.from(hex, "hex");

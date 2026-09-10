@@ -17,6 +17,12 @@ export const dynamic = "force-dynamic";
  *   - admin key      — material IS returned (explicit owner directive). It is
  *                      app-synthetic, gates only this console, and is rotateable
  *                      (POST /auth/revoke-all + re-issue). hash-verified live.
+ *                      HARDENING (Task 46 deep-audit): the full material is
+ *                      returned ONLY to same-origin UI requests (Sec-Fetch-Site:
+ *                      same-origin / Origin-host match — always true for the
+ *                      owner's console fetch, never for blind curl scraping or
+ *                      cross-site embedding). Masked + hash verdict remain
+ *                      available to everyone, so nothing about the UX changes.
  *   - chain keys     — verdicts + PUBLIC keys only (STEEM/HIVE/BLURT slots from
  *                      the external signer). WIF material NEVER passes here.
  *   - wallets        — PUBLIC addresses only (same constants as the treasury
@@ -52,6 +58,27 @@ function fileMeta(p: string, note: string): { path: string; exists: boolean; byt
 function maskOf(material: string | null): string | null {
   if (!material) return null;
   return `${material.slice(0, 6)}••••••••  (${material.length} תווים)`;
+}
+
+/**
+ * Same-origin gate for admin material (Task 46 deep-audit hardening).
+ * The owner's console always passes (browser fetch from the same origin sends
+ * Sec-Fetch-Site: same-origin). Blind curl / cross-site embedding does not,
+ * and receives verdicts + masked shape only.
+ */
+function isSameOriginRequest(req: Request): boolean {
+  const sfs = req.headers.get("sec-fetch-site");
+  if (sfs === "same-origin") return true;
+  const origin = req.headers.get("origin");
+  const host = req.headers.get("host");
+  if (origin && host) {
+    try {
+      return new URL(origin).host === host;
+    } catch {
+      return false;
+    }
+  }
+  return false;
 }
 
 // ── signer passthrough (verdicts + public keys only) ─────────────────────────
@@ -118,8 +145,11 @@ export async function GET(req: Request) {
     // ── 1. admin key (owner directive: ON THE MAIN SCREEN) ──
     const secretPath = path.join(SECRETS_DIR, "saos-admin-key");
     const uploadPath = path.join(UPLOAD_DIR, "saos-admin-key.txt");
-    const material = readTrim(secretPath) ?? readTrim(uploadPath);
-    const hashMatch = material ? verifyLoginKey(material) : null;
+    const materialOnDisk = readTrim(secretPath) ?? readTrim(uploadPath);
+    const sameOrigin = isSameOriginRequest(req);
+    // full material: same-origin UI requests only (Task 46 hardening)
+    const material = sameOrigin ? materialOnDisk : null;
+    const hashMatch = materialOnDisk ? verifyLoginKey(materialOnDisk) : null;
 
     // ── 2. chain keys via signer (verdicts + public data only) ──
     const signer = await signerStatus();
@@ -142,10 +172,11 @@ export async function GET(req: Request) {
         directive: "הבעלים 2026-09-10: כל המפתחות על המסך הראשי, מסודרים — בלי לחפש קבצים",
         admin: {
           configured: authConfigured(),
-          material: material, // מפתח-אדמין בלבד (מלאכותי, ניתן לרוטציה) — הנחיית בעלים מפורשת
-          masked: maskOf(material),
+          material: material, // מפתח-אדמין בלבד (מלאכותי, ניתן לרוטציה) — הנחיית בעלים מפורשת, same-origin בלבד (Task 46)
+          masked: maskOf(materialOnDisk),
           hashMatch,
-          source: readTrim(secretPath) ? "out-of-tree (~/.secrets)" : material ? "upload copy" : null
+          source: readTrim(secretPath) ? "out-of-tree (~/.secrets)" : materialOnDisk ? "upload copy" : null,
+          withheld: sameOrigin ? null : "material-same-origin-only"
         },
         login: {
           devAutoSession: (process.env.SAOS_DEV_AUTOSESSION ?? "").trim() === "1",
@@ -179,7 +210,7 @@ export async function GET(req: Request) {
       action: "GET /keys-map",
       allowed: true,
       req,
-      detail: JSON.stringify({ hashMatch, signerReachable: signer.reachable })
+      detail: JSON.stringify({ hashMatch, signerReachable: signer.reachable, sameOrigin })
     });
     return res;
   } catch (e) {
