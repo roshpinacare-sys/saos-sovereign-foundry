@@ -627,6 +627,8 @@ export function MyKeysPanel() {
                     const noneMatch = r.exists && roleVals.length > 0 && roleVals.every((s) => s.match !== true);
                     const div = r.divergence ? Object.values(r.divergence).filter((v) => v !== null) : [];
                     const unchanged = div.length > 0 && div.every((v) => v === "same");
+                    const anchor = (r as { postingAnchor?: { STEEM?: string | null; HIVE?: string | null } }).postingAnchor;
+                    const anchored = anchor?.STEEM ?? anchor?.HIVE ?? null;
                     return (
                       <div key={r.name} className="flex flex-wrap items-center gap-1.5 rounded-lg border border-zinc-800/70 bg-zinc-950/60 px-2.5 py-1.5">
                         <span dir="ltr" className="text-left"><Mono className="text-[11px] font-bold text-zinc-100">{r.name}</Mono></span>
@@ -640,7 +642,8 @@ export function MyKeysPanel() {
                               <Badge tone="warn">חיבור-חלקי ({roleVals.filter((s) => s.match === true).length}/4)</Badge>
                             )}
                             <span className="text-[10px] text-zinc-500">{r.liquid ?? "—"} · {r.sbd ?? "—"} · {r.hp ?? "—"} HP</span>
-                            {unchanged ? <Badge tone="info" title="רשויות-ה-STEEM זהות ל-HIVE — לא סובבו מאז-2018; הסיסמה-המקורית תחבר את שתי-השרשראות">STEEM≡HIVE (מקורי)</Badge> : null}
+                            {unchanged ? <Badge tone="info" title="רשויות-ה-STEEM זהות ל-HIVE — מפתח-אחד מחבר את שתי-השרשראות">STEEM≡HIVE</Badge> : null}
+                            {!allMatch && anchored ? <Badge tone="info" title="עוגן-חילוץ-חי: רשות-ה-posting כוללת את headcorner (account_auths) — פעולות-פוסטינג ניתנות-להפעלה-דרכו גם בלי-מפתח-ישיר (הוכח-בשרשרת, Task 70)">עוגן-פוסטינג-חי ({anchored})</Badge> : null}
                           </>
                         ) : (
                           <Badge tone="neutral">לא-קיים-ב-STEEM</Badge>

@@ -588,6 +588,7 @@ export interface SteemPlaneAccountRow {
   savings?: string;
   rewards?: string;
   divergence?: Record<string, string | null>;
+  postingAnchor?: { STEEM?: string | null; HIVE?: string | null };
   roles?: Record<string, { held: number; match: boolean | null }>;
 }
 

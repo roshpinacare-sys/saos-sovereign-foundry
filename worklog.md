@@ -2025,3 +2025,25 @@ Stage Summary:
 - **136/136 סלוטים · 0 סטיות · fleetAllConnected** — הכספת-החיה שלמה-פורנזית-משלושה-מקורות-עצמאיים.
 - **פתוח-יחיד בתחום-המפתחות: ynet** (סיסמתו-המקורית-אצל-הבעלים — הזרקה-אחת-מחברת-STEEM+HIVE). tov-rot1: נסגר.
 - דוקטרינת-המשמורת-הוכחה-שלישית: חומר-קבע-חי-בצ'אט-הבעלים (זיפ-09-10 → טאר-09-09 → שיחת-SETTLE-10) — וכל-פורמט-נבלע-ב-fail-closed.
+
+---
+Task ID: 70
+Agent: Z.ai Code (PM-מלא, סבב-ynet-בלי-מפתח)
+Task: הנחיית-הבעלים (trace 1a08d489fce57289): "אין לי את המפתח הוא שונה… בלעדיו תמצא פתרון לזה — תמשיך ודחוף" — לחבר/להפעיל את ynet בלי סיסמתו
+
+Work Log:
+- חקירת-שרשרת (נתונים-ציבוריים): ynet סובב 04-09 07:42:27/33 (STEEM≡HIVE — 4 פומביות-זהות; prev-owner STM86gwPfu…; recovery_account=steem-רשמי → התאוששות-מתה). ynet = יוצא-המן-הכלל מול-רוטציית-SETTLE-10 (08-09).
+- **rotation_evidence.json נקרא-סוף-סוף** (מהזיפ-המשוחזר): `derivedFrom: FACTORY_MASTER` · `scheme: sha256(username+role+password) via getPrivateKeys` · `accountAuthsPreserved.posting: [[headcorner,1],[steemauto,1]]` — המפתחות-החיים נגזרים מסיסמת-מפעל אחת (הדבקה-אחת-סוגרת-8-סלוטים), והמפעיל השאיר עוגן-חילוץ בתוך רשות-ה-posting.
+- **Ynet.txt אומת-offline**: גוזר את מצב-ה-לפני (owner == STM86gwPfu… == prev-בשרשרת) — סיסמת-המפעל-הקודמת (משמורת), לא-החי.
+- ציד-FM1-נכשל-כצפוי: ריפו-המפעיל roshpinacare-sys/steem (שיבוט-מלא; FM חי-רק-ב-.env-שנמחק; אפס-`FACTORY_MASTER=`-בבלובים-שנסרקו) · master_blast-של-המפעיל-עצמו (5,877 מועמדים × 282,096 בדיקות מול-ynet) → אפס · סוויפ-עצמאי-שלנו (הד.txt: 8-KL-דחוסים-פוענחו-ידנית + 256-וריאנטי-ROT1; 124.8MB/1,068-קבצים מקומיים: 102-WIF + 5,970-hex + 0-P) → אפס-התאמות.
+- **הפתרון-בלעדיו — העוגן-החי**: רשות-ה-posting של ynet (threshold=1) כוללת headcorner:1-בשתי-השרשראות, ומפתח-ה-posting-החי של headcorner-אצלנו (Task 69). **saos-ping-שודר-בשם-ynet ונחת-בשתי-השרשראות**: STEEM בלוק 109,469,365 (`12f1270ded36a01c7b3a3f12bbadc6f5f16f5423`) · HIVE בלוק 109,803,966 (`3d7ac3f419eb81349fa6e8eca1bdce689612fbe2`) — אומתו-ב-account_history. זרם-`saos`-מתמשך-קיים-על-ynet (הדמונים-משתמשים-באותו-עוגן) — ynet-מעולם-לא-היה-זומבי.
+- קוד: signer v2.4.5 — `postingAnchor`-נגזר-חי-בsteemPlaneProbe (אפס-מגע-במפתחות) + `summary.postingAnchoredGaps` · overview-tab: תג-`עוגן-פוסטינג-חי` · keys-map: תיקון-טענה-מיושנת (ynet סובב 09-04 — לא "מקורי-2018") + משפט-עוגן-נגזר.
+- מסמכים: evidence/YNET-ANCHOR-2026-09-10.md (עדות-מלאה) · KEY-RECOVERY.md §8 · MASTER-ACCESS-HUB פוטר · LEDGER §14.
+- היגיינה: אפס-סודות-בלוגים/גיט/צ'אט · /tmp: shred×3 (.hd-hex.list-זרע, .tar-fleet-bundle.json-WIF-ים, .cand_backuppass) + כלי-הציד-נמחקו · אפס-force-push.
+- דחיפה: askpass → push → ls-remote-אימות → askpass-נמחק.
+
+Stage Summary:
+- **ynet חי-ומופעל במישור-הפוסטינג בלי-שום-מפתח-ישיר** — הוכח-בשרשרת-בשתי-השרשראות (txids-מתועדים): הדבקה-ידנית-אינה-נדרשת-עוד-לפעולות-פוסטינג.
+- **האמת-על-ynet הושלמה**: סובב 04-09 מ-FACTORY_MASTER (עדות-rotation_evidence) · Ynet.txt = סיסמת-המפעל-הקודמת (משמורת) · FM1-הנוכחית-אבדה-5×-אצל-המפעיל (אומת-בשתי-סבבות-סריקה-עצמאיים).
+- **סגירה-מלאה-של-סלוטי-ynet (STEEM+HIVE ×4) = הדבקה-אחת** של סיסמת-המפעל-הנוכחית (או כל מפתח-חי) במסך-אבטחה — verify-then-write fail-closed.
+- סטטוס-מישור-STEEM: 11/12 מחוברים-מלא + ynet עם-עוגן-פוסטינג-חי · 136/136 סלוטים · 0 סטיות.

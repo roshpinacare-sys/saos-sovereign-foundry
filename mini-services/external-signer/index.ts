@@ -982,7 +982,7 @@ function heJson(contractName, contractAction, contractPayload) {
 let steemPlaneCache: { at: number; payload: Record<string, unknown> } | null = null;
 const STEEM_PLANE_TTL = 60_000;
 
-interface ChainAuth { key_auths?: Array<[string, number]>; account_auths?: unknown[]; }
+interface ChainAuth { key_auths?: Array<[string, number]>; account_auths?: Array<[string, number | string]>; }
 interface ChainAccount {
   name: string;
   created?: string;
@@ -1038,7 +1038,7 @@ async function steemPlaneProbe() {
   };
   const ROLES = ["owner", "active", "posting", "memo"];
   const accounts: Array<Record<string, unknown>> = [];
-  const summary = { onSteem: 0, accountsTotal: names.length, probed: 0, invalidHeld: 0, matchedRoles: 0, accountsWithMatch: 0, totalLiquid: 0, totalSbd: 0, totalHp: 0 };
+  const summary = { onSteem: 0, accountsTotal: names.length, probed: 0, invalidHeld: 0, matchedRoles: 0, accountsWithMatch: 0, postingAnchoredGaps: 0, totalLiquid: 0, totalSbd: 0, totalHp: 0 };
   for (const name of names) {
     const a = sMap.get(name);
     if (!a) { accounts.push({ name, exists: false, roles: {} }); continue; }
@@ -1073,6 +1073,19 @@ async function steemPlaneProbe() {
       const hKey = h ? String((h as ChainAccount)[role]?.key_auths?.[0]?.[0] ?? "") : "";
       divergence[role] = !sKey || !hKey ? null : sKey.slice(3) === hKey.slice(3) ? "same" : "diverged";
     }
+    // Task 70 — posting-anchor derivation (public chain data only): if OUR main
+    // account sits in this account's posting account_auths with weight ≥
+    // threshold, the posting plane is OPERABLE by us even with zero held keys
+    // (the ynet rescue anchor the operator preserved at the 09-04 rotation;
+    // proven on-chain by saos-ping txids on both chains). Derived, never stored.
+    const anchorIn = (accAuth: ChainAccount | null): string | null => {
+      if (!accAuth?.posting) return null;
+      const th = Number(accAuth.posting.weight_threshold ?? 1);
+      const hit = (accAuth.posting.account_auths ?? []).find((e) => String(e?.[0]) === STATE.main.account);
+      return hit && Number(hit[1]) >= th ? String(STATE.main.account) : null;
+    };
+    const postingAnchor = { STEEM: anchorIn(acc), HIVE: anchorIn(h as ChainAccount | null) };
+    if (!anyMatch && postingAnchor.STEEM) summary.postingAnchoredGaps++;
     accounts.push({
       name,
       exists: true,
@@ -1082,6 +1095,7 @@ async function steemPlaneProbe() {
       savings: `${acc.savings_balance} / ${acc.savings_sbd_balance}`,
       rewards: `${acc.reward_steem_balance} / ${acc.reward_sbd_balance} / ${acc.reward_vesting_balance}`,
       divergence,
+      postingAnchor,
       roles
     });
   }
