@@ -88,6 +88,42 @@ async function signerStatus(): Promise<{ reachable: boolean; error?: string; bod
   }
 }
 
+// ── roast-66: the STEEM plane (steemit) — live-measured, never frozen ────────
+// The owner caught the plane being invisible ("לכולם חסר steemit"). It now
+// travels from the signer's live probe (existence + balances + divergence +
+// held-WIF-vs-live-authority verdicts, public data only) into the map + gaps.
+interface SteemPlaneRow {
+  name: string;
+  exists: boolean;
+  created?: string;
+  liquid?: string;
+  sbd?: string;
+  hp?: string;
+  divergence?: Record<string, string | null>;
+  roles?: Record<string, { held: number; match: boolean | null }>;
+}
+async function signerSteemPlane(): Promise<{ reachable: boolean; error?: string; body?: Record<string, unknown> }> {
+  const token = signerToken();
+  if (!token) return { reachable: false, error: "signer-token-unavailable" };
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), 15000);
+  try {
+    const url = process.env.SAOS_EXTERNAL_SIGNER_URL ?? "http://127.0.0.1:3033";
+    const res = await fetch(`${url.replace(/\/$/, "")}/keys/steem-plane`, {
+      headers: { authorization: `Bearer ${token}` },
+      signal: ctl.signal,
+      cache: "no-store"
+    });
+    const body = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+    if (!res.ok || !body) return { reachable: false, error: `signer HTTP ${res.status}` };
+    return { reachable: true, body };
+  } catch (e) {
+    return { reachable: false, error: coarseError(e, "steem-plane-failed") };
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 // ── public wallet addresses (source of truth: treasury route + Task-44 recon) ─
 const TRON_FAMILY: Array<[string, string]> = [
   ["משפחה idx0 (ראשי)", "TAzZZkrwBXk59iRya7esnKVJeV1xLtqkGr"],
@@ -138,6 +174,14 @@ export async function GET(req: Request) {
     // ── 2. chain keys via signer (verdicts + public data only) ──
     const signer = await signerStatus();
     const signerBody = signer.body ?? {};
+    // roast-66: the STEEM plane — measured in parallel with the vault status
+    const plane = await signerSteemPlane();
+    const planeBody = (plane.body ?? {}) as {
+      measuredAt?: string;
+      steemPerMvest?: number;
+      accounts?: SteemPlaneRow[];
+      summary?: { onSteem?: number; accountsTotal?: number; probed?: number; matchedRoles?: number; accountsWithMatch?: number; totalLiquid?: number; totalSbd?: number; totalHp?: number; invalidHeld?: number };
+    };
 
     // ── 3. key files (paths + sizes only, NEVER content) ──
     const files = [
@@ -171,7 +215,20 @@ export async function GET(req: Request) {
     ].filter(Boolean));
     const emptyVaultAccounts = vaultNames.filter((n) => !withKeys.has(n));
     const fleetAllConnected = emptyVaultAccounts.length === 0 && withKeys.size > 0;
-    const openGaps = fleetAllConnected
+
+    // ── roast-66: the STEEM-plane gap is DERIVED from the live probe ──
+    // Before this round the plane was invisible; now: any account that EXISTS on
+    // steemit but holds NO matching WIF for even one role is an open, closable
+    // gap. If a later ingest connects an account, this entry heals itself —
+    // derived-or-silence, never frozen text.
+    const planeAccounts = plane.reachable ? (planeBody.accounts ?? []) : [];
+    const planeSummary = plane.reachable ? (planeBody.summary ?? null) : null;
+    const planeMissing = planeAccounts.filter(
+      (r) => r.exists && Object.values(r.roles ?? {}).some((s) => s.match !== true)
+    );
+    const ynetRow = planeAccounts.find((r) => r.name === "ynet");
+    const ynetUnchanged = ynetRow?.divergence ? Object.values(ynetRow.divergence).every((v) => v === "same") : false;
+    const openGaps0 = fleetAllConnected
       ? [
           {
             id: "tov-rot1",
@@ -197,6 +254,16 @@ export async function GET(req: Request) {
             state: "blocked-external" as const
           }
         ];
+    if (planeSummary && planeMissing.length > 0) {
+      openGaps0.push({
+        id: "steem-plane",
+        title: `מישור-STEEM (steemit) — ${planeMissing.length} חשבונות קיימים-על-השרשרת בלי מפתח-תואם`,
+        detail: `נמדד-חי ${planeBody.measuredAt?.slice(0, 16) ?? ""}: כל ${planeSummary.accountsTotal ?? planeAccounts.length} החשבונות קיימים ב-steemit (נוצרו 2018, לפני-הפיצול) עם יתרות אמיתיות — סה"כ ${planeSummary.totalLiquid ?? "?"} STEEM + ${planeSummary.totalSbd ?? "?"} SBD + ${planeSummary.totalHp ?? "?"} HP. רשויות-ה-STEEM שלהם סובבו חיצונית אחרי-2018 (סיסמאות-הצ'אט תואמות HIVE/BLURT — לא STEEM, ${planeSummary.probed ?? 0} WIF-ים נבדקו). מחוברים כרגע: ${planeSummary.accountsWithMatch ?? 0}.${ynetUnchanged ? " יוצא-מן-הכלל: ynet — רשויות-ה-STEEM שלו זהות ל-HIVE (לא סובבו מאז-2018); הסיסמה-המקורית שלו תחבר את שתי-השרשראות בבת-אחת." : ""}`,
+        oneStep: "שני-מסלולים: (1) סיסמת-הגיבוי 09-09 (אצל הבעלים, צ'אט 09-09) — גיבוי-עידן-הצי שב-backups מחזיק את מפתחות-ה-STEEM של הצי מאז-שנבנה; (2) הדבקת מפתח/סיסמת-STEEM נוכחית לכל חשבון במסך-אבטחה → verify-then-write fail-closed.",
+        state: "waiting-owner" as const
+      });
+    }
+    const openGaps = openGaps0;
 
     const ownerMaterial = [
       { path: "upload/הד.txt", role: "ייצוא-צ'אט 2018 (Haran Titi) — 13 סיסמאות-אב של הצי והראשי", disposition: "נקלט 10-09 ערב: 84 התאמות-חי על 12 חשבונות (הצי חזר!) → גיבוי-טרי → הושמד shred — הנגזרות חיות בכספת ובגיבוי", exists: false },
@@ -242,7 +309,16 @@ export async function GET(req: Request) {
             vaultAccountCount: vaultNames.length,
             fleetAllConnected
           },
-          services: svcs.map((s) => ({ name: s.name, port: s.port, alive: s.alive, disabled: s.disabled }))
+          services: svcs.map((s) => ({ name: s.name, port: s.port, alive: s.alive, disabled: s.disabled })),
+          steemPlane: plane.reachable
+            ? {
+                reachable: true,
+                measuredAt: planeBody.measuredAt ?? null,
+                steemPerMvest: planeBody.steemPerMvest ?? null,
+                summary: planeSummary,
+                accounts: planeAccounts
+              }
+            : { reachable: false, error: plane.error ?? "steem-plane-unreachable" }
         },
         openGaps,
         material: ownerMaterial,

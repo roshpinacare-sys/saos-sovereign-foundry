@@ -8,6 +8,7 @@ import {
   EyeOff,
   FileLock2,
   GitBranch,
+  Globe,
   KeyRound,
   ListChecks,
   LogIn,
@@ -590,6 +591,67 @@ export function MyKeysPanel() {
               })()}
             </div>
           )}
+
+          {/* ── 0-a. מישור-STEEM (steemit) — roast-66: המישור שהיה בלתי-נראה, עכשיו נמדד-חי ──
+              The owner caught it: "לכולם חסר steemit". Everything here is derived
+              from the signer's live probe — existence, balances, divergence,
+              held-key verdicts. Derived-or-silence: no probe → no section. */}
+          {(() => {
+            const sp = keysQ.data.connection?.steemPlane;
+            if (!sp?.reachable) return null;
+            const rows = sp.accounts ?? [];
+            const sum = sp.summary;
+            const connected = rows.filter((r) => r.exists && Object.values(r.roles ?? {}).every((s) => s.match === true)).length;
+            const missing = rows.filter((r) => r.exists && Object.values(r.roles ?? {}).some((s) => s.match !== true));
+            const allGood = missing.length === 0;
+            return (
+              <div className="rounded-xl border border-teal-400/20 bg-teal-400/[0.04] p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-teal-200">
+                    <Globe className="size-3.5" aria-hidden /> מישור-STEEM (steemit) — נמדד-חי מהשרשרת
+                  </span>
+                  <Badge tone={allGood ? "ok" : "warn"} title={sp.measuredAt ? `נמדד ${sp.measuredAt}` : undefined}>
+                    {allGood ? "כל-החשבונות מחוברים ל-steemit" : `${connected}/${rows.filter((r) => r.exists).length} חשבונות מחוברים · ${missing.length} עם-מפתח-חסר`}
+                  </Badge>
+                  <Badge tone="neutral">
+                    יתרות: {sum?.totalLiquid ?? "?"} STEEM + {sum?.totalSbd ?? "?"} SBD + {sum?.totalHp ?? "?"} HP
+                  </Badge>
+                </div>
+                <p className="mt-1.5 text-[11px] leading-relaxed text-zinc-400">
+                  כל {sum?.accountsTotal ?? rows.length} החשבונות קיימים ב-steemit (נוצרו 2018, לפני-הפיצול). {sum?.probed ?? 0} מפתחות-כספת נבדקו מול רשויות-ה-STEEM החיות — הפסקי-דין למטה נגזרים, לא קפואים.
+                </p>
+                <div className="scroll-slim mt-2 max-h-64 space-y-1.5 overflow-y-auto pl-1">
+                  {rows.map((r) => {
+                    const roleVals = Object.values(r.roles ?? {});
+                    const allMatch = r.exists && roleVals.length > 0 && roleVals.every((s) => s.match === true);
+                    const noneMatch = r.exists && roleVals.length > 0 && roleVals.every((s) => s.match !== true);
+                    const div = r.divergence ? Object.values(r.divergence).filter((v) => v !== null) : [];
+                    const unchanged = div.length > 0 && div.every((v) => v === "same");
+                    return (
+                      <div key={r.name} className="flex flex-wrap items-center gap-1.5 rounded-lg border border-zinc-800/70 bg-zinc-950/60 px-2.5 py-1.5">
+                        <span dir="ltr" className="text-left"><Mono className="text-[11px] font-bold text-zinc-100">{r.name}</Mono></span>
+                        {r.exists ? (
+                          <>
+                            {allMatch ? (
+                              <Badge tone="ok">מחובר-ל-steemit ({roleVals.filter((s) => s.match === true).length}/4)</Badge>
+                            ) : noneMatch ? (
+                              <Badge tone="warn">קיים-בשרשרת · מפתח-STEEM חסר (רשויות-סובבו)</Badge>
+                            ) : (
+                              <Badge tone="warn">חיבור-חלקי ({roleVals.filter((s) => s.match === true).length}/4)</Badge>
+                            )}
+                            <span className="text-[10px] text-zinc-500">{r.liquid ?? "—"} · {r.sbd ?? "—"} · {r.hp ?? "—"} HP</span>
+                            {unchanged ? <Badge tone="info" title="רשויות-ה-STEEM זהות ל-HIVE — לא סובבו מאז-2018; הסיסמה-המקורית תחבר את שתי-השרשראות">STEEM≡HIVE (מקורי)</Badge> : null}
+                          </>
+                        ) : (
+                          <Badge tone="neutral">לא-קיים-ב-STEEM</Badge>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ── 0-b. פערים-פתוחים — כל פער עם סגירה בצעד-אחד ── */}
           {keysQ.data.openGaps && keysQ.data.openGaps.length > 0 && (

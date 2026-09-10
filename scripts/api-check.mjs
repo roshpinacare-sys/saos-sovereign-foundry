@@ -762,6 +762,22 @@ async function main() {
     report("roast-59: restore dry-run on newest backup passes WITH chain-proof", false, String(e.message ?? e).slice(0, 80));
   }
 }
+// roast-66: THE STEEM PLANE — the owner caught the plane being invisible
+// ("לכולם חסר steemit"). The map must carry it live-measured forever: reachable,
+// 12 accounts, public-data-only (no WIF-shaped strings anywhere), and the
+// derived gap present while any on-chain account holds no matching key.
+{
+  const km = await j("/api/saos/keys-map");
+  const sp = km.body?.connection?.steemPlane;
+  report("steem-plane: keys-map carries the live plane (reachable)", sp?.reachable === true, `reachable=${sp?.reachable} err=${sp?.error ?? "-"}`);
+  report("steem-plane: all 12 fleet accounts measured on-chain", Array.isArray(sp?.accounts) && sp.accounts.length >= 12 && sp.accounts.filter((a) => a.exists).length >= 12, `accounts=${sp?.accounts?.length} exists=${sp?.accounts?.filter((a) => a.exists).length}`);
+  report("steem-plane: public data only — no WIF/pivate-key shapes in the payload", !JSON.stringify(km.body).match(/5[HJK][1-9A-HJ-NP-Za-km-z]{49}/), "regex sweep over the whole keys-map body");
+  report("steem-plane: summary carries live totals (liquid+SBD+HP)", typeof sp?.summary?.totalLiquid === "number" && typeof sp?.summary?.totalSbd === "number" && typeof sp?.summary?.totalHp === "number", `${sp?.summary?.totalLiquid} STEEM + ${sp?.summary?.totalSbd} SBD + ${sp?.summary?.totalHp} HP`);
+  const gapSteem = (km.body?.openGaps ?? []).find((g) => g.id === "steem-plane");
+  const connectedAccounts = sp?.accounts?.filter((a) => a.exists && Object.values(a.roles ?? {}).every((s) => s.match === true)).length ?? 0;
+  report("steem-plane: derived gap present iff accounts hold no matching key (heals itself)", (gapSteem !== undefined) === (connectedAccounts < (sp?.accounts?.filter((a) => a.exists).length ?? 0)), `gap=${gapSteem !== undefined} connected=${connectedAccounts}`);
+  report("steem-plane: gap carries a one-step close", gapSteem === undefined || (typeof gapSteem.oneStep === "string" && gapSteem.oneStep.length > 20 && gapSteem.state === "waiting-owner"), gapSteem ? `state=${gapSteem.state}` : "no gap (all connected)");
+}
 console.log(`\napi-check: ${pass} passed, ${fail} failed${skipped ? `, ${skipped} skipped (owner-held auth)` : ""}${fail ? ` → ${failures.join(", ")}` : ""}\n`);
   process.exit(fail === 0 ? 0 : 1);
 }

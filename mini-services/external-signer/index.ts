@@ -968,6 +968,138 @@ function heJson(contractName, contractAction, contractPayload) {
   };
 }
 
+// ── roast-66: THE STEEM PLANE — measured live, displayed, one-step-closable ──
+// The owner's finding ("לכולם חסר steemit"): the screen showed HIVE+BLURT for
+// the fleet while the STEEM plane was INVISIBLE — nobody could see that all 12
+// accounts EXIST on steemit (created 2018, pre-fork) with real balances, that
+// the main account's STEEM plane is live-held 4/4, and that the fleet's STEEM
+// authorities were rotated externally (the 2018 passwords match HIVE/BLURT but
+// NOT STEEM — measured 0/80). This endpoint measures the whole plane live:
+// existence, balances (liquid/SBD/HP), STEEM-vs-HIVE divergence, and a
+// fail-closed probe of whether ANY held WIF (any net tag — WIF bytes are
+// chain-agnostic, only the render prefix differs) matches the LIVE STEEM
+// authorities. PUBLIC DATA ONLY: verdicts + balances; no WIF, no pubkey echo.
+let steemPlaneCache: { at: number; payload: Record<string, unknown> } | null = null;
+const STEEM_PLANE_TTL = 60_000;
+
+interface ChainAuth { key_auths?: Array<[string, number]>; account_auths?: unknown[]; }
+interface ChainAccount {
+  name: string;
+  created?: string;
+  balance?: string;
+  sbd_balance?: string;
+  vesting_shares?: string;
+  savings_balance?: string;
+  savings_sbd_balance?: string;
+  reward_steem_balance?: string;
+  reward_sbd_balance?: string;
+  reward_vesting_balance?: string;
+  memo_key?: string;
+  owner?: ChainAuth;
+  active?: ChainAuth;
+  posting?: ChainAuth;
+}
+
+async function steemPlaneProbe() {
+  if (!STATE) throw new Error("seal-unavailable");
+  if (steemPlaneCache && Date.now() - steemPlaneCache.at < STEEM_PLANE_TTL) return steemPlaneCache.payload;
+  const names = [...new Set([STATE.main.account, ...STATE.fleet.map((f: { username: string }) => f.username), ...(STATE.vaultAccounts ?? [])])].filter(Boolean);
+  const [dgpo, steemAccs, hiveAccs] = await Promise.all([
+    rpcCallNet("STEEM", "condenser_api.get_dynamic_global_properties", []),
+    rpcCallNet("STEEM", "condenser_api.get_accounts", [names]),
+    rpcCallNet("HIVE", "condenser_api.get_accounts", [names]).catch(() => [] as Array<Record<string, unknown>>)
+  ]);
+  const tvs = Number(String(dgpo.total_vesting_shares).split(" ")[0]);
+  const tvf = Number(String(dgpo.total_vesting_fund_steem).split(" ")[0]);
+  const steemPerMvest = tvf / (tvs / 1e6);
+  const sMap = new Map<string, ChainAccount>((steemAccs as ChainAccount[]).map((a) => [a.name, a]));
+  const hMap = new Map<string, ChainAccount>((hiveAccs as ChainAccount[]).map((a) => [a.name, a]));
+  // held WIF candidates per account×role across ALL net tags (chain-agnostic bytes)
+  const heldOf = (account: string, role: string): string[] => {
+    const out = new Set<string>();
+    if (STATE.main.account === account) {
+      for (const net of ["STEEM", "HIVE", "BLURT"]) {
+        const w = STATE.main.net?.[net]?.[`${role}Wif`];
+        if (w) out.add(w);
+      }
+      const flat = STATE.main[`${role}Wif`];
+      if (flat) out.add(flat); // legacy flat slot (pre net-tagging) — a candidate like any other
+    }
+    const f = STATE.fleet.find((x: { username: string }) => x.username === account);
+    if (f) {
+      for (const net of ["STEEM", "HIVE", "BLURT"]) {
+        const w = f.net?.[net]?.[`${role}Wif`];
+        if (w) out.add(w);
+      }
+      const flat = f[`${role}Wif`];
+      if (flat) out.add(flat);
+    }
+    return [...out];
+  };
+  const ROLES = ["owner", "active", "posting", "memo"];
+  const accounts: Array<Record<string, unknown>> = [];
+  const summary = { onSteem: 0, accountsTotal: names.length, probed: 0, invalidHeld: 0, matchedRoles: 0, accountsWithMatch: 0, totalLiquid: 0, totalSbd: 0, totalHp: 0 };
+  for (const name of names) {
+    const a = sMap.get(name);
+    if (!a) { accounts.push({ name, exists: false, roles: {} }); continue; }
+    summary.onSteem++;
+    const h = hMap.get(name) ?? null;
+    const roles: Record<string, { held: number; match: boolean | null }> = {};
+    let anyMatch = false;
+    for (const role of ROLES) {
+      const wifs = heldOf(name, role);
+      const acc = a as ChainAccount;
+      const auths = role === "memo" ? [String(acc.memo_key ?? "")] : ((acc[role]?.key_auths ?? []) as Array<[string, number]>).map((k) => String(k?.[0] ?? ""));
+      let match: boolean | null = wifs.length ? false : null;
+      for (const wif of wifs) {
+        summary.probed++;
+        let pub: string;
+        try { pub = steem.auth.wifToPublic(wif); } catch { summary.invalidHeld++; continue; }
+        const payload = String(pub).slice(3);
+        if (auths.some((auth) => auth && auth.slice(3) === payload)) { match = true; break; }
+      }
+      if (match === true) { anyMatch = true; summary.matchedRoles++; }
+      roles[role] = { held: wifs.length, match };
+    }
+    if (anyMatch) summary.accountsWithMatch++;
+    const acc = a as ChainAccount;
+    const hp = (Number(String(acc.vesting_shares ?? "0").split(" ")[0]) / 1e6) * steemPerMvest;
+    summary.totalLiquid += Number(String(acc.balance ?? "0").split(" ")[0]);
+    summary.totalSbd += Number(String(acc.sbd_balance ?? "0").split(" ")[0]);
+    summary.totalHp += hp;
+    const divergence: Record<string, string | null> = {};
+    for (const role of ["owner", "active", "posting"]) {
+      const sKey = String(acc[role]?.key_auths?.[0]?.[0] ?? "");
+      const hKey = h ? String((h as ChainAccount)[role]?.key_auths?.[0]?.[0] ?? "") : "";
+      divergence[role] = !sKey || !hKey ? null : sKey.slice(3) === hKey.slice(3) ? "same" : "diverged";
+    }
+    accounts.push({
+      name,
+      exists: true,
+      created: String(acc.created ?? "").slice(0, 10),
+      liquid: acc.balance, sbd: acc.sbd_balance,
+      hp: hp.toFixed(3),
+      savings: `${acc.savings_balance} / ${acc.savings_sbd_balance}`,
+      rewards: `${acc.reward_steem_balance} / ${acc.reward_sbd_balance} / ${acc.reward_vesting_balance}`,
+      divergence,
+      roles
+    });
+  }
+  const payload = {
+    measuredAt: new Date().toISOString(),
+    steemPerMvest: Number(steemPerMvest.toFixed(3)),
+    accounts,
+    summary: {
+      ...summary,
+      totalLiquid: Number(summary.totalLiquid.toFixed(3)),
+      totalSbd: Number(summary.totalSbd.toFixed(3)),
+      totalHp: Number(summary.totalHp.toFixed(3))
+    }
+  };
+  steemPlaneCache = { at: Date.now(), payload };
+  return payload;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- server handle kept for supervision
 const server = Bun.serve({
   port: PORT,
@@ -1009,6 +1141,20 @@ const server = Bun.serve({
       return Response.json({ ok: true, summary: { slots: r.ok, drift: r.drift, unmatched: r.unmatched, errors: r.errors }, checkedAt: r.checkedAt, drifts: r.drifts, unmatchedSample: r.unmatchedSample ?? [], skipped: r.skipped ?? false, reason: r.reason ?? null });
     }
 
+    // ── roast-66: the STEEM plane as a first-class measured surface ──
+    // Before this, the plane was invisible (the owner: "לכולם חסר steemit"):
+    // the screen showed HIVE+BLURT verdicts only. Now: live existence + balances
+    // + divergence + held-WIF-vs-live-authority probe, fail-closed, public data
+    // only (verdicts + balances; no WIF, no pubkey echo).
+    if (url.pathname === "/keys/steem-plane" && req.method === "GET") {
+      try {
+        const payload = await steemPlaneProbe();
+        return Response.json({ ok: true, ...payload, version: "2.4.4" });
+      } catch (e) {
+        return Response.json({ ok: false, error: String(e?.message ?? e).slice(0, 200) }, { status: 502 });
+      }
+    }
+
     // ── Task 29: owner key entry point (self-protecting: only a live authority match is ever written) ──
     if (url.pathname === "/keys/status" && req.method === "GET") {
       try {
@@ -1047,7 +1193,7 @@ const server = Bun.serve({
             networks
           });
         }
-        return Response.json({ ok: true, main: { account: STATE.main.account, networks: mainNet }, fleet, vaultAccountNames: STATE.vaultAccounts ?? [], sealedAt: STATE.sealedAt, drift: { lastCheck: driftState.lastCheck, openDrifts: driftState.drifts.length, unmatched: driftState.unmatched.length, summary: driftState.lastSummary }, version: "2.4.3" });
+        return Response.json({ ok: true, main: { account: STATE.main.account, networks: mainNet }, fleet, vaultAccountNames: STATE.vaultAccounts ?? [], sealedAt: STATE.sealedAt, drift: { lastCheck: driftState.lastCheck, openDrifts: driftState.drifts.length, unmatched: driftState.unmatched.length, summary: driftState.lastSummary }, version: "2.4.4" });
       } catch (e) {
         return Response.json({ ok: false, error: String(e?.message ?? e).slice(0, 200) }, { status: 502 });
       }

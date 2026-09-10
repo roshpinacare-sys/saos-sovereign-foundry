@@ -577,6 +577,39 @@ export interface KeysMapChainKeys {
   fleet?: Array<{ username: string; posting: { loaded: boolean }; active: { loaded: boolean }; networks?: Record<string, { posting: boolean; active: boolean; owner: boolean; memo: boolean }> }>;
 }
 
+// ── roast-66: the STEEM plane (steemit) — live-measured per account ──────────
+export interface SteemPlaneAccountRow {
+  name: string;
+  exists: boolean;
+  created?: string;
+  liquid?: string;
+  sbd?: string;
+  hp?: string;
+  savings?: string;
+  rewards?: string;
+  divergence?: Record<string, string | null>;
+  roles?: Record<string, { held: number; match: boolean | null }>;
+}
+
+export interface KeysMapSteemPlane {
+  reachable: boolean;
+  error?: string;
+  measuredAt?: string | null;
+  steemPerMvest?: number | null;
+  summary?: {
+    onSteem?: number;
+    accountsTotal?: number;
+    probed?: number;
+    invalidHeld?: number;
+    matchedRoles?: number;
+    accountsWithMatch?: number;
+    totalLiquid?: number;
+    totalSbd?: number;
+    totalHp?: number;
+  } | null;
+  accounts?: SteemPlaneAccountRow[];
+}
+
 export interface KeysMapResponse {
   ok: boolean;
   error?: string;
@@ -602,6 +635,7 @@ export interface KeysMapResponse {
       fleetAllConnected: boolean;
     };
     services: Array<{ name: string; port: number; alive: boolean; disabled: boolean }>;
+    steemPlane?: KeysMapSteemPlane;
   };
   openGaps?: Array<{ id: string; title: string; detail: string; oneStep: string; state: "waiting-owner" | "blocked-external" }>;
   material?: Array<{ path: string; role: string; disposition: string; exists: boolean }>;
