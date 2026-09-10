@@ -566,18 +566,34 @@ loadState();
 const steem = require("steem");
 
 // ── RPC (plain fetch, no lib url coupling) ───────────────────────────────────
+// roast 56: failure CLASS is a structural fact the caller needs — a chain that
+// ANSWERED with an error refused the tx (nothing broadcast → a retry may build
+// a fresh tx safely); a TRANSPORT failure during broadcast means the tx MAY be
+// in flight (the caller must replay the requestId, never rebuild). Untagged,
+// both looked identical at the /sign boundary and the caller had to guess.
 async function rpcCall(node, method, params) {
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), 15_000);
   try {
-    const res = await fetch(node, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", method, params, id: 1 }),
-      signal: ctl.signal
-    });
-    const json = await res.json();
-    if (json.error) throw new Error(String(json.error.message ?? "rpc error").slice(0, 160));
+    let json;
+    try {
+      const res = await fetch(node, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", method, params, id: 1 }),
+        signal: ctl.signal
+      });
+      json = await res.json();
+    } catch (e) {
+      const err = new Error(`transport: ${String(e?.message ?? e).slice(0, 120)}`);
+      err.code = "TRANSPORT";
+      throw err;
+    }
+    if (json.error) {
+      const err = new Error(String(json.error.message ?? "rpc error").slice(0, 160));
+      err.code = "CHAIN_REJECTED"; // the chain answered and refused — nothing was broadcast
+      throw err;
+    }
     return json.result;
   } finally {
     clearTimeout(t);
@@ -1316,7 +1332,7 @@ const server = Bun.serve({
         return Response.json({ ok: true, txid, confirmedBlock: confirmedBlock ?? null, nodeTrxId: nodeTrxId ?? null, account: targetAccount, network: net, kind, role });
       } catch (e) {
         log("ERROR", `sign failed requestId=${requestId}: ${String(e?.message ?? e).slice(0, 160)}`);
-        return Response.json({ ok: false, error: String(e?.message ?? e).slice(0, 200) }, { status: 502 });
+        return Response.json({ ok: false, error: String(e?.message ?? e).slice(0, 200), failureClass: e?.code === "CHAIN_REJECTED" ? "chain-rejected" : e?.code === "TRANSPORT" ? "transport" : "unknown" }, { status: 502 });
       }
       };
 
@@ -1325,7 +1341,7 @@ const server = Bun.serve({
       try {
         resp = await exec();
       } catch (e) {
-        resp = Response.json({ ok: false, error: String(e?.message ?? e).slice(0, 200) }, { status: 502 });
+        resp = Response.json({ ok: false, error: String(e?.message ?? e).slice(0, 200), failureClass: e?.code === "CHAIN_REJECTED" ? "chain-rejected" : e?.code === "TRANSPORT" ? "transport" : "unknown" }, { status: 502 });
       }
       entry.pending = null;
       entry.status = resp.status;
@@ -1338,4 +1354,4 @@ const server = Bun.serve({
   }
 });
 
-log("INFO", `external-signer v2.5.2-task40 listening on :${PORT} (auth=${TOKEN ? "token" : "MISSING-FAIL-CLOSED"}, networks=STEEM+HIVE+BLURT, blurtChainId=cd8d90f2…, blurtSigning=blurtjs(op-enum-12), authorityGate=on(prefix-aware), keys-ingest=verify-then-write, maxOpHive=${MAX_OP_HIVE}, txid=sha256-full-64hex chain-verifiable)`);
+log("INFO", `external-signer v2.5.3-roast56 listening on :${PORT} (auth=${TOKEN ? "token" : "MISSING-FAIL-CLOSED"}, networks=STEEM+HIVE+BLURT, blurtChainId=cd8d90f2…, blurtSigning=blurtjs(op-enum-12), authorityGate=on(prefix-aware), keys-ingest=verify-then-write, maxOpHive=${MAX_OP_HIVE}, txid=sha256-full-64hex chain-verifiable, failureClass=structural)`);

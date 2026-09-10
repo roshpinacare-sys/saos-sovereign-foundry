@@ -250,6 +250,13 @@ export interface TxidVerification {
   source: string | null;
   /** honest reason when verified=false */
   reason: string;
+  /** roast 56: this failure is a TRANSPORT failure (endpoint unreachable/timeout)
+   * — the caller may rotate to the next candidate. A definitive answer (endpoint
+   * answered: verified OR unknown-txid) must NOT be re-classified by matching
+   * substrings of a human-readable reason — that was control-flow-by-Hebrew-
+   * substring, a safe-by-luck pattern: rewording a reason would silently break
+   * rotation. The flag is structural; reasons remain for humans. */
+  transportFailure?: boolean;
 }
 
 async function probeJson(url: string, body: unknown, timeoutMs = 5_000): Promise<unknown | null> {
@@ -291,12 +298,12 @@ async function verifyCondenserRotating(
   txid: string,
   blockHint?: number | null
 ): Promise<TxidVerification> {
-  let last: TxidVerification = { verified: false, source: null, reason: `אימות ${network}: אף נקודת-קצה ציבורית לא נבדקה` };
+  let last: TxidVerification = { verified: false, source: null, reason: `אימות ${network}: אף נקודת-קצה ציבורית לא נבדקה`, transportFailure: true };
   let answeredUrl: string | null = null;
   for (const url of CONDENSER_CANDIDATES[network]) {
     last = await verifyCondenser(url, network, txid);
     if (last.verified) return last;
-    if (last.reason.includes("לא נגיש") || last.reason.includes("פסק-זמן")) continue;
+    if (last.transportFailure) continue; // roast 56: structural flag, not a substring of the reason
     answeredUrl = url; // definitive answer (unknown txid) — stop rotating
     break;
   }
@@ -311,13 +318,13 @@ async function verifyCondenserRotating(
 async function verifyCondenser(apiUrl: string, network: string, txid: string): Promise<TxidVerification> {
   const json = await probeJson(apiUrl, { jsonrpc: "2.0", method: "condenser_api.get_transaction", params: [txid], id: 1 });
   if (json === null) {
-    return { verified: false, source: null, reason: `אימות ${network} נכשל: שירות הרשת הציבורי לא נגיש מהסנדבוקס (פסק-זמן) — הבקשה נשארת unverified ולא מוצגת כעוגן סופי` };
+    return { verified: false, source: null, transportFailure: true, reason: `אימות ${network} נכשל: שירות הרשת הציבורי לא נגיש מהסנדבוקס (פסק-זמן) — הבקשה נשארת unverified ולא מוצגת כעוגן סופי` };
   }
   const tx = (json as { result?: unknown }).result;
   if (tx && typeof tx === "object" && "transaction_id" in (tx as Record<string, unknown>)) {
-    return { verified: true, source: apiUrl, reason: "txid אומת מול הרשת הציבורית (get_transaction)" };
+    return { verified: true, source: apiUrl, transportFailure: false, reason: "txid אומת מול הרשת הציבורית (get_transaction)" };
   }
-  return { verified: false, source: null, reason: `הרשת הציבורית (${apiUrl}) לא מכירה את ה-txid — הבקשה מסומנת unverified` };
+  return { verified: false, source: null, transportFailure: false, reason: `הרשת הציבורית (${apiUrl}) לא מכירה את ה-txid — הבקשה מסומנת unverified` };
 }
 
 /**
@@ -332,7 +339,7 @@ async function verifyCondenser(apiUrl: string, network: string, txid: string): P
 async function verifyCondenserBlock(apiUrl: string, network: string, txid: string, blockNum: number): Promise<TxidVerification> {
   const json = await probeJson(apiUrl, { jsonrpc: "2.0", method: "condenser_api.get_block", params: [blockNum], id: 1 }, 8_000);
   if (json === null) {
-    return { verified: false, source: null, reason: `אימות ${network} (בלוק ${blockNum}) נכשל: ה-RPC הציבורי לא נגיש — unverified` };
+    return { verified: false, source: null, transportFailure: true, reason: `אימות ${network} (בלוק ${blockNum}) נכשל: ה-RPC הציבורי לא נגיש — unverified` };
   }
   const txs = (json as { result?: { transactions?: Array<{ transaction_id?: string; operations?: Array<[string, Record<string, unknown>]> }> } }).result?.transactions ?? [];
   const hit = txs.find((tx) => {
@@ -340,13 +347,14 @@ async function verifyCondenserBlock(apiUrl: string, network: string, txid: strin
     return id === txid || (id.length >= 32 && txid.startsWith(id));
   });
   if (!hit) {
-    return { verified: false, source: null, reason: `${network}: הבלוק ${blockNum} אותר אך אינו מכיל את ה-txid — unverified` };
+    return { verified: false, source: null, transportFailure: false, reason: `${network}: הבלוק ${blockNum} אותר אך אינו מכיל את ה-txid — unverified` };
   }
   const op = hit.operations?.[0];
   const customId = typeof op?.[1]?.id === "string" ? (op[1].id as string) : null;
   return {
     verified: true,
     source: `${apiUrl} (get_block ${blockNum})`,
+    transportFailure: false,
     reason: `txid אומת בבלוק ${blockNum} מול הרשת הציבורית${customId ? ` (custom_json ${customId})` : ""}`
   };
 }
@@ -451,13 +459,14 @@ export async function verifyTxidPublic(network: SignRequest["network"], txid: st
       let last: TxidVerification = {
         verified: false,
         source: null,
+        transportFailure: true,
         reason: "אימות BLURT: אף נקודת-קצה ציבורית לא נבדקה"
       };
       let answeredUrl: string | null = null; // roast 50: block-fallback rides the endpoint that actually answered
       for (const url of blurtCandidates) {
         last = await verifyCondenser(url, "BLURT", txid);
         if (last.verified) return last;
-        if (last.reason.includes("לא נגיש") || last.reason.includes("פסק-זמן")) continue;
+        if (last.transportFailure) continue; // roast 56: structural flag — was a Hebrew-substring match on the reason
         answeredUrl = url; // הנקודה ענתה והחזירה תשובה סופית (txid לא מוכר)
         break; // ננסה נפילה-לבלוק
       }

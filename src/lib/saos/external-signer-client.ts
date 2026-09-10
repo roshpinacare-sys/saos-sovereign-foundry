@@ -97,8 +97,25 @@ export async function externalSignerExecute(input: {
   account?: string;
   /** custom_json authority level — posting (weave default) or active */
   authLevel?: "posting" | "active";
-}): Promise<{ ok: boolean; txid?: string; account?: string; error?: string; confirmedBlock?: number | null; nodeTrxId?: string | null }> {
-  if (!externalSignerConfigured()) return { ok: false, error: "external-signer-not-configured" };
+}): Promise<{
+  ok: boolean;
+  txid?: string;
+  account?: string;
+  error?: string;
+  confirmedBlock?: number | null;
+  nodeTrxId?: string | null;
+  /** roast 56: the HTTP class travels with the result — the caller can tell a
+   * DEFINITIVE refusal (400/403/429: nothing was signed, nothing broadcast)
+   * from an ambiguous failure (502/transport: a broadcast MAY be in flight).
+   * Null = the signer never answered (client-side transport failure — the
+   * MOST ambiguous class: treat exactly like 502). */
+  status: number | null;
+  /** roast 56: the signer's structural failure class on 502s — "chain-rejected"
+   * means the chain ANSWERED and refused (nothing broadcast → definitive);
+   * "transport"/null means the tx MAY be in flight (ambiguous). */
+  failureClass?: string | null;
+}> {
+  if (!externalSignerConfigured()) return { ok: false, error: "external-signer-not-configured", status: null };
   const base = (process.env[URL_ENV] ?? "").replace(/\/$/, "");
   const token = (process.env[TOKEN_ENV] ?? "").trim();
   try {
@@ -111,10 +128,10 @@ export async function externalSignerExecute(input: {
       signal: ctl.signal
     });
     clearTimeout(t);
-    const json = (await res.json()) as { ok: boolean; txid?: string; account?: string; error?: string; confirmedBlock?: number | null; nodeTrxId?: string | null };
-    return json;
+    const json = (await res.json()) as { ok: boolean; txid?: string; account?: string; error?: string; confirmedBlock?: number | null; nodeTrxId?: string | null; failureClass?: string | null };
+    return { ...json, status: res.status };
   } catch (e) {
-    return { ok: false, error: String((e as Error)?.message ?? e).slice(0, 160) };
+    return { ok: false, error: String((e as Error)?.message ?? e).slice(0, 160), status: null };
   }
 }
 

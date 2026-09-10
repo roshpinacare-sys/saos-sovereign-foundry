@@ -58,7 +58,11 @@ export async function POST(req: Request) {
     } catch {
       // no body — defaults
     }
-    const stampCount = Math.min(24, Math.max(3, Number(body.stamps ?? 6)));
+    // roast 56: a non-numeric stamps ("6abc" → NaN) silently degraded to ZERO
+    // stamps (Math.max(3, NaN) === NaN, the loop never ran) — a "9 stamps" seal
+    // became a 3-leaf seal without a word. Validate, don't degrade.
+    const parsedStamps = Number(body.stamps ?? 6);
+    const stampCount = Math.min(24, Math.max(3, Number.isFinite(parsedStamps) ? Math.floor(parsedStamps) : 6));
     const batchId = body.batchId !== undefined && body.batchId !== null && BATCH_ID_RE.test(String(body.batchId))
       ? String(body.batchId)
       : randomUUID();
