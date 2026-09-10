@@ -87,6 +87,20 @@ function resolveToken() {
 }
 const TOKEN = resolveToken();
 
+// ── roast 54: /sign idempotency ledger ───────────────────────────────────────
+// requestId → { at, pending | null, status, response }. pending = a promise
+// the FIRST execution resolves when its response is cached; concurrent
+// duplicates await it instead of broadcasting a second signed tx.
+type SignCacheEntry = {
+  at: number;
+  pending: Promise<void> | null;
+  status: number;
+  response: Record<string, unknown>;
+};
+const signCache = new Map<string, SignCacheEntry>();
+const SIGN_CACHE_TTL_MS = 60 * 60_000; // 1h — long past any transport-retry window
+const SIGN_CACHE_CAP = 500;
+
 function log(level, msg) {
   const line = `${new Date().toISOString()} [${level}] ${String(msg)}`;
   try { appendFileSync(LOG, line + "\n"); } catch {}
@@ -615,6 +629,18 @@ const prevMatch = new Map(); // "acct|net|role" → boolean
 async function verifyLiveAll() {
   if (driftState.running || !STATE) return { skipped: true, reason: "check already running or seal unavailable" };
   driftState.running = true;
+  // roast 54 — the flag was cleared inline near the end; ONE unexpected throw
+  // between set and clear would leave running=true FOREVER: every later check
+  // answers "skipped — already running" and the drift monitor is dead until
+  // restart (the safe-by-luck class again). finally guarantees the reset.
+  try {
+    return await verifyLiveAllInner();
+  } finally {
+    driftState.running = false;
+  }
+}
+
+async function verifyLiveAllInner() {
   const rows: DriftRow[] = [];
   const unmatchedRows: DriftRow[] = [];
   let okCount = 0, errCount = 0;
@@ -657,7 +683,6 @@ async function verifyLiveAll() {
   driftState.unmatched = unmatchedRows;
   driftState.lastCheck = new Date().toISOString();
   driftState.lastSummary = { ok: okCount, drift: rows.length, unmatched: unmatchedRows.length, errors: errCount };
-  driftState.running = false;
   if (rows.length > 0 && rows.length > prevRotations) log("ALERT", `live-drift ROTATION: ${rows.length} key slot(s) MATCHED before and NO LONGER match the on-chain authority — external rotation detected! Accounts: ${[...new Set(rows.map((r) => r.account))].join(",")}`);
   else if (rows.length) log("WARN", `live-drift rotation still open: ${rows.length} slot(s) await re-ingest`);
   else if (unmatchedRows.length) log("INFO", `live-drift clean: ${okCount} slot(s) verified against the live chain; ${unmatchedRows.length} slot(s) never-matched (pending ingest for that chain) — no rotation`);
@@ -893,7 +918,14 @@ const server = Bun.serve({
         mainAccount: STATE.main.account,
         fleetAccounts: [STATE.main.account, ...STATE.fleet.map((f) => f.username)].filter((v, i, a) => a.indexOf(v) === i),
         networks: ["STEEM", "HIVE", "BLURT"],
-        capabilities: ["custom_json", "transfer_to_vesting", "transfer", "claim_rewards", "he_market_sell", "he_withdraw", "delegate_vesting_shares", "keys-ingest", "keys-backup", "rot1-seed-recovery", "universal-paste", "live-drift-monitor", "blurt-weave"],
+        capabilities: ["keys-ingest", "keys-backup", "rot1-seed-recovery", "universal-paste", "live-drift-monitor", "idempotent-sign"],
+        // roast 54 — per-network scopes replace the flat list that claimed
+        // transfer/delegate/claim for STEEM while only HIVE implements them
+        scopes: {
+          STEEM: ["custom_json"],
+          HIVE: ["custom_json", "transfer_to_vesting", "transfer", "claim_rewards", "he_market_sell", "he_withdraw", "delegate_vesting_shares"],
+          BLURT: ["custom_json"]
+        },
         authorityGate: "verify-before-broadcast (fail-closed)",
         maxOpHive: MAX_OP_HIVE,
         version: "2.5.2-task38"
@@ -1131,8 +1163,38 @@ const server = Bun.serve({
       try { body = await req.json(); } catch { return Response.json({ ok: false, error: "bad-json" }, { status: 400 }); }
       const { requestId, network, kind, authLevel, payload, id, account, to, amount, memo, symbol, quantity, price } = body ?? {};
       if (!requestId) return Response.json({ ok: false, error: "missing requestId" }, { status: 400 });
-      const net = network === "HIVE" ? "HIVE" : network === "BLURT" ? "BLURT" : network === "STEEM" ? "STEEM" : null;
-      if (!net) return Response.json({ ok: false, error: "unsupported network (capabilities: STEEM|HIVE|BLURT)" }, { status: 400 });
+
+      // ── roast 54: requestId IDEMPOTENCY + SINGLE-FLIGHT ──────────────────
+      // The field was required and then IGNORED — pure log decoration. Every
+      // buildSignBroadcast reads a FRESH dynamic-global-properties (new
+      // expiration + ref_block per call), so a caller retrying after an
+      // ambiguous timeout (request sent, answer lost) produced a DIFFERENT
+      // signed tx with a DIFFERENT txid: a REAL double broadcast — double
+      // transfer / double delegate / double fee. The requester sent
+      // requestId for exactly this protection; now it delivers:
+      //   replay  — a repeated requestId returns the CACHED response
+      //             (idempotentReplay:true), never re-broadcasts;
+      //   flight  — two CONCURRENT duplicates share ONE execution promise.
+      // Slot is reserved BEFORE any work. TTL 1h, cap 500 (insertion-order
+      // eviction + expired purge). In-memory only: after a signer restart the
+      // cache is empty — the standard idempotency tradeoff, disclosed here.
+      const now = Date.now();
+      for (const [k, v] of signCache) if (now - v.at > SIGN_CACHE_TTL_MS) signCache.delete(k);
+      while (signCache.size >= SIGN_CACHE_CAP) signCache.delete(signCache.keys().next().value);
+      const existing = signCache.get(requestId);
+      if (existing) {
+        if (existing.pending) await existing.pending; // single-flight: the FIRST execution finishes and caches
+        log("INFO", `replay requestId=${String(requestId).slice(0, 80)} → cached ${existing.status} response (no re-broadcast)`);
+        return Response.json({ ...existing.response, idempotentReplay: true }, { status: existing.status });
+      }
+      let resolveFlight: () => void = () => {};
+      const flight = new Promise<void>((res) => { resolveFlight = res; });
+      const entry: SignCacheEntry = { at: now, pending: flight, status: 502, response: { ok: false, error: "sign-in-flight" } };
+      signCache.set(requestId, entry); // slot reserved BEFORE any work
+
+      const exec = async (): Promise<Response> => {
+        const net = network === "HIVE" ? "HIVE" : network === "BLURT" ? "BLURT" : network === "STEEM" ? "STEEM" : null;
+        if (!net) return Response.json({ ok: false, error: "unsupported network (capabilities: STEEM|HIVE|BLURT)" }, { status: 400 });
 
       // Task 35 fix: the REQUIRED authority level is a function of the op kind —
       // resolved BEFORE keyFor so the correct network-suffixed slot is selected
@@ -1222,7 +1284,16 @@ const server = Bun.serve({
           j.required_auths = [targetAccount];
           operations = [["custom_json", j]];
         } else {
-          return Response.json({ ok: false, error: `unsupported kind ${kind ?? "?"} for ${net} (allowlist: custom_json, transfer_to_vesting, transfer, claim_rewards, he_market_sell, he_withdraw, delegate_vesting_shares)` }, { status: 400 });
+          // roast 54 — honest capability scoping: this refusal USED to list
+          // transfer/transfer_to_vesting/claim_rewards/delegate for STEEM while
+          // the branches above only ever implement them for HIVE — the message
+          // lied about what would work. Scopes below match the ACTUAL branches.
+          const scopes: Record<string, string> = {
+            STEEM: "custom_json only (posting or active) — asset ops are not implemented for STEEM in this signer",
+            HIVE: "custom_json, transfer_to_vesting, transfer, claim_rewards, he_market_sell, he_withdraw, delegate_vesting_shares",
+            BLURT: "custom_json only (weave anchors)"
+          };
+          return Response.json({ ok: false, error: `unsupported kind ${kind ?? "?"} for ${net} (scope: ${scopes[net] ?? "custom_json"})` }, { status: 400 });
         }
 
         // AUTHORITY VERIFICATION GATE — nothing broadcasts without a live match
@@ -1247,6 +1318,20 @@ const server = Bun.serve({
         log("ERROR", `sign failed requestId=${requestId}: ${String(e?.message ?? e).slice(0, 160)}`);
         return Response.json({ ok: false, error: String(e?.message ?? e).slice(0, 200) }, { status: 502 });
       }
+      };
+
+      // cache the outcome — a repeated requestId now replays THIS response
+      let resp: Response;
+      try {
+        resp = await exec();
+      } catch (e) {
+        resp = Response.json({ ok: false, error: String(e?.message ?? e).slice(0, 200) }, { status: 502 });
+      }
+      entry.pending = null;
+      entry.status = resp.status;
+      try { entry.response = await resp.clone().json(); } catch { entry.response = { ok: false, error: "unreadable-response" }; }
+      resolveFlight();
+      return resp;
     }
 
     return Response.json({ ok: false, error: "not-found" }, { status: 404 });
