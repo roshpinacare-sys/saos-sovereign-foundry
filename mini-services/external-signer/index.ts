@@ -190,8 +190,13 @@ function loadState() {
     let fleet = [];
     try {
       const vault = JSON.parse(bundle.files["keys/vault.json"]);
+      // Task 59: net-tagged keys count too — an account holding ONLY wifBLURT
+      // (e.g. a BLURT-plane ingest) is usable for BLURT and must not vanish.
+      // The MAIN account is excluded even if it has a vault.json entry (its
+      // slots live in .env; counting it as fleet would double every drift check).
       fleet = (vault.accounts ?? [])
-        .filter((a) => a?.username && (a?.keys?.posting?.wif || a?.keys?.active?.wif))
+        .filter((a) => a?.username && a.username !== account && (a?.keys?.posting?.wif || a?.keys?.active?.wif ||
+          ["wifSTEEM", "wifHIVE", "wifBLURT"].some((t) => a?.keys?.posting?.[t] || a?.keys?.active?.[t])))
         .map((a) => ({
           username: a.username,
           postingWif: a.keys?.posting?.wif ?? null,
@@ -327,13 +332,23 @@ function writeIngestedKey(dir, account, network, wif, role) {
     const i = lines.findIndex((l) => l.startsWith(name + "="));
     if (i >= 0) lines[i] = `${name}=${val}`; else lines.push(`${name}=${val}`);
   };
+  // Task 59 (account-aware persist): the ${NET}_${ROLE}_WIF .env slots belong
+  // to the MAIN account ONLY. Persisting a non-main account (tov/ynet/fleet)
+  // through the old path OVERWROTE headcorner's live-verified slot with a
+  // foreign key — a self-inflicted authority poison that the drift monitor
+  // would then report as an external rotation. Non-main keys land in
+  // keys/vault.json (per-account, net-tagged) and NEVER in main's .env.
+  const envMainAccount = lines.find((l) => l.startsWith("AGENT_ACCOUNT="))?.slice("AGENT_ACCOUNT=".length).trim();
+  const isMain = !envMainAccount || envMainAccount === account;
   // Task 41-recovery fix: BLURT must write its OWN suffixed slots — the old
   // ternary collapsed BLURT into "STEEM", so BLURT-derived WIFs corrupted the
   // STEEM_* slots (live authority gates then refused every STEEM broadcast).
   const netTag = network === "HIVE" ? "HIVE" : network === "BLURT" ? "BLURT" : "STEEM";
-  setVar(`${netTag}_${role.toUpperCase()}_WIF`, wif);
-  writeFileSync(envPath, lines.join("\n") + "\n");
-  chmodSync(envPath, 0o600);
+  if (isMain) {
+    setVar(`${netTag}_${role.toUpperCase()}_WIF`, wif);
+    writeFileSync(envPath, lines.join("\n") + "\n");
+    chmodSync(envPath, 0o600);
+  }
   const keysDir = path.join(dir, "keys");
   mkdirSync(keysDir, { recursive: true });
   const vPath = path.join(keysDir, "vault.json");
@@ -443,19 +458,22 @@ function parseKeyPayload(text: string) {
 
 /**
  * Task 29-b: MASTER-PASSWORD ingest — the owner's P-prefixed login string
- * ("מקשר להכל"). Derives ONLY active/posting/memo (owner key is NEVER derived
- * or stored — owner-level custody stays with the owner), for EVERY candidate
- * account × BOTH networks, and accepts only live-authority matches.
+ * ("מקשר להכל"). Task 59 (owner directive 2026-09-10, full-custody 2026-09-09):
+ * derives ALL FOUR roles (owner included — verify-then-write means only keys
+ * that MATCH the live chain authority are ever persisted, and the ROT1 path
+ * already persists owner matches) for EVERY candidate account — including the
+ * "ynet"/"tov" candidates the WIF path already had (the owner's password file
+ * carries a per-account password for tov; refusing to even try it was a gap).
  * Returns internal matches (with wif for the write path) + public verdicts.
  */
 async function ingestOwnerPassword(password, networks) {
   if (typeof networks === "undefined" || networks === null) networks = ["STEEM", "HIVE", "BLURT"];
-  const candidates = [STATE.main.account, ...STATE.fleet.map((f) => f.username)].filter((v, i, a) => a.indexOf(v) === i);
+  const candidates = [STATE.main.account, ...STATE.fleet.map((f) => f.username), "ynet", "tov"].filter((v, i, a) => a.indexOf(v) === i);
   const matches = [], checked = [];
   for (const acct of candidates) {
     let keys;
     try {
-      keys = steem.auth.getPrivateKeys(acct, password, ["active", "posting", "memo"]);
+      keys = steem.auth.getPrivateKeys(acct, password, ["owner", "active", "posting", "memo"]);
     } catch {
       checked.push({ account: acct, error: "password derivation failed" });
       continue;
@@ -468,7 +486,8 @@ async function ingestOwnerPassword(password, networks) {
         checked.push({ account: acct, network: net, error: String(e?.message ?? e).slice(0, 120) });
         continue;
       }
-      for (const role of ["active", "posting", "memo"]) {
+      let matchedThisNet = false;
+      for (const role of ["owner", "active", "posting", "memo"]) {
         let derived;
         try { derived = steem.auth.wifToPublic(keys[role]); } catch { continue; }
         const expected = auth[role];
@@ -478,8 +497,13 @@ async function ingestOwnerPassword(password, networks) {
         if (rendered && expected && rendered === expected) {
           matches.push({ account: acct, network: net, role, wif: keys[role], derived });
           checked.push({ account: acct, network: net, role, match: true });
+          matchedThisNet = true;
         }
       }
+      // Task 59: refusals must carry their own evidence — a no-match (acct,net)
+      // is now visible in `checked` instead of vanishing (the tov-password
+      // refusal came back with checked:[] — unexplainable to the owner).
+      if (!matchedThisNet) checked.push({ account: acct, network: net, match: false });
     }
   }
   return { ok: matches.length > 0, matches, checked };

@@ -97,21 +97,66 @@ async function gather(): Promise<Gathered> {
     ? fs.readdirSync(BRIEF_DIR).filter((f) => f.startsWith("BRIEF-")).sort().slice(-5).join(", ") || "(אין)"
     : "(אין)";
 
+  // Task 59 (owner asked "which headcorner key is missing?" after a brief
+  // claimed headcorner/tov were unprotected): the chief NEVER asked the signer
+  // what the vault actually holds — the LLM composed key-state claims from
+  // historical commit messages and stale docs. The vault section below is the
+  // LIVE measured state (keyless counts only — no secret/public key material
+  // ever enters the LLM input). It is also part of the fingerprint so a vault
+  // change triggers a fresh brief.
+  let vault = "כספת: לא זמינה (חותם :3033 לא נגיש)";
+  let vaultFingerprint = "unreachable";
+  try {
+    const token = fs.readFileSync(path.join(process.env.HOME ?? "/home/z", ".secrets", "external-signer-token"), "utf8").trim();
+    if (token) {
+      const r = await fetch("http://127.0.0.1:3033/keys/status", {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(5000)
+      });
+      if (r.ok) {
+        const s = (await r.json()) as {
+          main?: { account?: string; networks?: Record<string, Record<string, { loaded?: boolean; match?: boolean }>> };
+          fleet?: Array<{ username?: string }>;
+          drift?: { summary?: Record<string, number>; lastCheck?: string | null };
+          sealedAt?: string;
+        };
+        const parts: string[] = [];
+        for (const [net, roles] of Object.entries(s.main?.networks ?? {})) {
+          const loaded = Object.values(roles ?? {}).filter((x) => x?.loaded).length;
+          const matched = Object.values(roles ?? {}).filter((x) => x?.loaded && x?.match).length;
+          parts.push(`${net} ${matched}/${loaded}`);
+        }
+        const fleetNames = (s.fleet ?? []).map((f) => f.username).filter(Boolean);
+        const ds = s.drift?.summary ?? {};
+        vault = `כספת-חי (מקור-אמת מהחותם :3033 — ספירות-בלבד): main=${s.main?.account ?? "?"} slots ${parts.join(" · ")} | fleet-with-keys=[${fleetNames.join(",") || "אין"}] | drift ok=${ds.ok ?? "?"} drift=${ds.drift ?? "?"} unmatched=${ds.unmatched ?? "?"} | sealedAt=${s.sealedAt ?? "?"}`;
+        vaultFingerprint = `${parts.join(",")}|${fleetNames.join(",")}|ok=${ds.ok}`;
+      } else {
+        vault = `כספת: החותם החזיר ${r.status}`;
+      }
+    }
+  } catch (e) {
+    vault = `כספת: שגיאה ${String((e as Error)?.message ?? e).slice(0, 80)}`;
+  }
+
   const g = guardian
     ? `guardian: ok=${(guardian as { ok?: boolean }).ok} runs=${(guardian as { runCount?: number }).runCount} devMode=${(guardian as { devMode?: boolean }).devMode} tickAlive=${(guardian as { tick?: { alive?: boolean } }).tick?.alive} token=${((guardian as { token?: { present?: boolean } }).token ?? {}).present}`
     : "guardian: לא זמין";
   const text = [
     `HEAD: ${head}`,
-    commits,
+    // Task 59: vault BEFORE the (huge) commit messages — the brief file embeds
+    // only the first 5000 chars of the input, and the roast commit messages
+    // alone exceed that; the live vault evidence must survive the preview.
+    vault,
     g,
+    commits,
     `briefings אחרונים: ${briefings}`,
     "── זנב next-steps.md ──",
     readTail(`${FOUNDRY}/docs/next-steps.md`, 3500),
     "── זנב owner-decisions.md ──",
     readTail(`${FOUNDRY}/docs/owner-decisions.md`, 2000),
   ].join("\n");
-  // טביעת-אצבע: שינוי HEAD או פעילות-guardian או מספר-בריפים → מצב חדש
-  const hashSource = `${head}|${(guardian as { runCount?: number })?.runCount ?? 0}|${briefings}`;
+  // טביעת-אצבע: שינוי HEAD או פעילות-guardian או מצב-כספת או מספר-בריפים → מצב חדש
+  const hashSource = `${head}|${(guardian as { runCount?: number })?.runCount ?? 0}|${briefings}|${vaultFingerprint}`;
   const hash = Buffer.from(hashSource).toString("base64").slice(0, 32);
   return { hash, text };
 }
@@ -119,6 +164,8 @@ async function gather(): Promise<Gathered> {
 const SYSTEM_PROMPT = `אתה ראש-המטה של פרויקט SAOS — רשת סוכנים ריבונית על בלוקצ'יין Steem/SOL/EVM (repos פרטיים תחת roshpinacare-sys, סביבת פיתוח, הנחיית-בעלים 2026-09-08: סוכנים מורשים לגישת-מפתחות וביצוע בסביבה הפרטית; הבעלים משוחרר מתלות ומקבל רק החלטות-על).
 
 תפקידך: נתח את מצב-הרשת שניתן לך והפק בריף ניהולי בעברית, תמציתי ומבוסס-ראיות בלבד. אסור להמציא עובדות שאינן בקלט. אסור לכלול סודות/מפתחות/טוקנים (גם אם מופיעים — החלף ב-<REDACTED>).
+
+כלל-השתרשות-מפתחות (Task 59): בכל מה שנוגע למפתחות/כספת/חשבונות — המקור-המחייב הוא **סעיף כספת-חי בקלט** (מהחותם :3033, נמדד רגע-כתיבת-הבריף). אסור להסיק מצב-מפתחות מהודעות-קומיט או מסמכים היסטוריים — הם מתארים את העבר. אם סעיף-הכספת אומר שסלוטים מאומתים — אסור לטעון שחשבון "אינו מוגן"/"ממתין למפתח" בלי שהקלט אומר זאת.
 
 פורמט-חובה (Markdown):
 ## מצב רשת (2-4 שורות)

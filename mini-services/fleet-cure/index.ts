@@ -1,16 +1,17 @@
 /**
  * fleet-cure (:3034) — Task 26-c.
  * =============================================================================
- * The measured truth (2026-09-09):
- *   - 9/9 fleet accounts' envelope keys VERIFY LIVE against HIVE posting
- *     authority (the connection the owner called critical).
- *   - headcorner/tov keys are owner-held (runtime-only, wiped disk) — nothing
- *     in-environment can move headcorner's 9.682 liquid HIVE; runbook exists.
+ * The measured truth (Task 59, 2026-09-10 19:24 UTC — /keys/status + verify-live):
+ *   - Envelope: headcorner 12/12 slots (STEEM+HIVE+BLURT × owner/active/posting/memo,
+ *     ALL live-verified) + tov 4/4 BLURT slots (resurrected from the owner's
+ *     password file — BLURT was never rotated there). 16/16 ok, 0 drift.
+ *   - tov STEEM/HIVE remain externally-rotated (SETTLE-10 ROT1 tree, seed lost) —
+ *     nothing in-environment signs those two planes for tov (assets negligible:
+ *     0.449 STEEM + tiny vesting, measured 2026-09-10).
  *   - Chain-enforced: min delegation 1,611.18 VESTS > any fleet owned vests
  *     ⇒ delegation cure impossible (measured, honest).
  *   - One HIVE weave op costs ~225M RC (measured live: cashmachine refusal).
- *     Fleet mana regenerates at max_rc/5d — first window opens in ~3h (woq).
- *
+ *     Fleet mana regenerates at max_rc/5d.
  * THIS SERVICE: every 5 minutes —
  *   1. measures live RC mana of the 9 fleet accounts (public RPC);
  *   2. when an account crosses OP_COST + buffer AND the HIVE weave
@@ -193,16 +194,55 @@ function saveState(s: CureState) {
   try { writeFileSync(STATE_FILE, JSON.stringify(s, null, 1)); } catch {}
 }
 
+// Task 59: the vault summary below is MEASURED LIVE from the signer on every
+// status write (keyless counts only) — the evidence file can never again claim
+// key state from frozen text (the stale "9/9 HIVE posting" claim survived in
+// this file for two days while the envelope changed underneath it).
+async function vaultSummary() {
+  try {
+    const tok = signerToken();
+    if (!tok) return { reachable: false, reason: "no signer token" };
+    const res = await fetch(`${SIGNER_URL}/keys/status`, { headers: { Authorization: `Bearer ${tok}` }, signal: AbortSignal.timeout(5000) });
+    if (!res.ok) return { reachable: false, reason: `signer ${res.status}` };
+    const s = (await res.json()) as Record<string, unknown>;
+    const main = (s as { main?: { account?: string; networks?: Record<string, Record<string, { loaded?: boolean; match?: boolean }>> } }).main;
+    const networks: Record<string, string> = {};
+    let mainOk = 0, mainLoaded = 0;
+    for (const [net, roles] of Object.entries(main?.networks ?? {})) {
+      const loaded = Object.values(roles ?? {}).filter((r) => r?.loaded).length;
+      const matched = Object.values(roles ?? {}).filter((r) => r?.loaded && r?.match).length;
+      mainLoaded += loaded; mainOk += matched;
+      networks[net] = `${matched}/${loaded} matched`;
+    }
+    const fleet = (s as { fleet?: Array<{ account?: string; username?: string }> }).fleet ?? [];
+    const drift = (s as { drift?: { summary?: Record<string, number>; lastCheck?: string | null } }).drift;
+    return {
+      reachable: true,
+      main: main?.account ?? null,
+      mainSlots: `${mainOk}/${mainLoaded} matched`,
+      perNetwork: networks,
+      fleetAccounts: fleet.map((f) => f.account ?? f.username).filter(Boolean),
+      drift: drift?.summary ?? null,
+      driftCheckedAt: drift?.lastCheck ?? null,
+      sealedAt: (s as { sealedAt?: string }).sealedAt ?? null,
+      source: "external-signer :3033 /keys/status (counts only — no key material)"
+    };
+  } catch (e) {
+    return { reachable: false, reason: String((e as Error)?.message ?? e).slice(0, 120) };
+  }
+}
+
 async function writeStatus(state: CureState, rows: FleetRow[], note: string, pendingWeave?: boolean) {
   const status = {
     updatedAt: new Date().toISOString(),
     // Task 62: readiness ≠ schedule. חלון-RC פתוח הוא תנאי-הכרח, לא תוכנית.
     // הדגל הזה = האם בקשת-weave תלויה באמת קיימת — רק אז מותר למסך להצהיר "מתוזמן".
     pendingWeave: pendingWeave ?? false,
-    purpose: "Task 26-c fleet RC cure — the pending HIVE weave SignRequest executes automatically at the first fleet RC window (keys verified live 9/9 HIVE posting; executor = external-signer :3033)",
+    purpose: "Task 26-c fleet RC cure — RC windows measured live per fleet account (chain-side, keyless); execution = external-signer :3033 authority gate, which only ever signs with keys sealed in the envelope and verified live (see vault summary below). pendingWeave decides whether anything is scheduled at all (roast-62: readiness ≠ schedule).",
     opCostRc: OP_COST_RC,
     measuredOpCostRc: 225_041_204,
-    headcornerNote: "headcorner/tov keys are owner-held (runtime-only). headcorner's 9.682 liquid HIVE power-up runbook: DEX POST /api/dex/convert {account:headcorner, action:powerup} once the owner-held active key is loaded into the runtime envelope (authority gate will verify).",
+    headcornerNote: "headcorner 12/12 slots live-verified in the envelope (STEEM+HIVE+BLURT × owner/active/posting/memo — Task 59, owner password file). tov: BLURT 4/4 resurrected (never rotated there); STEEM/HIVE externally-rotated (SETTLE-10, seed lost) — orphaned planes, assets negligible. Liquid HIVE power-up runbook: DEX POST /api/dex/convert {account:headcorner, action:powerup} — the authority gate verifies against the live chain.",
+    vault: await vaultSummary(),
     note,
     accounts: rows,
     lastTxid: state.txid ?? null,

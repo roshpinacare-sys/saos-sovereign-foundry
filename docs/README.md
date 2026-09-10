@@ -9,9 +9,9 @@
 - **מצב עגינה ציבורית (נכון ל-roast 63, 2026-09-10)**:
   - STEEM ✅ עגינות-חיות מרובות — custom_json `saos.weave.v1`, txid מאומת חי (ר' docs/evidence/ANCHOR-PULSE-2026-09-10.md)
   - BLURT ✅ עגינות-חיות מרובות — חתום headcorner (מפתח-הבעלים) ואומת על mainnet (rpc.beblurt.com)
-  - HIVE ⏳ gated — rc-floor; מעטפת-הצי 9/9 מאומתת חי; weave ממתין לחלון-RC (ר' fleet-cure)
+  - HIVE ⏳ gated — rc-floor; סלוטי-הצי אינם טעונים במעטפת-הנוכחית (תוקן-תיעוד Task 59 — הטענה "9/9" הייתה מ-09-09); weave ממתין גם-לסלוטים וגם לחלון-RC (ר' fleet-cure + KEYS-VAULT-LEDGER)
   - TRON 🚧 transit — root נישא בתוך stateRoot דרך רכבת tronbridge היומית
-- **מצב חתימה בסנדבוקס**: `live-external-signer` — החותם-החיצוני (:3033) מחזיק מעטפת מוצפנת מאומתת; האפליקציה מקבלת txid ציבורי בלבד (Task 26, הנחיית-בעלים); מפתחות headcorner/tov בחזקת-הבעלים
+- **מצב חתימה בסנדבוקס**: `live-external-signer` — החותם-החיצוני (:3033) מחזיק מעטפת מוצפנת מאומתת; האפליקציה מקבלת txid ציבורי בלבד (Task 26, הנחיית-בעלים); headcorner 12/12 סלוטים (כולל BLURT owner — Task 59) + tov 4/4 BLURT (תחייה 09-10); מצב-חי-תמיד: `docs/KEYS-VAULT-LEDGER-2026-09-10.md`
 
 ## מפת הקבצים
 
