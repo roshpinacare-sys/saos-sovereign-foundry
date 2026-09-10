@@ -74,6 +74,11 @@ const BLURT_RPC = process.env.BLURT_RPC ?? "https://rpc.beblurt.com";
 const BLURT_NODES = [BLURT_RPC, "https://blurt-rpc.saboin.com", "https://rpc.blurt.world"].filter((v, i, a) => a.indexOf(v) === i);
 const NET_PREFIX = { STEEM: "STM", HIVE: "STM", BLURT: "BLT" };
 const MAX_OP_HIVE = Number(process.env.SIGNER_MAX_OP_HIVE ?? 50);
+// roast 72: ONE version truth. Before this, four surfaces lied differently
+// (/health 2.5.2-task38 · /keys/steem-plane + /keys/status 2.4.5 ·
+// backup-export 2.4.1 · startup log 2.5.4-roast64) — Task-71's bump was
+// partial. Every surface now serves this single constant.
+const SIGNER_VERSION = "2.5.5";
 const AUTH_CACHE_TTL_MS = 10 * 60_000;
 /** token resolution: env → ~/.secrets/external-signer-token (secrets never in trees) */
 function resolveToken() {
@@ -1146,7 +1151,7 @@ const server = Bun.serve({
         },
         authorityGate: "verify-before-broadcast (fail-closed)",
         maxOpHive: MAX_OP_HIVE,
-        version: "2.5.2-task38"
+        version: SIGNER_VERSION
       });
     }
 
@@ -1163,7 +1168,7 @@ const server = Bun.serve({
     if (url.pathname === "/keys/steem-plane" && req.method === "GET") {
       try {
         const payload = await steemPlaneProbe();
-        return Response.json({ ok: true, ...payload, version: "2.4.5" });
+        return Response.json({ ok: true, ...payload, version: SIGNER_VERSION });
       } catch (e) {
         return Response.json({ ok: false, error: String(e?.message ?? e).slice(0, 200) }, { status: 502 });
       }
@@ -1207,7 +1212,7 @@ const server = Bun.serve({
             networks
           });
         }
-        return Response.json({ ok: true, main: { account: STATE.main.account, networks: mainNet }, fleet, vaultAccountNames: STATE.vaultAccounts ?? [], sealedAt: STATE.sealedAt, drift: { lastCheck: driftState.lastCheck, openDrifts: driftState.drifts.length, unmatched: driftState.unmatched.length, summary: driftState.lastSummary }, version: "2.4.5" });
+        return Response.json({ ok: true, main: { account: STATE.main.account, networks: mainNet }, fleet, vaultAccountNames: STATE.vaultAccounts ?? [], sealedAt: STATE.sealedAt, drift: { lastCheck: driftState.lastCheck, openDrifts: driftState.drifts.length, unmatched: driftState.unmatched.length, summary: driftState.lastSummary }, version: SIGNER_VERSION });
       } catch (e) {
         return Response.json({ ok: false, error: String(e?.message ?? e).slice(0, 200) }, { status: 502 });
       }
@@ -1324,7 +1329,7 @@ const server = Bun.serve({
         // fully carries BLURT — the backup lied about what it holds, and exactly
         // the BLURT plane (the live-anchored chain, HEADCORNER master-key roles)
         // would have been missing from a wipe-recovery. All three planes now.
-        const payload = { exportedAt: new Date().toISOString(), version: "2.4.1", main: { account: STATE.main.account, keys: { generic: { posting: STATE.main.postingWif ?? null, active: STATE.main.activeWif ?? null, memo: STATE.main.memoWif ?? null, owner: STATE.main.ownerWif ?? null }, net: { STEEM: STATE.main.net?.STEEM ?? null, HIVE: STATE.main.net?.HIVE ?? null, BLURT: STATE.main.net?.BLURT ?? null } } }, fleet: STATE.fleet.map((f) => ({ username: f.username, generic: { posting: f.postingWif ?? null, active: f.activeWif ?? null, owner: f.ownerWif ?? null }, net: { STEEM: f.net?.STEEM ?? null, HIVE: f.net?.HIVE ?? null, BLURT: f.net?.BLURT ?? null } })) };
+        const payload = { exportedAt: new Date().toISOString(), version: SIGNER_VERSION, main: { account: STATE.main.account, keys: { generic: { posting: STATE.main.postingWif ?? null, active: STATE.main.activeWif ?? null, memo: STATE.main.memoWif ?? null, owner: STATE.main.ownerWif ?? null }, net: { STEEM: STATE.main.net?.STEEM ?? null, HIVE: STATE.main.net?.HIVE ?? null, BLURT: STATE.main.net?.BLURT ?? null } } }, fleet: STATE.fleet.map((f) => ({ username: f.username, generic: { posting: f.postingWif ?? null, active: f.activeWif ?? null, owner: f.ownerWif ?? null }, net: { STEEM: f.net?.STEEM ?? null, HIVE: f.net?.HIVE ?? null, BLURT: f.net?.BLURT ?? null } })) };
         const salt = randomBytes(16), iv = randomBytes(12);
         const key = scryptSync(passphrase, salt, 32);
         const cipher = createCipheriv("aes-256-gcm", key, iv);
@@ -1593,4 +1598,4 @@ const server = Bun.serve({
   }
 });
 
-log("INFO", `external-signer v2.5.4-roast64 listening on :${PORT} (auth=${TOKEN ? "token" : "MISSING-FAIL-CLOSED"}, networks=STEEM+HIVE+BLURT, blurtChainId=cd8d90f2…, blurtSigning=blurtjs(op-enum-12), authorityGate=on(prefix-aware), keys-ingest=verify-then-write full-vault-candidate-tree, maxOpHive=${MAX_OP_HIVE}, txid=sha256-full-64hex chain-verifiable, failureClass=structural)`);
+log("INFO", `external-signer v${SIGNER_VERSION} listening on :${PORT} (auth=${TOKEN ? "token" : "MISSING-FAIL-CLOSED"}, networks=STEEM+HIVE+BLURT, blurtChainId=cd8d90f2…, blurtSigning=blurtjs(op-enum-12), authorityGate=on(prefix-aware), keys-ingest=verify-then-write full-vault-candidate-tree, maxOpHive=${MAX_OP_HIVE}, txid=sha256-full-64hex chain-verifiable, failureClass=structural)`);

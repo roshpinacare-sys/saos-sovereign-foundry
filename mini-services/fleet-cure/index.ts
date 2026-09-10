@@ -343,11 +343,24 @@ async function cycle(state: CureState): Promise<void> {
 
 const bootState = loadState();
 
+// roast 72: the 19:25 bun --hot reload silently killed the cycle loop — the
+// status file froze for 3h20m with ZERO log evidence (a monitor that dies
+// quietly is worse than a monitor that fails loudly). Fixes: (1) no-overlap
+// lock — a slow cycle can never pile up; (2) every cycle logs start/end so a
+// dead loop is visible in the log within one cadence.
+let cycling = false;
 async function loop() {
+  if (cycling) { log("WARN", "cycle skipped — previous cycle still running (no-overlap lock)"); return; }
+  cycling = true;
+  const t0 = Date.now();
   try {
+    log("INFO", "cycle start");
     await cycle(bootState);
+    log("INFO", `cycle end in ${Date.now() - t0}ms`);
   } catch (e) {
     log("ERROR", `cycle error: ${String((e as Error)?.message ?? e).slice(0, 200)}`);
+  } finally {
+    cycling = false;
   }
 }
 
