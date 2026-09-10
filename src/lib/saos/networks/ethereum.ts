@@ -55,18 +55,40 @@ function safeRpcUrl(): string | null {
   }
 }
 
+/**
+ * Keyless public read candidates (roast 50): a single hardcoded endpoint made
+ * "ETH unreachable" an intermittent LIE — publicnode 403'd from this env during
+ * Task 49 while the chain itself was fine, and answered again right after.
+ * Rotation is the honest fix: try candidates in order, report where it worked.
+ * All four answered live 2026-09-10 (eth_chainId → 0x1); llamarpc/ankr/blockpi
+ * were rejected (CF-challenge / auth-gated / dead) and are not included.
+ */
+const ETH_PUBLIC_READ_ENDPOINTS = [
+  "https://ethereum-rpc.publicnode.com",
+  "https://cloudflare-eth.com",
+  "https://rpc.flashbots.net",
+  "https://eth.drpc.org"
+];
+
+/** env RPC first (when valid), then the public keyless candidates — in order */
+export function ethereumReadRpcCandidates(): string[] {
+  const env = safeRpcUrl();
+  return env ? [env, ...ETH_PUBLIC_READ_ENDPOINTS] : [...ETH_PUBLIC_READ_ENDPOINTS];
+}
+
 /** RPC presence state (never the URL) */
 export function ethereumRpcStatus(): RpcStatus {
   return safeRpcUrl() === null ? "not-configured" : "public";
 }
 
 /**
- * Keyless read endpoint for public tx verification: the configured env URL if
- * valid, else a well-known public RPC. Never carries credentials (safeRpcUrl
+ * Keyless read endpoint for public tx verification: first candidate (env if
+ * valid, else public). Callers that need resilience should use
+ * ethereumReadRpcCandidates() and rotate. Never carries credentials (safeRpcUrl
  * refuses keyed URLs) — used by verifyTxidPublic for read-only lookups only.
  */
 export function ethereumReadRpcCandidate(): string {
-  return safeRpcUrl() ?? "https://ethereum-rpc.publicnode.com";
+  return ethereumReadRpcCandidates()[0]!;
 }
 
 /** true when a read-only probe is possible right now */
@@ -138,18 +160,18 @@ export function ethereumStatus(nowIso: string): EthereumStatusView {
  * Both paths are keyless — a URL with embedded credentials is always refused.
  */
 export async function probeEthereumReadonly(opts?: { allowPublicFallback?: boolean }): Promise<EthereumProbeResult> {
-  let url = safeRpcUrl();
-  if (!url && opts?.allowPublicFallback) url = "https://ethereum-rpc.publicnode.com";
-  if (!url) {
+  const envUrl = safeRpcUrl();
+  // roast 50: rotation across candidates — one blocked/hostile endpoint no
+  // longer fakes a "network down" (Task 49 proved publicnode can 403 alone)
+  const candidates = opts?.allowPublicFallback
+    ? ethereumReadRpcCandidates()
+    : envUrl
+      ? [envUrl]
+      : [];
+  if (candidates.length === 0) {
     return { probed: false, ok: false, chainId: null, blockNumber: null, sourceHost: null, reason: "not-configured: אין ETH_RPC_URL" };
   }
-  let host: string | null = null;
-  try {
-    host = new URL(url).host;
-  } catch {
-    host = null;
-  }
-  const call = async (method: string): Promise<string | null> => {
+  const call = async (url: string, method: string): Promise<string | null> => {
     try {
       const res = await fetch(url, {
         method: "POST",
@@ -165,15 +187,35 @@ export async function probeEthereumReadonly(opts?: { allowPublicFallback?: boole
       return null;
     }
   };
-  const chainId = await call("eth_chainId");
-  const blockNumber = await call("eth_blockNumber");
-  const ok = chainId !== null && blockNumber !== null;
+  for (const url of candidates) {
+    const chainId = await call(url, "eth_chainId");
+    if (chainId === null) continue; // endpoint hostile/unreachable — next candidate
+    const blockNumber = await call(url, "eth_blockNumber");
+    const ok = blockNumber !== null;
+    const host = await new Promise<string | null>((r) => {
+      try {
+        r(new URL(url).host);
+      } catch {
+        r(null);
+      }
+    });
+    return {
+      probed: true,
+      ok,
+      chainId,
+      blockNumber,
+      sourceHost: host,
+      reason: ok
+        ? `קריאה-בלבד הצליחה (eth_chainId + eth_blockNumber ← ${host}${candidates.length > 1 ? ", סיבוב-נקודות קריאה" : ""})`
+        : "chainId נענה אך blockNumber נכשל — הרשת אינה מאומתת חי במלואה (לא נחסם, לא הומצא)"
+    };
+  }
   return {
     probed: true,
-    ok,
-    chainId,
-    blockNumber,
-    sourceHost: host,
-    reason: ok ? "קריאה-בלבד הצליחה (eth_chainId + eth_blockNumber)" : "קריאה נכשלה/פסק-זמן — הרשת אינה מאומתת חי (לא נחסם, לא הומצא)"
+    ok: false,
+    chainId: null,
+    blockNumber: null,
+    sourceHost: null,
+    reason: `קריאה נכשלה/פסק-זמן מול כל ${candidates.length} נקודות-הקריאה — הרשת אינה מאומתת חי כרגע (לא נחסם, לא הומצא)`
   };
 }

@@ -53,11 +53,12 @@ export function genesisState(): KernelState {
 
 /** deterministic applyTx — illegal tx throws, never silently degrades */
 export function applyTx(state: KernelState, tx: KernelTx): KernelState {
-  const key = `${tx.issuer}:${tx.nonce}`;
-  if (state.nonces.includes(key)) throw new Error(`replay rejected: ${key}`);
+  // validation BEFORE dedupe: a malformed tx must not masquerade as a replay
   if (!tx.issuer || !tx.nonce) throw new Error("issuer+nonce required");
   if (tx.amount !== undefined && (!Number.isSafeInteger(tx.amount) || tx.amount <= 0))
     throw new Error("amount must be positive safe integer");
+  const key = `${tx.issuer}:${tx.nonce}`;
+  if (state.nonces.includes(key)) throw new Error(`replay rejected: ${key}`);
 
   const gas = GAS_TABLE[tx.op];
   if (gas === undefined) throw new Error(`unknown op ${String(tx.op)}`);

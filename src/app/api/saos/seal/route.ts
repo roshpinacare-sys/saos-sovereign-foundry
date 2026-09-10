@@ -82,11 +82,16 @@ export async function POST(req: Request) {
     const tree = await buildMerkleTree(leafPayloads.map((l) => l.digest));
     const root = tree.root;
 
-    // honest anchor statuses — advisory mode, never fabricated
+    // honest anchor statuses — never fabricated (roast 50):
+    // the matrix is a capability snapshot; new rows are pending/gated/transit
+    // with a txid of null. "anchored" is reserved for rows carrying a live
+    // verified txid (anchor-pulse → PATCH signer → verifyTxidPublic).
     const rcPct = Number(process.env.HIVE_RC_PCT ?? 0.6);
     const tronEnergy = Number(process.env.TRON_ENERGY ?? 0);
     const matrix = anchoringMatrix(rcPct, tronEnergy);
-    const advisory = "advisory-mode: אין מפתחות חתימה בסנדבוקס — הפעימה מתועדת ומוכנה לשידור כשהכספת חוזרת";
+    const advisory = modeState.liveArmed
+      ? "פעימת-עדות (סימולציה): שורה זו אינה שידור — העיגון האמיתי נרשם כשורת AnchorTx נפרדת עם txid מאומת מול הרשת החיה"
+      : "advisory-mode: הפעימה מתועדת ומוכנה לשידור כשנתיב-החתימה יחובר";
     const anchorRowsFor = (sealId: string) =>
       matrix.map((m) => ({
         sealId,

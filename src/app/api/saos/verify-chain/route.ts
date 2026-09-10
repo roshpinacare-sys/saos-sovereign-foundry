@@ -11,8 +11,12 @@ export const dynamic = "force-dynamic";
  * GET /api/saos/verify-chain — the independent verification surface.
  *
  * Scopes (query `scope`):
- *   chain (default) — verify the ENTIRE receipt hash-chain + rebuild & verify
+ *   chain (default) — verify the receipt hash-chain + rebuild & verify
  *                     every stored seal's merkle tree (all leaves proven).
+ *                     Scan caps (MAX_SEALS/MAX_RECEIPTS) are disclosed:
+ *                     `receiptChain.total/capped` + `sealsTotal` state whether
+ *                     anything was skipped — checked counts never masquerade
+ *                     as the whole chain (roast 50).
  *   seal            — verify one seal by `height` or `root` (all its leaves).
  *   leaf            — verify a single leaf inclusion proof (`height|root` + `index`).
  *
@@ -29,6 +33,9 @@ interface SealCheck {
   height: number;
   root: string;
   leafCount: number;
+  authoredLeafCount: number;
+  leafCountMatches: boolean;
+  duplicateLeafDigests: number;
   rootMatches: boolean;
   verifiedLeaves: number;
   invalidLeaves: number;
@@ -41,6 +48,14 @@ async function checkSeal(sealId: string): Promise<SealCheck & { stateRoot: strin
     include: { leaves: true }
   });
   const leaves = [...seal.leaves].sort((a, b) => a.index - b.index).map((l) => l.digest);
+  // roast 50 — phantom-leaf hardening (CVE-2012-2459 family): the tree
+  // duplicates the last node of an odd level, so leaves [a,b,c] and [a,b,c,c]
+  // build the SAME root — a tamperer could add a phantom duplicate leaf to the
+  // DB and every proof would still verify. Two stored counters close the hole
+  // without touching the anchored hashing scheme: the seal's OWN authored
+  // leavesCount, and duplicate-digest detection within the batch.
+  const leafCountMatches = leaves.length === seal.leavesCount;
+  const duplicateLeafDigests = leaves.length - new Set(leaves).size;
   const tree = await buildMerkleTree(leaves);
   const proofs: { index: number; verified: boolean }[] = [];
   for (let i = 0; i < tree.leaves.length; i++) {
@@ -57,6 +72,9 @@ async function checkSeal(sealId: string): Promise<SealCheck & { stateRoot: strin
     root: seal.root,
     stateRoot: seal.stateRoot,
     leafCount: leaves.length,
+    authoredLeafCount: seal.leavesCount,
+    leafCountMatches,
+    duplicateLeafDigests,
     rootMatches,
     verifiedLeaves,
     invalidLeaves,
@@ -83,6 +101,10 @@ export async function GET(req: Request) {
     // ── scope: chain ────────────────────────────────────────────────────────
     if (scope === "chain") {
       const errors: string[] = [];
+      // roast 50 — caps honesty: totals counted and reported next to checked
+      // counts, so an oversized chain can never verify "green" while older
+      // records silently skip the scan (the doc claimed "the ENTIRE chain").
+      const [receiptsTotal, sealsTotal] = await Promise.all([db.evidenceReceipt.count(), db.sealRecord.count()]);
       const receipts = await db.evidenceReceipt.findMany({ orderBy: { createdAt: "asc" }, take: MAX_RECEIPTS });
       const chain = await verifyChainDag(
         receipts.map((r) => ({
@@ -103,6 +125,10 @@ export async function GET(req: Request) {
         sealChecks.push(c);
         if (!c.rootMatches) errors.push(`seal height=${c.height}: rebuilt root mismatch`);
         if (c.invalidLeaves > 0) errors.push(`seal height=${c.height}: ${c.invalidLeaves} invalid leaf proofs`);
+        if (!c.leafCountMatches)
+          errors.push(`seal height=${c.height}: PHANTOM-LEAF tamper — stored leaves ${c.leafCount} ≠ authored leavesCount ${c.authoredLeafCount}`);
+        if (c.duplicateLeafDigests > 0)
+          errors.push(`seal height=${c.height}: ${c.duplicateLeafDigests} duplicate leaf digest(s) — duplicate-leaf ambiguity`);
       }
       sealChecks.sort((a, b) => a.height - b.height);
 
@@ -126,6 +152,8 @@ export async function GET(req: Request) {
         receiptChain: {
           ok: chain.ok,
           checked: receipts.length,
+          total: receiptsTotal,
+          capped: receiptsTotal > receipts.length,
           digestErrors: chain.digestErrors,
           linkErrors: chain.linkErrors,
           // concurrent legacy branches — reported, never rewritten (fixed forward by transactional appends)
@@ -135,11 +163,15 @@ export async function GET(req: Request) {
           height: c.height,
           root: c.root,
           leafCount: c.leafCount,
+          authoredLeafCount: c.authoredLeafCount,
+          leafCountMatches: c.leafCountMatches,
+          duplicateLeafDigests: c.duplicateLeafDigests,
           rootMatches: c.rootMatches,
           verifiedLeaves: c.verifiedLeaves,
           invalidLeaves: c.invalidLeaves,
           proofResult: c.proofResult
         })),
+        sealsTotal,
         totals,
         proofResult: sealChecks.length > 0 && sealChecks.every((c) => c.proofResult === "all-verified") ? "all-verified" : sealChecks.length === 0 ? "empty" : "partial",
         root: sealChecks.at(-1)?.root ?? null,

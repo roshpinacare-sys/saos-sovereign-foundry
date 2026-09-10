@@ -303,7 +303,7 @@ export function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void 
                     {s.anchors.map((a, ai) => {
                       const info = ANCHOR_STATUS[a.status] ?? ANCHOR_STATUS.pending;
                       return (
-                        <Badge key={`${a.network}:${ai}`} tone={info.tone}>
+                        <Badge key={`${a.network}:${ai}`} tone={info.tone} title={a.gate ?? undefined}>
                           {a.network}: {info.label}
                         </Badge>
                       );

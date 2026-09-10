@@ -20,7 +20,7 @@
 
 import { canonicalDigest, canonicalize } from "./canonical-json";
 import type { SealRecord } from "@prisma/client";
-import { ethereumReadRpcCandidate } from "./networks/ethereum";
+import { ethereumReadRpcCandidates } from "./networks/ethereum";
 import { solanaReadRpcCandidate } from "./networks/solana";
 import { externalSignerCached } from "./external-signer-client";
 
@@ -330,29 +330,35 @@ async function verifyTron(txid: string): Promise<TxidVerification> {
   }
 }
 
-/** ETHEREUM: read-only eth_getTransactionByHash on a keyless public RPC (Task 12) */
+/** ETHEREUM: read-only eth_getTransactionByHash, rotating keyless public RPCs (roast 50) */
 async function verifyEthereum(txid: string): Promise<TxidVerification> {
-  const url = ethereumReadRpcCandidate();
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_getTransactionByHash", params: [txid] }),
-      signal: AbortSignal.timeout(5_000),
-      cache: "no-store"
-    });
-    if (!res.ok) {
-      return { verified: false, source: null, reason: `אימות ETHEREUM נכשל: RPC ציבורי לא נגיש (HTTP ${res.status}) — unverified` };
+  const candidates = ethereumReadRpcCandidates();
+  let lastReason = "אימות ETHEREUM: אף נקודת-קריאה לא נוסתה";
+  for (const url of candidates) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_getTransactionByHash", params: [txid] }),
+        signal: AbortSignal.timeout(5_000),
+        cache: "no-store"
+      });
+      if (!res.ok) {
+        lastReason = `אימות ETHEREUM: ה-RPC ${new URL(url).host} דחה (HTTP ${res.status}) — עובר לנקודת-הקריאה הבאה`;
+        continue; // endpoint hostile (e.g. 403) — rotate, never fake "network down"
+      }
+      const json = (await res.json()) as { result?: unknown };
+      const tx = json?.result;
+      if (tx && typeof tx === "object" && "blockNumber" in (tx as Record<string, unknown>) && (tx as Record<string, unknown>).blockNumber !== null) {
+        return { verified: true, source: url, reason: `tx hash אומת מול RPC ציבורי (eth_getTransactionByHash ← ${new URL(url).host})` };
+      }
+      // endpoint answered definitively: tx unknown/mempool — honest unverified
+      return { verified: false, source: null, reason: `ה-RPC הציבורי (${new URL(url).host}) לא מכיר את ה-hash (או שהעסקה עדיין ב-mempool) — unverified` };
+    } catch {
+      lastReason = `אימות ETHEREUM: ${new URL(url).host} לא נגיש (פסק-זמן) — עובר לנקודת-הקריאה הבאה`;
     }
-    const json = (await res.json()) as { result?: unknown };
-    const tx = json?.result;
-    if (tx && typeof tx === "object" && "blockNumber" in (tx as Record<string, unknown>) && (tx as Record<string, unknown>).blockNumber !== null) {
-      return { verified: true, source: url, reason: "tx hash אומת מול RPC ציבורי (eth_getTransactionByHash)" };
-    }
-    return { verified: false, source: null, reason: "ה-RPC הציבורי לא מכיר את ה-hash (או שהעסקה עדיין ב-mempool) — unverified" };
-  } catch {
-    return { verified: false, source: null, reason: "אימות ETHEREUM נכשל: RPC ציבורי לא נגיש מהסנדבוקס (פסק-זמן) — unverified" };
   }
+  return { verified: false, source: null, reason: `${lastReason} — unverified` };
 }
 
 /** SOLANA: read-only getTransaction on a keyless public RPC (Task 12) */
@@ -409,14 +415,18 @@ export async function verifyTxidPublic(network: SignRequest["network"], txid: st
         source: null,
         reason: "אימות BLURT: אף נקודת-קצה ציבורית לא נבדקה"
       };
+      let answeredUrl: string | null = null; // roast 50: block-fallback rides the endpoint that actually answered
       for (const url of blurtCandidates) {
         last = await verifyCondenser(url, "BLURT", txid);
         if (last.verified) return last;
         if (last.reason.includes("לא נגיש") || last.reason.includes("פסק-זמן")) continue;
-        break; // הנקודה ענתה והחזירה תשובה סופית (txid לא מוכר) — ננסה נפילה-לבלוק
+        answeredUrl = url; // הנקודה ענתה והחזירה תשובה סופית (txid לא מוכר)
+        break; // ננסה נפילה-לבלוק
       }
       if (blockHint) {
-        const viaBlock = await verifyCondenserBlock("https://rpc.beblurt.com", "BLURT", txid, blockHint);
+        // roast 50: was hardcoded to beblurt — if beblurt is the dead one the
+        // whole block-fallback died with it; use the endpoint that answered
+        const viaBlock = await verifyCondenserBlock(answeredUrl ?? blurtCandidates[0]!, "BLURT", txid, blockHint);
         if (viaBlock.verified) return viaBlock;
       }
       return last;

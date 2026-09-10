@@ -21,7 +21,14 @@ export function canonicalize(value: unknown): string {
       if (!Number.isSafeInteger(n)) fail("unsafe integer rejected");
       return n;
     }
-    if (t === "bigint") return Number(v);
+    if (t === "bigint") {
+      // fail-closed: a bigint beyond the safe-integer range loses precision in
+      // Number() — two DIFFERENT bigints could canonicalize to the identical
+      // JSON (digest collision). Callers must convert at their own boundary.
+      const n = Number(v as bigint);
+      if (!Number.isSafeInteger(n)) fail("bigint beyond safe-integer range rejected");
+      return n;
+    }
     if (t === "boolean") return v;
     if (t === "string") return v;
     if (t === "symbol" || t === "function") fail("symbol/function rejected");

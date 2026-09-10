@@ -23,8 +23,14 @@ export interface AppendResult {
   persisted: boolean;
 }
 
+// isUniqueViolation is declared further below and hoisted — safe to use in appendOn
+
 async function appendOn(client: DbLike, kind: string, payload: Record<string, unknown>, sealId?: string): Promise<AppendResult> {
-  const prev = await client.evidenceReceipt.findFirst({ orderBy: { createdAt: "desc" } });
+  // deterministic tie-break: createdAt has millisecond precision and 11
+  // same-millisecond adjacent pairs already exist in this chain — id (cuid,
+  // time-ordered) breaks the tie toward the most-recent insert. A wrong "prev"
+  // pick would forge a silent fork.
+  const prev = await client.evidenceReceipt.findFirst({ orderBy: [{ createdAt: "desc" }, { id: "desc" }] });
   const receipt = await forgeReceipt(kind, payload, prev?.digest ?? null);
   if (!persistenceAllowed()) return { receipt, persisted: false };
   try {
@@ -39,9 +45,13 @@ async function appendOn(client: DbLike, kind: string, payload: Record<string, un
       }
     });
     return { receipt, persisted: true };
-  } catch {
-    // identical-run digest collision — the chain keeps the existing receipt
-    return { receipt, persisted: false };
+  } catch (e) {
+    // ONLY a genuine identical-run digest collision (unique constraint) is
+    // tolerable — the chain keeps the existing receipt. Any OTHER failure
+    // (disk, lock, pool) must propagate: swallowing it here would mislabel a
+    // real write failure as a benign collision (the old catch{} lied).
+    if (isUniqueViolation(e)) return { receipt, persisted: false };
+    throw e;
   }
 }
 

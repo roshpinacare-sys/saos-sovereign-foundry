@@ -74,18 +74,27 @@ export function hiveRcRecoveryPlan(currentPct: number): HiveRcPlan {
   return { currentPct, lightFloorHours: Number(lightH.toFixed(1)), heavyFloorHours: Number(heavyH.toFixed(1)), verdict, path };
 }
 
-/** the full anchoring matrix as the platform sees it today */
+/**
+ * the full anchoring matrix as the platform sees it today.
+ *
+ * Truth contract (roast 50): a matrix row can NEVER be "anchored" — that
+ * status means "a live verified txid exists on an external chain", and only
+ * the verified broadcast path (anchor-pulse → PATCH signer → verifyTxidPublic)
+ * may set it. A capability snapshot that fabricates "anchored" wrote lies into
+ * AnchorTx rows (txid:null + status:anchored — the seal-1 legacy bug).
+ * Capable networks are "pending" (ready, awaiting broadcast).
+ */
 export function anchoringMatrix(rcPct: number, tronEnergy: number): ChainGate[] {
   const steem: ChainGate = {
     network: "STEEM",
-    status: "anchored",
+    status: "pending",
     gate: null,
     detail: "custom_json id=saos.weave.v1 (active, חינם-RC) + קריאת-היסטוריה לאימות",
     recovery: null
   };
   const blurt: ChainGate = {
     network: "BLURT",
-    status: "anchored",
+    status: "pending",
     gate: null,
     detail: `חתימה קנונית ידנית (low-s loop), עמלה ${BLURT_FEE_FORMULA}, cooldown ${BLURT_COOLDOWN_MIN} דק׳ מדוד`,
     recovery: null

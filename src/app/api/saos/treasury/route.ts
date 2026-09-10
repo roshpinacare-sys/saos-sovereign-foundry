@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
+import { ethereumReadRpcCandidates } from "@/lib/saos/networks/ethereum";
 import type { TreasuryOutflowRow } from "@/components/saos/types";
 
 export const dynamic = "force-dynamic";
@@ -111,7 +112,8 @@ const FLOW_OUT_TARGETS = {
 
 const USDT_TRC20 = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
 const USDT_ERC20 = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
-const ETH_RPC = "https://ethereum-rpc.publicnode.com";
+// roast 50: ETH reads rotate candidates — a single hardcoded publicnode made
+// "ETH unreachable" intermittent (Task 49 caught it 403ing alone)
 const USDT_SPL = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"; // native USDT mint on Solana
 const USDC_SPL = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // native USDC mint on Solana
 /** USDT TRC20 transfer ≈ 64,895 energy; burn price 420 sun/energy → ≈ 27.25 TRX per settlement */
@@ -195,22 +197,29 @@ async function tronRow(label: string, address: string): Promise<BalanceRow> {
 }
 
 async function evmRow(label: string, address: string): Promise<BalanceRow> {
-  try {
-    const r = (await rpc(ETH_RPC, "eth_getBalance", [address, "latest"])) as string;
-    let usdt = 0;
+  // rotate read candidates until one answers — one hostile endpoint (403/
+  // CF-challenge) no longer fakes an "error" row for a wallet that is fine
+  const candidates = ethereumReadRpcCandidates();
+  let lastErr: unknown = null;
+  for (const ETH_RPC of candidates) {
     try {
-      const u = (await rpc(ETH_RPC, "eth_call", [
-        { to: USDT_ERC20, data: "0x70a08231" + address.slice(2).padStart(64, "0") },
-        "latest"
-      ])) as string;
-      usdt = Number(BigInt(u)) / 1e6;
-    } catch {
-      // native balance is still honest data; a failing USDT read reports as 0
+      const r = (await rpc(ETH_RPC, "eth_getBalance", [address, "latest"])) as string;
+      let usdt = 0;
+      try {
+        const u = (await rpc(ETH_RPC, "eth_call", [
+          { to: USDT_ERC20, data: "0x70a08231" + address.slice(2).padStart(64, "0") },
+          "latest"
+        ])) as string;
+        usdt = Number(BigInt(u)) / 1e6;
+      } catch {
+        // native balance is still honest data; a failing USDT read reports as 0
+      }
+      return { label, address, status: "ok", native: weiToEth(r), nativeSymbol: "ETH", usdt };
+    } catch (e) {
+      lastErr = e;
     }
-    return { label, address, status: "ok", native: weiToEth(r), nativeSymbol: "ETH", usdt };
-  } catch (e) {
-    return { label, address, status: "error", error: e instanceof Error ? e.message : String(e) };
   }
+  return { label, address, status: "error", error: lastErr instanceof Error ? lastErr.message : String(lastErr) };
 }
 
 /** Solana RPC — honors SOL_RPC_URL when set; read-only, keyless, never throws outward */
