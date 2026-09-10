@@ -573,11 +573,21 @@ export function MyKeysPanel() {
                   <Badge tone="danger">כספת לא נגישה</Badge>
                 )}
               </div>
-              {keysQ.data.connection.vault.summary?.ok === 16 ? (
-                <p className="mt-2 text-[11px] leading-relaxed text-zinc-400">
-                  מצב-המפתחות המלא: headcorner 12/12 (STEEM · HIVE · BLURT × owner/active/posting/memo) + tov 4/4-BLURT — הכל נגזר, נטען ומאומת מול השרשרת החיה.
-                </p>
-              ) : null}
+              {(() => {
+                // Task 65: the vault-state line is DERIVED (accounts/slots live)
+                // — the frozen "=== 16" check went silent the moment the fleet
+                // came home (92 slots) and never lied, but also never told the
+                // truth. Derived-or-silence, per roast-63 discipline.
+                const v = keysQ.data.connection?.vault;
+                if (!v?.fleetAllConnected) return null;
+                const accts = v.vaultAccountCount;
+                const slots = v.summary?.ok;
+                return (
+                  <p className="mt-2 text-[11px] leading-relaxed text-zinc-400">
+                    מצב-המפתחות המלא: כל {accts} חשבונות-הכספת חיים ({slots} סלוטים מאומתים-חי) — ראשי STEEM·HIVE·BLURT × 4 תפקידים + הצי HIVE·BLURT × 4 תפקידים. הכל נגזר, נטען ומאומת מול השרשרת החיה.
+                  </p>
+                );
+              })()}
             </div>
           )}
 

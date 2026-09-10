@@ -146,8 +146,8 @@ export async function GET(req: Request) {
       fileMeta(path.join(UPLOAD_DIR, "negen-space.html"), "דף-עיצוב (מרחב-סגנונות) — חומר-עזר, ללא מפתחות"),
       fileMeta(path.join(SECRETS_DIR, "external-signer-token"), "טוקן אימות לחותם החיצוני :3033"),
       fileMeta(path.join(SECRETS_DIR, "fleet-envelope"), "מעטפת-הכספת החתומה (WIF-ים — החומר עצמו לעולם לא נחשף)"),
-      fileMeta(path.join(process.cwd(), "backups", "key-backup-headcorner-20260910.enc"), "גיבוי-טרי מוצפן של כל 16 הסלוטים החיים (10-09) — סיסמה נמסרה בצ'אט בלבד"),
-      fileMeta(path.join(process.cwd(), "backups", "key-backup-headcorner-20260909.enc"), "גיבוי מוצפן עידן-הצי (09-09: 10 חשבונות-צי × STEEM/HIVE + headcorner) — סיסמה אצל הבעלים בצ'אט"),
+      fileMeta(path.join(process.cwd(), "backups", "key-backup-headcorner-20260910.enc"), "גיבוי מוצפן טרי של מצב-הכספת בערב 10-09 (כולל הצי שחזר) — סיסמה נמסרה בצ'אט בלבד"),
+      fileMeta(path.join(process.cwd(), "backups", "key-backup-headcorner-20260909.enc"), "גיבוי מוצפן עידן-הצי (09-09) — עתה משני לכספת החיה; סיסמה אצל הבעלים בצ'אט"),
       fileMeta("/tmp/my-project/backups/key-backup-headcorner-20260909.enc", "עותק-שרד של גיבוי 09-09 (זהה md5)")
     ];
 
@@ -158,26 +158,48 @@ export async function GET(req: Request) {
       ? (signerBody.fleet as Array<{ networks?: Record<string, unknown> }>).filter((f) => f.networks && Object.keys(f.networks).length > 0).length
       : 0;
 
-    const oldBackup = files[6];
-    const openGaps = [
-      {
-        id: "fleet-slots",
-        title: "סלוטי-הצי (9 חשבונות HIVE) — חומר קיים, ממתין סיסמה",
-        detail: `המפתחות של כל חשבונות-הצי קיימים בגיבוי המוצפן ${oldBackup.path}${oldBackup.exists ? " (על-הדיסק, אומת)" : " (לא נמצא על-הדיסק — ניתן לשחזור מהיסטוריית-הגיט)"} — נבלעו ואומתו-חי 18/18 בעבר. סיסמת-הגיבוי נמסרה לבעלים בצ'אט (09-09, עידן "keys-rescue").`,
-        oneStep: "הבעלים מדביק את סיסמת-הגיבוי מהצ'אט של 09-09 → פענוח → ingest → הצי חי. שום דבר אחר לא נדרש.",
-        state: "waiting-owner" as const
-      },
-      {
-        id: "tov-rot1",
-        title: "tov-STEEM/HIVE — יתום-ROT1 (נכסים זעירים, לא חוסם דבר)",
-        detail: "המפתחות סובבו חיצונית (SETTLE-10) והסיד של עץ-ROT1 לא נמצא. יתרה ציבורית: 0.449 STEEM + ווסטינג-זעיר. לא חוסם שום צינור.",
-        oneStep: "אם סיד-ROT1 (64-hex) ימצא אי-פעם — הדבקה אחת במסך-אבטחה → כל-העץ נגזר ונאומת אוטומטית.",
-        state: "blocked-external" as const
-      }
-    ];
+    const oldBackup = files[6]; void oldBackup; // kept: the 09-09 era-backup stays listed in files; the fleet gap is no longer tied to it
+    // v5: the fleet gap is now DERIVED from the live vault — a gap only exists
+    // while vault account names hold no keys. Frozen claims ("9 accounts
+    // waiting") went stale the moment the fleet's master passwords arrived
+    // (Task 65: 12 accounts, 92 slots, 0 drift) — derived-or-silence, never
+    // frozen text (roast-63/64 discipline).
+    const vaultNames = Array.isArray(signerBody.vaultAccountNames) ? (signerBody.vaultAccountNames as string[]) : [];
+    const withKeys = new Set<string>([
+      ...(typeof signerBody.main === "object" && signerBody.main && (signerBody.main as { account?: string }).account ? [(signerBody.main as { account: string }).account] : []),
+      ...(Array.isArray(signerBody.fleet) ? (signerBody.fleet as Array<{ username?: string }>).map((f) => f.username ?? "") : [])
+    ].filter(Boolean));
+    const emptyVaultAccounts = vaultNames.filter((n) => !withKeys.has(n));
+    const fleetAllConnected = emptyVaultAccounts.length === 0 && withKeys.size > 0;
+    const openGaps = fleetAllConnected
+      ? [
+          {
+            id: "tov-rot1",
+            title: "tov-STEEM/HIVE — יתום-ROT1 (נכסים זעירים, לא חוסם דבר)",
+            detail: "המפתחות סובבו חיצונית (SETTLE-10) והסיד של עץ-ROT1 לא נמצא. יתרה ציבורית: 0.449 STEEM + ווסטינג-זעיר. לא חוסם שום צינור. tov-BLURT חי ומאומת (4/4).",
+            oneStep: "אם סיד-ROT1 (64-hex) ימצא אי-פעם — הדבקה אחת במסך-אבטחה → כל-העץ נגזר ונאומת אוטומטית.",
+            state: "blocked-external" as const
+          }
+        ]
+      : [
+          {
+            id: "fleet-slots",
+            title: `סלוטי-צי — ${emptyVaultAccounts.length} חשבונות בכספת בלי מפתחות`,
+            detail: `חשבונות-כספת ללא חומר: ${emptyVaultAccounts.join(" · ") || "—"}. שאר-הכספת חיה ומאומתת.`,
+            oneStep: "הדבקת סיסמת-אב/WIF במסך-אבטחה → החותם מאמת מול רשויות-חיות וכותב fail-closed.",
+            state: "waiting-owner" as const
+          },
+          {
+            id: "tov-rot1",
+            title: "tov-STEEM/HIVE — יתום-ROT1 (נכסים זעירים, לא חוסם דבר)",
+            detail: "המפתחות סובבו חיצונית (SETTLE-10) והסיד של עץ-ROT1 לא נמצא. יתרה ציבורית: 0.449 STEEM + ווסטינג-זעיר. לא חוסם שום צינור.",
+            oneStep: "אם סיד-ROT1 (64-hex) ימצא אי-פעם — הדבקה אחת במסך-אבטחה → כל-העץ נגזר ונאומת אוטומטית.",
+            state: "blocked-external" as const
+          }
+        ];
 
     const ownerMaterial = [
-      { path: "upload/הד.txt", role: "סיסמאות-אב headcorner+tov", disposition: "הושמד 10-09 (shred ×3) אחרי 8/8 התאמות-חי ואישור-הבעלים — הנגזרות חיות בכספת ובגיבוי-הטרי", exists: false },
+      { path: "upload/הד.txt", role: "ייצוא-צ'אט 2018 (Haran Titi) — 13 סיסמאות-אב של הצי והראשי", disposition: "נקלט 10-09 ערב: 84 התאמות-חי על 12 חשבונות (הצי חזר!) → גיבוי-טרי → הושמד shred — הנגזרות חיות בכספת ובגיבוי", exists: false },
       { path: "upload/הדקור.txt", role: "ערכת STEEM/HIVE של headcorner", disposition: "הושמד 10-09 (shred ×3, פריצדנט-32) — 8/8 נבלעו ומאומתים-חי", exists: false },
       { path: "upload/בלורט.evm", role: "סיסמת-אב BLURT של headcorner", disposition: "הושמד 10-09 — הוכח מקומית שהוא שכפול-מדויק של סיסמת-headcorner בהד.txt (אותו מפתח-ציבורי נגזר)", exists: false },
       { path: "upload/photo_2026-09-10_01-12-28.jpg", role: "צירוף-מילים (מקור משפחת-TRON והארנקים)", disposition: "נשמר — עותק-המערכת היחיד של הנגזרת; נגזר ונמפה במלואו (FUNDS-RECON)", exists: true },
@@ -216,7 +238,9 @@ export async function GET(req: Request) {
             version: (signerBody.version as string | undefined) ?? null,
             summary: vaultSummary,
             sealedAt: (signerBody.sealedAt as string | undefined) ?? null,
-            fleetAccountsWithKeys
+            fleetAccountsWithKeys,
+            vaultAccountCount: vaultNames.length,
+            fleetAllConnected
           },
           services: svcs.map((s) => ({ name: s.name, port: s.port, alive: s.alive, disabled: s.disabled }))
         },

@@ -170,7 +170,7 @@ function openSeal(dir) {
 }
 
 // ── in-memory key material (NEVER leaves this process) ───────────────────────
-let STATE = null; // { sealedAt, main: {account, postingWif, activeWif, memoWif}, fleet: [{username, postingWif, activeWif}] }
+let STATE = null; // { sealedAt, main: {account, postingWif, activeWif, memoWif}, fleet: [{username, postingWif, activeWif}], vaultAccounts: string[] }
 
 function loadState() {
   const dir = resolveEnvelopeDir();
@@ -209,6 +209,16 @@ function loadState() {
           }
         }));
     } catch {}
+    // v2.4.3: remember EVERY vault account name — including empty skeletons
+    // (the 9 fleet accounts from the Task-36 build). Ingest candidates must
+    // include them: owner key material for a fleet account arrives as a WIF
+    // and the chain decides — but only if the account NAME is a candidate.
+    // Skeleton names are public blockchain accounts; no secret material here.
+    let vaultAccounts: string[] = [];
+    try {
+      const vaultRaw = JSON.parse(bundle.files["keys/vault.json"]);
+      vaultAccounts = (vaultRaw.accounts ?? []).map((a: { username?: string }) => a?.username).filter((u: unknown): u is string => typeof u === "string" && u.length > 0);
+    } catch {}
     STATE = {
       sealedAt: bundle.sealedAt ?? null,
       main: {
@@ -223,9 +233,10 @@ function loadState() {
           BLURT: { postingWif: envOf.BLURT_POSTING_WIF ?? null, activeWif: envOf.BLURT_ACTIVE_WIF ?? null, ownerWif: envOf.BLURT_OWNER_WIF ?? null, memoWif: envOf.BLURT_MEMO_WIF ?? null }
         }
       },
-      fleet
+      fleet,
+      vaultAccounts
     };
-    log("INFO", `envelope open: sealedAt=${STATE.sealedAt ?? "?"} main=${account} fleet=${fleet.length} accounts (values in-memory only, dir=${dir})`);
+    log("INFO", `envelope open: sealedAt=${STATE.sealedAt ?? "?"} main=${account} fleet=${fleet.length} accounts, ${vaultAccounts.length} vault account names (values in-memory only, dir=${dir})`);
   } catch (e) {
     log("ERROR", `envelope open failed: ${String(e?.message ?? e).slice(0, 120)} — fail-closed`);
     STATE = null;
@@ -385,7 +396,7 @@ async function ingestOwnerKey(network: string | null, wif: string, roleHint?: st
     return { ok: false, verdict: { network: network ?? null, role: roleHint ?? null, derived: null, match: false, error: "wif derivation failed (not a valid private key)" } };
   }
   const nets = network ? [network] : ["STEEM", "HIVE", "BLURT"];
-  const candidates = [STATE.main.account, ...STATE.fleet.map((f) => f.username), "ynet", "tov"].filter((v, i, a) => a.indexOf(v) === i);
+  const candidates = ingestCandidates();
   const roles = roleHint && ["owner", "active", "posting", "memo"].includes(roleHint) ? [roleHint] : ["owner", "active", "posting", "memo"];
   const checked: Array<Record<string, unknown>> = [];
   for (const net of nets) {
@@ -457,6 +468,19 @@ function parseKeyPayload(text: string) {
 }
 
 /**
+ * v2.4.3 — the FULL ingest candidate tree: main + loaded fleet + ynet/tov +
+ * EVERY vault account name (including empty fleet skeletons). Before this, a
+ * fleet WIF from the owner was refused because the skeleton names were dropped
+ * by the keys-only fleet filter — the exact "owner sent everything and we said
+ * no" class roast 59 was built to kill. Fail-closed unchanged: each candidate
+ * is still verified against the LIVE chain authority before anything writes.
+ */
+function ingestCandidates(): string[] {
+  return [STATE.main.account, ...STATE.fleet.map((f) => f.username), ...(STATE.vaultAccounts ?? []), "ynet", "tov"]
+    .filter((v, i, a) => typeof v === "string" && v.length > 0 && a.indexOf(v) === i);
+}
+
+/**
  * Task 29-b: MASTER-PASSWORD ingest — the owner's P-prefixed login string
  * ("מקשר להכל"). Task 59 (owner directive 2026-09-10, full-custody 2026-09-09):
  * derives ALL FOUR roles (owner included — verify-then-write means only keys
@@ -468,7 +492,7 @@ function parseKeyPayload(text: string) {
  */
 async function ingestOwnerPassword(password, networks) {
   if (typeof networks === "undefined" || networks === null) networks = ["STEEM", "HIVE", "BLURT"];
-  const candidates = [STATE.main.account, ...STATE.fleet.map((f) => f.username), "ynet", "tov"].filter((v, i, a) => a.indexOf(v) === i);
+  const candidates = ingestCandidates();
   const matches = [], checked = [];
   for (const acct of candidates) {
     let keys;
@@ -1023,7 +1047,7 @@ const server = Bun.serve({
             networks
           });
         }
-        return Response.json({ ok: true, main: { account: STATE.main.account, networks: mainNet }, fleet, sealedAt: STATE.sealedAt, drift: { lastCheck: driftState.lastCheck, openDrifts: driftState.drifts.length, unmatched: driftState.unmatched.length, summary: driftState.lastSummary }, version: "2.4.2" });
+        return Response.json({ ok: true, main: { account: STATE.main.account, networks: mainNet }, fleet, vaultAccountNames: STATE.vaultAccounts ?? [], sealedAt: STATE.sealedAt, drift: { lastCheck: driftState.lastCheck, openDrifts: driftState.drifts.length, unmatched: driftState.unmatched.length, summary: driftState.lastSummary }, version: "2.4.3" });
       } catch (e) {
         return Response.json({ ok: false, error: String(e?.message ?? e).slice(0, 200) }, { status: 502 });
       }
@@ -1057,7 +1081,7 @@ const server = Bun.serve({
         if (isRotSeed) {
           // SAOS-ROT1 master seed — derive the full tree for every candidate account.
           const seedHex = wif.replace(/^SAOS-ROT1:/i, "").trim();
-          const accounts = [STATE.main.account, ...STATE.fleet.map((f) => f.username), "ynet", "tov"].filter((v, i, a) => a.indexOf(v) === i);
+          const accounts = ingestCandidates();
           const found = [];
           for (const acct of accounts) {
             try { found.push(...await saosRot1Match(seedHex, acct)); } catch {}
@@ -1409,4 +1433,4 @@ const server = Bun.serve({
   }
 });
 
-log("INFO", `external-signer v2.5.3-roast56 listening on :${PORT} (auth=${TOKEN ? "token" : "MISSING-FAIL-CLOSED"}, networks=STEEM+HIVE+BLURT, blurtChainId=cd8d90f2…, blurtSigning=blurtjs(op-enum-12), authorityGate=on(prefix-aware), keys-ingest=verify-then-write, maxOpHive=${MAX_OP_HIVE}, txid=sha256-full-64hex chain-verifiable, failureClass=structural)`);
+log("INFO", `external-signer v2.5.4-roast64 listening on :${PORT} (auth=${TOKEN ? "token" : "MISSING-FAIL-CLOSED"}, networks=STEEM+HIVE+BLURT, blurtChainId=cd8d90f2…, blurtSigning=blurtjs(op-enum-12), authorityGate=on(prefix-aware), keys-ingest=verify-then-write full-vault-candidate-tree, maxOpHive=${MAX_OP_HIVE}, txid=sha256-full-64hex chain-verifiable, failureClass=structural)`);

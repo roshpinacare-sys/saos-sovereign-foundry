@@ -3,7 +3,7 @@
 > **המסמך הזה הוא המקום-היחיד שצריך.** כל דבר שהמערכת מחזיקה — מפה, מצב, נתיב, וסגירה-בצעד-אחד.
 > אין בו שום חומר-סוד — נתיבים, ספירות ופסקי-דין בלבד.
 > המקבילה-החיה על-המסך: **סקירה → "המפתחות שלי" → מרכז-החיבור** (`/api/saos/keys-map`).
-> עדכון-אחרון: 2026-09-10 20:00 UTC (Task 64 "חייב לחבר הכל").
+> עדכון-אחרון: 2026-09-10 20:20 UTC (Task 65 — **הצי חזר**: קליטת-ייצוא-הצ'אט 2018 → 12 חשבונות, 92 סלוטים).
 
 ---
 
@@ -11,9 +11,10 @@
 
 | רכיב | מצב | איך מודדים |
 |---|---|---|
-| כספת (חותם חיצוני :3033) | **16/16 סלוטים מאומתים-חי · 0 סטיות · 0 שגיאות** | `GET :3033/keys/verify-live` (Bearer `~/.secrets/external-signer-token`) |
-| headcorner | **12/12** — STEEM+HIVE+BLURT × owner/active/posting/memo | `GET :3033/keys/status` (v2.4.2 — התצוגה מציגה גם memo) |
-| tov | **4/4 BLURT** (owner/active/posting/memo) | אותו-status — `fleet[0].networks.BLURT` |
+| כספת (חותם חיצוני :3033) | **92/92 סלוטים מאומתים-חי · 0 סטיות · 0 שגיאות** | `GET :3033/keys/verify-live` (Bearer `~/.secrets/external-signer-token`) |
+| headcorner (ראשי) | **12/12** — STEEM+HIVE+BLURT × owner/active/posting/memo | `GET :3033/keys/status` (v2.4.3) |
+| הצי + tov + ynet | **11 חשבונות — 80 סלוטים חיים**: cashmachine · haran · israelnews · lsa · macrame · siq · wic · wog · woq (HIVE+BLURT × 4 תפקידים) + tov · ynet (BLURT × 4) | אותו-status — `fleet[].networks` |
+| חשבונות-כספת | **12/12 עם מפתחות — 0 שלדים ריקים** (`fleetAllConnected`) | `/api/saos/keys-map → connection.vault` |
 | מפקח-שירותים | **4/4 חיים** — vault-guardian:3031 · chief-of-staff:3032 · external-signer:3033 · fleet-cure:3034 | `supervisorStatus()` — מוצג חי במסך |
 | עגינות-שרשרת | BLURT + STEEM עגונות ומאומתות-על-השרשרת; HIVE בחלון-RC | `GET /api/saos/live-proof` · `/verify-chain` |
 | מסד-נתונים | ok — 15 חותמות · 303 קבלות · השרשרת 0-forks | `GET /api/saos/live-proof` |
@@ -23,8 +24,9 @@
 | נתיב | מה זה | מצב |
 |---|---|---|
 | `~/.secrets/fleet-envelope/` | **הכספת-החיה** — המעטפת האטומה (.env ראשי + keys/vault.json + fleet_keys.enc חתום) | 700 · המקור הקנוני |
-| `backups/key-backup-headcorner-20260910.enc` | **גיבוי-טרי** של כל 16 הסלוטים החיים (כל-3-המישורים, v2.4.1) — round-trip אומת | 0600 · gitignored · **סיסמה נמסרה בצ'אט 10-09** |
-| `backups/key-backup-headcorner-20260909.enc` | גיבוי עידן-הצי: **10 חשבונות-צי × STEEM/HIVE (active/posting/owner) + headcorner** — החומר-היחיד שמכיל את מפתחות-הצי | 0600 · gitignored · שוחזר מהיסטוריית-הגיט (Task 64) · **סיסמה אצל הבעלים (צ'אט 09-09)** |
+| `backups/key-backup-headcorner-20260910-b.enc` | **הגיבוי-הקנוני** — כל 92 הסלוטים החיים (12 חשבונות, כל-המישורים-החיים; 93 ערכים, round-trip אומת) | 0600 · gitignored · **סיסמה נמסרה בצ'אט 10-09 ערב (Task 65)** |
+| `backups/key-backup-headcorner-20260910.enc` | גיבוי-ביניים — מצב 16-הסלוטים שלפני-שיבת-הצי (10-09 אחה"צ) | 0600 · gitignored · סיסמה בצ'אט 10-09 |
+| `backups/key-backup-headcorner-20260909.enc` | גיבוי עידן-הצי (09-09: 10 חשבונות × STEEM/HIVE + headcorner) — **עתה משני**: הצי חי בכספת עצמה | 0600 · gitignored · שוחזר מהיסטוריית-הגיט (Task 64) · סיסמה אצל הבעלים (צ'אט 09-09) |
 | `~/.secrets/saos-admin-key` (+ עותק `upload/saos-admin-key.txt`) | מפתח-האדמין של הקונסולה | hash-מאומת חי מול `SAOS_ADMIN_KEY_HASH` |
 | `~/.secrets/external-signer-token` | טוקן-Bearer לחותם :3033 | 0600 |
 | `upload/Roshcaregt.txt` | טוקן-דחיפה לגיטהאב (askpass) | gitignored · לעולם לא בצ'אט |
@@ -35,19 +37,22 @@
 
 | קובץ | מה היה | גורל |
 |---|---|---|
-| `upload/הד.txt` | סיסמאות-אב headcorner+tov | **הושמד (shred ×3) 10-09** — 8/8 התאמות-חי נכתבו לכספת; אישור-הבעלים נתקבל ("בדקתי זה מתאים") |
+| `upload/הד.txt` (העלאה-ראשונה) | סיסמאות-אב headcorner+tov | **הושמד (shred ×3) 10-09** — 8/8 התאמות-חי נכתבו לכספת; אישור-הבעלים נתקבל ("בדקתי זה מתאים") |
+| `upload/הד.txt` (העלאה-שנייה, 20:05) | **ייצוא-צ'אט 2018 (Haran Titi)** — 13 סיסמאות-אב של הצי והראשי | **הושמד (shred ×3) 10-09 ערב** — 84 התאמות-חי על 12 חשבונות → הצי כולו נכתב לכספת → גיבוי-קנוני טרי (-b) → השמדה. 1 סירוב-כן (סיסמה-עבר של tov שכבר-סובבה) |
 | `upload/הדקור.txt` | ערכת STEEM/HIVE של headcorner | **הושמד (shred ×3) 10-09** (פריצדנט-32) — 8/8 נבלעו ומאומתים-חי |
 | `upload/בלורט.evm` | סיסמת-אב BLURT של headcorner | **הושמד 10-09** — הוכח מקומית (גזירת-מפתח-ציבורי) שהוא **שכפול-מדויק** של סיסמת-headcorner בהד.txt |
 | התמונה | mnemonic | נשמר וממופה — כל-הנגזרות אומתו (FUNDS-RECON) |
 
 ## 4. פערים-פתוחים — והסגירה-בצעד-אחד של כל אחד
 
-1. **סלוטי-הצי (9 חשבונות HIVE)** — `waiting-owner`
-   - המפתחות **קיימים** בתוך `backups/key-backup-headcorner-20260909.enc` (נבלעו ואומתו-חי 18/18 בעבר).
-   - **הסגירה**: הבעלים מדביק את סיסמת-הגיבוי מהצ'אט של 09-09 ("keys-rescue") → `node scripts/decrypt-key-backup.mjs backups/key-backup-headcorner-20260909.enc --pass-env SAOS_BP --out /tmp/fleet.json` → הזרקה דרך מסך-אבטחה או `POST :3033/keys/ingest` → הצי חי. שום דבר אחר לא נדרש.
-2. **tov-STEEM/HIVE** — `blocked-external`
-   - יתום-ROT1: המפתחות סובבו חיצונית (SETTLE-10) והסיד לא נמצא. נכסים זעירים (0.449 STEEM), לא חוסם שום צינור.
+> Task 65: **הפער הראשון (סלוטי-הצי) נסגר** — לא בדרך-הסיסמה-שחיכינו אלא טוב-ממנה: ייצוא-הצ'אט 2018 של הבעלים הכיל את סיסמאות-האב המקוריות, והחותם (v2.4.3 — עץ-מועמדים-מלא-כולל-שלדי-כספת) אימת 84 התאמות-חי. הפער-במסך נגזר-חי (`fleetAllConnected`) — לא עוד טקסט-קפוא.
+
+1. **tov-STEEM/HIVE** — `blocked-external`
+   - יתום-ROT1: המפתחות סובבו חיצונית (SETTLE-10) והסיד לא נמצא. נכסים זעירים (0.449 STEEM), לא חוסם שום צינור. tov-BLURT חי (4/4).
    - **הסגירה (רק אם הסיד ימצא)**: הדבקה אחת של סיד-ROT1 (64-hex) במסך-אבטחה → כל-העץ נגזר ומאומת אוטומטית.
+2. **מישור-STEEM של הצי** — `empty-by-truth`
+   - רשויות-ה-STEEM החיות של חשבונות-הצי אינן תואמות לסיסמאות-2018 (העיד-עליהן השרשרת עצמו — 0 התאמות-STEEM מול 84 ב-HIVE/BLURT). לא חוסם דבר: הצי פעיל ב-HIVE+BLURT.
+   - **הסגירה**: רק אם יופיע חומר-בעלים חדש למישור-זה — הדבקה במסך-אבטחה, fail-closed.
 
 ## 5. הליכים-סטנדרטיים (שלא יהיה צורך לחפש שוב)
 
@@ -56,7 +61,7 @@
 - **בדיקת-כספת מלאה**: `curl -H "Authorization: Bearer $(cat ~/.secrets/external-signer-token)" localhost:3033/keys/verify-live`.
 - **גיבוי-מפתחות טרי**: `POST :3033/keys/backup` (Bearer, body `{"passphrase":"…"}`) → כותבים את `file` ל-`backups/key-backup-<תאריך>.enc` (0600) → round-trip עם `scripts/decrypt-key-backup.mjs --pass-env`. הסיסמה — **לצ'אט בלבד, לעולם לא לקובץ**.
 - **דחיפה לגיטהאב**: askpass מ-`upload/Roshcaregt.txt` (ראה worklog), `git push origin main`, אימות `git ls-remote origin main`. אף-כוח-גיטהאב לעולם לא בצ'אט.
-- **שחזור-אסון**: סדר-ההתאוששות = מעטפה חיה → גיבוי-טרי (10-09) → גיבוי 09-09 → סיד/סיסמאות אצל הבעלים. מסמך-האם: `docs/KEY-RECOVERY.md`.
+- **שחזור-אסון**: סדר-ההתאוששות = מעטפה חיה → גיבוי-קנוני (10-09-b) → גיבויי 10-09/09-09 → סיד/סיסמאות אצל הבעלים. מסמך-האם: `docs/KEY-RECOVERY.md`.
 
 ## 6. מסמכי-אם (הרשויות)
 
@@ -73,3 +78,4 @@
 ---
 
 *Task 64 — הנחיית-הבעלים "חייב לחבר הכל הכל… ולאטום שנוכל לגשת להכל בלי בעיה וללא צורך עוד פעם בחיפוש ואיתור".*
+*Task 65 — הנחיית-הבעלים "תבדוק את זה חבר הכל ותאטום מה שצריך שהכל יהיה מחובר ודחוף": הקובץ החדש התברר כייצוא-צ'אט 2018 עם 13 סיסמאות-אב — הצי כולו (9 חשבונות + ynet + tov) חזר ונאטם; 92 סלוטים · 0 סטיות.*

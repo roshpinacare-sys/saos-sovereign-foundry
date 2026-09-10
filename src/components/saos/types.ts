@@ -598,6 +598,8 @@ export interface KeysMapResponse {
       summary: { ok?: number; drift?: number; unmatched?: number; errors?: number } | null;
       sealedAt: string | null;
       fleetAccountsWithKeys: number;
+      vaultAccountCount: number;
+      fleetAllConnected: boolean;
     };
     services: Array<{ name: string; port: number; alive: boolean; disabled: boolean }>;
   };
