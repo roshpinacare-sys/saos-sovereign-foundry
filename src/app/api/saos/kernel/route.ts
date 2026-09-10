@@ -23,7 +23,7 @@ export async function GET(req: Request) {
       { ok: result.ok, stateRoot: result.stateRoot, gasUsed: result.gasUsed }
     );
 
-    return NextResponse.json({ ok: result.ok, result, receipt: appended.receipt.digest, persisted: appended.persisted });
+    return NextResponse.json({ ok: result.ok, result, receipt: appended.receipt.digest, persisted: appended.persisted, suppressed: appended.suppressed ?? null });
   } catch (e) {
     return NextResponse.json(
       { ok: false, error: coarseError(e, "selftest-failed") },

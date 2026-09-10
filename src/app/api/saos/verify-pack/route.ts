@@ -68,6 +68,7 @@ export async function GET(req: Request) {
       sampleProof: await merkleProof(tree, 0),
       receipt: appended.receipt.digest,
       persisted: appended.persisted,
+      suppressed: appended.suppressed ?? null,
       howToVerify: [
         "קח את sampleProof.path",
         "hash = leaf; לכל צעד: dir==='R' ? sha256(hash+sibling) : sha256(sibling+hash)",

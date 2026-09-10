@@ -12,7 +12,15 @@
  *   2. every file's sha256 matches the manifest
  *   3. PRAGMA integrity_check on the snapshot
  *   4. row counts match the manifest
- * A restore that fails verification NEVER touches any database.
+ *   4b. (roast 59) EVIDENCE-CHAIN PROOF inside the snapshot itself —
+ *       verifyChainDag over every receipt + merkle-root rebuild for every
+ *       seal, the same discipline as backup.mjs (roast 53) and
+ *       /api/saos/verify-chain. sha256+integrity+counts prove the COPY is
+ *       faithful — not that the chain inside it is TRUE (LIVE-caught this
+ *       round: a snapshot with a tampered receipt + re-signed manifest
+ *       passed as "✅ pass" and would have resurrected a broken chain).
+ * A restore that fails verification NEVER touches any database — in ANY
+ * mode, including --yes.
  */
 
 import { createHash } from "crypto";
@@ -59,7 +67,47 @@ async function verifyBackup(dir) {
       actual[m] = c;
       if (c !== expected) { countsMatch = false; console.error(`  count mismatch ${m}: manifest=${expected} snapshot=${c}`); }
     }
-    return { ok: countsMatch, reason: countsMatch ? "verified" : "counts mismatch", manifest, actual };
+
+    // 4b. roast 59 — chain-proof INSIDE the snapshot (mirror of backup.mjs
+    // step-3b). Counts match the manifest even when a receipt row was
+    // tampered AFTER the fact; integrity_check validates file structure, not
+    // chain truth. Live-caught: forked-chain snapshot passed as "✅ pass".
+    const chainProof = { ok: false, receipts: 0, digestErrors: 0, linkErrors: 0, sealsChecked: 0, sealErrors: 0 };
+    const { verifyChainDag } = await import("../src/lib/saos/evidence");
+    const { buildMerkleTree } = await import("../src/lib/saos/merkle");
+    const snapReceipts = await probe.evidenceReceipt.findMany({ orderBy: { createdAt: "asc" } });
+    const dag = await verifyChainDag(
+      snapReceipts.map((r) => ({
+        kind: r.kind,
+        at: (r.at ?? r.createdAt).toISOString(),
+        payload: JSON.parse(r.payload),
+        prevDigest: r.prevDigest,
+        digest: r.digest
+      }))
+    );
+    chainProof.receipts = snapReceipts.length;
+    chainProof.digestErrors = dag.digestErrors.length;
+    chainProof.linkErrors = dag.linkErrors.length;
+
+    const snapSeals = await probe.sealRecord.findMany({ orderBy: { height: "desc" }, include: { leaves: true } });
+    chainProof.sealsChecked = snapSeals.length;
+    for (const seal of snapSeals) {
+      const leaves = [...seal.leaves].sort((a, b) => a.index - b.index).map((l) => l.digest);
+      const dup = leaves.length - new Set(leaves).size;
+      const tree = await buildMerkleTree(leaves);
+      if (leaves.length !== seal.leavesCount || dup > 0 || tree.root !== seal.root) {
+        chainProof.sealErrors += 1;
+        console.error(`  seal height=${seal.height}: chain-proof failed in snapshot`);
+      }
+    }
+    chainProof.ok =
+      dag.digestErrors.length === 0 && dag.linkErrors.length === 0 && chainProof.sealErrors === 0 && snapSeals.length > 0;
+    if (!chainProof.ok) {
+      console.error(`  chain-proof: BROKEN — receipts=${chainProof.receipts} digestErrors=${chainProof.digestErrors} linkErrors=${chainProof.linkErrors} seals=${chainProof.sealsChecked} sealErrors=${chainProof.sealErrors}`);
+    }
+
+    const ok = countsMatch && chainProof.ok;
+    return { ok, reason: !countsMatch ? "counts mismatch" : !chainProof.ok ? "chain=BROKEN" : "verified", manifest, actual, chainProof };
   } finally {
     await probe.$disconnect();
   }
@@ -83,20 +131,25 @@ async function main() {
   console.log(`restore ${yes ? "--yes (REAL)" : "(dry-run)"} → ${abs}`);
   const v = await verifyBackup(abs);
   console.log(`   verification: ${v.ok ? "✅ pass" : `❌ ${v.reason}`}`);
+  if (v.chainProof) {
+    console.log(`   chain-proof: ${v.chainProof.ok ? "ok" : "BROKEN"} — receipts=${v.chainProof.receipts} digestErrors=${v.chainProof.digestErrors} linkErrors=${v.chainProof.linkErrors} seals=${v.chainProof.sealsChecked} sealErrors=${v.chainProof.sealErrors}`);
+  }
   if (v.manifest) {
     console.log(`   backup of commit: ${v.manifest.gitCommit?.slice(0, 12)} @ ${v.manifest.createdAt}`);
     console.log(`   counts: ${Object.entries(v.actual ?? v.manifest.counts).map(([k, x]) => `${k}=${x}`).join(" ")}`);
   }
 
-  if (!v.ok) { console.error("\n❌ restore aborted — verification failed; nothing was touched"); process.exit(1); }
+  if (!v.ok) { console.error("\n❌ restore aborted — verification failed (including chain-proof); nothing was touched"); process.exit(1); }
 
   const snapPath = path.join(abs, "db.sqlite3");
   const liveDb = path.join(ROOT, "db", "custom.db");
 
   if (target) {
     fs.mkdirSync(path.dirname(path.resolve(target)), { recursive: true });
+    // roast 59: the drill path is ALSO chain-proof gated — a drill that copies
+    // a broken chain trains the operator on a lie
     fs.copyFileSync(snapPath, path.resolve(target));
-    console.log(`\n✅ drill complete — snapshot copied to ${path.resolve(target)} (live db untouched)`);
+    console.log(`\n✅ drill complete — snapshot copied to ${path.resolve(target)} (live db untouched, chain-proof verified)`);
     process.exit(0);
   }
 

@@ -137,6 +137,12 @@ async function main() {
   const k = await j("/api/saos/kernel");
   report("GET /kernel ok", k.status === 200 && k.body.ok === true);
   report("kernel selftest 7/7", k.body.result?.checks?.length === 7 && k.body.result.checks.every((c) => c.pass));
+  // roast-59: duplicate-window — the SECOND identical kernel call inside the
+  // window is ALWAYS computed-fresh-but-not-re-chained (deterministic: whether
+  // the first call chained or was itself suppressed, the last same-kind
+  // receipt now holds identical content within seconds)
+  const k2 = await j("/api/saos/kernel");
+  report("roast-59: identical kernel re-call computed but NOT re-chained", k2.body.ok === true && k2.body.persisted === false && typeof k2.body.suppressed === "string" && k2.body.suppressed.includes("duplicate-window"), (k2.body.suppressed ?? "").slice(0, 80));
 
   // 3. seal — monotone height (env-aware: without an operator session the seal
   // endpoint MUST refuse with 401 — that refusal is itself the assertion)
@@ -665,7 +671,27 @@ async function main() {
   const limited = codes.filter((c) => c === 429).length;
   report("rate-limit returns 429 beyond the limit", limited >= 1, `codes=[${codes.join(",")}] → ${limited}×429`);
 
-  console.log(`\napi-check: ${pass} passed, ${fail} failed${skipped ? `, ${skipped} skipped (owner-held auth)` : ""}${fail ? ` → ${failures.join(", ")}` : ""}\n`);
+  
+// roast-59: the RECOVERY path is in the regression harness — restore dry-run
+// on the newest good backup must pass WITH the chain-proof (digest+merkle
+// verified inside the snapshot, not just counts)
+{
+  const { execSync } = await import("child_process");
+  const { readdirSync } = await import("fs");
+  try {
+    const bdirs = readdirSync("backups").filter((d) => d.startsWith("backup-")).sort().reverse();
+    if (bdirs.length > 0) {
+      const out = execSync(`bun scripts/restore.mjs backups/${bdirs[0]}`, { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] });
+      const passed = out.includes("verification: ✅ pass") && out.includes("chain-proof: ok");
+      report("roast-59: restore dry-run on newest backup passes WITH chain-proof", passed, `backup=${bdirs[0]}`);
+    } else {
+      report("roast-59: restore dry-run on newest backup passes WITH chain-proof", false, "no backups dir");
+    }
+  } catch (e) {
+    report("roast-59: restore dry-run on newest backup passes WITH chain-proof", false, String(e.message ?? e).slice(0, 80));
+  }
+}
+console.log(`\napi-check: ${pass} passed, ${fail} failed${skipped ? `, ${skipped} skipped (owner-held auth)` : ""}${fail ? ` → ${failures.join(", ")}` : ""}\n`);
   process.exit(fail === 0 ? 0 : 1);
 }
 

@@ -87,11 +87,12 @@ export async function GET(req: Request) {
 
   // 5) checkpoint — chain this run into the evidence receipt chain
   //    (append-only clock; productionAuthority NONE enforced by the store)
-  let checkpoint: { digest: string | null; prevDigest: string | null; persisted: boolean; kind: string } = {
+  let checkpoint: { digest: string | null; prevDigest: string | null; persisted: boolean; kind: string; suppressed: string | null } = {
     digest: null,
     prevDigest: null,
     persisted: false,
-    kind: "breakthrough-demo"
+    kind: "breakthrough-demo",
+    suppressed: null
   };
   try {
     const receipt = await appendReceipt("breakthrough-demo", {
@@ -102,7 +103,7 @@ export async function GET(req: Request) {
       proofSizeBytesJson: clock.metrics.proofSizeBytesJson,
       demoKind: "cross-chain-atomic-state-proof"
     });
-    checkpoint = { digest: receipt.receipt.digest, prevDigest: receipt.receipt.prevDigest, persisted: receipt.persisted, kind: "breakthrough-demo" };
+    checkpoint = { digest: receipt.receipt.digest, prevDigest: receipt.receipt.prevDigest, persisted: receipt.persisted, kind: "breakthrough-demo", suppressed: receipt.suppressed ?? null };
   } catch (e) {
     errors.push(`checkpoint: ${coarseError(e, "receipt-append-failed")}`);
   }

@@ -89,7 +89,8 @@ export async function GET(req: Request) {
         plan,
         planId: saved.id,
         receipt: appended.receipt.digest,
-        persisted: appended.persisted
+        persisted: appended.persisted,
+        suppressed: appended.suppressed ?? null
       });
     }
 
@@ -164,7 +165,8 @@ export async function GET(req: Request) {
       plan,
       planId: saved.id,
       receipt: appended.receipt.digest,
-      persisted: appended.persisted
+      persisted: appended.persisted,
+      suppressed: appended.suppressed ?? null
     });
   } catch (e) {
     // roast-58: raw e.message leaked Prisma internals + source paths (LIVE-proven)

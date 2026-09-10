@@ -21,16 +21,73 @@ export type DbLike = Prisma.TransactionClient | typeof db;
 export interface AppendResult {
   receipt: ChainedReceipt;
   persisted: boolean;
+  /** roast 59 — set when the append was skipped by the duplicate window (honest disclosure, never silent) */
+  suppressed?: string;
+}
+
+// ─── roast 59: duplicate-window ─────────────────────────────────────────────
+// The chain is EVIDENCE, not a log. A kernel selftest every 2 seconds chains
+// the SAME truth again and again (LIVE-caught: two identical selftests 2s
+// apart → 2 identical receipts; at the 30/min limit that is ~43k duplicate
+// rows/day diluting the chain). GET-route appends now suppress an identical
+// computed payload within the window: the caller still gets the freshly
+// computed result, honestly marked persisted:false + suppressed — nothing is
+// hidden, the chain just stops re-recording the same fact.
+const DUPLICATE_WINDOW_MS = 10 * 60_000;
+const VOLATILE_PAYLOAD_KEYS = new Set(["planId", "snapshotId", "digest", "at", "runId", "checkpointId"]);
+
+function stablePayloadOf(payload: Record<string, unknown>): string {
+  const out: Record<string, unknown> = {};
+  for (const k of Object.keys(payload).sort()) {
+    if (!VOLATILE_PAYLOAD_KEYS.has(k)) out[k] = payload[k];
+  }
+  return JSON.stringify(out);
 }
 
 // isUniqueViolation is declared further below and hoisted — safe to use in appendOn
 
-async function appendOn(client: DbLike, kind: string, payload: Record<string, unknown>, sealId?: string): Promise<AppendResult> {
+async function appendOn(
+  client: DbLike,
+  kind: string,
+  payload: Record<string, unknown>,
+  sealId?: string,
+  opts?: { suppressDuplicateWindow?: boolean }
+): Promise<AppendResult> {
   // deterministic tie-break: createdAt has millisecond precision and 11
   // same-millisecond adjacent pairs already exist in this chain — id (cuid,
   // time-ordered) breaks the tie toward the most-recent insert. A wrong "prev"
   // pick would forge a silent fork.
   const prev = await client.evidenceReceipt.findFirst({ orderBy: [{ createdAt: "desc" }, { id: "desc" }] });
+
+  // roast 59 — duplicate-window probe: INSIDE the same serialized transaction
+  // (no race), GET-route path only. Identical stable payload for the same kind
+  // within the window → computed, returned, NOT re-chained.
+  if (opts?.suppressDuplicateWindow && persistenceAllowed()) {
+    const lastSameKind = await client.evidenceReceipt.findFirst({
+      where: { kind },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }]
+    });
+    if (lastSameKind) {
+      const atMs = (lastSameKind.at ?? lastSameKind.createdAt).getTime();
+      const ageMs = Date.now() - atMs;
+      if (ageMs >= 0 && ageMs <= DUPLICATE_WINDOW_MS) {
+        try {
+          const lastPayload = JSON.parse(lastSameKind.payload) as Record<string, unknown>;
+          if (stablePayloadOf(lastPayload) === stablePayloadOf(payload)) {
+            const wouldBe = await forgeReceipt(kind, payload, prev?.digest ?? null);
+            return {
+              receipt: wouldBe,
+              persisted: false,
+              suppressed: `duplicate-window: identical ${kind} content already chained ${Math.round(ageMs / 1000)}s ago — computed fresh, not re-chained (${Math.ceil((DUPLICATE_WINDOW_MS - ageMs) / 1000)}s of window left)`
+            };
+          }
+        } catch {
+          // unparseable stored payload → fall through and chain as usual
+        }
+      }
+    }
+  }
+
   const receipt = await forgeReceipt(kind, payload, prev?.digest ?? null);
   if (!persistenceAllowed()) return { receipt, persisted: false };
   try {
@@ -66,7 +123,7 @@ async function appendOn(client: DbLike, kind: string, payload: Record<string, un
  * serial by construction, independent of journal mode.
  */
 export function appendReceipt(kind: string, payload: Record<string, unknown>, sealId?: string): Promise<AppendResult> {
-  return withWriteLock(() => db.$transaction((tx) => appendOn(tx, kind, payload, sealId)));
+  return withWriteLock(() => db.$transaction((tx) => appendOn(tx, kind, payload, sealId, { suppressDuplicateWindow: true })));
 }
 
 /** append a receipt inside a caller-owned transaction (seal route — same tx as the seal) */
