@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { auditDroppedCount, authConfigured, currentSessionEpoch } from "@/lib/saos/auth";
 import { coarseError } from "@/lib/saos/api-errors";
 import { enforceRateLimit, ruleFor } from "@/lib/saos/rate-limit";
-import { saosMode } from "@/lib/saos/modes";
+import { saosModeFresh } from "@/lib/saos/modes";
 import { networkStatuses } from "@/lib/saos/network-status";
 import { runLiveNetworkProbes, liveProbePlan, type LiveProbeResult } from "@/lib/saos/networks/live-probes";
 import { hiveRcLive } from "@/lib/saos/hive-rc-live";
@@ -141,7 +141,7 @@ export async function GET(req: Request) {
 
   const errors: string[] = [];
   const timestamp = new Date().toISOString();
-  const mode = saosMode();
+  const mode = await saosModeFresh(); // roast 61: broadcastCapable from a FRESH signer verdict, never the sync cache
 
   // ── Level 1: database + system ─────────────────────────────────────────
   let database: { ok: boolean; counts: Record<string, number> } = { ok: false, counts: {} };

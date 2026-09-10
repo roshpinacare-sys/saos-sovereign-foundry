@@ -1,61 +1,30 @@
-# בריף ראש-המטה — 2026-09-10T01:44:13.230Z
+# בריף ראש-המטה — 2026-09-10T15:15:21.149Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: 2451501
-- 2451501 b474eb47-854c-476a-a4d1-c71dd1ce1739
-- b226eec fix(43): owner login fully restored via real-keys ingest + treasury honest data fix
-- 0c34743 feat(42): SOVEREIGN v4 AURORA CONSOLE — full redesign: side console-rail (RTL 248px, brand/nav/mode/clock), contextual sticky topbar, aurora-mesh background (animated conic ribbons + engineering grid), deep glass with gradient hairlines, Heebo+Space Grotesk typography, new card/button/stat language (emerald↔gold, display numerals, hover-lift); class-contract preserved so all 10 tabs work unchanged; grid fix: toaster+skip-link moved out of auto-placement; mobile horizontal nav rail; browser-verified desktop+mobile, 0 console errors, lint clean. No logic changes.
-- bce4413 fix(42): owner login channel restored post-wipe — new signer token + rebuilt fleet envelope (scrypt/AES tag-order fixed), BLURT posting/active/memo re-derived from owner password and live-verified (LOADED+MATCH), signer fixes: BLURT netTag slot corruption, STATE refresh after ingest, master-password login fallback (hash-only in-signer); app env: SAOS_EXTERNAL_SIGNER_URL/TOKEN restored; E2E: 200 owner:headcorner via BLURT/active, 30d session; STEEM/HIVE honestly awaiting owner universal-paste (ROT1 seed is owner-custody, 0 local matches)
-- 45c81c5 fix(41-recovery): full state restoration after external wipe event (~22:03) — .env rebuilt (live+confirm, new admin key OUTSIDE tree per SH-7), fresh verified backup, 9/9 owner decisions re-recorded from git-documented evidence only (0 invented), new genesis seal 9edc42eb, incident evidence doc; preflight: 5 hard blockers -> 0, readyForAnchor=true, mode=live, browser-verified
-guardian: ok=true runs=0 devMode=true tickAlive=true token=false
-briefings אחרונים: BRIEF-2026-09-09T22-33-30.md, BRIEF-2026-09-09T23-03-35.md, BRIEF-2026-09-09T23-14-22.md, BRIEF-2026-09-09T23-44-04.md, BRIEF-2026-09-10T00-44-07.md
-── זנב next-steps.md ──
-…
-ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
-
-### המשאב שנמצא (כנות-מלאה)
-- **9.682 HIVE נזילים על headcorner** (שרשרת HIVE) — הכסף האמיתי היחיד בצי; כל השאר אבק (טוקני-HE זעירים, TRX ~$0.5 ללא נתיב-המרה ללא CEX חיצוני — נשארים בסביבה שלנו).
-- **גילוי-מפתח**: המעטפת החתומה היא **קבוצת-מפתחות-ה-HIVE**: 9 מתוך 10 חשבונות-צי (cashmachine, haran, israelnews, lsa, macrame, siq, wic, wog, woq) — המפתח-הפעיל במעטפת **מתאים לסמכות-החיה על HIVE** (אימות-גזירה מול-שרשרת; 100 מעטפות-גיבוי סרוקות, מעטפת-אחת ייחודית). headcorner ו-tov לא נכללים (מפתחותיהם אצל-הרנטיים-החי בלבד).
-- **האבחנה העמוקה**: STEEM RC של headcorner 100% (שפע — max_rc 2.33T), אבל HIVE RC 0.003% → **פעולת-עוגן אחת ב-HIVE כל ~25 דק** במקום כל-36 שניות. פעולה אחת עולה ~124M RC (נמדד חי דרך דחיית-withdraw של lsa: "has 20,972,581 RC, needs 124,200,044").
-
-### ה-deadlock שנמצא ותוקן (steem repo, commit `ade0b5e`)
-לרנטיים יש דימון `hivePower` (FSM של SWAP.HIVE → withdraw → HIVE → powerup) — אך הוא היה סגור מאחורי `rcCur < 1.2G → return`: העוגן שוחק RC ≈ קצב-הרגן לנצח → **התרופה הייתה חסומה על-ידי המחלה** וה-9.682 ישבו. התיקון: השער = כשירות-שידור בלבד (150M ≈ פעולה-אחת); `he_powerup.cjs` קיבל `--amount ALL` + אימות-סמכות מקדים (exit 2 על אי-התאמה, שום-שידור) + בדיקת-RC עם ETA (exit 3). **הרצה-מסיימת אחת על-הרנטיים-החי**: `node agent/he_powerup.cjs --amount ALL` → max_rc 25.6G→~40G (+55% רגן/יום).
-
-### מסילת-ההמרה האמיתית (נבנתה והוכחה חיה הערב)
-1. **external-signer v2** (:3033): רשת HIVE + אופס-אלווליסט (transfer_to_vesting/transfer/claim_rewards/he_market_sell/he_withdraw/custom_json) + **שער-אימות-סמכות** (גזירת-מפתח מול-סמכות-חיה לפני-כל-שידור, 403 על אי-התאמה) + **שער-כשירות-RC** (429 עם ETA, אף-שידור-אסון) + תקרת-סכום (50 HIVE).
-2. **נתיב-המרה ב-DEX** (saos-dex): `GET /api/dex/convert?account=` (תצוגה-חיה: מאזנים + מסלול-מוצע) + `POST /api/dex/convert` (operator-gated; ה-DEX ללא-מפתחות — הביצוע דרך החותם בלבד). typecheck PASS; DB מבודד (נתפס ותוקן: DATABASE_URL של-ה-shell דרס את ה-.env — הופעל מחדש עם `file:../db/dex.db` מפורש; ה-foundry לא-נפגע).
-3. **ביצועים אמיתיים שנחתו על-השרשרת הערב**: lsa מכרה 2.51025127 WEED @0.00098 → **0.00248765 SWAP.HIVE** (נחת, אומת במאזן); macrame מכרה 0.570715 STEM @0.00025 → **+0.000145 SWAP.HIVE** (נחת); macrame withdraw שודר והתקבל (בגשר-hivepegged; נחיתה בטיפול). ה-powerup-עצמו נעול כרגע ב-RC (ETA ~232 דק ל-macrame) — השערים מדווחים בכנות וה-FSM ישלים אוטומטית אחרי-פריסת-התיקון או שה-RC יגיע.
-
-### החלטות
-- `hive-rc-floor`: **needs-resource → decided-custom** (המשאב קיים, המסילה נבנתה והוכחה, נותר פעולת-הרצה אחת על-הרנטיים). `tron-stake`/`vault-restore` נשארים כנים (TRX אבק בלי נתיב; שחזור-חוץ).
-
-### תקרית שנתפסה ותוקנה (Task 27-b)
-במהלך-ההפעלה הראשונה של ה-DEX דלף DATABASE_URL מה-shell (foundry custom.db דרס את .env של ה-DEX — קדימות process.env) וקו-הריליי שלו כתב 2 קבלות-זרות לשרשרת-ה-foundry (23:14:38/23:15:14). נתפס בבדיקת-החובה שלפני-סגירה: אוכסן (docs/evidence/dex-relay-pollution-archive-2026-09-08.json, sha256 34f3a606…), הוסר, והסכימה הוקשתה — EvidenceReceipt.at נעשה REQUIRED כך שכותב-זר נכשל מבנית. verifyChainDa
+HEAD: 7bd9f0e
+- 7bd9f0e roast(60): immutability was read-then-write fiction, revoke-all was a no-op with an explicit secret, and seal quietly degraded garbage — all three caught LIVE. (1) THE MONEY ONE: two concurrent PATCHes with different txids BOTH passed the row.txid===null check and the second silently overwrote the first (LIVE: both ok:true, row kept only txid-B — a recorded anchor could be rewritten by racing the endpoint; the 'recorded txid can never be overwritten' contract had no atom behind it). Fixed: atomic CAS — record flips txid null→value via updateMany({where:{id,txid:null}}), cancel/fail flips to terminal conditional on txid still null (a row can never end 'cancelled' carrying a public result), POST's duplicate-protection moved inside withWriteLock + interactive transaction (find-then-create can no longer double-create per seal+network). LIVE re-proof: patch2 refused with the winner's txid named; FIRST-wins; record-vs-cancel race → exactly one writer, consistent state. (2) POST /auth/revoke-all was MATHEMATICALLY a no-op whenever SAOS_SESSION_SECRET is configured — sessionSecret() replaced the epoch entirely (cookie MAC epoch-independent), so epoch rotation could NEVER invalidate any cookie; LIVE: ok:true and the same cookie still authenticated. Fixed: explicit secret now mixed WITH the epoch (sha256(secret:epoch)) — rotation kills every prior cookie (one-time deploy effect: re-login). Masking discovered en route: dev auto-session makes GET /auth answer authenticated:true with a FRESH managed session for a dead cookie — the honest proof is a 401 on a sensitive route (no auto-session there) + actor=dev-managed-session; both now measured. (3) seal stamps:'abc' silently DEGRADED to 6 stamps (roast-56's own comment said 'Validate, don't degrade' while the code degraded; 0/-5/2.5 → silently 3) — economy-57 discipline violation; now refused 400 invalid-stamps (nothing sealed) before anything is computed. (4) harness env-blindness: 3 api-check assertions hard-coded CI's no-config env (eth chainId===null, probe not-attempted, live-proof source!=='env') and never ran locally (authed tests always skipped: owner-held key) — first local authed run exposed them; now env-aware (echo ETH_CHAIN_ID/SOL_CLUSTER when configured, probe iff RPC configured) + new regression assertions: concurrent PATCH race first-wins, dead-cookie 401 on sensitive route post-revoke. Also live-verified: both BLURT anchored txids still on mainnet signed by headcorner posting (saos.weave.v1) — the HEADCORNER master-key anchoring (owner directive 54) is real and persistent; gateway proven closed to mini-services from the browser (XTransformPort probes answered SPA HTML); no SSRF anywhere (all server fetches env-fixed URLs); chief-of-staff (:3032) unauthenticated but localhost-only — disclosed as accepted local risk. tsc+lint clean, api-check 174/0 (was 168/5 on first authed run), verify-chain 246/246 0 forks 12 seals roots-match, browser 0 console errors, no h-scroll 1280/390, sticky footer
+- 04fcf43 roast(59): the recovery path + chain economics — both gaps caught LIVE before the fix. (1) restore.mjs trusted counts, not truth: verification was manifest+sha256+integrity+counts — NO chain-proof, the exact discipline roast-53 added to backup.mjs never reached restore. LIVE-CAUGHT: built a drill copy of the newest backup with one tampered receipt (DAG link broken) + re-signed manifest (simulates a backup taken from an already-poisoned chain) — restore answered '✅ pass'; with --yes the system would resurrect a broken chain and boot up believing it's verified. Fixed: step-4b verifyChainDag over every receipt INSIDE the snapshot + merkle-root rebuild for every seal (leavesCount + duplicate checks), required in EVERY mode (dry-run/drill/--yes), refusal prints 'chain=BROKEN' with the full proof line; the drill path is gated too — a drill on a broken chain trains the operator on a lie. Re-proof: tampered copy → '❌ chain=BROKEN (digestErrors=1)', nothing touched; good backup → '✅ pass' chain-proof ok 193 receipts 2 seals 0 errors. (2) the chain is EVIDENCE, not a log, but a kernel selftest every 2s re-chained the SAME truth (LIVE-CAUGHT: two identical selftests 2s apart → +2 identical receipts; at the 30/min cap ≈ 43k duplicate rows/day). Fixed: duplicate-window in appendReceipt (GET-path only — the seal path's appendReceiptTx always chains): identical stable payload (volatile keys planId/snapshotId/digest/at/runId/checkpointId stripped) for the same kind within a 10-min window → computed fresh, returned, NOT re-chained, honestly marked persisted:false + suppressed='duplicate-window: identical … chained Ns ago' — probed INSIDE the same serialized transaction (no race) and reads the DB (survives restarts); breakthrough unaffected (per-run fresh content by design). Re-proof: kernel ×2 → +0 rows (was +2) with full honest disclosure; verify-pack (different kind) still chains. (3) api-check 125→127/0: second-identical-kernel-call is DETERMINISTIC
 ```
 </details>
 ## מצב רשת
-הרשת פעילה עם HEAD ב-2451501, עם תיקוני קריטי לגישת בעלים ושחזור נתוני אוצר. מערכת ה-RC של HIVE פועלת בקצב מוגבל (פעולה אחת כל ~25 דקות) למרות שפע RC ב-STEEM. מסלול המרה חדש מ-HIVE ל-DEX הוכח ומוכן לשימוש. קיימים 9.682 HIVE נזילים על headcorner.
+רשת SAOS פעילה עם HEAD ב-7bd9f0e. נמצאו ונתקנו מספר פגיעות קריטיות כולל מרוץ-תנאים ב-PATCH, בעיות אימות ב-revoke-all, ושגיאות בסילול החותם. נבנתה מסילת המרה HIVE-DEX מוכחת עם 9.682 HIVE נזילים. האוטומציה fleet-cure (:3034) מוכנה לטיפול במחסור RC ב-HIVE.
 
 ## סיכונים / דברים מדממים
-- קצב RC נמוך ב-HIVE מגביל את קצב הפעולות לכדי אחת כל ~25 דקות
-- מתן האצלה (delegation) ב-HIVE אינו אפשרי כעת בשל מינימום גבוה של 1,611.18 VESTS
-- מפתחות הגישה ל-headcorner ו-tov נמצאים אצל הבעלים בלבד, מה שמגביל את האוטומציה הפוטנציאלית
+ה-RC של headcorner ב-HIVE נמוך מאוד (0.003%), מה שמגביל עיגון לכל ~25 דקות במקום כל 36 שניות. קיים סיכון לגילוי מפתחות אם יתגלו פרצות במערכת האימות החיצונית.
 
-## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימות
-1. [רנטיים/ראש-המטה] הפעל `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי להגדלת RC יומי ב-55% + אימות עליית RC ב-.env לאחר הרצה
-2. [רנטיים/ראש-המטה] הפעל fleet-cure service על ה-foundry לטיפול ב-RC עם חלון זמן של ~3.3 שעות + אימות שידור ה-txid ב-docs/evidence/fleet-cure-status.json
-3. [רנטיים/ראש-המטה] המתן להשלמת withdraw של lsa (~3.5h) ואימות קבלת ה-0.00248 SWAP.HIVE במאזן החשבון
+## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
+1. [רנטיים] הפעל `node agent/he_powerup.cjs --amount ALL` כדי לאפשר power-up אוטומטי של HIVE כאשר RC יגיע ל-150M+.
+2. [רנטיים] הפעל אוטומציית fleet-cure (:3034) כדי לטפל ב-weave הממתין ב-HIVE כאשר RC יגיע ל-230M+.
+3. [רנטיים] עקוב אחר השלמת withdraw של lsa (0.00248 SWAP.HIVE) והעברתו ל-DEX להמרה ל-TRX.
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-- אישור הפעלת fleet-cure service עם חלון זמן של ~3.3 שעות לטיפול ב-RC
-- קביעת סדר עדיפות להמתנה להשלמת withdraw של lsa לפני ביצוע פעולות נוספות
-- אישור מעקב אחר שינויים ב-HIVE_RC_PCT ב-.env והתאמת האסטרטגיה בהתאם
+1. אישור הפעלת האוטומציה fleet-cure כאשר RC יגיע ל-230M.
+2. הפעלת מסילת ההמרה HIVE-DEX להמרת ה-HIVE הנותרים לאחר power-up.
+3. ניטור קרוב של שיעור ה-RC ב-HIVE והתאמת תדירות העיגונים בהתאם.
 
-## נשאר לבעלים בלבד (או "כלום")
-- החלטות בנוגע להאצלת נכסים (delegation) כאשר יהיה HP זמין
-- אישור שחזור מפתחות בעלים אופציונלי ל-vault-restore
-- החלטות על מימון טרנזיט TRX והמרתו לטוקנים ב-DEX
+## נשאר לבעלים בלבד
+הפעלת ה-power-up הסופי על הרנטיים (`node agent/he_powerup.cjs --amount ALL`) ואישור העברת המפתחות הראשיים לאחר מכן.

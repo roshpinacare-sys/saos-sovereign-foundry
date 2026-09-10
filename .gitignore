@@ -46,6 +46,10 @@ Caddyfile
 # fleet-cure runtime files (Task 26-c)
 mini-services/fleet-cure/cure-state.json
 mini-services/fleet-cure/*.pid
+# roast 61: the daemon rewrites this file every 5min cycle (updatedAt) —
+# machine-written runtime evidence, not repo content; tracking it dirtied
+# the tree each cycle once the daemon runs
+docs/evidence/fleet-cure-status.json
 
 # Task 36 — uploaded key material & local secret store (never commit)
 *.evm

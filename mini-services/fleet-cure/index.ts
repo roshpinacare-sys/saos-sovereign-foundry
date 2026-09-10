@@ -99,15 +99,18 @@ async function pendingHiveWeave(): Promise<PendingReq | null> {
   }
 }
 
-async function signWeave(account: string, payload: unknown): Promise<{ ok: boolean; txid?: string; error?: string }> {
+interface SignOutcome { ok: boolean; txid?: string; error?: string; status?: number; failureClass?: string | null }
+
+async function signWeave(account: string, requestId: string, payload: unknown): Promise<SignOutcome> {
   if (!SIGNER_TOKEN) return { ok: false, error: "signer-token-missing (fail-closed)" };
   const res = await fetch(`${SIGNER_URL}/sign`, {
     method: "POST",
     headers: { authorization: `Bearer ${SIGNER_TOKEN}`, "content-type": "application/json" },
-    body: JSON.stringify({ requestId: `fleet-cure-${account}-${Date.now().toString(36)}`, network: "HIVE", kind: "custom_json", account, id: WEAVE_ID, payload }),
+    body: JSON.stringify({ requestId, network: "HIVE", kind: "custom_json", account, id: WEAVE_ID, payload }),
     signal: AbortSignal.timeout(45_000)
   });
-  return (await res.json()) as { ok: boolean; txid?: string; error?: string };
+  const j = (await res.json()) as { ok: boolean; txid?: string; error?: string; failureClass?: string | null };
+  return { ok: Boolean(j.ok), txid: j.txid, error: j.error, status: res.status, failureClass: j.failureClass ?? null };
 }
 
 async function recordTxid(requestId: string, txid: string): Promise<boolean> {
@@ -134,10 +137,29 @@ async function recordTxid(requestId: string, txid: string): Promise<boolean> {
   }
 }
 
-interface CureState { doneAccount?: string; txid?: string; recordedAt?: string; attempts: { at: string; account: string; ok: boolean; detail: string }[] }
+/**
+ * roast 61 — retry discipline per SignRequest:
+ *  - reqId: the SignRequest the current state refers to (a NEW id resets it);
+ *  - lastAttemptAt: bounds auto-retries to the signer's 1h idempotency-ledger
+ *    window (55min guard) — past it a retry could rebuild a DIFFERENT tx;
+ *  - refusedReqId: a DEFINITIVE chain refusal (400/403/429 or failureClass
+ *    chain-rejected — nothing was broadcast) is never auto-retried.
+ * The requestId itself is DETERMINISTIC (`fleet-cure-<sigId>`): every retry
+ * replays the signer's ledger (single-flight) instead of minting a fresh
+ * identity that could double-broadcast the same weave.
+ */
+interface CureState {
+  doneAccount?: string; txid?: string; recordedAt?: string;
+  reqId?: string; lastAttemptAt?: string; refusedReqId?: string;
+  attempts: { at: string; account: string; ok: boolean; detail: string }[]
+}
 const STATE_FILE = path.join(import.meta.dir, "cure-state.json");
 function loadState(): CureState {
-  try { return JSON.parse(readFileSync(STATE_FILE, "utf8")) as CureState; } catch { return { attempts: [] }; }
+  try {
+    const s = JSON.parse(readFileSync(STATE_FILE, "utf8")) as CureState;
+    if (!Array.isArray(s.attempts)) s.attempts = []; // roast 61: never trust a foreign/legacy state shape
+    return s;
+  } catch { return { attempts: [] }; }
 }
 function saveState(s: CureState) {
   try { writeFileSync(STATE_FILE, JSON.stringify(s, null, 1)); } catch {}
@@ -197,15 +219,36 @@ async function cycle(state: CureState): Promise<void> {
     return;
   }
 
+  // ── roast 61: per-SignRequest retry discipline ──
+  if (state.reqId !== req.id) {
+    state.reqId = req.id;
+    state.lastAttemptAt = undefined;
+    state.refusedReqId = undefined;
+  }
+  if (state.refusedReqId === req.id) {
+    await writeStatus(state, rows, `sig=${req.id} was DEFINITIVELY refused by the chain (nothing broadcast) — auto-retry stopped; operator decides next`);
+    return;
+  }
+  if (state.lastAttemptAt && Date.now() - Date.parse(state.lastAttemptAt) > 55 * 60_000) {
+    await writeStatus(state, rows, `sig=${req.id} still unrecorded >55min after the last attempt — past the signer idempotency-ledger window (1h); auto-retry stopped (operator decides)`);
+    return;
+  }
+
   const ready = FLEET.map((a) => ({ a, m: mana.get(a)?.mana ?? 0 })).sort((x, y) => y.m - x.m)[0];
   if (!ready || ready.m < OP_COST_RC) {
     await writeStatus(state, rows, `no fleet account at op-cost yet — best ${ready?.a ?? "?"} ${(ready?.m ?? 0) >= 1e6 ? Math.round((ready?.m ?? 0) / 1e6) + "M" : String(ready?.m ?? 0)} RC`);
     return;
   }
 
-  log("INFO", `window OPEN: ${ready.a} mana=${ready.m} ≥ ${OP_COST_RC} — executing weave sig=${req.id}`);
-  const r = await signWeave(ready.a, req.payload);
-  state.attempts.push({ at: new Date().toISOString(), account: ready.a, ok: Boolean(r.ok), detail: r.ok ? `txid=${r.txid}` : String(r.error ?? "?").slice(0, 160) });
+  // DETERMINISTIC requestId (roast 61): retries replay the signer's ledger —
+  // the old `fleet-cure-<account>-<now36>` minted a fresh identity per attempt,
+  // so a lost response + retry could rebuild a DIFFERENT tx = double broadcast
+  // (the exact money-class roast 56 closed on anchor-pulse — this caller stayed open).
+  const requestId = `fleet-cure-${req.id}`;
+  log("INFO", `window OPEN: ${ready.a} mana=${ready.m} ≥ ${OP_COST_RC} — executing weave sig=${req.id} requestId=${requestId}`);
+  const r = await signWeave(ready.a, requestId, req.payload);
+  state.lastAttemptAt = new Date().toISOString();
+  state.attempts.push({ at: new Date().toISOString(), account: ready.a, ok: Boolean(r.ok), detail: r.ok ? `txid=${r.txid}` : `${r.status ?? "?"}/${r.failureClass ?? "-"}: ${String(r.error ?? "?").slice(0, 140)}` });
   state.attempts = state.attempts.slice(-40);
   if (r.ok && r.txid) {
     state.doneAccount = ready.a;
@@ -215,8 +258,14 @@ async function cycle(state: CureState): Promise<void> {
     log("INFO", `WEAVE LANDED: txid=${r.txid} account=${ready.a} recorded=${recorded}`);
     await writeStatus(state, rows, `weave landed txid=${r.txid} (recorded=${recorded})`);
   } else {
-    log("WARN", `weave attempt failed on ${ready.a}: ${String(r.error ?? "?").slice(0, 160)}`);
-    await writeStatus(state, rows, `attempt failed (${ready.a}): ${String(r.error ?? "?").slice(0, 120)} — retry next cycle`);
+    // roast 61: classify like the foundry does — 400/403/429 or failureClass
+    // chain-rejected means the chain ANSWERED and refused (nothing broadcast,
+    // definitive); transport/timeout stays ambiguous and may retry within the
+    // ledger window. A definitive refusal never auto-retries.
+    const definitive = r.status === 400 || r.status === 403 || r.status === 429 || r.failureClass === "chain-rejected";
+    if (definitive) state.refusedReqId = req.id;
+    log("WARN", `weave attempt failed on ${ready.a} (definitive=${definitive}): ${String(r.error ?? "?").slice(0, 160)}`);
+    await writeStatus(state, rows, `attempt failed (${ready.a}, definitive=${definitive}): ${String(r.error ?? "?").slice(0, 120)}${definitive ? " — auto-retry stopped" : " — retry next cycle within the ledger window"}`);
   }
   saveState(state);
 }

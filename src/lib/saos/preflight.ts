@@ -30,12 +30,12 @@ import { statSync } from "fs";
 import path from "path";
 import { db } from "@/lib/db";
 import { adminKeyHash } from "@/lib/saos/auth";
-import { saosMode } from "@/lib/saos/modes";
+import { saosMode, saosModeFresh } from "@/lib/saos/modes";
 import { verifyChainDag } from "@/lib/saos/evidence";
 import { networkStatuses, type NetworkStatusView } from "@/lib/saos/network-status";
 import { signerRegistry, effectiveStatus, type SignRequest } from "@/lib/saos/signer";
 import { OWNER_DECISIONS } from "@/lib/saos/owner-decisions";
-import { externalSignerHealth, externalSignerKeyMatches, type SignerKeyMatches } from "@/lib/saos/external-signer-client";
+import { externalSignerKeyMatches, type SignerKeyMatches } from "@/lib/saos/external-signer-client";
 import { hiveRcLive } from "@/lib/saos/hive-rc-live";
 import { fleetCureStatus } from "@/lib/saos/fleet-cure";
 
@@ -150,7 +150,12 @@ export interface PreflightResult {
 export async function computePreflight(target: SignRequest["network"] | null): Promise<PreflightResult> {
   const checks: PreflightCheck[] = [];
   const add = (id: string, status: CheckStatus, detail: string) => checks.push({ id, status, detail });
-  const mode = saosMode();
+  // roast 61: the mode — including broadcastCapable — is computed AFTER a
+  // fresh signer-verdict (saosModeFresh refreshes the TTL-gated health cache).
+  // The old order computed `mode` from the never/stale-checked sync cache and
+  // refreshed the health only ~170 lines later — one payload could say
+  // "אין חותם מחובר" in the mode while its OWN signer summary said connected.
+  const mode = await saosModeFresh();
 
   // 1. fresh verified backup
   const lastBackup = await db.opLog.findFirst({ where: { op: "backup" }, orderBy: { createdAt: "desc" } });
@@ -225,9 +230,16 @@ export async function computePreflight(target: SignRequest["network"] | null): P
         resourceWarns.push(`HIVE: מוכנה לעגן עכשיו — RC ראשי מדוד ${rcPct}% ≥ סף-הקל 8% ומפתחות-ראשי מאומתים חי (HIVE ${keys.byNetwork.HIVE?.matched ?? 0}/${keys.byNetwork.HIVE?.total ?? 0}); עוגן-צי אוטומטי נמשך במקביל [${rcSource}]`);
       } else if (fc.lastTxid) {
         resourceWarns.push(`HIVE: עוגן-צי בוצע — weave txid ${fc.lastTxid.slice(0, 12)}… (fleet-cure, RC מדוד ${rcPct}% מתוך ${rcSource})`);
-      } else if (fc.best && fc.best.etaMin <= 24 * 60) {
+      } else if (fc.best && fc.isFresh && fc.best.etaMin <= 24 * 60) {
         resourceWarns.push(
           `HIVE: עוגן-צי ראשון מתוזמן אוטומטית בעוד ~${Math.round(fc.best.etaMin)} דק' (${fc.best.account}, מנה ${Math.round(fc.best.mana / 1e6)}M/230M RC) — מפתחות צי מאומתים 9/9 HIVE-posting; RC ראשי מדוד ${rcPct}% (סף-קל 8% ברגן) [${rcSource}]`
+        );
+      } else if (fc.best && !fc.isFresh) {
+        // roast 61: network-status gates fleet promises on isFresh — preflight
+        // bypassed the gate and promised "מתוזמן אוטומטית" from a frozen file
+        // (the daemon had been dead while the report kept the promise).
+        resourceWarns.push(
+          `HIVE: סטטוס-הצי לא-עדכני — קובץ בן ${Math.round(fc.fileAgeMin ?? 0)} דק', הדמון :3034 לא כותב; אין חלון עיגון-צי מתוזמן עד שהדמון יחזור [${rcSource}]`
         );
       } else {
         resourceFails.push(`HIVE RC ${rcPct}% < 8% (סף-קל) ואין חלון-צי בטווח 24 שע' [${rcSource}]`);
@@ -320,8 +332,9 @@ export async function computePreflight(target: SignRequest["network"] | null): P
         : `מצב ${mode.mode} — אין שידור אמיתי; עוגן אמיתי דורש SAOS_MODE=live + SAOS_LIVE_CONFIRM=YES ואישור בעלים מפורש`
   );
 
-  // signer readiness summary — Task 26: refresh the external-signer health first
-  await externalSignerHealth();
+  // signer readiness summary — Task 26; roast 61: the health refresh itself
+  // was hoisted to the top (saosModeFresh) so mode, this summary and the
+  // registry all read the SAME fresh cache instead of a mid-flight mixture.
   const registry = signerRegistry();
   const signerReady = registry.some((s) => s.signer !== "none" && (s.status === "ready" || s.status === "awaiting-approval"));
   const externalSignerConnected = registry.some((s) => (s.signer === "external" || s.signer === "hardware") && s.status !== "disconnected");

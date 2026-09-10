@@ -6,7 +6,7 @@ import { HISTORIC_ANCHORS } from "@/lib/saos/historic";
 import { networkStatuses } from "@/lib/saos/network-status";
 import { probeEthereumReadonly } from "@/lib/saos/networks/ethereum";
 import { probeSolanaReadonly } from "@/lib/saos/networks/solana";
-import { saosMode } from "@/lib/saos/modes";
+import { saosModeFresh } from "@/lib/saos/modes";
 import { authConfigured } from "@/lib/saos/auth";
 import { enforceRateLimit, ruleFor } from "@/lib/saos/rate-limit";
 import { signerRegistry } from "@/lib/saos/signer";
@@ -29,7 +29,7 @@ export async function GET(req: Request) {
     const [rcLive, keys] = await Promise.all([hiveRcLive(), externalSignerKeyMatches()]);
     const rcPct = rcLive?.rcPct ?? Number(process.env.HIVE_RC_PCT ?? 0.6);
     const tronEnergy = Number(process.env.TRON_ENERGY ?? 0);
-    const mode = saosMode();
+    const mode = await saosModeFresh(); // roast 61: broadcastCapable from a FRESH signer verdict, never the sync cache
 
     // Task 12: opt-in read-only probe (?probe=1) — keyless public RPCs only,
     // short timeout, never throws; the DEFAULT call stays zero-live-calls.

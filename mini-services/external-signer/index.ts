@@ -120,6 +120,12 @@ function tokenOk(req) {
 function resolveEnvelopeDir() {
   const candidates = [];
   if (process.env.FLEET_KEYS_DIR) candidates.push(process.env.FLEET_KEYS_DIR);
+  // roast 61: the deliberate local envelope home was never in the search list —
+  // after the /tmp clone is wiped and before any guardian backup exists, the
+  // sealed envelope sitting at ~/.secrets/fleet-envelope was invisible and the
+  // signer booted fail-closed with "seal-unavailable" while the envelope
+  // existed on disk (caught live this round).
+  candidates.push(path.join(process.env.HOME ?? "/home/z", ".secrets", "fleet-envelope"));
   candidates.push("/tmp/agent-audit/steem/agent");
   const rec = path.join(process.env.HOME ?? "/home/z", ".secrets", "vault-recovery");
   try {

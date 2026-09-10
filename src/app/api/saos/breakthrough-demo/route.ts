@@ -10,7 +10,7 @@ import {
   verificationGuide
 } from "@/lib/saos/breakthrough";
 import { appendReceipt } from "@/lib/saos/receipt-store";
-import { saosMode } from "@/lib/saos/modes";
+import { saosModeFresh, type ModeState } from "@/lib/saos/modes";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +40,7 @@ export async function GET(req: Request) {
 
   const errors: string[] = [];
   const timestamp = new Date().toISOString();
-  const mode = saosMode();
+  const mode = await saosModeFresh(); // roast 61: broadcastCapable from a FRESH signer verdict, never the sync cache
 
   // 1) live read-only probes (60s cache — public endpoints never hammered)
   let probes: LiveProbeResult[] = [];
@@ -169,7 +169,7 @@ export async function GET(req: Request) {
   });
 }
 
-function safetyBlock(mode: ReturnType<typeof saosMode>) {
+function safetyBlock(mode: ModeState) {
   return {
     broadcast: false,
     transaction: false,

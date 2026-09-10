@@ -19,9 +19,13 @@
  *
  * כיבוי-ידני: SAOS_NO_CHIEF=1  ·  פורט: 3032
  */
-import ZAI from "z-ai-web-dev-sdk";
 import fs from "fs";
 import path from "path";
+// roast 61: the SDK import is GONE from the long-lived process on purpose —
+// the LLM call runs in an ephemeral child (brief-worker.ts). Measured live:
+// an in-process SDK call killed the whole detached service silently during
+// cycle #1 on every background boot (and killed the original instance at
+// 01:44). The parent now survives any SDK crash and reports it honestly.
 
 const PORT = 3032;
 const TICK_MS = 30_000;
@@ -152,6 +156,34 @@ async function writeBriefing(content: string, stateText: string): Promise<string
   return file;
 }
 
+/** roast 61: run the LLM in an ephemeral child — returns the content or throws */
+async function callLlmWorker(system: string, user: string): Promise<string> {
+  const proc = Bun.spawn(["bun", path.join(import.meta.dir, "brief-worker.ts")], {
+    stdin: "pipe",
+    stdout: "pipe",
+    stderr: "pipe"
+  });
+  proc.stdin.write(JSON.stringify({ system, user }));
+  await proc.stdin.end();
+  const killer = setTimeout(() => {
+    try { proc.kill(); } catch {}
+  }, 120_000);
+  let code = 1;
+  try {
+    const [out, err, exited] = await Promise.all([
+      new Response(proc.stdout).text(),
+      new Response(proc.stderr).text(),
+      proc.exited
+    ]);
+    code = exited;
+    if (code !== 0) throw new Error(`brief-worker exit=${code}: ${err.trim().slice(0, 160) || "(no stderr)"}`);
+    if (!out.trim()) throw new Error("brief-worker produced empty content");
+    return out;
+  } finally {
+    clearTimeout(killer);
+  }
+}
+
 async function cycle(force = false): Promise<{ skipped?: boolean; file?: string; error?: string }> {
   if (busy) return { skipped: true, error: "busy" };
   busy = true;
@@ -163,17 +195,11 @@ async function cycle(force = false): Promise<{ skipped?: boolean; file?: string;
       return { skipped: true };
     }
     lastStateHash = hash;
-    const zai = await ZAI.create();
-    const completion = await zai.chat.completions.create({
-      messages: [
-        { role: "assistant", content: SYSTEM_PROMPT },
-        { role: "user", content: `מצב-רשת נוכחי:\n\n${text}` },
-      ],
-      thinking: { type: "disabled" },
-    });
+    // roast 61: SDK isolated into an ephemeral worker child — the parent can
+    // never be killed by the SDK again; a worker crash = logged lastError and
+    // a retry next cycle. 120s timeout: a hung worker can never wedge `busy`.
+    const content = await callLlmWorker(SYSTEM_PROMPT, `מצב-רשת נוכחי:\n\n${text}`);
     llmCalls++;
-    const content = completion.choices[0]?.message?.content ?? "";
-    if (!content.trim()) throw new Error("empty LLM response");
     const file = await writeBriefing(content, text);
     lastBriefAt = new Date().toISOString();
     lastBriefFile = file;

@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { authConfigured } from "@/lib/saos/auth";
 import { coarseError } from "@/lib/saos/api-errors";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
-import { saosMode } from "@/lib/saos/modes";
+import { saosModeFresh } from "@/lib/saos/modes";
 import { gitRun, gitSnapshot } from "@/lib/saos/repo-git";
 
 export const dynamic = "force-dynamic";
@@ -145,7 +145,7 @@ export async function GET(req: Request) {
       adminKeyFileInTree = false;
     }
 
-    const mode = saosMode();
+    const mode = await saosModeFresh(); // roast 61: broadcastCapable from a FRESH signer verdict, never the sync cache
     return NextResponse.json({
       ok: true,
       git: {

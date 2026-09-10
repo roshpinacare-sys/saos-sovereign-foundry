@@ -17,9 +17,9 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { audit, requireAuth } from "@/lib/saos/auth";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
-import { saosMode } from "@/lib/saos/modes";
+import { saosModeFresh } from "@/lib/saos/modes";
 import { buildSignRequest, verifyTxidPublic } from "@/lib/saos/signer";
-import { externalSignerExecute, externalSignerHealth } from "@/lib/saos/external-signer-client";
+import { externalSignerExecute } from "@/lib/saos/external-signer-client";
 import { BLURT_COOLDOWN_MIN } from "@/lib/saos/anchor-gates";
 import { withWriteLock } from "@/lib/saos/receipt-store";
 
@@ -108,8 +108,10 @@ export async function POST(req: Request) {
   // connected" FOREVER, closing the broadcast gate while the signer was alive
   // and reachable (caught LIVE this round: mode lied, /health answered OK).
   // The gate decides a REAL fee-burning broadcast — it gets a FRESH verdict.
-  await externalSignerHealth();
-  const mode = saosMode();
+  // roast 56-4 + 61: the broadcast gate decides a REAL fee-burning broadcast —
+  // it gets a FRESH signer verdict (saosModeFresh), never the sync cache whose
+  // warm-up probe could race and lie forever.
+  const mode = await saosModeFresh();
   if (!mode.broadcastCapable) {
     return NextResponse.json(
       { ok: false, error: `broadcast-not-armed: ${mode.detail}`, mode: mode.mode },
@@ -328,8 +330,7 @@ export async function GET(req: Request) {
       { status: auth.authConfigured ? 401 : 403 }
     );
   }
-  await externalSignerHealth(); // roast 56-4: same fresh-verdict discipline for the honest-state view
-  const mode = saosMode();
+  const mode = await saosModeFresh(); // roast 56-4/61: same fresh-verdict discipline for the honest-state view
   const seal = await db.sealRecord.findFirst({ orderBy: { height: "desc" } });
   const anchors = await db.anchorTx.findMany({
     orderBy: { createdAt: "desc" },

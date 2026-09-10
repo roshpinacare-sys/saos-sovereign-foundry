@@ -8,7 +8,7 @@
 
 export type SaosMode = "dry-run" | "safe" | "live" | "maintenance";
 
-import { externalSignerCached } from "./external-signer-client";
+import { externalSignerCached, externalSignerHealth } from "./external-signer-client";
 
 export interface ModeState {
   mode: SaosMode;
@@ -83,6 +83,26 @@ export function assertWritesEnabled(): ModeState {
     throw new Error(`mode-refusal: כתיבה אסורה במצב ${m.mode} — הגדר SAOS_MODE=dry-run כדי לאפשר`);
   }
   return m;
+}
+
+/**
+ * roast 61 — the async twin of saosMode(). Refreshes the external-signer
+ * health (TTL-gated + single-flight: a real call ONLY when the cache is >60s
+ * stale; an immediate no-op when the signer is not configured) BEFORE the
+ * mode is computed, so `broadcastCapable` is never derived from a
+ * never-checked or long-stale sync cache.
+ *
+ * Roast 56-4 fixed ONLY the anchor-pulse POST gate; every other consumer
+ * (preflight, /status, /live-gate, /live-proof, /repo-status,
+ * /breakthrough-demo, anchor-pulse GET) kept reading the sync cache —
+ * LIVE-caught this round: preflight computed `mode` from the stale cache at
+ * its top and refreshed the health only ~170 lines later, so one payload
+ * could say "אין חותם מחובר" (mode.broadcastCapable=false) while its OWN
+ * signer summary said connected — a self-contradicting gate report.
+ */
+export async function saosModeFresh(): Promise<ModeState> {
+  await externalSignerHealth();
+  return saosMode();
 }
 
 /** GET-route side effects (receipt/entity persistence) honor writesEnabled; computation never blocked */

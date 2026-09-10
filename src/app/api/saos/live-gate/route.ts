@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { audit, adminKeyHash, requireAuth } from "@/lib/saos/auth";
 import { coarseError } from "@/lib/saos/api-errors";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
-import { saosMode } from "@/lib/saos/modes";
+import { saosModeFresh } from "@/lib/saos/modes";
 import { verifyChainDag } from "@/lib/saos/evidence";
 import { networkStatuses } from "@/lib/saos/network-status";
 import { signerRegistry } from "@/lib/saos/signer";
@@ -54,7 +54,7 @@ async function runGate(deep: boolean) {
   add("rate-limit-active", "pass", "הגבלת-קצב בזיכרון פעילה על כל נקודות /api/saos/* (ברירות-מחדל + אחלפי SAOS_RL_*)");
 
   // 3. mode gate — double-flag protection
-  const mode = saosMode();
+  const mode = await saosModeFresh(); // roast 61: broadcastCapable from a FRESH signer verdict, never the sync cache
   add(
     "mode-gate",
     "pass",
