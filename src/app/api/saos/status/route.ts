@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { anchoringMatrix } from "@/lib/saos/anchor-gates";
+import { coarseError } from "@/lib/saos/api-errors";
 import { HISTORIC_ANCHORS } from "@/lib/saos/historic";
 import { networkStatuses } from "@/lib/saos/network-status";
 import { probeEthereumReadonly } from "@/lib/saos/networks/ethereum";
@@ -96,7 +97,7 @@ export async function GET(req: Request) {
     });
   } catch (e) {
     return NextResponse.json(
-      { ok: false, error: e instanceof Error ? e.message : "status failed" },
+      { ok: false, error: coarseError(e, "status-failed") },
       { status: 200 } // the API never 500s — errors are data
     );
   }

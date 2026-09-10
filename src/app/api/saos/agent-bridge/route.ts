@@ -3,6 +3,7 @@ import { readFileSync } from "fs";
 import path from "path";
 
 import { audit, requireAuth } from "@/lib/saos/auth";
+import { coarseError } from "@/lib/saos/api-errors";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
 import { db } from "@/lib/db";
 
@@ -90,7 +91,7 @@ async function executeAction(action: string): Promise<{ ok: boolean; result: unk
     }
     return { ok: false, result: { error: "action-not-whitelisted" } };
   } catch (e) {
-    return { ok: false, result: { error: `action-failed: ${String((e as Error)?.message ?? e).slice(0, 120)}` } };
+    return { ok: false, result: { error: `action-failed: ${coarseError(e, "internal error withheld")}` } };
   }
 }
 
@@ -113,7 +114,7 @@ export async function GET(req: Request) {
     ]);
     return NextResponse.json({ ok: true, messages, total, fresh });
   } catch (e) {
-    return NextResponse.json({ ok: false, error: `bridge-read-failed: ${String((e as Error)?.message ?? e).slice(0, 120)}` }, { status: 502 });
+    return NextResponse.json({ ok: false, error: `bridge-read-failed: ${coarseError(e, "internal error withheld")}` }, { status: 502 });
   }
 }
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
+import { coarseError } from "@/lib/saos/api-errors";
 import { kernelSelftest } from "@/lib/saos/kernel";
 import { appendReceipt } from "@/lib/saos/receipt-store";
 
@@ -25,7 +26,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: result.ok, result, receipt: appended.receipt.digest, persisted: appended.persisted });
   } catch (e) {
     return NextResponse.json(
-      { ok: false, error: e instanceof Error ? e.message : "selftest failed" },
+      { ok: false, error: coarseError(e, "selftest-failed") },
       { status: 200 } // the API never 500s — errors are data
     );
   }

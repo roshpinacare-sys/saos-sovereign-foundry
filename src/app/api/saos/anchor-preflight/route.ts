@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
+import { coarseError } from "@/lib/saos/api-errors";
 import { parseNetwork, type SignRequest } from "@/lib/saos/signer";
 import { computePreflight } from "@/lib/saos/preflight";
 
@@ -73,6 +74,6 @@ export async function GET(req: Request) {
       note: "קריאה בלבד — אין עוגן, אין שידור, אין מפתח; readyForAnchor=false אומר: עצור והשלם את החסרים לפני עוגן אמיתי"
     });
   } catch (e) {
-    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "anchor-preflight failed" }, { status: 200 });
+    return NextResponse.json({ ok: false, error: coarseError(e, "anchor-preflight-failed") }, { status: 200 });
   }
 }

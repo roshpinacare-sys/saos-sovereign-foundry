@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
+import { coarseError } from "@/lib/saos/api-errors";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -52,7 +53,7 @@ export async function GET(req: Request) {
     });
   } catch (e) {
     return NextResponse.json(
-      { ok: false, error: e instanceof Error ? e.message : "plans failed" },
+      { ok: false, error: coarseError(e, "plans-failed") },
       { status: 200 } // never 500
     );
   }

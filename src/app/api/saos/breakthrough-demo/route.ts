@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
+import { coarseError } from "@/lib/saos/api-errors";
 import { runLiveNetworkProbes, type LiveProbeResult } from "@/lib/saos/networks/live-probes";
 import {
   buildAtomicClock,
@@ -49,7 +50,7 @@ export async function GET(req: Request) {
     probes = probed.results;
     probesCached = probed.cached;
   } catch (e) {
-    errors.push(`probes: ${e instanceof Error ? e.message : "probe run failed"}`);
+    errors.push(`probes: ${coarseError(e, "probe-run-failed")}`);
   }
 
   // 2–4) build + verify the atomic clock (all phases measured inside)
@@ -57,7 +58,7 @@ export async function GET(req: Request) {
   try {
     clock = await buildAtomicClock(probes, timestamp);
   } catch (e) {
-    errors.push(`clock: ${e instanceof Error ? e.message : "atomic clock failed"}`);
+    errors.push(`clock: ${coarseError(e, "atomic-clock-failed")}`);
   }
 
   if (!clock || !clock.root) {
@@ -103,7 +104,7 @@ export async function GET(req: Request) {
     });
     checkpoint = { digest: receipt.receipt.digest, prevDigest: receipt.receipt.prevDigest, persisted: receipt.persisted, kind: "breakthrough-demo" };
   } catch (e) {
-    errors.push(`checkpoint: ${e instanceof Error ? e.message : "receipt append failed"}`);
+    errors.push(`checkpoint: ${coarseError(e, "receipt-append-failed")}`);
   }
 
   const families = new Set(

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
+import { coarseError } from "@/lib/saos/api-errors";
 import { TRX_PER_USDT_TRANSFER } from "@/lib/saos/economy";
 import { ethereumReadRpcCandidates } from "@/lib/saos/networks/ethereum";
 import type { TreasuryOutflowRow } from "@/components/saos/types";
@@ -197,7 +198,7 @@ async function tronRow(label: string, address: string): Promise<BalanceRow> {
       }
     }
     throw new Error(`כל ${bases.length} נקודות-הקריאה דחו (trongrid+tronstack)`);
-  } catch (e) {
+  } catch {
     // one patient retry — public RPC 429 storms are transient (politeness window)
     await sleep(1_500);
     try {
@@ -209,8 +210,10 @@ async function tronRow(label: string, address: string): Promise<BalanceRow> {
         }
       }
       throw new Error(`כל ${bases.length} נקודות-הקריאה דחו (trongrid+tronstack) אחרי ניסיון-חוזר`);
-    } catch {
-      return { label, address, status: "error", error: e instanceof Error ? e.message : String(e) };
+    } catch (e2) {
+      // roast-58: was an UNBOUND catch that reported the OUTER first-round error (stale truth);
+      // now the retry's own failure is reported, and internals are coarsened
+      return { label, address, status: "error", error: coarseError(e2, "rpc-row-error") };
     }
   }
 }
@@ -291,7 +294,7 @@ async function solRow(label: string, address: string): Promise<BalanceRow> {
       usdt
     };
   } catch (e) {
-    return { label, address, status: "error", error: e instanceof Error ? e.message : String(e) };
+    return { label, address, status: "error", error: coarseError(e, "rpc-row-error") };
   }
 }
 
@@ -498,7 +501,7 @@ export async function GET(req: Request) {
       ok: true,
       generatedAt: new Date().toISOString(),
       degraded: true,
-      error: e instanceof Error ? e.message : String(e),
+      error: coarseError(e, "treasury-failed"),
       summary: {
         totalTrx: null,
         totalTrxFamily: null,

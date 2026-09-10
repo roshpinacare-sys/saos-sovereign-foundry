@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
+import { coarseError } from "@/lib/saos/api-errors";
 import { db } from "@/lib/db";
 import { buildMerkleTree, merkleProof, verifyMerkleProof } from "@/lib/saos/merkle";
 import { appendReceipt } from "@/lib/saos/receipt-store";
@@ -75,7 +76,7 @@ export async function GET(req: Request) {
     });
   } catch (e) {
     return NextResponse.json(
-      { ok: false, error: e instanceof Error ? e.message : "verify-pack failed" },
+      { ok: false, error: coarseError(e, "verify-pack-failed") },
       { status: 200 } // never 500
     );
   }

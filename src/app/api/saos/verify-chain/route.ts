@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { buildMerkleTree, merkleProof, verifyMerkleProof } from "@/lib/saos/merkle";
+import { coarseError } from "@/lib/saos/api-errors";
 import { verifyChainDag } from "@/lib/saos/evidence";
 import { appendReceipt } from "@/lib/saos/receipt-store";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
@@ -281,7 +282,7 @@ export async function GET(req: Request) {
     );
   } catch (e) {
     return NextResponse.json(
-      { ok: false, error: e instanceof Error ? e.message : "verify-chain failed" },
+      { ok: false, error: coarseError(e, "verify-chain-failed") },
       { status: 200 } // never 500
     );
   }

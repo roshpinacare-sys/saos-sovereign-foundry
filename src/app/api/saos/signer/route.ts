@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
 import { audit, requireAuth } from "@/lib/saos/auth";
+import { coarseError } from "@/lib/saos/api-errors";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
 import {
   SIGN_TTL_MS,
@@ -108,7 +109,7 @@ export async function GET(req: Request) {
       }))
     });
   } catch (e) {
-    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "signer list failed" }, { status: 200 });
+    return NextResponse.json({ ok: false, error: coarseError(e, "signer-list-failed") }, { status: 200 });
   }
 }
 
@@ -221,7 +222,7 @@ export async function POST(req: Request) {
       note: "מצב יבש בלבד: יצירת הבקשה אינה משדרת ואיננה מבצעת עסקה. אין מפתח פרטי בתגובה, בבסיס-הנתונים או בשרת — חותמים מחוץ למערכת ומחזירים רק את התוצאה הציבורית (txid + הוכחה)"
     });
   } catch (e) {
-    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "signer create failed" }, { status: 200 });
+    return NextResponse.json({ ok: false, error: coarseError(e, "signer-create-failed") }, { status: 200 });
   }
 }
 
@@ -337,6 +338,6 @@ export async function PATCH(req: Request) {
             : "התוצאה הציבורית נרשמה (בלי אימות רשת)"
     });
   } catch (e) {
-    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "signer result failed" }, { status: 200 });
+    return NextResponse.json({ ok: false, error: coarseError(e, "signer-result-failed") }, { status: 200 });
   }
 }

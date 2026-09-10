@@ -3,6 +3,7 @@ import { readFileSync } from "fs";
 import path from "path";
 
 import { audit } from "@/lib/saos/auth";
+import { coarseError } from "@/lib/saos/api-errors";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -55,7 +56,7 @@ export async function POST(req: Request) {
     });
     return NextResponse.json(body, { status: res.ok ? 200 : 502 });
   } catch (e) {
-    return NextResponse.json({ ok: false, error: `signer-unreachable: ${String((e as Error)?.message ?? e).slice(0, 120)}` }, { status: 502 });
+    return NextResponse.json({ ok: false, error: `signer-unreachable: ${coarseError(e, "internal error withheld")}` }, { status: 502 });
   } finally {
     clearTimeout(t);
   }

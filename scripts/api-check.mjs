@@ -180,8 +180,29 @@ async function main() {
   // 8. fail-closed (always HTTP 200, ok:false)
   const f1 = await j("/api/saos/seal", { method: "POST", headers: sealHeaders, body: JSON.stringify({ stamps: "abc" }) });
   report("fail-closed: seal stamps=abc", f1.body.ok === false || f1.status === 401, sealCookie ? "bad input refused" : "bad input / missing session both refused");
+  // roast-58: garbage planning params are refused with HTTP 400 + the offending
+  // param name BEFORE anything is computed or persisted (economy-57 discipline)
   const f2 = await j("/api/saos/energy?net=hive&rc=abc");
-  report("fail-closed: energy rc=abc", f2.status === 200 && f2.body.ok === false);
+  report("fail-closed: energy rc=abc → 400 named-param refusal", f2.status === 400 && f2.body.ok === false && f2.body.error.includes("rc"));
+  const f2b = await j("/api/saos/energy?net=tron&trx=2000000000");
+  report("fail-closed: energy trx=2e9 → 400 (was a live table-poisoner)", f2b.status === 400 && f2b.body.ok === false && f2b.body.error.includes("trx"));
+
+  // roast-58: coarseError class-discipline — curated errors travel verbatim,
+  // internals (paths/newlines/framework tokens) are coarsened + logged, all truncated
+  {
+    const { coarseError } = await import("../src/lib/saos/api-errors.ts");
+    const curated = "unsafe integer rejected";
+    const internalPrisma = "Invalid `db.energyPlan.create()` invocation in\n/home/z/my-project/.next/dev/server/chunks/x.js:151:161";
+    const internalPath = "ENOENT: no such file or directory, open '/home/z/.secrets/fleet-envelope'";
+    const longCurated = "x".repeat(300);
+    report("coarseError: curated single-line passes verbatim", coarseError(new Error(curated), "t-failed") === curated);
+    const c1 = coarseError(new Error(internalPrisma), "t-failed");
+    report("coarseError: prisma multi-line coarsened + path withheld", !c1.includes("/home/") && c1.startsWith("t-failed") && !c1.includes("\n"));
+    const c2 = coarseError(new Error(internalPath), "t-failed");
+    report("coarseError: fs path leak coarsened", !c2.includes("/home/") && c2.startsWith("t-failed"));
+    report("coarseError: non-Error values handled", coarseError("prisma exploded", "t-failed").startsWith("t-failed") && coarseError(42, "t-failed") === "42");
+    report("coarseError: everything truncated to 200", coarseError(new Error(longCurated), "t-failed").length === 201);
+  }
   const f3 = await j("/api/saos/verify-chain?scope=seal&height=999999");
   report("fail-closed: verify-chain unknown height", f3.status === 200 && f3.body.ok === false);
   const f4 = await j("/api/saos/verify-chain?scope=seal&root=zzzz");

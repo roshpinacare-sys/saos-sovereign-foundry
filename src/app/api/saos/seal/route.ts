@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
 import { applyTx, genesisState, stateRootOf, type KernelTx } from "@/lib/saos/kernel";
+import { coarseError } from "@/lib/saos/api-errors";
 import { buildMerkleTree } from "@/lib/saos/merkle";
 import { canonicalDigest, canonicalize } from "@/lib/saos/canonical-json";
 import { anchoringMatrix } from "@/lib/saos/anchor-gates";
@@ -173,7 +174,7 @@ export async function POST(req: Request) {
     });
   } catch (e) {
     return NextResponse.json(
-      { ok: false, error: e instanceof Error ? e.message : "seal failed" },
+      { ok: false, error: coarseError(e, "seal-failed") },
       { status: 200 } // the API never 500s — errors are data
     );
   }

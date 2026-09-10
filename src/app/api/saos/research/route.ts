@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
+import { coarseError } from "@/lib/saos/api-errors";
 import { persistenceAllowed } from "@/lib/saos/modes";
 import { FINDINGS, SYNTHESIS } from "@/lib/saos/findings";
 
@@ -73,7 +74,7 @@ export async function GET(req: Request) {
     });
   } catch (e) {
     return NextResponse.json(
-      { ok: false, error: e instanceof Error ? e.message : "research failed" },
+      { ok: false, error: coarseError(e, "research-failed") },
       { status: 200 } // the API never 500s — errors are data
     );
   }

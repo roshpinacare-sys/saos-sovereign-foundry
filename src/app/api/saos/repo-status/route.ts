@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "fs";
 import path from "path";
 import { db } from "@/lib/db";
 import { authConfigured } from "@/lib/saos/auth";
+import { coarseError } from "@/lib/saos/api-errors";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
 import { saosMode } from "@/lib/saos/modes";
 import { gitRun, gitSnapshot } from "@/lib/saos/repo-git";
@@ -189,6 +190,6 @@ export async function GET(req: Request) {
       note: "קריאה-בלבד: git/fs/OpLog — אפס ערכי-סוד, אפס תוכן קבצים, אפס כתיבה"
     });
   } catch (e) {
-    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "repo-status failed" }, { status: 200 });
+    return NextResponse.json({ ok: false, error: coarseError(e, "repo-status-failed") }, { status: 200 });
   }
 }

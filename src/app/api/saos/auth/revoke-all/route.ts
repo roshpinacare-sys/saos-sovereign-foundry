@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { SESSION_COOKIE, audit, requireAuth, revokeAllSessions } from "@/lib/saos/auth";
+import { coarseError } from "@/lib/saos/api-errors";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +49,6 @@ export async function POST(req: Request) {
     res.cookies.set(SESSION_COOKIE, "", { httpOnly: true, sameSite: "strict", path: "/", maxAge: 0 });
     return res;
   } catch (e) {
-    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "revoke-all failed" }, { status: 200 });
+    return NextResponse.json({ ok: false, error: coarseError(e, "revoke-all-failed") }, { status: 200 });
   }
 }

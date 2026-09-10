@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { audit, requireAuth } from "@/lib/saos/auth";
+import { coarseError } from "@/lib/saos/api-errors";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
 import {
   DECISION_STATUSES,
@@ -94,7 +95,7 @@ export async function GET(req: Request) {
       sourceNote: "הרישום נערך מתוך תיעוד המערכת (docs/*) — זהו תוכן תיעודי, לא נתון חי; הסטטוסים שהוקלטו נשמרים ב-DB עם היסטוריית ביקורת"
     });
   } catch (e) {
-    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "decisions read failed" }, { status: 200 });
+    return NextResponse.json({ ok: false, error: coarseError(e, "decisions-read-failed") }, { status: 200 });
   }
 }
 
@@ -151,6 +152,6 @@ export async function POST(req: Request) {
       note: "ההחלטה הוקלטה (רישום סטטוס בלבד — לא משנה מצב ריצה, לא מבצעת פעולה חיצונית, לא מבצעת עוגן)"
     });
   } catch (e) {
-    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "decisions write failed" }, { status: 200 });
+    return NextResponse.json({ ok: false, error: coarseError(e, "decisions-write-failed") }, { status: 200 });
   }
 }

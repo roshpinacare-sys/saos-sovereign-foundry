@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { audit, requireAuth } from "@/lib/saos/auth";
+import { coarseError } from "@/lib/saos/api-errors";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -50,6 +51,6 @@ export async function GET(req: Request) {
       }))
     });
   } catch (e) {
-    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "audit read failed" }, { status: 200 });
+    return NextResponse.json({ ok: false, error: coarseError(e, "audit-read-failed") }, { status: 200 });
   }
 }

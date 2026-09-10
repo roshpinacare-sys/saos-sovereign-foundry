@@ -4,6 +4,7 @@ import os from "os";
 import path from "path";
 import { db } from "@/lib/db";
 import { auditDroppedCount, authConfigured, currentSessionEpoch } from "@/lib/saos/auth";
+import { coarseError } from "@/lib/saos/api-errors";
 import { enforceRateLimit, ruleFor } from "@/lib/saos/rate-limit";
 import { saosMode } from "@/lib/saos/modes";
 import { networkStatuses } from "@/lib/saos/network-status";
@@ -200,7 +201,7 @@ export async function GET(req: Request) {
     if (!authConfigured()) errors.push("auth-unconfigured: SAOS_ADMIN_KEY_HASH חסר — מצב מופחת");
   } catch (e) {
     service = "down";
-    errors.push(`database: ${e instanceof Error ? e.message : "unreachable"}`);
+    errors.push(`database: ${coarseError(e, "db-probe-failed")}`);
   }
 
   // ── repo snapshot (read-only git) ──────────────────────────────────────
@@ -231,7 +232,7 @@ export async function GET(req: Request) {
     probesCached = res.cached;
     probesAt = res.at;
   } catch (e) {
-    errors.push(`probes: ${e instanceof Error ? e.message : "probe run failed"}`);
+    errors.push(`probes: ${coarseError(e, "probe-run-failed")}`);
   }
 
   // Task 33: live RC + live key-match snapshot replace the stale env fallback.
@@ -308,7 +309,7 @@ export async function GET(req: Request) {
     proofRoot = latest?.root ?? null;
     proofHeight = latest?.height ?? null;
   } catch (e) {
-    errors.push(`preflight: ${e instanceof Error ? e.message : "preflight failed"}`);
+    errors.push(`preflight: ${coarseError(e, "preflight-probe-failed")}`);
   }
 
   // safe-live Task 33 (honest update): the PROOF itself never transmits —

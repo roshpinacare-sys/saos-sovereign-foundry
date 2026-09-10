@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import path from "path";
 
 import { audit, authConfigured, verifyLoginKey } from "@/lib/saos/auth";
+import { coarseError } from "@/lib/saos/api-errors";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -79,7 +80,7 @@ async function signerStatus(): Promise<{ reachable: boolean; error?: string; bod
     if (!res.ok || !body) return { reachable: false, error: `signer HTTP ${res.status}` };
     return { reachable: true, body };
   } catch (e) {
-    return { reachable: false, error: String((e as Error)?.message ?? e).slice(0, 120) };
+    return { reachable: false, error: coarseError(e, "signer-status-failed") };
   } finally {
     clearTimeout(t);
   }
@@ -188,7 +189,7 @@ export async function GET(req: Request) {
     return res;
   } catch (e) {
     return NextResponse.json(
-      { ok: false, error: `keys-map-failed: ${String((e as Error)?.message ?? e).slice(0, 160)}` },
+      { ok: false, error: `keys-map-failed: ${coarseError(e, "internal error withheld")}` },
       { status: 500 }
     );
   }

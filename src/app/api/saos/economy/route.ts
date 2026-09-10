@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
+import { coarseError } from "@/lib/saos/api-errors";
 import { simulateEconomy, DEFAULT_ECONOMY, type EconomyInput } from "@/lib/saos/economy";
 import { appendReceipt } from "@/lib/saos/receipt-store";
 import { db } from "@/lib/db";
@@ -97,7 +98,7 @@ export async function GET(req: Request) {
     });
   } catch (e) {
     return NextResponse.json(
-      { ok: false, error: e instanceof Error ? e.message : "economy failed" },
+      { ok: false, error: coarseError(e, "economy-failed") },
       { status: 200 } // never 500
     );
   }

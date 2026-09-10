@@ -3,6 +3,7 @@ import { existsSync } from "fs";
 import path from "path";
 import { db } from "@/lib/db";
 import { audit, adminKeyHash, requireAuth } from "@/lib/saos/auth";
+import { coarseError } from "@/lib/saos/api-errors";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
 import { saosMode } from "@/lib/saos/modes";
 import { verifyChainDag } from "@/lib/saos/evidence";
@@ -181,7 +182,7 @@ export async function GET(req: Request) {
       generatedAt: new Date().toISOString()
     });
   } catch (e) {
-    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "live-gate failed" }, { status: 200 });
+    return NextResponse.json({ ok: false, error: coarseError(e, "live-gate-failed") }, { status: 200 });
   }
 }
 
@@ -218,6 +219,6 @@ export async function POST(req: Request) {
       generatedAt: new Date().toISOString()
     });
   } catch (e) {
-    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "live-gate failed" }, { status: 200 });
+    return NextResponse.json({ ok: false, error: coarseError(e, "live-gate-failed") }, { status: 200 });
   }
 }
