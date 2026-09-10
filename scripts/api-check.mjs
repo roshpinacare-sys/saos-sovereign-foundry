@@ -284,6 +284,25 @@ async function main() {
   const sigBadTxid = await j("/api/saos/signer", { method: "PATCH", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ id: sigId, txid: "x" }) });
   report("signer rejects malformed txid", sigBadTxid.body.ok === false);
 
+  // roast 60: immutability must be ATOMIC — two CONCURRENT PATCHes with
+  // different txids used to BOTH pass the null-check and the second silently
+  // overwrote the first (LIVE-caught). Now exactly one wins (FIRST-wins).
+  const raceCreate = await j("/api/saos/signer", { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ network: "TRON", signer: "external", ttlSeconds: 60 }) });
+  const raceId = raceCreate.body.signature?.id;
+  const RACE_A = `race-a-${Date.now()}-aaaaaaaa`;
+  const RACE_B = `race-b-${Date.now()}-bbbbbbbb`;
+  const [rp1, rp2] = await Promise.all([
+    j("/api/saos/signer", { method: "PATCH", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ id: raceId, txid: RACE_A }) }),
+    j("/api/saos/signer", { method: "PATCH", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ id: raceId, txid: RACE_B }) })
+  ]);
+  const wins = [rp1, rp2].filter((r) => r.body.ok === true);
+  const refusals = [rp1, rp2].filter((r) => r.body.ok === false);
+  report("signer concurrent PATCH race: exactly ONE writer wins", wins.length === 1 && refusals.length === 1 && /בלתי-הפיך/.test(refusals[0].body.error ?? ""));
+  report("signer concurrent PATCH race: FIRST txid kept (never overwritten)", wins[0]?.body.signature?.txid === RACE_A && refusals[0]?.body.error?.includes(RACE_A.slice(0, 8)));
+  const raceRow = await j("/api/saos/signer", { headers: { cookie } });
+  const racedPending = (raceRow.body.pending ?? []).find((p) => p.id === raceId);
+  report("signer race row final state = first recorded txid", racedPending?.txid === RACE_A);
+
   // 12. audit trail (authed)
   const auditRead = await j("/api/saos/audit?take=50", { headers: { cookie } });
   const evKinds = (auditRead.body.events ?? []).map((e) => e.kind);
@@ -449,7 +468,18 @@ async function main() {
     const rev = await j("/api/saos/auth/revoke-all", { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: "{}" });
     report("revoke-all (authed) → ok + revokedAt", rev.body.ok === true && typeof rev.body.revokedAt === "string", `at=${rev.body.revokedAt}`);
     const afterRev = await j("/api/saos/auth", { headers: { cookie } });
-    report("revoke-all: the revoking session itself is dead", afterRev.body.authenticated === false, "epoch rotation invalidates every prior cookie");
+    // roast 60: env-aware — with SAOS_DEV_AUTOSESSION=1 (dev phase) GET /auth
+    // honestly issues a FRESH managed session for a dead cookie (actor
+    // "dev-managed-session"); the proof the OLD cookie died is that it no
+    // longer authenticates AS ITSELF — and a sensitive route (no auto-session
+    // there) must refuse it with 401. Both are now measured.
+    const autoSession = (process.env.SAOS_DEV_AUTOSESSION ?? "").trim() === "1";
+    const deadAsItself = autoSession
+      ? afterRev.body.actor === "dev-managed-session" && afterRev.body.managed === true
+      : afterRev.body.authenticated === false;
+    report("revoke-all: the revoking session itself is dead", deadAsItself, autoSession ? "dev auto-session re-issued (managed:true) — old cookie no longer the actor" : "epoch rotation invalidates every prior cookie");
+    const deadProbe = await j("/api/saos/signer", { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ network: "STEEM" }) });
+    report("revoke-all: dead cookie refused on sensitive route (401)", deadProbe.status === 401);
     const rel = await loginWithRetry(ADMIN_KEY);
     const newCookie = (rel.headers.get("set-cookie") ?? "").split(";")[0] ?? "";
     report("revoke-all: re-login after revocation works", rel.status === 200 && rel.body.ok === true && newCookie.startsWith("saos_session="));
@@ -472,7 +502,11 @@ async function main() {
     report("eth+sol: not ready for anchor", eth.isReadyForAnchor === false && sol.isReadyForAnchor === false);
     report("eth+sol: no error without RPC (state honest)", ["not-configured", "public"].includes(eth.rpcStatus) && ["not-configured", "public"].includes(sol.rpcStatus) && eth.rpcStatus === (process.env.ETH_RPC_URL ? "public" : "not-configured") && sol.rpcStatus === (process.env.SOL_RPC_URL ? "public" : "not-configured"), "no throw, no invented data");
     report("eth+sol: chainType correct", eth.chainType === "evm" && sol.chainType === "solana-runtime");
-    report("eth+sol: no invented chainId (null without env)", eth.chainId === null && sol.chainId === null);
+    // roast 60: env-aware — CI runs without ETH/SOL config (chainId null);
+    // an env WITH ETH_CHAIN_ID / SOL_CLUSTER configured makes the view
+    // HONESTLY echo them (eth: raw env, sol: lowercased cluster allowlist).
+    // The old assertion hard-expected null and lied about configured envs.
+    report("eth+sol: no invented chainId (null without env)", eth.chainId === (process.env.ETH_CHAIN_ID ? String(process.env.ETH_CHAIN_ID).trim() : null) && sol.chainId === (process.env.SOL_CLUSTER ? String(process.env.SOL_CLUSTER).trim().toLowerCase() : null));
     report("eth+sol: no invented cost/time", eth.estimatedCost === null && sol.estimatedCost === null && eth.estimatedTime === null && sol.estimatedTime === null);
     report("eth+sol: resource not live-checked (honest disclosure)", eth.resourceLiveChecked === false && sol.resourceLiveChecked === false);
     report("eth+sol: unblockPlan present", Array.isArray(eth.unblockPlan) && eth.unblockPlan.length > 0 && Array.isArray(sol.unblockPlan) && sol.unblockPlan.length > 0);
@@ -493,7 +527,9 @@ async function main() {
   if (sp.body.probes) {
     const pe = sp.body.probes.ethereum ?? {};
     const ps = sp.body.probes.solana ?? {};
-    report("probe: not-configured → not attempted (honest)", pe.probed === false && ps.probed === false, "no env RPC in this environment");
+    // roast 60: env-aware — the probe is attempted iff an RPC is configured;
+    // “not attempted” is only guaranteed on a config-less env (CI).
+    report("probe: attempted iff configured (honest)", pe.probed === Boolean(process.env.ETH_RPC_URL) && ps.probed === Boolean(process.env.SOL_RPC_URL), process.env.ETH_RPC_URL ? "RPC configured — probe honestly attempted" : "no env RPC in this environment");
     report("probe: no URLs in probe payload", !JSON.stringify(sp.body.probes).includes("https://"), "hostname-only policy");
   }
 
@@ -554,8 +590,8 @@ async function main() {
   const lpSol = lpB.networks?.find((x) => x.network === "SOLANA");
   report(
     "live-proof: unconfigured networks keep honest rpcStatus (state matches env)",
-    lpB.ok === true && lpEth?.rpcStatus === (process.env.ETH_RPC_URL ? "public" : "not-configured") && lpSol?.rpcStatus === (process.env.SOL_RPC_URL ? "public" : "not-configured") && lpEth?.probe?.source !== "env" && lpSol?.probe?.source !== "env",
-    "no invented rpc state — public only when an RPC URL is actually configured"
+    lpB.ok === true && lpEth?.rpcStatus === (process.env.ETH_RPC_URL ? "public" : "not-configured") && lpSol?.rpcStatus === (process.env.SOL_RPC_URL ? "public" : "not-configured") && (process.env.ETH_RPC_URL || lpEth?.probe?.source !== "env") && (process.env.SOL_RPC_URL || lpSol?.probe?.source !== "env"),
+    "no invented rpc state — source=env only when an RPC URL is actually configured"
   );
   report(
     "live-proof: every probe carries an honest reason; failure ≠ crash (no-internet safe)",

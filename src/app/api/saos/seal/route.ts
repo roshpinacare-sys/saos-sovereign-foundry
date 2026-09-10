@@ -61,9 +61,24 @@ export async function POST(req: Request) {
     }
     // roast 56: a non-numeric stamps ("6abc" → NaN) silently degraded to ZERO
     // stamps (Math.max(3, NaN) === NaN, the loop never ran) — a "9 stamps" seal
-    // became a 3-leaf seal without a word. Validate, don't degrade.
-    const parsedStamps = Number(body.stamps ?? 6);
-    const stampCount = Math.min(24, Math.max(3, Number.isFinite(parsedStamps) ? Math.floor(parsedStamps) : 6));
+    // became a 3-leaf seal without a word.
+    // roast 60: the "fix" still DEGRADED ("abc"/0/-5/2.5 → silently 6 or 3),
+    // contradicting both the comment and the economy-57 discipline. Garbage is
+    // now REFUSED with the offending param name before anything is computed.
+    const rawStamps = body.stamps;
+    let stampCount: number;
+    if (rawStamps === undefined || rawStamps === null) {
+      stampCount = 6;
+    } else {
+      const parsed = Number(rawStamps);
+      if (!Number.isSafeInteger(parsed) || parsed < 3 || parsed > 24) {
+        return NextResponse.json(
+          { ok: false, error: `invalid-stamps (nothing sealed): stamps must be an integer within 3..24` },
+          { status: 400 }
+        );
+      }
+      stampCount = parsed;
+    }
     const batchId = body.batchId !== undefined && body.batchId !== null && BATCH_ID_RE.test(String(body.batchId))
       ? String(body.batchId)
       : randomUUID();

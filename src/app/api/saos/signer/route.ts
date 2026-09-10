@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { audit, requireAuth } from "@/lib/saos/auth";
 import { coarseError } from "@/lib/saos/api-errors";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
+import { withWriteLock } from "@/lib/saos/receipt-store";
 import {
   SIGN_TTL_MS,
   buildSignRequest,
@@ -43,6 +44,18 @@ export const dynamic = "force-dynamic";
  *
  * There is no DELETE and no key field anywhere — expired rows are pruned only
  * by scripts/cleanup.mjs with a verified backup (docs/database.md retention).
+ *
+ * roast 60 — the immutability contract is now ATOMIC, not read-then-write:
+ * two concurrent PATCHes with different txids used to BOTH pass the
+ * `row.txid === null` check and the second UPDATE silently overwrote the
+ * first (LIVE-CAUGHT: both answered ok:true, row kept only txid-B — a
+ * recorded anchor could be rewritten by racing the endpoint). Every mutation
+ * is now a single conditional UPDATE (CAS): record flips `txid null→value`,
+ * cancel/fail flips `status→terminal` with `txid still null` in the WHERE —
+ * exactly one concurrent writer wins, the loser gets the honest refusal and
+ * the row keeps the FIRST recorded truth. POST's duplicate-protection moved
+ * inside a serialized transaction (withWriteLock) — find-then-create can no
+ * longer double-create for the same seal+network.
  */
 
 const TERMINAL: SignatureLifecycle[] = ["recorded", "failed", "expired", "cancelled"];
@@ -170,36 +183,47 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "seal not found — הרץ פעימה (POST /seal) או ציין height/sealId קיים" }, { status: 200 });
     }
 
-    // duplicate-protection: an unrecorded request for the same seal+network must not pile up
-    const existing = await db.pendingSignature.findFirst({
-      where: { sealId: seal.id, network, txid: null, signerStatus: "awaiting-approval" }
-    });
-    if (existing) {
+    // duplicate-protection (roast 60): find-then-create moved INSIDE one
+    // serialized transaction — two concurrent POSTs can no longer both miss
+    // the findFirst and double-create for the same seal+network.
+    const outcome = await withWriteLock(() =>
+      db.$transaction(async (tx) => {
+        const existing = await tx.pendingSignature.findFirst({
+          where: { sealId: seal.id, network, txid: null, signerStatus: "awaiting-approval" }
+        });
+        if (existing) {
+          return { idempotent: true as const, existing };
+        }
+        const id = `sig-${randomUUID()}`;
+        const request = await buildSignRequest(seal, network, kind, id, ttlMs);
+        const lifecycle: SignatureLifecycle = signer === "manual" ? "awaiting-approval" : "pending";
+        const row = await tx.pendingSignature.create({
+          data: {
+            id,
+            sealId: seal.id,
+            network,
+            kind,
+            payload: request.payload,
+            payloadHash: request.payloadHash,
+            digestToSign: request.digestToSign,
+            signer,
+            signerStatus: signer === "manual" ? "awaiting-approval" : "disconnected",
+            status: lifecycle,
+            expiresAt: new Date(Date.now() + ttlMs)
+          }
+        });
+        return { idempotent: false as const, row, request, id, lifecycle };
+      })
+    );
+
+    if (outcome.idempotent) {
       return NextResponse.json(
-        { ok: true, idempotent: true, signature: { id: existing.id, network: existing.network, signer: existing.signer, signerStatus: existing.signerStatus, status: statusFrom(existing), digestToSign: existing.digestToSign } },
+        { ok: true, idempotent: true, signature: { id: outcome.existing.id, network: outcome.existing.network, signer: outcome.existing.signer, signerStatus: outcome.existing.signerStatus, status: statusFrom(outcome.existing), digestToSign: outcome.existing.digestToSign } },
         { status: 200 }
       );
     }
 
-    const id = `sig-${randomUUID()}`;
-    const request = await buildSignRequest(seal, network, kind, id, ttlMs);
-    const lifecycle: SignatureLifecycle = signer === "manual" ? "awaiting-approval" : "pending";
-    const row = await db.pendingSignature.create({
-      data: {
-        id,
-        sealId: seal.id,
-        network,
-        kind,
-        payload: request.payload,
-        payloadHash: request.payloadHash,
-        digestToSign: request.digestToSign,
-        signer,
-        signerStatus: signer === "manual" ? "awaiting-approval" : "disconnected",
-        status: lifecycle,
-        expiresAt: new Date(Date.now() + ttlMs)
-      }
-    });
-
+    const { row, request, id, lifecycle } = outcome;
     await audit({ kind: "signer-create", actor: auth.actorRef, action: "POST /signer", allowed: true, req, detail: `id=${id} ${network} seal#${seal.height} signer=${signer} status=${lifecycle}${ttlNote}` });
 
     return NextResponse.json({
@@ -263,10 +287,19 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ ok: false, error: `${action} refused — לבקשה כבר יש תוצאה ציבורית או מצב סופי (${current}); רישום הוא בלתי-הפיך` }, { status: 200 });
       }
       const reason = typeof body.reason === "string" && body.reason.trim().length > 0 ? body.reason.trim().slice(0, 300) : action === "cancel" ? "בוטל ידנית על-ידי המפעיל" : "סומן ככשל על-ידי המפעיל";
-      const updated = await db.pendingSignature.update({
-        where: { id },
+      // roast 60 CAS: the flip to terminal is conditional on txid STILL being
+      // null — a concurrent record loses nothing and the row can never end up
+      // "cancelled" while carrying a public result.
+      const cas = await db.pendingSignature.updateMany({
+        where: { id, txid: null, status: { notIn: TERMINAL } },
         data: { status: action === "cancel" ? "cancelled" : "failed", cancelReason: reason, cancelledAt: new Date() }
       });
+      if (cas.count === 0) {
+        const winner = await db.pendingSignature.findUnique({ where: { id } });
+        const why = winner?.txid ? "לבקשה כבר יש תוצאה ציבורית — רישום הוא בלתי-הפיך" : `הבקשה במצב סופי (${statusFrom(winner ?? row)})`;
+        return NextResponse.json({ ok: false, error: `${action} refused — ${why}` }, { status: 200 });
+      }
+      const updated = (await db.pendingSignature.findUnique({ where: { id } }))!;
       await audit({ kind: action === "cancel" ? "signer-cancel" : "signer-fail", actor: auth.actorRef, action: "PATCH /signer", allowed: true, req, detail: `id=${id} ${updated.network} status=${updated.status} reason=${reason.slice(0, 60)}` });
       return NextResponse.json({ ok: true, signature: { id: updated.id, network: updated.network, status: updated.status, cancelReason: updated.cancelReason } });
     }
@@ -290,7 +323,7 @@ export async function PATCH(req: Request) {
     const doVerify = body.verify === true;
 
     // first hop: signed-externally (proof received, verification pending)
-    let data: Parameters<typeof db.pendingSignature.update>[0]["data"] = {
+    let data: Parameters<typeof db.pendingSignature.updateMany>[0]["data"] = {
       txid,
       proofRef,
       anchorRef,
@@ -301,7 +334,8 @@ export async function PATCH(req: Request) {
       verificationSource: doVerify ? null : "verification not requested — התוצאה נרשמה ללא אימות רשת"
     };
 
-    // optional second hop: public read-only verification
+    // optional second hop: public read-only verification (network call BEFORE
+    // the CAS — the lock/mutation window stays short and the verdict is final)
     let verification: Awaited<ReturnType<typeof verifyTxidPublic>> | null = null;
     if (doVerify) {
       verification = await verifyTxidPublic(row.network as "STEEM" | "BLURT" | "HIVE" | "TRON", txid);
@@ -313,7 +347,18 @@ export async function PATCH(req: Request) {
       }
     }
 
-    const updated = await db.pendingSignature.update({ where: { id }, data });
+    // roast 60 CAS — atomic first-wins: the UPDATE is conditional on txid being
+    // null, so exactly ONE concurrent PATCH flips it. The loser gets the honest
+    // refusal; the first recorded txid can never be overwritten.
+    const cas = await db.pendingSignature.updateMany({ where: { id, txid: null }, data });
+    if (cas.count === 0) {
+      const winner = await db.pendingSignature.findUnique({ where: { id } });
+      const err = winner?.txid
+        ? `txid already recorded — רישום הוא בלתי-הפיך (מירוץ-מקביל: הראשון ניצח, ${winner.txid.slice(0, 12)}…)`
+        : `refused — הבקשה במצב סופי (${statusFrom(winner ?? row)})`;
+      return NextResponse.json({ ok: false, error: err }, { status: 200 });
+    }
+    const updated = (await db.pendingSignature.findUnique({ where: { id } }))!;
     await audit({ kind: "signer-result", actor: auth.actorRef, action: "PATCH /signer", allowed: true, req, detail: `id=${id} ${updated.network} txid=${txid.slice(0, 12)}… status=${updated.status} verified=${updated.verified === null ? "not-checked" : updated.verified}` });
 
     return NextResponse.json({

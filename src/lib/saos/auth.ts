@@ -95,7 +95,16 @@ function bustEpochCache(): void {
 
 function sessionSecret(epoch: string): string {
   const explicit = (process.env.SAOS_SESSION_SECRET ?? "").trim();
-  if (explicit.length >= 16) return explicit;
+  if (explicit.length >= 16) {
+    // roast 60: an explicit secret used to REPLACE the epoch entirely — the
+    // cookie MAC was epoch-independent, so epoch rotation (revoke-all) could
+    // NEVER invalidate an existing cookie. LIVE-CAUGHT: POST /auth/revoke-all
+    // answered ok:true and the same cookie still authenticated. The epoch is
+    // now MIXED INTO the explicit secret: rotation kills every prior cookie,
+    // the configured secret stays the root of trust. One-time deploy effect:
+    // existing cookies re-login (which is exactly what revocation is for).
+    return createHash("sha256").update(`${explicit}:${epoch}`).digest("hex");
+  }
   return createHash("sha256").update(`saos-session:${adminKeyHash() ?? "none"}:${epoch}`).digest("hex");
 }
 
