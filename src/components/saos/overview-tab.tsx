@@ -604,6 +604,10 @@ export function MyKeysPanel() {
             const connected = rows.filter((r) => r.exists && Object.values(r.roles ?? {}).every((s) => s.match === true)).length;
             const missing = rows.filter((r) => r.exists && Object.values(r.roles ?? {}).some((s) => s.match !== true));
             const allGood = missing.length === 0;
+            // derived-or-silence: the 2018-creation claim is measured from the rows,
+            // never frozen — it disappears the moment a non-2018 account shows up
+            const existRows2018 = rows.filter((r) => r.exists);
+            const allCreated2018 = existRows2018.length > 0 && existRows2018.every((r) => String(r.created ?? "").startsWith("2018"));
             return (
               <div className="rounded-xl border border-teal-400/20 bg-teal-400/[0.04] p-3">
                 <div className="flex flex-wrap items-center gap-2">
@@ -618,7 +622,7 @@ export function MyKeysPanel() {
                   </Badge>
                 </div>
                 <p className="mt-1.5 text-[11px] leading-relaxed text-zinc-400">
-                  כל {sum?.accountsTotal ?? rows.length} החשבונות קיימים ב-steemit (נוצרו 2018, לפני-הפיצול). {sum?.probed ?? 0} מפתחות-כספת נבדקו מול רשויות-ה-STEEM החיות — הפסקי-דין למטה נגזרים, לא קפואים.
+                  כל {sum?.accountsTotal ?? rows.length} החשבונות קיימים ב-steemit{allCreated2018 ? " (נוצרו 2018, לפני-הפיצול)" : ""}. {sum?.probed ?? 0} מפתחות-כספת נבדקו מול רשויות-ה-STEEM החיות — הפסקי-דין למטה נגזרים, לא קפואים.
                 </p>
                 <div className="scroll-slim mt-2 max-h-64 space-y-1.5 overflow-y-auto pl-1">
                   {rows.map((r) => {

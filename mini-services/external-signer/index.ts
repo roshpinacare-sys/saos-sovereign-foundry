@@ -1163,7 +1163,7 @@ const server = Bun.serve({
     if (url.pathname === "/keys/steem-plane" && req.method === "GET") {
       try {
         const payload = await steemPlaneProbe();
-        return Response.json({ ok: true, ...payload, version: "2.4.4" });
+        return Response.json({ ok: true, ...payload, version: "2.4.5" });
       } catch (e) {
         return Response.json({ ok: false, error: String(e?.message ?? e).slice(0, 200) }, { status: 502 });
       }
@@ -1207,7 +1207,7 @@ const server = Bun.serve({
             networks
           });
         }
-        return Response.json({ ok: true, main: { account: STATE.main.account, networks: mainNet }, fleet, vaultAccountNames: STATE.vaultAccounts ?? [], sealedAt: STATE.sealedAt, drift: { lastCheck: driftState.lastCheck, openDrifts: driftState.drifts.length, unmatched: driftState.unmatched.length, summary: driftState.lastSummary }, version: "2.4.4" });
+        return Response.json({ ok: true, main: { account: STATE.main.account, networks: mainNet }, fleet, vaultAccountNames: STATE.vaultAccounts ?? [], sealedAt: STATE.sealedAt, drift: { lastCheck: driftState.lastCheck, openDrifts: driftState.drifts.length, unmatched: driftState.unmatched.length, summary: driftState.lastSummary }, version: "2.4.5" });
       } catch (e) {
         return Response.json({ ok: false, error: String(e?.message ?? e).slice(0, 200) }, { status: 502 });
       }

@@ -100,6 +100,7 @@ interface SteemPlaneRow {
   sbd?: string;
   hp?: string;
   divergence?: Record<string, string | null>;
+  postingAnchor?: { STEEM?: string | null; HIVE?: string | null };
   roles?: Record<string, { held: number; match: boolean | null }>;
 }
 async function signerSteemPlane(): Promise<{ reachable: boolean; error?: string; body?: Record<string, unknown> }> {
@@ -223,6 +224,10 @@ export async function GET(req: Request) {
     // derived-or-silence, never frozen text.
     const planeAccounts = plane.reachable ? (planeBody.accounts ?? []) : [];
     const planeSummary = plane.reachable ? (planeBody.summary ?? null) : null;
+    const existRows = planeAccounts.filter((r) => r.exists);
+    // derived-or-silence: the "created 2018" claim is measured from the chain rows,
+    // never frozen — it disappears the moment a non-2018 account shows up
+    const allCreated2018 = existRows.length > 0 && existRows.every((r) => String(r.created ?? "").startsWith("2018"));
     const planeMissing = planeAccounts.filter(
       (r) => r.exists && Object.values(r.roles ?? {}).some((s) => s.match !== true)
     );
@@ -268,7 +273,7 @@ export async function GET(req: Request) {
       openGaps0.push({
         id: "steem-plane",
         title: `מישור-STEEM (steemit) — ${planeMissing.length} חשבונות קיימים-על-השרשרת בלי מפתח-תואם`,
-        detail: `נמדד-חי ${planeBody.measuredAt?.slice(0, 16) ?? ""}: כל ${planeSummary.accountsTotal ?? planeAccounts.length} החשבונות קיימים ב-steemit (נוצרו 2018, לפני-הפיצול) עם יתרות אמיתיות — סה"כ ${planeSummary.totalLiquid ?? "?"} STEEM + ${planeSummary.totalSbd ?? "?"} SBD + ${planeSummary.totalHp ?? "?"} HP. ${planeSummary.probed ?? 0} מפתחות-כספת נבדקו מול רשויות-ה-STEEM החיות. מחוברים כרגע: ${planeSummary.accountsWithMatch ?? 0} — עץ-ROT1 מלא (הזרע שוחזר-מהצ'אט של הבעלים והוזרק, Task 69).${ynetUnchanged ? " יוצא-מן-הכלל: ynet — STEEM≡HIVE (רשויות-זהות בשתי-השרשראות; סובב 09-04 לפי-עדות-rotation_evidence, נגזר-מ-FACTORY_MASTER)." : ""}${ynetRow?.postingAnchor?.STEEM || ynetRow?.postingAnchor?.HIVE ? " עוגן-חילוץ-חי: מישור-ה-posting של ynet מופעל-דרך-headcorner (account_auths) — הוכח-בשרשרת saos-ping בשתי-השרשראות (Task 70); פעולות-פוסטינג זמינות-עכשיו גם-בלי-המפתח." : ""}`,
+        detail: `נמדד-חי ${planeBody.measuredAt?.slice(0, 16) ?? ""}: כל ${planeSummary.accountsTotal ?? planeAccounts.length} החשבונות קיימים ב-steemit${allCreated2018 ? " (נוצרו 2018, לפני-הפיצול)" : ""} עם יתרות אמיתיות — סה"כ ${planeSummary.totalLiquid ?? "?"} STEEM + ${planeSummary.totalSbd ?? "?"} SBD + ${planeSummary.totalHp ?? "?"} HP. ${planeSummary.probed ?? 0} מפתחות-כספת נבדקו מול רשויות-ה-STEEM החיות. מחוברים כרגע: ${planeSummary.accountsWithMatch ?? 0} — עץ-ROT1 מלא (הזרע שוחזר-מהצ'אט של הבעלים והוזרק, Task 69).${ynetUnchanged ? " יוצא-מן-הכלל: ynet — STEEM≡HIVE (רשויות-זהות בשתי-השרשראות; סובב 09-04 לפי-עדות-rotation_evidence, נגזר-מ-FACTORY_MASTER)." : ""}${ynetRow?.postingAnchor?.STEEM || ynetRow?.postingAnchor?.HIVE ? " עוגן-חילוץ-חי: מישור-ה-posting של ynet מופעל-דרך-headcorner (account_auths) — הוכח-בשרשרת saos-ping בשתי-השרשראות (Task 70); פעולות-פוסטינג זמינות-עכשיו גם-בלי-המפתח." : ""}`,
         oneStep: "הדבקת מפתח/סיסמת-STEEM נוכחית לכל חשבון-חסר במסך-אבטחה → verify-then-write fail-closed (ynet: סיסמת-FACTORY-MASTER-הנוכחית מחברת STEEM+HIVE יחד; בינתיים-מישור-הפוסטינג שלו כבר-חי-דרך-העוגן).",
         state: "waiting-owner" as const
       });
