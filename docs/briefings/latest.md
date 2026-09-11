@@ -1,19 +1,19 @@
-# בריף ראש-המטה — 2026-09-11T13:39:41.615Z
+# בריף ראש-המטה — 2026-09-11T14:39:36.975Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: 87e7a70
+HEAD: 51974f5
 כספת-חי (מקור-אמת מהחותם :3033 — ספירות-בלבד): main=headcorner slots STEEM 4/4 · HIVE 4/4 · BLURT 4/4 | fleet-with-keys=[cashmachine,haran,israelnews,lsa,macrame,siq,wic,wog,woq,ynet,tov] | drift ok=136 drift=0 unmatched=0 | sealedAt=2026-09-10T21:32:28.346Z
-guardian: ok=true runs=660 devMode=true tickAlive=true token=true
-- 87e7a70 9d666975-a670-423f-a288-3e1218c9bb8b
-- 41734d3 task83: h18 third consecutive cycle — 5/6 anchored live (STEEM e91c10b1 blk109479017, HIVE c04e2fa5 blk109813630 from woq 2nd fleet account in a row, SOLANA 4zUm4JNt slot446088169 memo-decoded, ETHEREUM x2 blocks 25952351/375, BLURT 1f1f321e blk63541833) + TRON honestly bandwidth-gated (free 600B daily quota consumed by h16+2xh17 — measured limit ~3 free anchors/day/account, rotation or 1-TRX freeze recorded) + BTC scouted: all 12 vault bc1q addresses 0 BTC 0 txs ever (no-fuel gate, funding = owner decision); second bug caught live and fixed: pulse stored non-canonical 64-hex txid that graphene get_transaction rejects ('invalid size') — now stores+verifies node-confirmed canonical id (40-hex), full hash kept in meta.rawSignerTxid, h18 HIVE row normalized in place with audit note, fix validated live by the very next BLURT anchor; SIGERROR red herring diagnosed (signature cryptographically valid, node edge artifact, zero broadcast confirmed on-chain); tsc+lint clean; zero secrets, zero force-push
-- f2b0a2b task82: h17 FULL MATRIX REPEAT 6/6 — second consecutive seal anchored on all networks (STEEM a4782b39 blk109478392, BLURT 49abca96 blk63541138, SOLANA 3RXaKCD9 slot446083569 finalized memo-decoded, ETHEREUM x3 self-tx blocks 25952255/62/65, TRON a7aedd6f blk86144962 amount 47476sun=0xb974 root encoding, HIVE 432e8abd blk109813318 FIRST from wic); live-caught and fixed pulse deadlock (account-conflict 409 ran before confirmFresh — one refused fleet account trapped the (seal,network) forever; supersede now first with failed+superseded audit trail and fresh requestId); effective-RC regen model (stored 1.7M = effective 174.5M — wic anchored); inventory truth: 8 ETH fleet addrs drained to 0.0 by h16, cashmachine sole funded (0.0000816 after 3 anchors); ynet HIVE authority mismatch proven (envelope STM5ct91 vs chain STM4tXiBSDN); honest TRON double-anchor incident logged; tsc+lint clean; zero secrets, zero force-push
-- 39371f4 broadcast: מכתם-roast-79 מ-control-center — מעגל-המוות-הכלכלי-נשבר · החיילים-קמו-לתחייה · המשגר-הריבוני · אפס-סודות · קובץ-חד-בלבד (לא-נגענו-בקבצים-קיימים)
-- 245ed29 broadcast: r30 מישור-המטבע-המובן מהכספת Saosmartwallet · הכספת צופה בכתובת-המימון של 7 הדלתות (chain.funding — המודול ה-42, צנזורה-חיה 8 רשתות, read-only) · לוח-צפייה יומי 14:00 UTC — כסף-שנוחת נראה בתוך-יום · בזלית נרשמה (mainnet 0.000334 · BSC 0.000006 · הדלתות ריקות) · תיקון-שורש: הבודק-העצמאי קיבל חילוצי-פרוטוקול חינם (3 ריצות-מוכחות-מלאות דורגו-blocked-בגלל-תשובת-בודק-אחת-זבל) · סולם-המימון צעד-צעד · אפס-סודות
-briefings אחרונים: BRIEF-2026-09-11T11-09-42.md, BRIEF-2026-09-11T11-39-43.md, BRIEF-2026-09-11T12-09-37.md, BRIEF-2026-09-11T12-39-43.md, BRIEF-2026-09-11T13-09-38.md
+guardian: ok=true runs=697 devMode=true tickAlive=false token=true
+- 51974f5 task85: h19 fourth consecutive cycle — 4/6 anchored live (STEEM 4b70d75c blk109487902, BLURT 72774a43 blk63550493, HIVE 90f38828 from cashmachine — third fleet rotation account wic→woq→cashmachine, SOLANA 5q7omywW slot446173949 memo-decoded on second RPC) + two honest gates zero-broadcast: ETHEREUM daytime gas x42 (baseFee 2.477 gwei, balance 0.0000569 < anchor cost, fail-closed) and TRON bandwidth 247/600B left after h16+2xh17 with full fleet fuel scan proving all 11 other TRON addresses zero/inactive (only headcorner funded, 0.07791 TRX verified via getaccount after catching getaccountresource balance-field omission); effective-RC model predicted 3rd rotation success first-try; tsc+lint clean; zero secrets, zero force-push
+- 1061d04 worklog: task84 git-sync-and-push (rebase over 614bc4e, head 918915e)
+- 918915e briefing-rotation: sweep 2026-09-11 07:09-13:39 (14 briefs) — retire 2026-09-10 evening set, latest.md advanced
+- 76957b9 9d666975-a670-423f-a288-3e1218c9bb8b
+- 614bc4e broadcast: v67 ההשקיה החכמה — the irrigation itself went autonomous: two doors born by themselves (probe → ×2 → relay deployed → seal anchored on OPTIMISM+BASE, all source=auto with receipts) · the honest answer on our DEX + SOL/TRX conversion gate · 3 wisdom gaps caught live and fixed · zero secrets
+briefings אחרונים: BRIEF-2026-09-11T12-09-37.md, BRIEF-2026-09-11T12-39-43.md, BRIEF-2026-09-11T13-09-38.md, BRIEF-2026-09-11T13-39-41.md, BRIEF-2026-09-11T14-09-39.md
 ── זנב next-steps.md ──
 …
 ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
@@ -28,22 +28,32 @@ briefings אחרונים: BRIEF-2026-09-11T11-09-42.md, BRIEF-2026-09-11T11-39-4
 
 ### מסילת-ההמרה האמיתית (נבנתה והוכחה חיה הערב)
 1. **external-signer v2** (:3033): רשת HIVE + אופס-אלווליסט (transfer_to_vesting/transfer/claim_rewards/he_market_sell/he_withdraw/custom_json) + **שער-אימות-סמכות** (גזירת-מפתח מול-סמכות-חיה לפני-כל-שידור, 403 על אי-התאמה) + **שער-כשירות-RC** (429 עם ETA, אף-שידור-אסון) + תקרת-סכום (50 HIVE).
-2. **נתיב-המרה ב-DEX** (saos-dex): `GET /api/dex/convert?account=` (תצוגה-חיה: מאזנים + מסלול-מוצע) + `POST /api/dex/convert` (operator-gated; ה-DEX ללא-מפתח
+2. **נתיב-המרה ב-DEX** (saos-dex): `GET /api/dex/convert?account=` (תצוגה-חיה: מאזנים + מסלול-מוצע) + `POST /api/dex/convert` (operator-gated; ה-DEX ללא-מפתחות — הביצוע דרך החותם בלבד). typecheck PASS; DB מבודד (נתפס ותוקן: DATABASE_URL של-ה-shell דרס את ה-.env — הופעל מחדש עם `file:../db/dex.db` מפורש; ה-foundry לא-נפגע).
+3. **ביצועים אמיתיים שנחתו על-השרשרת הערב**: lsa מכרה 2.51025127 WEED @0.00098 → **0.00248765 SWAP.HIVE** (נחת, אומת במאזן); macrame מכרה 0.570715 STEM @0.00025 → **+0.000145 SWAP.HIVE** (נחת); macrame withdraw שודר והתקבל (בגשר-hivepegged; נחיתה בטיפול). ה-powerup-עצמו נעול כרגע ב-RC (ETA ~232 דק ל-macrame) — השערים מדווחים בכנות וה-FSM ישלים אוטומטית אחרי-פריסת-התיקון או שה-RC יגיע.
+
+### החלטות
+- `hive-rc-floor`: **needs-resource → decided-custom** (המשאב קיים, המסילה נבנתה והוכחה, נותר פעולת-הרצה אחת על-הרנטיים). `tron-stake`/`vault-restore` נשארים כנים (TRX אבק בלי נתיב; שחזור-חוץ).
+
+### תקרית שנתפסה ותוקנה (Task 27-b)
+במהלך-ההפעלה הראשונה של ה-DEX דלף DATABASE_URL מה-shell (foundry custom.db דרס את .env של ה-DEX — קדימות process.env) וקו-הריליי שלו כתב 2 קבלות-זרות לשרשרת-ה-foundry (23:14:38/23:15:14). נתפס בבדיקת-החובה שלפני-סגירה: אוכסן (docs/evidence/dex-relay-pollution-archive-2026-09-08.json, sha256 34f3a606…), הוסר, והסכימה הוקשתה — EvidenceReceipt.at נעשה REQUIRED כך שכותב-זר נכשל מבנית. verifyChainDag PASS מחדש.
+
+### פתוח מ-Task 27
+- **הרצה-מסיימת על-הרנטיים** (בעלים/רנטיים): `node agent/he_p
 ```
 </details>
-## מצב רשת (2-4 שורות)
-הרשת פעילה עם HEAD: 87e7a70. כספת-חי מאומתת עם 4/4 סלוטים ב-STEEM, HIVE ו-BLURT. צי הסוכנים פעיל עם 11 חשבונות, אך קיים צוואר בקבוק חמור ב-HIVE (RC 0.003%) מגביל את קצב העוגנים לאחת כל ~25 דקות. מסילת המרה מ-HE ל-HIVE פעילה ומוגנת בשערי אימות. המשאב הנזיל היחיד בצי הוא 9.682 HIVE.
+## מצב רשת
+הרשת יציבה עם 11 סוכנים מורשים. מפתחות פעילים במעטפת עבור 9 חשבונות ב-HIVE. חשבון headcorner מחזיק 9.682 HIVE נזילים. קיים צוואר בקבוק ב-HIVE RC (0.003%) מה שמאט פעילות לכדי פעולה אחת בכ-25 דקות. מסילת המרה DEX פעילה ומאובטחת.
 
 ## סיכונים / דברים מדממים (או "אין")
-צוואר בקבוק ב-HIVE RC מגביל את קצב הפעולות ומעכב את השלמת משימות (כמו withdraw של macrame). חשבונות headcorner ו-tov לא מוגנים על ידי המעטפת החתומה והמפתחות שלהם נמצאים אצל הבעלים בלבד. ה-TRX בצי חסרי ערך מעשי עקב מחסור בנתיבי המרה.
+סיכון אופרטיבי רציני בקצב הרגנרציה (RC) ברשת HIVE, המגביל את קצב העיבוד לפעולה אחת בכ-25 דקות. עודף ה-HIVE נזיל על headcorner לא ניתן להמרה ל-HP בקצב מלא עקב מגבלת ה-RC. כל המשאבים האחרים (TRX, טוקנים זעירים) הם "אבק" ללא ערך מעשי מחוץ לסביבת הפיתוח.
 
 ## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
-1. [רנטיים-חי] הפעלת `node agent/he_powerup.cjs --amount ALL` כדי להעביר את כל ה-HIVE הנזיל ל-vests, תוך ניצול ה-RC הקיים למרות הצוואר בקבוק. קריטריון-אימת: מדידת עלייה ב-RC הכולל של החשבון והפחתת היתרה הנזילה לאפס.
-2. [רנטיים-חי] פעולת המתנה עד שה-RC של macrame יגיע לסף מספיק לביצוע ה-withdraw של 0.00248 SWAP.HIVE. קריטריון-אימת: קבלת הטרנזקציה בבלוקצ'יין עם ה-txid המתאים.
-3. [רנטיים-חי] ניטור הפעלת השירות החדש `fleet-cure` כדי לאסוף נתוני RC מצי הסוכנים. קריטריון-אימת: קיום קובץ `docs/evidence/fleet-cure-status.json` עם נתוני RC מעודכנים.
+1. [רנטיים-חי] `node agent/he_powerup.cjs --amount ALL` - הפעלת תהליך האצת כל ה-HIVE הנזיל ל-HP כדי לנצל את עודף ה-RC הקיים ולהגדיל את קצב הרגנרציה היומי.
+2. [רנטיים-חי] המתנה פסיבית להשלמת ה-powerup של macrame (צפוי ב-~3.5 שעות) ואימות הצלחת ה-withdraw של lsa (0.00248 SWAP.HIVE) דרך מעקב אחרי ה-txid בשרשרת.
+3. [רנטיים-חי] פעולת הרצה ראשונית של `fleet-cure` על מנת להתחיל למדוד את מנת ה-RC של כלל הסוכנים כל 5 דקות ולהפעיל אוטומטית את פעולת ה-weave כאשר RC זמין.
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-אישור הפעלת `he_powerup.cjs --amount ALL` על ידי הרנטיים-החי, כיוון שהמסילה והשערים אומתו והמשאב (9.682 HIVE) קיים ומוכן להעברה ל-vests. ההחלטה על שימוש בשירות `fleet-cure` ניתנת לי כיוון שהוא עובד בתוך סביבת הפיתוח ומספק נתונים ציבוריים בלבד.
+אישור הפעלת `fleet-cure` כמערכת אוטומטית לניהול צווארי הבקבוק ב-RC של צי הסוכנים ב-HIVE. אישור להמשך פעילות מסילת ה-DEX להמרות פנימיות בין נכסים, תוך הקפדה על שערי האבטחה הקיימים.
 
 ## נשאר לבעלים בלבד (או "כלום")
-הפעלת מפתחות headcorner ו-tov, קבלת החלטות על מימון TRX, וכל פעולה הדורשת גישה למפתחות הפרטיים של חשבונות אלה.
+החלטה על מימון חיצוני ל-TRX על מנת לאפשר המרה פוטנציאלית לנכסים בעלי ערך. ניהול ושימוש במפתחות הראשיים של headcorner ו-tov לכל הרשתות (STEEM, חשבון הבעלים ב-HIVE). ניהול האצת נכסים (HP delegation) כאשר יהיה ניתן לעבור את שערי הסמכות.
