@@ -348,7 +348,13 @@ async function pulsePost(req: Request) {
 
   // independent public verification — the anchor must stand on its own
   // (Task 47: blockHint lets the verifier use get_block when account_history lags)
-  const verification = await verifyTxidPublic(network, exec.txid, exec.confirmedBlock ?? null);
+  // Task 82 (caught live on h18/woq): some signer paths return the FULL sha256
+  // (64-hex) as txid — graphene nodes REJECT that in get_transaction ("invalid
+  // size", proven live on both h17 and h18). The node-confirmed canonical id
+  // (exec.nodeTrxId, 40-hex for HIVE/BLURT) is the lookup-able truth; the full
+  // hash stays in meta. Verify AND store the canonical id.
+  const storedTxid = exec.nodeTrxId ?? exec.txid;
+  const verification = await verifyTxidPublic(network, storedTxid, exec.confirmedBlock ?? null);
 
   // roast 52 — truth contract kept END-TO-END: "anchored" is written ONLY when
   // the public network itself confirmed the txid. roast 56: the WRITE-AHEAD
@@ -358,7 +364,7 @@ async function pulsePost(req: Request) {
   const promoted = await db.anchorTx.updateMany({
     where: { id: intent.id, txid: null },
     data: {
-      txid: exec.txid,
+      txid: storedTxid,
       status: verification.verified ? "anchored" : "transit",
       gate: verification.verified ? null : "unverified-txid: שודר ונרשם, אך הרשת הציבורית טרם אישרה — ייחשב anchored רק לאחר אימות-קריאה עצמאי",
       meta: JSON.stringify({
@@ -370,6 +376,7 @@ async function pulsePost(req: Request) {
         verificationSource: verification.source,
         verificationReason: verification.reason,
         confirmedBlock: exec.confirmedBlock ?? null,
+        rawSignerTxid: exec.txid,
         nodeTrxId: exec.nodeTrxId ?? null,
         sealHeight: seal.height,
         at: new Date().toISOString()
@@ -378,7 +385,7 @@ async function pulsePost(req: Request) {
   });
   const row = promoted.count > 0
     ? await db.anchorTx.findUniqueOrThrow({ where: { id: intent.id } })
-    : await db.anchorTx.findFirst({ where: { sealId: seal.id, network, kind: PULSE_KIND, txid: exec.txid } }) ?? intent;
+    : await db.anchorTx.findFirst({ where: { sealId: seal.id, network, kind: PULSE_KIND, txid: storedTxid } }) ?? intent;
 
   await audit({
     kind: "anchor-pulse",
