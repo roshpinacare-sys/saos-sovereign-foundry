@@ -1,19 +1,19 @@
-# בריף ראש-המטה — 2026-09-11T05:09:32.281Z
+# בריף ראש-המטה — 2026-09-11T06:09:43.286Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: fbf2705
+HEAD: 25507cf
 כספת-חי (מקור-אמת מהחותם :3033 — ספירות-בלבד): main=headcorner slots STEEM 4/4 · HIVE 4/4 · BLURT 4/4 | fleet-with-keys=[cashmachine,haran,israelnews,lsa,macrame,siq,wic,wog,woq,ynet,tov] | drift ok=136 drift=0 unmatched=0 | sealedAt=2026-09-10T21:32:28.346Z
-guardian: ok=true runs=261 devMode=true tickAlive=true token=true
-- fbf2705 2da3182a-10a5-49a3-89ba-3e702dd7087f
-- 8d95fc7 task80: HIVE anchored LIVE for the first time — seal h16 now 5/6 networks (ETH+SOL+STEEM+BLURT+HIVE); STEEM 7438441d blk 109475336 + BLURT 72c094f3 blk 63538064 from headcorner; HIVE 2ee771d6 blk 109811500 from lsa (active authority, fleet launcher); RC-starvation diagnosed end-to-end (legacy chain-seal stream harvests at ~207M RC < full weave 231.6M — structural, waiting never wins) and beaten with compact payload {protocol,root,height} 120B ≈ 108M RC; pulse accepts fleet account param (fail-closed live-authority gate); signer now returns node-confirmed canonical 40-hex txid (get_transaction rejects 64-hex, proven live); api-check 149/0; zero secrets, zero force-push
-- 75d9265 broadcast: ספר האוצר נולד (v65) — ההרשאה בקוד · 4 פעימות מיינטנט תחת ההרשאה · כל הוצאה מהקבלות · כתובת-מימון 7 הדלתות · אפס-סודות
-- 7b2c531 broadcast: מכתם-roast-77 מ-saos-control-center/saos-dex — הפעלת-הכסף-הראשונה (powerup-STEEM · txid) + שערי-דלק-ETH + תיקון-סמכות-posting-מהכספת · מטריצת-השגה · קובץ-חד-בלבד · אפס-סודות
-- 2a4062d broadcast: r27 מישור-היעילות מהכספת Saosmartwallet · המלאי-החי (כספת-234 · 5-סוכנים · 41-מודולים) · מדידת-מוחות (nvidia 91.5% מול zai 34.5%) · הזדמנויות-בסדר-תשואה · מטרות-הרשת · מה-מיושם-עכשיו · אפס-סודות
-briefings אחרונים: BRIEF-2026-09-11T02-39-37.md, BRIEF-2026-09-11T03-09-43.md, BRIEF-2026-09-11T03-39-36.md, BRIEF-2026-09-11T04-09-35.md, BRIEF-2026-09-11T04-39-46.md
+guardian: ok=true runs=306 devMode=true tickAlive=true token=true
+- 25507cf task81: TRON anchored LIVE for the first time from sovereign keys — seal h16 now 6/6 FULL MATRIX (ETH+SOL+STEEM+BLURT+HIVE+TRON); txid 74e574fc SUCCESS, blackhole-null transfer amount encodes root[0:4] (60138 sun = eaea), cost 0.060138 TRX with zero bandwidth burn (free daily 600 quota); live channel-map: self-transfer forbidden, 1 TRX activation, freeze min 1 TRX, SetAccountId legacy trap; two bugs caught live and fixed (broadcast visible:true + verifyTron contractRet vs result); ingest verified via trongrid; tsc+lint clean; zero secrets, zero force-push
+- 8c4c19b 2da3182a-10a5-49a3-89ba-3e702dd7087f
+- 56fb9d2 broadcast: r29 מישור-ההבנה מהכספת Saosmartwallet · הקציר-הנסתר (783.864 VESTS נתבעו — txId אמיתי, אומת-מול-השרשרת) · פער-התמונה-העצמית (הרוויחה-ולא-ידעה: ERROR:undefined הסתיר-הצלחה) · שלושה-תיקוני-שורש (טרנסקריפט-כנה · אמת-txId · census-ניתן-לאימות) · סולם-המימון צעד-צעד · אפס-סודות
+- 6595813 broadcast: מכתם-roast-78 — רצפת-הגנת-הגיבוי (SOL: העיגון-לא-יכול-עוד-לאכול-את-העיגון) · עיגונים-חיים-e43 · runway-1,913 · אפס-סודות · קובץ-חד-בלבד
+- 5d404e4 broadcast: ההתפשטות-האוטומטית נולדה והוכחה (v66) — העוגן הראשון דרך SAOSRelay נורה על-ידי האורגניזם עצמו (txid · בלוק · עלות מהקבלה) · ההשקיה הפכה לפקודה אחת · כתובת-המימון של 7 הדלתות · אפס-סודות
+briefings אחרונים: BRIEF-2026-09-11T03-39-36.md, BRIEF-2026-09-11T04-09-35.md, BRIEF-2026-09-11T04-39-46.md, BRIEF-2026-09-11T05-09-32.md, BRIEF-2026-09-11T05-39-40.md
 ── זנב next-steps.md ──
 …
 ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
@@ -38,29 +38,22 @@ briefings אחרונים: BRIEF-2026-09-11T02-39-37.md, BRIEF-2026-09-11T03-09-4
 במהלך-ההפעלה הראשונה של ה-DEX דלף DATABASE_URL מה-shell (foundry custom.db דרס את .env של ה-DEX — קדימות process.env) וקו-הריליי שלו כתב 2 קבלות-זרות לשרשרת-ה-foundry (23:14:38/23:15:14). נתפס בבדיקת-החובה שלפני-סגירה: אוכסן (docs/evidence/dex-relay-pollution-archive-2026-09-08.json, sha256 34f3a606…), הוסר, והסכימה הוקשתה — EvidenceReceipt.at נעשה REQUIRED כך שכותב-זר נכשל מבנית. verifyChainDag PASS מחדש.
 
 ### פתוח מ-Task 27
-- **הרצה-מסיימת על-הרנטיים** (בעלים/רנטיים): `node agent/he_powerup.cjs --amount AL
+- **הרצה-מסיימת על-הרנטיים** (בעלים/רנטיים): `node agent/he_powerup.cjs --amount ALL` → אח
 ```
 </details>
-## מצב רשת
-הרשת יציבה עם 5/6 רשתות מעוגנות. קיים מחסור RC ב-HIVE (0.003%) המגביל תדירות עיבוד לכל ~25 דקות, אך נמצא פתרון מבצעי מוכן. כלל הסוכנים בצי מורשים ופעילים.
+## מצב רשת (2-4 שורות)
+הרשת פעילה עם כל 6 העוגנים מאומתים (STEEM, HIVE, BLURT, TRON, ETH, SOL). קיים חסרון RC חמור ברשת HIVE (0.003%) המגביל את קצב הפעולות לאחת בכ-25 דקות. מערכת ה-DEX פעילה ועובדת, ונמצאים 9.682 HIVE נזילים ב-headcorner. נמצאו ותוקנו באגים קריטיים ב-DEX ובמנגנון ה-powerup.
 
 ## סיכונים / דברים מדממים (או "אין")
-מחסור RC ב-HIVE המגביל את קצב העיבוד של הרשת. כל המכשור הנדרש לפתרון קיים ומוכן להפעלה.
+סיכון RC חמור ב-HIVE מגביל באופן משמעותי יכולת הפעולה של הרשת ומונע גיוס משאבים (power-up) יעיל. המצב נמצא בטיפול אוטומטי אך עדיין מגביל את קצב הפעולות. כל המפתחות של הסוכנים נמצאים בחזקת הבעלים בלבד, מה שמפחית את הסיכון לחדירה אך יוצר תלות בבעלים לפעולות.
 
 ## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
-1. [רנטיים] הפעלת `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי.
-   - קריטריון-אימת: RC של headcorner עולה ל-40G (מדידה חיה ב-.env).
-
-2. [רנטיים] הפעלת שירות `fleet-cure` על ה-foundry.
-   - קריטריון-אימת: יצירת `docs/evidence/fleet-cure-status.json` עם נתוני RC מדידים.
-
-3. [רנטיים] המתנה עד להשלמת ה-powerup של macrame.
-   - קריטריון-אימת: קבלת הפעולה המתוכננת לאחר ש-RC מאפשר זאת.
+1. [he_powerup] הפעלת `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי כדי לנצל את התיקון במנגנון ה-powerup ולהגדיל את קצב הרגן.
+2. [fleet-cure] הפעלת שירות ה-monitoring החדש (fleet-cure) כדי למדוד את מצב ה-RC של החיילים ולבצע אוטומטית את פעולת ה-weave כאשר יש מספיק RC.
+3. [external-signer] הפעלת ניסיון power-up דרך ה-DEX עם סכום קטן כדי לאמת את תקינות מסילת ההמרה החדשה ושערי האבטחה.
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-אישור הפעלת ה-automation של `fleet-cure` כדי לטפל במחסור ה-RC ב-HIVE באופן אוטומטי עם הגעת ה-RC הנדרש.
+אישור הפעלת המערכת האוטומטית fleet-cure לטיפול בבעיית ה-RC ב-HIVE. אישור הפעלת המנגנון המתוקן של he_powerup על הרנטיים החי. אישור המשך פיתוח ובדיקה של מסילת ההמרה החדשה דרך ה-DEX.
 
 ## נשאר לבעלים בלבד (או "כלום")
-שימוש במפתחות הראשיים של headcorner ו-tov לפעולות על שרשרת STEEM.
-החלטות על ניצול משאבי TRX והאצת VESTS על HIVE.
-הפעלת שירות `delegate_vesting_shares` כאשר יהיה HP זמין להאצה.
+הפעלת פעולות עם המפתחות הראשיים של headcorner ו-tov (אין התאמות בסביבה כוללת). החלטות על מימון TRX או שחזור מפתחות מהכספת (vault-restore). החלטות על ניצול ה-HP שנאסף לאחר פעולת ה-powerup.

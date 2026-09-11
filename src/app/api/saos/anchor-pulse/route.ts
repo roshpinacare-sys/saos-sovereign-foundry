@@ -38,14 +38,17 @@ import { coarseError } from "@/lib/saos/api-errors";
  *   2. an intent AnchorTx row (status transit, meta.intent=true, txid null)
  *      is written BEFORE the broadcast and BECOMES the anchor row on success
  *      — no duplicate rows per (seal, network) pulse.
- *   3. ambiguity discipline: 400/403/429 = definitive refusal (nothing was
+ *   3. ambiguity discipline: 400/403/409/429 = definitive refusal (nothing was
  *      signed, nothing broadcast) → row marked failed, retry replays the
  *      cached refusal honestly. 502/transport = ambiguous (a broadcast MAY be
  *      in flight) → row stays transit with the ambiguity gate; while the
  *      intent is younger than the signer's 1h ledger TTL the retry replays
  *      the SAME requestId (safe); older than that → 409 refuse unless the
  *      operator explicitly passes confirmFresh:true (a human decides on the
- *      only remaining double-broadcast corner).
+ *      only remaining double-broadcast corner). Task 82: confirmFresh ALSO
+ *      supersedes a definitively-refused intent onto a DIFFERENT fleet
+ *      account (old row marked failed/superseded, fresh requestId) — without
+ *      it one refused account deadlocks the (seal,network) forever.
  */
 
 const PULSE_KIND = "weave";
@@ -185,25 +188,42 @@ async function pulsePost(req: Request) {
       const meta = safeMeta(existing.meta);
       const rid = typeof meta.requestId === "string" ? meta.requestId : null;
       const metaAccount = typeof meta.account === "string" && meta.account ? meta.account : null;
+      // already anchored for this (seal, network) → return the recorded anchor, NEVER re-broadcast
+      if (existing.txid) return { intent: existing, requestId: rid ?? `pulse-${network.toLowerCase()}-${Date.now()}`, accountConflict: null };
+      // Task 82 (caught live on h17): the account-conflict 409 used to run BEFORE
+      // the confirmFresh branch — so when the FIRST attempted fleet account ended
+      // in a definitive refusal (e.g. ynet's authority mismatch, nothing was ever
+      // signed/broadcast), the (seal,network) intent was trapped on that account
+      // FOREVER: a live fleet deadlock. Fix: the human-confirmed supersede runs
+      // FIRST (only while the old intent has no txid = provably nothing in
+      // flight), marks the old intent failed/superseded, and mints a fresh
+      // requestId so the signer's idempotency ledger cannot replay the original
+      // account's verdict. The anti-hijack default (409 without confirmFresh)
+      // stays intact below.
+      if (body.confirmFresh === true && rid && !existing.txid) {
+        const freshId = `pulse-${network.toLowerCase()}-${Date.now()}`;
+        await db.anchorTx.update({
+          where: { id: existing.id },
+          data: {
+            status: "failed",
+            meta: JSON.stringify({ ...meta, superseded: true, supersededBy: freshId, supersededAt: new Date().toISOString(), supersededReason: "account-switch after definitive refusal — nothing was ever broadcast for this intent" })
+          }
+        });
+        const created = await db.anchorTx.create({
+          data: {
+            sealId: seal.id, network, kind: PULSE_KIND, txid: null,
+            status: "transit",
+            gate: "broadcast-intent (confirmFresh:true — Task 82 supersede after definitive refusal; old intent marked failed; fresh requestId)",
+            meta: JSON.stringify({ intent: true, requestId: freshId, authLevel, account: anchorAccount ?? metaAccount, confirmFresh: true, supersededRequestId: rid, sealHeight: seal.height, at: new Date().toISOString() })
+          }
+        });
+        return { intent: created, requestId: freshId, accountConflict: null };
+      }
       // Task 80: the anchor account is part of the intent's identity — a retry
       // with a DIFFERENT account must not hijack the same deterministic ledger
       // slot (the signer would replay the original account's verdict).
       if (anchorAccount && metaAccount && anchorAccount !== metaAccount) {
         return { intent: existing, requestId: rid ?? "", accountConflict: { metaAccount, bodyAccount: anchorAccount } };
-      }
-      if (existing.txid) return { intent: existing, requestId: rid ?? `pulse-${network.toLowerCase()}-${Date.now()}`, accountConflict: null };
-      if (body.confirmFresh === true && typeof meta.requestId === "string") {
-        // human override of the only ambiguous corner (intent older than the ledger TTL)
-        const freshId = `pulse-${network.toLowerCase()}-${Date.now()}`;
-        const created = await db.anchorTx.create({
-          data: {
-            sealId: seal.id, network, kind: PULSE_KIND, txid: null,
-            status: "transit",
-            gate: "broadcast-intent (confirmFresh:true — requestId חדש לאחר עמימות לא-פתורה; הסיכון לשידור-כפול של הניסיון הקודם הוסבר ואושר)",
-            meta: JSON.stringify({ intent: true, requestId: freshId, authLevel, account: anchorAccount ?? metaAccount, confirmFresh: true, supersededRequestId: meta.requestId, sealHeight: seal.height, at: new Date().toISOString() })
-          }
-        });
-        return { intent: created, requestId: freshId, accountConflict: null };
       }
       return { intent: existing, requestId: rid ?? `pulse-${network.toLowerCase()}-${seal.id}`, accountConflict: null };
     }
