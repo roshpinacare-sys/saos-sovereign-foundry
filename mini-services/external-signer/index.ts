@@ -78,7 +78,7 @@ const MAX_OP_HIVE = Number(process.env.SIGNER_MAX_OP_HIVE ?? 50);
 // (/health 2.5.2-task38 · /keys/steem-plane + /keys/status 2.4.5 ·
 // backup-export 2.4.1 · startup log 2.5.4-roast64) — Task-71's bump was
 // partial. Every surface now serves this single constant.
-const SIGNER_VERSION = "2.5.6";
+const SIGNER_VERSION = "2.5.7";
 const AUTH_CACHE_TTL_MS = 10 * 60_000;
 /** token resolution: env → ~/.secrets/external-signer-token (secrets never in trees) */
 function resolveToken() {
@@ -1556,25 +1556,60 @@ const server = Bun.serve({
           }
         } else if (net === "BLURT" && kind !== "custom_json") {
           return Response.json({ ok: false, error: "BLURT capability scope: custom_json only (weave anchors); asset ops stay STEEM/HIVE (Task 36)" }, { status: 400 });
-        } else if (net === "HIVE" && (kind === "transfer_to_vesting" || kind === "transfer")) {
+        } else if ((net === "HIVE" || net === "STEEM") && (kind === "transfer_to_vesting" || kind === "transfer")) {
+          // Task 76: STEEM joins asset ops — the legacy steem lib serializes
+          // STEEM/SBD/VESTS natively (the Task-35 HIVE-asset bug never applied
+          // to the STEEM symbols themselves), so the HIVE branches generalize.
           const amt = Number(amount);
           if (!Number.isFinite(amt) || amt < 0.001) return Response.json({ ok: false, error: "amount must be ≥ 0.001" }, { status: 400 });
           if (amt > MAX_OP_HIVE) return Response.json({ ok: false, error: `amount ${amt} > MAX_OP_HIVE ${MAX_OP_HIVE} (fail-closed bound)` }, { status: 400 });
           const toAcct = typeof to === "string" && to ? to : targetAccount;
           if (!/^[a-z0-9\-.]{3,16}$/.test(toAcct)) return Response.json({ ok: false, error: `bad to-account ${toAcct}` }, { status: 400 });
-          const asset = kind === "transfer_to_vesting" ? "HIVE" : "HIVE";
+          const asset = net === "HIVE" ? "HIVE" : "STEEM";
           operations = [[kind, { from: targetAccount, to: toAcct, amount: amt.toFixed(3) + " " + asset, ...(memo && kind === "transfer" ? { memo: String(memo).slice(0, 200) } : {}) }]];
-        } else if (net === "HIVE" && kind === "claim_rewards") {
+        } else if ((net === "HIVE" || net === "STEEM") && kind === "claim_rewards") {
           role = "posting";
           const accs = await rpcCallNet(net, "condenser_api.get_accounts", [[targetAccount]]);
           const a = accs?.[0];
           if (!a) throw new Error("account fetch failed");
-          const rh = a.reward_hive_balance, rhb = a.reward_hbd_balance, rv = a.reward_vesting_balance;
-          if ((parseFloat(rh) || 0) + (parseFloat(rhb) || 0) + (parseFloat(rv) || 0) === 0) {
-            return Response.json({ ok: false, error: "no pending rewards" }, { status: 400 });
+          if (net === "STEEM") {
+            const rs = a.reward_steem_balance, rsb = a.reward_sbd_balance, rv = a.reward_vesting_balance;
+            if ((parseFloat(rs) || 0) + (parseFloat(rsb) || 0) + (parseFloat(rv) || 0) === 0) {
+              return Response.json({ ok: false, error: "no pending rewards" }, { status: 400 });
+            }
+            // steem@0.7.10 serializer names the vests field reward_vests (legacy
+            // pre-HF20 schema); the wire format is positional so the chain reads
+            // it as reward_vesting — byte-identical, lib-naming-only difference.
+            operations = [["claim_reward_balance", { account: targetAccount, reward_steem: rs, reward_sbd: rsb, reward_vests: rv }]];
+          } else {
+            const rh = a.reward_hive_balance, rhb = a.reward_hbd_balance, rv = a.reward_vesting_balance;
+            if ((parseFloat(rh) || 0) + (parseFloat(rhb) || 0) + (parseFloat(rv) || 0) === 0) {
+              return Response.json({ ok: false, error: "no pending rewards" }, { status: 400 });
+            }
+            operations = [["claim_reward_balance", { account: targetAccount, reward_hive: rh, reward_hbd: rhb, reward_vesting: rv }]];
           }
-          operations = [["claim_reward_balance", { account: targetAccount, reward_hive: rh, reward_hbd: rhb, reward_vesting: rv }]];
-        } else if (net === "HIVE" && kind === "delegate_vesting_shares") {
+        } else if (net === "HIVE" && kind === "delegate_rc") {
+          // Task 76: RC delegation — the non-custodial, instantly-reversible HIVE
+          // unblock: pools the fleet's idle RC capacity onto the main account
+          // WITHOUT moving any funds and WITHOUT the 13-week HP lock. Fleet-cure
+          // policy mirrors delegate_vesting_shares: main-only, ≤80% owned vests.
+          role = "active";
+          const deleg = String(to ?? "").toLowerCase();
+          if (deleg !== String(STATE.main.account).toLowerCase()) {
+            return Response.json({ ok: false, error: `delegatee ${deleg} not allowed — delegate_rc pools only to the main account` }, { status: 400 });
+          }
+          const vests = Number(amount);
+          if (!Number.isFinite(vests) || vests < 0.5) return Response.json({ ok: false, error: "amount (VESTS) must be ≥ 0.5" }, { status: 400 });
+          const accsR = await rpcCallNet(net, "condenser_api.get_accounts", [[targetAccount]]);
+          const aR = accsR?.[0];
+          if (!aR) throw new Error("delegator fetch failed");
+          const totalR = parseFloat(aR.vesting_shares);
+          const allowedR = Math.floor(totalR * 0.8 * 1e6) / 1e6;
+          if (vests > allowedR + 1e-9) {
+            return Response.json({ ok: false, error: `amount ${vests} VESTS > 80% of owned vests (${allowedR.toFixed(6)} of ${totalR.toFixed(6)}) — fail-closed bound` }, { status: 400 });
+          }
+          operations = [["delegate_rc", { from: targetAccount, delegatee: deleg, vesting_shares: vests.toFixed(6) + " VESTS" }]];
+        } else if ((net === "HIVE" || net === "STEEM") && kind === "delegate_vesting_shares") {
           role = "active";
           // Task 26-c fleet cure — hard bounds (fail-closed):
           const deleg = String(to ?? "").toLowerCase();
@@ -1619,8 +1654,8 @@ const server = Bun.serve({
           // the branches above only ever implement them for HIVE — the message
           // lied about what would work. Scopes below match the ACTUAL branches.
           const scopes: Record<string, string> = {
-            STEEM: "custom_json only (posting or active) — asset ops are not implemented for STEEM in this signer",
-            HIVE: "custom_json, transfer_to_vesting, transfer, claim_rewards, he_market_sell, he_withdraw, delegate_vesting_shares",
+            STEEM: "custom_json, transfer_to_vesting, transfer, claim_rewards, delegate_vesting_shares (Task 76 — steem-lib native assets)",
+            HIVE: "custom_json, transfer_to_vesting, transfer, claim_rewards, he_market_sell, he_withdraw, delegate_vesting_shares, delegate_rc",
             BLURT: "custom_json only (weave anchors)"
           };
           return Response.json({ ok: false, error: `unsupported kind ${kind ?? "?"} for ${net} (scope: ${scopes[net] ?? "custom_json"})` }, { status: 400 });
@@ -1630,7 +1665,8 @@ const server = Bun.serve({
         // against the LIVE chain above (verifyAuthority per candidate); nothing
         // broadcasts without that match.
         // RC FEASIBILITY GATE — no doomed broadcasts (posting weave is RC-free-light, skip it)
-        if (net === "HIVE" && !(kind === "custom_json" && authLevel !== "active")) {
+        // Task 76: STEEM runs an RC pool too — the gate generalizes to both chains.
+        if ((net === "HIVE" || net === "STEEM") && !(kind === "custom_json" && authLevel !== "active")) {
           const rcv = await verifyRcFeasibility(net, targetAccount);
           if (!rcv.ok) {
             log("REFUSED", `requestId=${requestId} kind=${kind} network=${net} account=${targetAccount}: ${rcv.error}`);
@@ -1665,4 +1701,4 @@ const server = Bun.serve({
   }
 });
 
-log("INFO", `external-signer v${SIGNER_VERSION} listening on :${PORT} (auth=${TOKEN ? "token" : "MISSING-FAIL-CLOSED"}, networks=STEEM+HIVE+BLURT, blurtChainId=cd8d90f2…, blurtSigning=blurtjs(op-enum-12), authorityGate=on(prefix-aware), keys-ingest=verify-then-write full-vault-candidate-tree, maxOpHive=${MAX_OP_HIVE}, txid=sha256-full-64hex chain-verifiable, failureClass=structural)`);
+log("INFO", `external-signer v${SIGNER_VERSION} listening on :${PORT} (auth=${TOKEN ? "token" : "MISSING-FAIL-CLOSED"}, networks=STEEM+HIVE+BLURT, steemAssetOps=claim+delegate+transfer(task76), hiveDelegateRc=on(task76), blurtChainId=cd8d90f2…, blurtSigning=blurtjs(op-enum-12), authorityGate=on(prefix-aware), keys-ingest=verify-then-write full-vault-candidate-tree, maxOpHive=${MAX_OP_HIVE}, txid=sha256-full-64hex chain-verifiable, failureClass=structural)`);

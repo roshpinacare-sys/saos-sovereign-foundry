@@ -13,7 +13,111 @@ import {
   cn
 } from "@/components/ui/kit";
 import { EP, errText, saosFetch, useSaos } from "./api";
-import type { TreasuryBalanceRow, TreasuryGrapheneRow, TreasuryResponse } from "./types";
+import type { TreasuryBalanceRow, TreasuryGrapheneRow, TreasuryOpsResponse, TreasuryOpsRow, TreasuryResponse } from "./types";
+
+/**
+ * מימוש בפועל (Task 76) — התשובה העומדת לשאלת הבעלים: מה יש לנו ומה אפשר לעשות
+ * איתו עכשיו באמת. מדידה-חיה keyless + מפת-ביצוע (מה מוכן בחותם / מה שער-בעלים).
+ */
+export function TreasuryOpsPanel() {
+  const q = useSaos<TreasuryOpsResponse>("treasury-ops", () => saosFetch<TreasuryOpsResponse>(EP.treasuryOps));
+  if (q.state === "loading") return <LoadingPanel rows={4} label="מימוש בפועל — מודד שרשראות" />;
+  if (q.state === "error") {
+    return (
+      <Panel title="מימוש בפועל" icon={<Sparkles className="size-4 text-amber-300" />} source={EP.treasuryOps} lastChecked={null}>
+        <ErrorState kind={q.err.kind} detail={errText(q.err)} onRetry={q.refresh} retrying={q.refreshing} />
+      </Panel>
+    );
+  }
+  const d = q.data;
+  if (!d) return null;
+  const nets = ["STEEM", "HIVE", "BLURT"] as const;
+  const visible = (rows: TreasuryOpsRow[]) =>
+    rows.filter((r) => r.exists && (r.account === "headcorner" || r.liquid >= 0.001 || r.rewardsMain + r.rewardsDebt + r.rewardsVests > 0 || r.hp >= 0.5 || r.ownerGated.length > 0));
+  return (
+    <Panel
+      title="מימוש בפועל — מה יש ומה אפשר לעשות איתו עכשיו"
+      icon={<Sparkles className="size-4 text-amber-300" />}
+      source={EP.treasuryOps}
+      lastChecked={d.at}
+      onRefresh={q.refresh}
+      refreshing={q.refreshing}
+    >
+      <div className="space-y-3">
+        {nets.map((net) => {
+          const rows = visible(d.graphene.rows.filter((r) => r.network === net));
+          if (!rows.length) return null;
+          const liquid = rows.reduce((s, r) => s + r.liquid, 0);
+          const debt = rows.reduce((s, r) => s + r.debt, 0);
+          const hp = rows.reduce((s, r) => s + r.hp, 0);
+          const rew = rows.reduce((s, r) => s + r.rewardsMain + r.rewardsDebt + r.rewardsVests, 0);
+          return (
+            <div key={net} className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-3">
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <Badge tone="gold">{net}</Badge>
+                <span className="text-zinc-400">נזיל צי <Mono className="text-amber-200">{liquid.toFixed(3)}</Mono></span>
+                {hp > 0.01 && <span>· HP <Mono>{hp.toFixed(2)}</Mono></span>}
+                {debt > 0.0005 && <span>· {net === "HIVE" ? "HBD" : "SBD"} <Mono>{debt.toFixed(3)}</Mono></span>}
+                {rew > 0.0001 && <span className="text-emerald-300">· ממתין-לאיסוף <Mono>{rew.toFixed(3)}</Mono></span>}
+              </div>
+              <div className="mt-2 max-h-64 space-y-1.5 overflow-y-auto pr-1">
+                {rows.map((r) => (
+                  <div key={`${r.network}-${r.account}`} className="rounded-md border border-zinc-800/70 bg-zinc-950/60 p-2 text-xs">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-zinc-200">{r.account}</span>
+                      <span className="text-zinc-400">נזיל <Mono className="text-amber-200">{r.liquid.toFixed(3)}</Mono></span>
+                      {r.hp >= 0.01 && <span>· HP <Mono>{r.hp.toFixed(2)}</Mono></span>}
+                      {r.rcPercent !== null && (
+                        <span className={r.rcPercent < d.rcFloorPercent ? "text-rose-300" : "text-zinc-500"}>
+                          · RC <Mono>{r.rcPercent.toFixed(2)}%</Mono>
+                          {r.rcEtaMinToFloor !== null && <span className="text-zinc-500"> (~{r.rcEtaMinToFloor >= 60 ? `${Math.floor(r.rcEtaMinToFloor / 60)}ש׳ ${r.rcEtaMinToFloor % 60}ד׳` : `${r.rcEtaMinToFloor}ד׳`} לסף {d.rcFloorPercent}%)</span>}
+                        </span>
+                      )}
+                      {r.keysHeld && <Badge tone="ok">מפתחות-חיים</Badge>}
+                    </div>
+                    {(r.executableNow.length > 0 || r.ownerGated.length > 0) && (
+                      <div className="mt-1 space-y-0.5 text-[11px] leading-relaxed">
+                        {r.executableNow.map((x, i) => <div key={i} className="text-emerald-300">▸ מוכן לביצוע: {x}</div>)}
+                        {r.ownerGated.map((x, i) => <div key={i} className="text-zinc-400">▸ שער-בעלים: {x}</div>)}
+                      </div>
+                    )}
+                    {r.notes.length > 0 && (
+                      <div className="mt-1 space-y-0.5 text-[11px] text-zinc-500">
+                        {r.notes.map((n, i) => <div key={i}>· {n}</div>)}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-3 text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone="gold">TRX — מסלול-המימוש</Badge>
+            <span className="text-zinc-400">משפחה נזיל <Mono className="text-amber-200">{d.tronPlan.familyLiquid.toFixed(6)}</Mono></span>
+            <span>· כספת-ראשית <Mono>{d.tronPlan.vaultMain.toFixed(2)}</Mono></span>
+            <span>· ארנק-2020 (ממתין-אימות-בעלים) <Mono>{d.tronPlan.ownerWalletPending.toFixed(6)}</Mono></span>
+            <span>· סף-אסדר-USDT <Mono>{d.tronPlan.needForUsdtTransfer}</Mono></span>
+          </div>
+          <p className="mt-1.5 text-[11px] leading-relaxed text-zinc-500">{d.tronPlan.note}</p>
+        </div>
+
+        {d.executed.length > 0 && (
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-3">
+            <div className="text-xs font-semibold text-zinc-300">בוצע בפועל (יומן-עסקאות ציבורי)</div>
+            <div className="mt-1.5 max-h-40 space-y-1 overflow-y-auto pr-1 text-[11px] leading-relaxed">
+              {d.executed.map((e, i) => (
+                <div key={i} className="text-zinc-500"><Mono className="text-zinc-600">{e.at.slice(0, 16).replace("T", " ")}</Mono> {e.detail}</div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </Panel>
+  );
+}
 
 /**
  * קופה חיה (Task 41) — כל הכספים שלנו, אמיתיים, מהרשתות עצמן.
@@ -33,6 +137,8 @@ export function TreasuryTab() {
           יתרות אמיתיות מ-TRON / Ethereum / Solana / BLURT / STEEM / HIVE · קריאה-בלבד · אף מפתח לא מעורב · מטמון 60 שניות
         </p>
       </div>
+
+      <TreasuryOpsPanel />
 
       {q.state === "loading" && <LoadingPanel rows={6} label="קופה חיה" />}
       {q.state === "error" && <ErrorState kind={q.err.kind} detail={errText(q.err)} onRetry={q.refresh} retrying={q.refreshing} />}

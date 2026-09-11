@@ -770,3 +770,40 @@ export interface TreasuryResponse {
     graphene: { rows: TreasuryGrapheneRow[] };
   };
 }
+
+export interface TreasuryOpsRow {
+  account: string;
+  network: "STEEM" | "HIVE" | "BLURT";
+  exists: boolean;
+  liquid: number;
+  debt: number;
+  hp: number;
+  vests: number;
+  rewardsMain: number;
+  rewardsDebt: number;
+  rewardsVests: number;
+  rcPercent: number | null;
+  rcEtaMinToFloor: number | null;
+  keysHeld: boolean | null;
+  executableNow: string[];
+  ownerGated: string[];
+  notes: string[];
+}
+
+/** Task 76 — the "מימוש בפועל" map (owner trace 1a08df6c8f0f1d25) */
+export interface TreasuryOpsResponse {
+  ok: boolean;
+  at: string;
+  rcFloorPercent: number;
+  graphene: { rows: TreasuryOpsRow[]; sources: string[] };
+  signerScopes: Record<string, string>;
+  tronPlan: {
+    needForUsdtTransfer: number;
+    familyLiquid: number;
+    vaultMain: number;
+    ownerWalletPending: number;
+    note: string;
+  };
+  errors: string[];
+  executed: Array<{ at: string; detail: string }>;
+}

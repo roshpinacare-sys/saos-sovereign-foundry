@@ -264,7 +264,8 @@ export const EP = {
   agentBridge: "/api/saos/agent-bridge",
   research: "/api/saos/research",
   breakthroughDemo: "/api/saos/breakthrough-demo",
-  treasury: "/api/saos/treasury"
+  treasury: "/api/saos/treasury",
+  treasuryOps: "/api/saos/treasury-ops"
 } as const;
 
 export function lastCheckedText(iso: string | null): string {

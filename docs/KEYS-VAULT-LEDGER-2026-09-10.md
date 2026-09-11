@@ -280,3 +280,18 @@
 6. **לא-בוצע בכוונה (כנות)**: power-up-HIVE (נעילת-13שבועות — החלטת-בעלים); הורדת-הסף (תחרות-RC מול משדר-ה-chain-seal); עיגון-TRON ישיר (אין-TRX — נמדד-חי).
 
 > עדות-מלאה: `docs/evidence/BLOCKAGE-AUDIT-2026-09-11.md`
+
+---
+
+## §19 — Task 76: מימוש בפועל — העסקאות נפתחו והראשונה בשרשרת (2026-09-11 01:00–01:30Z)
+
+**טריגר בעלים:** "יש לנו קצת סטים או Hive או trx תבדוק איך ניתן ליישם את זה בפועל" (trace 1a08df6c8f0f1d25).
+
+1. **התשובה-החיה על מסך אחד** (`GET /api/saos/treasury-ops` + מקטע "מימוש בפועל" בראש-הקופה): STEEM ~3.98 נזיל+5,357HP (headcorner 3.381+5,351) · HIVE 34.63HP+0.073 נזיל, אפס-ממתין-לאיסוף · **BLURT ~44.2 נזיל — גילוי: כל-12-החשבונות קיימים ונזילים (לא 4)** · TRX משפחה 3.639+כספת 0.5+17.099 בארנק-2020 (ממתין-אימות-בעלים) · RC-חי לכל-חשבון עם ETA-לסף-8%.
+2. **העסקה-החיה-הראשונה מסוגה**: STEEM claim_rewards headcorner — **txid `acb32065…461df43` בלוק 109,472,664 — 890.546016 VESTS → STEEM POWER**, אומת-חי (HP 5,351.03→5,351.59). שורש-הפער: החותם היה custom_json-only ל-STEEM מסיבת-שיום-שגויה — steem@0.7.10 מסדר STEEM/SBD/VESTS ילידית; תיקון-יחיד: שדה-`reward_vests` של-סכמת-לפני-HF20 (זהות-בתים ב-wire).
+3. **חותם v2.5.7 — יכולות-עסקאות**: STEEM +transfer/transfer_to_vesting/claim_rewards/delegate_vesting_shares · HIVE +delegate_rc (main-only, ≤80%-owned, fail-closed) · שער-RC הוכלל-ל-STEEM. MAX_OP_HIVE=50 + גבולות-Task-26-c עומדים.
+4. **פורנזי**: מקור-רוקן-ה-RC-של-הצי אותר — משדר-ה-chain-seal מסתובב-על-כל-החיילים (cashmachine עד 22:50:15Z); + משדר-שני `saos.vault.anchor.v1/vault-seal` (r19/r20) על STEEM. STEEM-RC בריא 33–91% — אין-שער.
+5. **לא-בוצע בכוונה**: delegate_rc צי→headcorner (היכולת-עומדת; דורש `confirmFleetRcImpact:true` — מנוון-RC-מפקידים שהמשדר-ההיסטורי נשען-עליו = הכרעת-chain-seal התלויה-שלך מ-§18; בלעדיה HIVE מתאושש-טבעית ~9.6ש') · כל-העברה-פיננסית (שער-בעלים לפי-עיצוב) · TRX-איחוד (דורש צירוף-תמונה + אימות TMXHfFQd; אם-כן: 21.24 מתוך 27.25 לאסדר-USDT).
+6. שערים: tsc-נקי · lint-נקי · דפדפן-חי (1280px+390px, אפס-console-errors, אפס-h-scroll) · POST-מאובטח (אדמין+OpLog+Audit).
+
+> עדות-מלאה: `docs/evidence/TREASURY-OPS-2026-09-11.md`

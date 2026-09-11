@@ -19,6 +19,7 @@
 | מפקח-שירותים | **4/4 חיים** — vault-guardian:3031 · chief-of-staff:3032 · external-signer:3033 · fleet-cure:3034 | `supervisorStatus()` — מוצג חי במסך |
 | עגינות-שרשרת | **שתי-עגנים-חיים-מאומתים**: BLURT `16b0f861…` (בלוק 63534122) + STEEM `c0b2b74e…` (בלוק 109,471,749) — seal h=15 · **מנוע-פעימה-אוטומטי :3032** (שערי-כנות, שער-כלכלי 360דק') · HIVE בחלון-RC | `GET /api/saos/anchor-pulse` (Bearer) · `:3032/status → anchorPulse` |
 | משאבי-חוץ (חי) | **TRON נמדד-חי**: אנרגיה=0 ב-12/12 כתובות · ראשי 0.5 TRX (דשא-רכבת) · HIVE RC חי + מתמטיקה נמדדת (max 41.2B · op≈0.546% · סף-8%≈14 ops) — נמדד 00:44Z 11.09 | `GET /api/saos/status → tronMeasure/tronSource/rcSource` |
+| מימוש-בפועל (חי) | **מפת-ביצוע חיה**: STEEM claim בשרשרת (`acb32065…` בלוק 109,472,664 · 890.55 VESTS→HP) · חותם v2.5.7: STEEM+HIVE עסקאות-נכסים (transfer/claim/delegate+delegate_rc) · BLURT 44.2 נזיל על 12 חשבונות · פיננסי=שער-בעלים · delegate_rc דורש confirmFleetRcImpact | `GET/POST /api/saos/treasury-ops` (Bearer לPOST) |
 | מסד-נתונים | ok — 15 חותמות · 303 קבלות · השרשרת 0-forks | `GET /api/saos/live-proof` |
 
 ## 2. מפת-הסודות (נתיבים בלבד — מה מחזיק מה)

@@ -97,6 +97,12 @@ export async function externalSignerExecute(input: {
   account?: string;
   /** custom_json authority level — posting (weave default) or active */
   authLevel?: "posting" | "active";
+  /** Task 76: asset-op fields passed through verbatim to the signer's /sign
+   * (claim_rewards / delegate_rc / transfer / delegate_vesting_shares). The
+   * signer fail-closes anything outside its allowlist, so this passthrough is
+   * exactly as narrow as the signer's own capability gate. */
+  to?: string;
+  amount?: number;
 }): Promise<{
   ok: boolean;
   txid?: string;
