@@ -380,10 +380,12 @@ export function networkStatuses(
     resourceLiveChecked: tronMeasured
   };
 
-  // Task 12: Ethereum & Solana join the matrix — dry-run only, keyless,
+  // Task 12: Ethereum & Solana join the matrix — keyless,
   // `not-configured` is a state (never an error); zero live calls by default.
-  const ethereum = ethereumStatus(nowIso);
-  const solana = solanaStatus(nowIso);
+  // Task 78: verified external anchors (owner-authorized, server-reverified)
+  // surface verbatim on the cards — anchored becomes a real, shown state.
+  const ethereum = ethereumStatus(nowIso, liveAnchors?.ETHEREUM ?? null);
+  const solana = solanaStatus(nowIso, liveAnchors?.SOLANA ?? null);
 
   return [steem, blurt, hive, tron, ethereum, solana];
 }

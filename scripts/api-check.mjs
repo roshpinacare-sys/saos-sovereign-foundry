@@ -533,8 +533,11 @@ async function main() {
   report("status: ETHEREUM present", !!eth);
   report("status: SOLANA present", !!sol);
   if (eth && sol) {
-    report("eth+sol: dry-run by default", eth.isDryRunOnly === true && sol.isDryRunOnly === true);
-    report("eth+sol: not ready for anchor", eth.isReadyForAnchor === false && sol.isReadyForAnchor === false);
+    // task 78: dry-run iff no verified external anchor exists yet — once an
+    // anchor is recorded (owner-authorized external broadcast), the honest
+    // state flips to ready (isReadyForAnchor), never fabricated either way.
+    report("eth+sol: dry-run iff no verified anchor (default dry-run)", eth.isDryRunOnly === !eth.lastVerifiedAnchor && sol.isDryRunOnly === !sol.lastVerifiedAnchor);
+    report("eth+sol: anchor-state coherence", eth.isReadyForAnchor === !!eth.lastVerifiedAnchor && sol.isReadyForAnchor === !!sol.lastVerifiedAnchor);
     report("eth+sol: no error without RPC (state honest)", ["not-configured", "public"].includes(eth.rpcStatus) && ["not-configured", "public"].includes(sol.rpcStatus) && eth.rpcStatus === (process.env.ETH_RPC_URL ? "public" : "not-configured") && sol.rpcStatus === (process.env.SOL_RPC_URL ? "public" : "not-configured"), "no throw, no invented data");
     report("eth+sol: chainType correct", eth.chainType === "evm" && sol.chainType === "solana-runtime");
     // roast 60: env-aware — CI runs without ETH/SOL config (chainId null);

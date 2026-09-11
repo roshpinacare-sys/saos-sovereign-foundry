@@ -106,12 +106,13 @@ export function ethereumChainIdFromEnv(): string | null {
  * Ethereum status view — computed, honest, dry-run only.
  * `not-configured` is a state, not an error; values are never invented.
  */
-export function ethereumStatus(nowIso: string): EthereumStatusView {
+export function ethereumStatus(nowIso: string, verifiedAnchor?: string | null): EthereumStatusView {
   const rpcStatus = ethereumRpcStatus();
   const configured = rpcStatus !== "not-configured";
   const chainId = ethereumChainIdFromEnv();
   const vaultBlocker = "vault: אין מפתחות חתימה בסנדבוקס (חתימה חיצונית בלבד — docs/external-signer.md)";
   const notConfigured = "not-configured: אין ETH_RPC_URL מוגדר — הרשת מוכרת אך לא ניתנת לבדיקת-קריאה";
+  const anchored = Boolean(verifiedAnchor); // task 78: external anchoring PROVEN live (owner-authorized)
 
   return {
     network: "ETHEREUM",
@@ -123,26 +124,35 @@ export function ethereumStatus(nowIso: string): EthereumStatusView {
     rpcStatus,
     liveProbePossible: configured,
     lastChecked: nowIso,
-    lastVerifiedAnchor: null,
-    nextAction: configured
-      ? "אימות-קריאה אפשרי מול ה-RPC הציבורי (probe אופציונלי); אין שידור — dry-run בלבד עד חותם חיצוני ואישור בעלים"
-      : "אין פעולה חיה — הרשת במצב not-configured; הגדרת RPC ציבורי (ללא מפתח) מאפשרת קריאה-בלבד",
-    blocker: configured ? vaultBlocker : notConfigured,
-    requiredResource: "gas (ETH) לכל עסקת עיגון — מימון חיצוני על-ידי הבעלים בלבד",
+    lastVerifiedAnchor: verifiedAnchor ?? null,
+    nextAction: anchored
+      ? "עוגן-חי רשום ומאומת (מפתחות-ריבוניים, הרשאת-בעלים) — עיגון-חוץ נוסף אפשרי בכל רגע; שידור-פלטפורמה פנימי עדיין נעול (חוק-זהב)"
+      : configured
+        ? "אימות-קריאה אפשרי מול ה-RPC הציבורי (probe אופציונלי); עיגון-חוץ מהמפתחות-הריבוניים מוכח — נדרשת הרשאת בעלים לכל שידור"
+        : "אין פעולה חיה — הרשת במצב not-configured; הגדרת RPC ציבורי (ללא מפתח) מאפשרת קריאה-בלבד",
+    blocker: anchored ? null : configured ? vaultBlocker : notConfigured,
+    requiredResource: anchored ? null : "gas (ETH) לכל עסקת עיגון — מימון חיצוני על-ידי הבעלים בלבד",
     unblockPlan: [
       "1. הגדרת ETH_RPC_URL ציבורי ללא מפתח (קריאה-בלבד) — לעולם לא RPC עם מפתח בקוד/בריפו",
       "2. קריאת-אימות בלבד (eth_chainId / eth_blockNumber — probe אופציונלי)",
       "3. חתימה חיצונית של עסקת עיגון (calldata = stateRoot) מחוץ למערכת",
       "4. רישום התוצאה הציבורית בלבד (tx hash) — PATCH /api/saos/signer"
     ],
-    isReadyForAnchor: false,
-    isDryRunOnly: true,
-    ownerOptions: [
-      "השארת אתריום במצב not-configured / dry-run (ברירת-מחדל הבטוחה)",
-      "הגדרת RPC ציבורי ללא מפתח לאימות-קריאה בלבד",
-      "מימון gas (ETH) + חתימה חיצונית — נדרש אישור בעלים מפורש ולא מבוצע אוטומטית"
-    ],
-    ownerAction: "להחליט אם להגדיר RPC ציבורי (ללא מפתח) ולממן gas — פעולה כלכלית מחוץ למערכת; המערכת אינה משדרת ואינה חותמת",
+    isReadyForAnchor: anchored,
+    isDryRunOnly: !anchored,
+    ownerOptions: anchored
+      ? [
+          "עיגוני-המשך חיצוניים מכתובות-הסוכנים (הרשאת-בעלים קיימת — task 78)",
+          "מימון gas נוסף להרחבת-הקצב"
+        ]
+      : [
+          "השארת אתריום במצב not-configured / dry-run (ברירת-מחדל הבטוחה)",
+          "הגדרת RPC ציבורי ללא מפתח לאימות-קריאה בלבד",
+          "מימון gas (ETH) + חתימה חיצונית — נדרש אישור בעלים מפורש ולא מבוצע אוטומטית"
+        ],
+    ownerAction: anchored
+      ? "אין פעולה נדרשת — העוגן החי רשום; עיגוני-המשך בהרשאה הקיימת"
+      : "להחליט אם להגדיר RPC ציבורי (ללא מפתח) ולממן gas — פעולה כלכלית מחוץ למערכת; המערכת אינה משדרת ואינה חותמת",
     estimatedTime: null,
     estimatedCost: null, // gas price is market data — never invented
     resourceLiveChecked: false

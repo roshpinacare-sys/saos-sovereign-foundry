@@ -86,12 +86,13 @@ export function solanaClusterFromEnv(): SolCluster | null {
  * Solana status view — computed, honest, dry-run only.
  * `not-configured` is a state, not an error; values are never invented.
  */
-export function solanaStatus(nowIso: string): SolanaStatusView {
+export function solanaStatus(nowIso: string, verifiedAnchor?: string | null): SolanaStatusView {
   const rpcStatus = solanaRpcStatus();
   const configured = rpcStatus !== "not-configured";
   const cluster = solanaClusterFromEnv();
   const vaultBlocker = "vault: אין מפתחות חתימה בסנדבוקס (חתימה חיצונית בלבד — docs/external-signer.md)";
   const notConfigured = "not-configured: אין SOL_RPC_URL מוגדר — הרשת מוכרת אך לא ניתנת לבדיקת-קריאה";
+  const anchored = Boolean(verifiedAnchor); // task 78: external anchoring PROVEN live (owner-authorized)
 
   return {
     network: "SOLANA",
@@ -103,26 +104,35 @@ export function solanaStatus(nowIso: string): SolanaStatusView {
     rpcStatus,
     liveProbePossible: configured,
     lastChecked: nowIso,
-    lastVerifiedAnchor: null,
-    nextAction: configured
-      ? "אימות-קריאה אפשרי מול ה-RPC הציבורי (probe אופציונלי); אין שידור — dry-run בלבד עד חותם חיצוני ואישור בעלים"
-      : "אין פעולה חיה — הרשת במצב not-configured; הגדרת RPC ציבורי (ללא מפתח) מאפשרת קריאה-בלבד",
-    blocker: configured ? vaultBlocker : notConfigured,
-    requiredResource: "SOL לעמלות עסקה + rent לחשבונות + compute units — מימון חיצוני על-ידי הבעלים בלבד",
+    lastVerifiedAnchor: verifiedAnchor ?? null,
+    nextAction: anchored
+      ? "עוגן-חי רשום ומאומת (מפתחות-ריבוניים, הרשאת-בעלים) — עיגון-חוץ נוסף אפשרי בכל רגע; שידור-פלטפורמה פנימי עדיין נעול (חוק-זהב)"
+      : configured
+        ? "אימות-קריאה אפשרי מול ה-RPC הציבורי (probe אופציונלי); עיגון-חוץ מהמפתחות-הריבוניים מוכח — נדרשת הרשאת בעלים לכל שידור"
+        : "אין פעולה חיה — הרשת במצב not-configured; הגדרת RPC ציבורי (ללא מפתח) מאפשרת קריאה-בלבד",
+    blocker: anchored ? null : configured ? vaultBlocker : notConfigured,
+    requiredResource: anchored ? null : "SOL לעמלות עסקה + rent לחשבונות + compute units — מימון חיצוני על-ידי הבעלים בלבד",
     unblockPlan: [
       "1. הגדרת SOL_RPC_URL ציבורי ללא מפתח (קריאה-בלבד) — לעולם לא RPC עם מפתח בקוד/בריפו",
       "2. קריאת-אימות בלבד (getSlot — probe אופציונלי)",
       "3. חתימה חיצונית של עסקת עיגון (memo program / blockhash commitment) מחוץ למערכת",
       "4. רישום התוצאה הציבורית בלבד (signature) — PATCH /api/saos/signer"
     ],
-    isReadyForAnchor: false,
-    isDryRunOnly: true,
-    ownerOptions: [
-      "השארת סולנה במצב not-configured / dry-run (ברירת-מחדל הבטוחה)",
-      "הגדרת RPC ציבורי ללא מפתח לאימות-קריאה בלבד",
-      "מימון SOL (עמלות/rent) + חתימה חיצונית — נדרש אישור בעלים מפורש ולא מבוצע אוטומטית"
-    ],
-    ownerAction: "להחליט אם להגדיר RPC ציבורי (ללא מפתח) ולממן SOL — פעולה כלכלית מחוץ למערכת; המערכת אינה משדרת ואינה חותמת",
+    isReadyForAnchor: anchored,
+    isDryRunOnly: !anchored,
+    ownerOptions: anchored
+      ? [
+          "עיגוני-המשך חיצוניים מכתובות-הסוכנים (הרשאת-בעלים קיימת — task 78)",
+          "מימון SOL נוסף להרחבת-הקצב"
+        ]
+      : [
+          "השארת סולנה במצב not-configured / dry-run (ברירת-מחדל הבטוחה)",
+          "הגדרת RPC ציבורי ללא מפתח לאימות-קריאה בלבד",
+          "מימון SOL (עמלות/rent) + חתימה חיצונית — נדרש אישור בעלים מפורש ולא מבוצע אוטומטית"
+        ],
+    ownerAction: anchored
+      ? "אין פעולה נדרשת — העוגן החי רשום; עיגוני-המשך בהרשאה הקיימת"
+      : "להחליט אם להגדיר RPC ציבורי (ללא מפתח) ולממן SOL — פעולה כלכלית מחוץ למערכת; המערכת אינה משדרת ואינה חותמת",
     estimatedTime: null,
     estimatedCost: null, // fee/rent market data — never invented
     resourceLiveChecked: false

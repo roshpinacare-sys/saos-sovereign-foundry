@@ -99,3 +99,37 @@
 ---
 
 *נמדד-חי 2026-09-11 · קריאה-בלבד · blockscout API v2 + rpc.flashbots.net + api.mainnet-beta.solana.com · אפס-מגע-בטוקנים · אפס-סודות-במסמך.*
+
+---
+
+# פרק-ביצוע (Task 78) — עיגון-חי ראשון על SOLANA + ETHEREUM מהמפתחות-הריבוניים
+
+> הרשאת-בעלים מפורשת (trace 1a08e34c83694f99): "אתה רשאי להשתמש בסול לעיגון… גם איתריום סול מה שצריך להתקדם… אבל שנדע מה אנחנו עושים".
+> החיפוש אחר SOL-אישי: כל נתיבי-הארנקים הסטנדרטיים (Phantom m/44'/501'/0'/0', Sollet /0'/0/i, MetaMask m/44'/60'/0'/0/i) משני ה-mnemonic-ים השמורים (tron-mnemonic + security-wallet-legacy) — **12 כתובות-SOL + 10 כתובות-ETH: הכל ריק על mainnet** (יתרה 0 + אפס-היסטוריה). ה-SOL הזמין = דאסט הסוכנים (10×0.006 + 0.000815) — והוא מספיק (עמלת-memo 0.000005/tx ≈ 1200 עוגנים לכתובת).
+
+## מה בוצע (נמדד-חי 2026-09-11, חותם h15 root `f5ce4952…`)
+
+| רשת | מחותם | txid | סטטוס |
+|---|---|---|---|
+| SOLANA | ynet | `4PfUv42vNJTF8NswPdA3KNFuyPerFUA2waFqQwzVtxs6jD2hgaarEXtXX7KDqyDkxFmyW5drUKD9Sd2zxYyTMyPi` | **recorded+anchored** (slot 446041776, finalized; memo=`saos.weave.v1` h15) |
+| SOLANA | haran | `2ucCSpx26K6doC8MP8u2FXm2tg3bvp2e1KC3ktyaHwZs5yyFgyShcs5RfmEHjRwp3Hk9ctpPTchffWWhb1isNAHP` | recorded (slot 446041819) |
+| ETHEREUM | ynet | `0x806de2934b2985d7dad77e9ad94f76e042dcc6b4930db43aef64078359e15df7` | **recorded+anchored** (block 25951133; calldata=root+height) |
+| ETHEREUM | haran | `0xac428bf0c4b566c81c1a7f19c69f3055eb75e3106a20cb970cae287701e4cd6c` | recorded (block 25951134) |
+
+עוגנים-נוספים על-השרשרת (טרם-התיקון, רישום-פלטפורמה נחסם עקב הבאג — קיימים כראייה ציבורית):
+- SOL ynet `2AKXEHoMRBbv…ocUKNRvVozNouusZj1gXb3f7g5` (slot 446040933 — **עוגן-ה-SOL החי הראשון של העידן**) · SOL ynet `67ceJYYwXz37…Aa1fbG8` · SOL haran `3oJmuGEAX4qE…1hgmmhowK`
+- שריפת-עמלות מצטברת: ≈0.000015 SOL + ≈0.000009 ETH — אבק, מתוך הדאסט שהוקצה לזה.
+
+## תוצאות-פלטפורמה
+
+- **חותם h15: 4/6 רשתות נעוגנות** — STEEM ✓ BLURT ✓ **ETHEREUM ✓ SOLANA ✓** (HIVE=RC-floor, TRON=energy-0).
+- כרטיסי-הרשת ETH/SOL: `lastVerifiedAnchor` חי, `isReadyForAnchor=true`, `isDryRunOnly=false`, blocker=null — האמת החדשה מוצגת.
+- נתיב-חדש `POST /api/saos/anchor-ingest` (auth, rate-limit, audit): קליטת עוגן-חוץ — השרת מאמת מחדש את ה-txid מול RPC-ציבורי (verifyTxidPublic) לפני שום-כתיבה; מילוי-CAS של שורת-הכוונה מבלי לדרוס txid קיים; סירוב-כנה ללא-אימות.
+
+## באג-P0 שנתפס-חי ותוקן
+
+**הרעלת-אידמפוטנטיות ב-POST /api/saos/signer**: שאילת-ההמשך (`sealId+network+txid:null+signerStatus:"awaiting-approval"`) לא סיננה סטטוסים-סופיים — שורת-drill שבוטלה-ידנית (מהדרילים של 10/09) החזירה עצמה לנצח מכל POST חדש לאותו (seal,network), וכל PATCH נדחה "מצב-סופי". נמדד-חי: שני POSTs עוקבים החזירו את אותו `sig-4b99…` המבוטל. **תיקון**: סינון `status in [pending, awaiting-approval]` — נוסה-חי: POST מייצר שורה-חדשה, העיגון נרשם.
+
+## שערים
+
+tsc נקי · lint נקי · **api-check 149/0** (25 SKIP owner-held) · כל ה-txids אומתו מול mainnet (getTransaction finalized / getTransactionReceipt) · אפס-סודות-במסמך · אפס-מגע-בטוקנים (WATTOIN נשאר מוסגר).

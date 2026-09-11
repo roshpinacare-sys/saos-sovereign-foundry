@@ -186,10 +186,21 @@ export async function POST(req: Request) {
     // duplicate-protection (roast 60): find-then-create moved INSIDE one
     // serialized transaction — two concurrent POSTs can no longer both miss
     // the findFirst and double-create for the same seal+network.
+    // task78: terminal rows (cancelled/failed/expired/recorded) must NEVER be
+    // reused as idempotent hits — a cancelled drill row poisoned the whole
+    // (seal,network) request path forever (measured live: POST kept returning
+    // a row cancelled-by-operator, every PATCH refused "terminal state").
+    // Non-terminal only: fresh creation stays possible after cleanup.
     const outcome = await withWriteLock(() =>
       db.$transaction(async (tx) => {
         const existing = await tx.pendingSignature.findFirst({
-          where: { sealId: seal.id, network, txid: null, signerStatus: "awaiting-approval" }
+          where: {
+            sealId: seal.id,
+            network,
+            txid: null,
+            signerStatus: "awaiting-approval",
+            status: { in: ["pending", "awaiting-approval"] as SignatureLifecycle[] }
+          }
         });
         if (existing) {
           return { idempotent: true as const, existing };
