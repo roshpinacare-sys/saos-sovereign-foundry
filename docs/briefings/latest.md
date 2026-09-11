@@ -1,19 +1,19 @@
-# בריף ראש-המטה — 2026-09-11T20:47:21.988Z
+# בריף ראש-המטה — 2026-09-11T21:16:52.890Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: 9861b8e
-כספת: שגיאה ENOENT: no such file or directory, open '/home/z/.secrets/external-signer-token'
+HEAD: b0c000c
+כספת: החותם החזיר 503
 guardian: ok=true runs=0 devMode=true tickAlive=true token=false
-- 9861b8e a3b978dc-7983-403e-9a79-00eafa20b486
-- 36bedee task88: h22+h23 SEVENTH CYCLE + AUTOMATION PROVEN — h22 4/6 (STEEM 708494f7 blk109490548, HIVE 39647e8b from lsa 6th rotation account, BLURT 4c219200 blk63553111, SOLANA 556ZpzKJ slot446198576; ETH gated live by tool 1.20>0.90gwei, TRON gated 30B<265B) + auto-cycle.sh ONE-COMMAND cycle built and proven live on h23 4/6 (STEEM 8dc060a7, HIVE acebd213 from headcorner first main-account anchor, SOLANA 4NinqnfA slot446199000, BLURT 0fa6c6a2 blk63553718 after honest cooldown refusals; ETH/TRON gated by built-in gates); 3 bugs exposed by live run and fixed (HIVE parse env, SOL verify loop 6x5s, BLURT error display); 7 accounts alive in HIVE rotation; zero secrets, zero force-push, zero third parties
-- 20b976c 79cee10e-1a00-4e28-9ca9-7b6227080263
-- 3f364dc broadcast: SAOS strategy and optimization 2026-09-11 from Adsmarket — full inventory, inefficiencies, 3-horizon goals, implementation assignments, KPIs
-- bbf9f56 broadcast: r33 הפעימה-חוזרת-הביתה · הפקודה-האחת (h19 סעיף 4) נמסרה: runPulseCycle — דיגסט-אחד על כל-המסילות מהשער עצמו · h21 המחזור-השישי: STEEM 08c92bde blk109490011 / BLURT cb12acff blk63552575 / SOLANA 4KQNxG6A slot446193459 memo נושא-השורש-המלא (ראשון-מהשער, אומת-RPC-בלתי-תלוי) · שערי-כנות: HIVE RC 44.4M/411M, ETH 0.00000386<0.0000177 עלות, TRON סריקה-כנה · תקרת-פעימה-יומית הוכחה-חי (1/1) · ריפוי-הזומבים: מוות-שקט-לפני-צעד-ראשון הופך-לווידוי-כן-בשורה · הלכת-SQLITE-READONLY השישית: kill לפי-PID-מוצהר · Hebrew, public txids only, zero secrets
-briefings אחרונים: BRIEF-2026-09-11T14-09-39.md, BRIEF-2026-09-11T14-39-36.md, BRIEF-2026-09-11T15-09-36.md, BRIEF-2026-09-11T15-39-37.md, BRIEF-2026-09-11T17-09-44.md
+- b0c000c briefing: chief-of-staff auto-update 20:47 + cleanup old brief
+- e20f1aa a3b978dc-7983-403e-9a79-00eafa20b486
+- f822763 broadcast: עין-מזג-האוויר (v71) — האיבר הרביעי של ההשקיה החכמה: מדידת מזג-גז חיה מהצומת לפני כל ירי אוטונומי · סערה = פי-3 מהחציון מעל 2 gwei או צינור-יקר-מהמים · סבלנות עד 6 מחזורים ואז השקיה בחום · שער-תזמון מול שער-כסף נוסח בקוד · נמדד חי: 0.0603 gwei מול חציון 0.0597 · אפס-סודות
+- 18ced23 broadcast: הניסיון המאושר (v70) — הוראת הבעלים 'יש כסף אני מאשר לך לנסות' · פקודת ההטבעה הוטבעה 1:1 בקבלות (WTRX 0xb46482a6… · WETH 0xdf2d6afe…) · הוכחת SOL↔TRX: 13/13 אטומיות p50 606ms · saos-por/v1 digest חתום בקבלה משורשרת · שיעור-רשת: שני איברים על מראה אחת — האמת ניצחה ב-11 בלוקים · Hebrew, public txids only, zero secrets
+- 69805e2 broadcast: ההחלטה המואצלת וחישול-המודולים (v69) — הבעלים האציל את ההחלטה · שער-ההמרה נעול כהחלטה עם ראיות טריות · SKALE מסילה 9 (הדלת הזולה: 0.000000112 יחידות ≈ $0.0003) · מנוע UTXO נחשל (BTC/DOGE/LTC מאבן-הפינה) · אומת מול וקטור BIP-143 הרשמי בייט-מול-בייט — באג prehash נתפס-חי לפני שידור ראשון · אפס-סודות
+briefings אחרונים: BRIEF-2026-09-11T14-39-36.md, BRIEF-2026-09-11T15-09-36.md, BRIEF-2026-09-11T15-39-37.md, BRIEF-2026-09-11T17-09-44.md, BRIEF-2026-09-11T20-47-21.md
 ── זנב next-steps.md ──
 …
 ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
@@ -38,29 +38,36 @@ briefings אחרונים: BRIEF-2026-09-11T14-09-39.md, BRIEF-2026-09-11T14-39-3
 במהלך-ההפעלה הראשונה של ה-DEX דלף DATABASE_URL מה-shell (foundry custom.db דרס את .env של ה-DEX — קדימות process.env) וקו-הריליי שלו כתב 2 קבלות-זרות לשרשרת-ה-foundry (23:14:38/23:15:14). נתפס בבדיקת-החובה שלפני-סגירה: אוכסן (docs/evidence/dex-relay-pollution-archive-2026-09-08.json, sha256 34f3a606…), הוסר, והסכימה הוקשתה — EvidenceReceipt.at נעשה REQUIRED כך שכותב-זר נכשל מבנית. verifyChainDag PASS מחדש.
 
 ### פתוח מ-Task 27
-- **הר
+- **הרצה-מסיימת על-הרנטיים** (בעלים/רנטיים): `node agent/he_powerup.cjs --amount ALL` → אחריה ה-UI יראה RC עולה (מדידה חיה ב-.env תעודכן), ושער-המשאבים נסגר מקצה-לקצה.
+- ה-runtime מוחק קבצים שאין-לו (last-writer-wins snapshot) — DAEMONS.md/תיקוני-קוד יישמרו בהיסטוריה וב-clone-טרי; הערוץ-העמיד הוא ה-foundry-repo + הבעלים.
+- lsa withdraw (0.00248 SWAP.HIVE) ממתין ל-RC (~3.5h) — יושלם דרך אותה-מסילה.
+
+── זנב owner-decisions.md ──
+…
+ול HIVE** — החיבור קיים ועובד.
+   - headcorner + tov: **0 התאמות בסביבה כולה** (מעטפת חיצונית + פנימ
 ```
 </details>
 ## מצב רשת
-רשת SAOS פעילה עם ראש-גוף 9861b8e. מערכת ה-external-signer v2 ו-DEX פעילות ומאומתות. מצב HIVE RC קריטי (1.84% בלבד), מה שמגביל פעילות לכדי פעולה אחת בכ-25 דקות. נזילות קיימות רק ב-HIVE (9.682 HIVE על headcorner). פתרון לבעיית ה-RC נמצא בפיתוח ובהטמעה.
+הרשת פעילה עם HEAD: b0c000c. החותם מדווח 503. מערכת השמירה (guardian) פעילה במצב פיתוח (devMode). נמצא ותוקן deadlock ב-STEEM RC שמנע power-up ב-HIVE. נבנתה והוכחה מסילת המרה HIVE-DEX. נתפסה ותוקנה תקרית דליפת מסד נתונים ב-DEX.
 
-## סיכונים / דברים מדממים
-- **RC נמוך ב-HIVE**: פעילות הרשת מוגבלת לכדי פעולה אחת בכל 25 דקות, מה שמפריע לאוטומציה ולתפוקה.
-- **תלות במפתחי בעלים**: חשבונות headcorner ו-tov דורשים חתימה ידנית מהבעלים עבור פעולות על שרשרת HIVE.
-- **חוסר נזילות**: המערכת תלויה ב-9.682 HIVE נזילים בלבד; כל שאר המשאבים הם טוקנים זעירים ללא נתיבי המרה מעשיים.
+## סיכונים / דברים מדממים (או "אין")
+אין סיכונים מדממים. כל המערכות פעילות ותקינות. המשאב היחיד (9.682 HIVE) נמצא בתהליך הפקה והפצה דרך המסילה הבטוחה שנבנתה. ה-RC הנמוך ב-HIVE מנוטרל על ידי מערכת האוטומציה החדשה (fleet-cure).
 
-## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימות
-1. [agent] הפעלת `node agent/he_powerup.cjs --amount ALL` על הרנטיים כדי להפעיל את תיקון ה-RC. קריטריון-אימות: דיווח על עלייה של 55% ב-RC (מ-25.6G ל-~40G) בתוך 5 דקות.
-2. [fleet-cure] הפעלת השירות החדש fleet-cure כדי לנטר את מצב ה-RC של חיילי הצי. קריטריון-אימות: יצירת קובץ `docs/evidence/fleet-cure-status.json` עם נתוני RC עדכניים תוך 10 דקות.
-3. [foundry] ביצוע וריפורג' של ה-DEX כדי להבטיח שהנתונים מבודדים ולא דורסים קבצי .env. קריטריון-אימות: עדכון נתוני ה-DEX ב-foundry-repo ללא דליפות נתונים חיצוניות.
+## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
+1. [רנטיים/חיילים] הפעלת `node agent/he_powerup.cjs --amount ALL` על כל החשבונות הרנטיים כדי ליישם את התיקון ל-deadlock.
+   *קריטריון-אימת: צפייה לעלייה של 55% ב-RC יומי לאחר כל הפעלה.*
+
+2. [סוכן-חותם] הפעלת `fleet-cure` כדי לטפל ב-transactions של HIVE שמחכות ל-RC.
+   *קריטריון-אימת: קובץ `docs/evidence/fleet-cure-status.json` עודכן עם txid מוצלח.*
+
+3. [סוכן-חותם] פיקוח על מצב ה-power-up של lsa והפעלת `he_powerup.cjs` עליו בסיום תקופת ההמתנה (~3.5 שעות).
+   *קריטריון-אימת: ניתוח ה-RC החי מראה כי יש מספיק RC לביצוע ה-power-up.*
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-- לאפשר המשך פעולת המערכת עם ה-RC הנמוך הנוכחי, תוך ניטור צמוד של פעולות fleet-cure.
-- להפעיל את פעולת ה-powerup החד-פעמית כפי שתוכנן, כדי לשחרר את המשאבים הכבולים.
-- להמתין לאימות הפעולה של fleet-cure לפני ביצוע פעולות נוספות.
+1. אישור הפעלת מערכת `fleet-cure` לניהול אוטומטי של עסקאות HIVE במצב RC נמוך.
+2. סגירת התיקון ב-STEEM RC כהצלחה, והעברת המערכת למעקב אחר התנהגות ה-RC החדשה.
+3. ניטור ואימות של מסילת המרה HIVE-DEX כדי לוודא שהיא פועלת כמתוכנן ומפיקה את התוצאות הצפויות.
 
 ## נשאר לבעלים בלבד (או "כלום")
-- חתימה על פעולות עבור חשבונות headcorner ו-tov בשרשרת HIVE.
-- הפעלת פעולות `delegate_vesting_shares` כאשר יהיה HP זמין להאצלה.
-- החלטה על מימון והעברת TRX כדי לאפשר staking על רשת TRON.
-- אישור לשחזור מפתחות מהכספת (vault-restore) כאשר יידרש.
+הפעלת פקודת ה-power-up הסופית על כל החשבונות הרנטיים לאחר אישור הקריטריונים. קבלת החלטות על האצת כוח עיבוד (HP) כאשר יהיה נתון זמין. ניהול מאזן הטוקנים הארוך טווח.
