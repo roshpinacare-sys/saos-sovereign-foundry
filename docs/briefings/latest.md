@@ -1,19 +1,19 @@
-# בריף ראש-המטה — 2026-09-11T14:39:36.975Z
+# בריף ראש-המטה — 2026-09-11T15:09:36.111Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: 51974f5
+HEAD: 3718902
 כספת-חי (מקור-אמת מהחותם :3033 — ספירות-בלבד): main=headcorner slots STEEM 4/4 · HIVE 4/4 · BLURT 4/4 | fleet-with-keys=[cashmachine,haran,israelnews,lsa,macrame,siq,wic,wog,woq,ynet,tov] | drift ok=136 drift=0 unmatched=0 | sealedAt=2026-09-10T21:32:28.346Z
 guardian: ok=true runs=697 devMode=true tickAlive=false token=true
+- 3718902 task86: h20 FULL MATRIX 6/6 (STEEM 00d4046f blk109488353, BLURT f98a1285 blk63551154, HIVE 543cd69b from woq, TRON 2dce81bf amt=0xfe4b root encoding, SOLANA vyQDcVz9 slot446179760, ETHEREUM 0x7b90815f blk25954839 via new balance-tuned fee discipline after catching flashbots-protect ~25-block expiry live) + h19 TRON backfill bc5f7c4f (5/6) + OWNER-APPROVED TRON vault family consolidation: custody proven by independent mnemonic derivation cross-check (6/6 addresses match tron-legacy-mnemonic m/44'/195'/0'/0/i), 3.639141 TRX consolidated to headcorner via 3 zero-fee transfers; transparent parallel event logged (2.574421 TRX external sweep to owner's collection address 168s after h20 anchor, not agent-executed, full arithmetic reconciled to 0.232 TRX); 2020 wallet (14.39 TRX) untouched pending owner guidance; external funder zero-touch; zero secrets, zero force-push, zero third parties
+- 0d42596 broadcast: r32 ריפוי-חותמות-הכספת מהכספת Saosmartwallet · המפתח-של-המפעיל-חזר: הרוטציה-r16/r17 הוציאה-את-מפתחות-ה-steem-של-הקובץ-מה-authority-אך-הכספת-מעולם-לא-חתמה-תחת-החדשים · ריענון-חותמות-בכל-כניסה (seal-refresh): המפתח-אב-נאטם-תחת-כל-מפתח-headcorner-נוכחי · זיהוי-מפתח-מוחלף (rotated-out-key) במקום-מבוי-סתום · שומר-סריקה-חלקית (steem+hive-שקטים = chains-down, לא-הרשעת-שווא) · שומר-מחיקה-עצמית (wipe-guard) · הוכחה-חיה A/B/C: ישן-מדבר-אמת · הנוכחי-hive-נכנס · הנוכחי-steem-נכנס · 12-חותמות/8-חיות · אפס-סודות
+- 0c6af50 broadcast: בית-הזיכרון (v68) — איפוס-הסנדבוקס מחק את הספר · האורגניזם בנה אותו מחדש מהשרשרת (relays אומתו חיים · עוגני h=1 נקראו מהקבלות · 6 טפטופים פוענחו מהפורטלים — כולל probe לא-מתועד) · חותם h=2 נולד · הגשש ירה לבד · שתי קבלות חדשות מאומתות · שומר-עושר למראה · אפס-סודות
 - 51974f5 task85: h19 fourth consecutive cycle — 4/6 anchored live (STEEM 4b70d75c blk109487902, BLURT 72774a43 blk63550493, HIVE 90f38828 from cashmachine — third fleet rotation account wic→woq→cashmachine, SOLANA 5q7omywW slot446173949 memo-decoded on second RPC) + two honest gates zero-broadcast: ETHEREUM daytime gas x42 (baseFee 2.477 gwei, balance 0.0000569 < anchor cost, fail-closed) and TRON bandwidth 247/600B left after h16+2xh17 with full fleet fuel scan proving all 11 other TRON addresses zero/inactive (only headcorner funded, 0.07791 TRX verified via getaccount after catching getaccountresource balance-field omission); effective-RC model predicted 3rd rotation success first-try; tsc+lint clean; zero secrets, zero force-push
 - 1061d04 worklog: task84 git-sync-and-push (rebase over 614bc4e, head 918915e)
-- 918915e briefing-rotation: sweep 2026-09-11 07:09-13:39 (14 briefs) — retire 2026-09-10 evening set, latest.md advanced
-- 76957b9 9d666975-a670-423f-a288-3e1218c9bb8b
-- 614bc4e broadcast: v67 ההשקיה החכמה — the irrigation itself went autonomous: two doors born by themselves (probe → ×2 → relay deployed → seal anchored on OPTIMISM+BASE, all source=auto with receipts) · the honest answer on our DEX + SOL/TRX conversion gate · 3 wisdom gaps caught live and fixed · zero secrets
-briefings אחרונים: BRIEF-2026-09-11T12-09-37.md, BRIEF-2026-09-11T12-39-43.md, BRIEF-2026-09-11T13-09-38.md, BRIEF-2026-09-11T13-39-41.md, BRIEF-2026-09-11T14-09-39.md
+briefings אחרונים: BRIEF-2026-09-11T12-39-43.md, BRIEF-2026-09-11T13-09-38.md, BRIEF-2026-09-11T13-39-41.md, BRIEF-2026-09-11T14-09-39.md, BRIEF-2026-09-11T14-39-36.md
 ── זנב next-steps.md ──
 …
 ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
@@ -28,32 +28,29 @@ briefings אחרונים: BRIEF-2026-09-11T12-09-37.md, BRIEF-2026-09-11T12-39-4
 
 ### מסילת-ההמרה האמיתית (נבנתה והוכחה חיה הערב)
 1. **external-signer v2** (:3033): רשת HIVE + אופס-אלווליסט (transfer_to_vesting/transfer/claim_rewards/he_market_sell/he_withdraw/custom_json) + **שער-אימות-סמכות** (גזירת-מפתח מול-סמכות-חיה לפני-כל-שידור, 403 על אי-התאמה) + **שער-כשירות-RC** (429 עם ETA, אף-שידור-אסון) + תקרת-סכום (50 HIVE).
-2. **נתיב-המרה ב-DEX** (saos-dex): `GET /api/dex/convert?account=` (תצוגה-חיה: מאזנים + מסלול-מוצע) + `POST /api/dex/convert` (operator-gated; ה-DEX ללא-מפתחות — הביצוע דרך החותם בלבד). typecheck PASS; DB מבודד (נתפס ותוקן: DATABASE_URL של-ה-shell דרס את ה-.env — הופעל מחדש עם `file:../db/dex.db` מפורש; ה-foundry לא-נפגע).
-3. **ביצועים אמיתיים שנחתו על-השרשרת הערב**: lsa מכרה 2.51025127 WEED @0.00098 → **0.00248765 SWAP.HIVE** (נחת, אומת במאזן); macrame מכרה 0.570715 STEM @0.00025 → **+0.000145 SWAP.HIVE** (נחת); macrame withdraw שודר והתקבל (בגשר-hivepegged; נחיתה בטיפול). ה-powerup-עצמו נעול כרגע ב-RC (ETA ~232 דק ל-macrame) — השערים מדווחים בכנות וה-FSM ישלים אוטומטית אחרי-פריסת-התיקון או שה-RC יגיע.
-
-### החלטות
-- `hive-rc-floor`: **needs-resource → decided-custom** (המשאב קיים, המסילה נבנתה והוכחה, נותר פעולת-הרצה אחת על-הרנטיים). `tron-stake`/`vault-restore` נשארים כנים (TRX אבק בלי נתיב; שחזור-חוץ).
-
-### תקרית שנתפסה ותוקנה (Task 27-b)
-במהלך-ההפעלה הראשונה של ה-DEX דלף DATABASE_URL מה-shell (foundry custom.db דרס את .env של ה-DEX — קדימות process.env) וקו-הריליי שלו כתב 2 קבלות-זרות לשרשרת-ה-foundry (23:14:38/23:15:14). נתפס בבדיקת-החובה שלפני-סגירה: אוכסן (docs/evidence/dex-relay-pollution-archive-2026-09-08.json, sha256 34f3a606…), הוסר, והסכימה הוקשתה — EvidenceReceipt.at נעשה REQUIRED כך שכותב-זר נכשל מבנית. verifyChainDag PASS מחדש.
-
-### פתוח מ-Task 27
-- **הרצה-מסיימת על-הרנטיים** (בעלים/רנטיים): `node agent/he_p
+2. **נתיב-המרה ב-DEX** (saos-dex): `GET /api/dex/convert?account=` (תצוגה-חיה: מאזנים + מסלול-מוצע) + `POST /api/dex/convert` (operator-gated; ה-DEX ללא-מפתחות — הביצוע דרך החותם בלבד). typecheck PASS; DB מבודד (
 ```
 </details>
 ## מצב רשת
-הרשת יציבה עם 11 סוכנים מורשים. מפתחות פעילים במעטפת עבור 9 חשבונות ב-HIVE. חשבון headcorner מחזיק 9.682 HIVE נזילים. קיים צוואר בקבוק ב-HIVE RC (0.003%) מה שמאט פעילות לכדי פעולה אחת בכ-25 דקות. מסילת המרה DEX פעילה ומאובטחת.
+רשת SAOS פעילה עם 11 סוכנים מורשים. מצב הכספת מאומת עם 4/4 סלוטים פעילים ב-STEEM, HIVE ו-BLURT. הצי מחזיק 9.682 HIVE נזילים על headcorner. סוכני הרשת מוגנים במפתחות חיצוניים ופנימיים, כאשר הבעלים מחזיק את המפתחות הראשיים של headcorner ו-tov. מערכת ה-RC של HIVE חלשה (0.003%), מהמתיחה ביצוע עוגנים לכל ~25 דקה.
 
-## סיכונים / דברים מדממים (או "אין")
-סיכון אופרטיבי רציני בקצב הרגנרציה (RC) ברשת HIVE, המגביל את קצב העיבוד לפעולה אחת בכ-25 דקות. עודף ה-HIVE נזיל על headcorner לא ניתן להמרה ל-HP בקצב מלא עקב מגבלת ה-RC. כל המשאבים האחרים (TRX, טוקנים זעירים) הם "אבק" ללא ערך מעשי מחוץ לסביבת הפיתוח.
+## סיכונים / דברים מדממים
+- חולשת RC חמורה ב-HIVE (0.003%) מגבילה ביצועים לפעולה אחת כל ~25 דקות.
+- 14.39 TRX בכתובת 2020 עדיין לא מנוהלים, ממתינים להנחיית בעלים.
+- מגבלת RC גורמת ל-lsa לא להשלים withdraw של 0.00248 SWAP.HIVE (ממתין ~3.5 שעות).
+- תקרית דליפת מסד נתונים ב-DEX נתפסה ותוקנה, אך מהווה סיכון אפשרי לסנכרון עתידי.
 
-## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
-1. [רנטיים-חי] `node agent/he_powerup.cjs --amount ALL` - הפעלת תהליך האצת כל ה-HIVE הנזיל ל-HP כדי לנצל את עודף ה-RC הקיים ולהגדיל את קצב הרגנרציה היומי.
-2. [רנטיים-חי] המתנה פסיבית להשלמת ה-powerup של macrame (צפוי ב-~3.5 שעות) ואימות הצלחת ה-withdraw של lsa (0.00248 SWAP.HIVE) דרך מעקב אחרי ה-txid בשרשרת.
-3. [רנטיים-חי] פעולת הרצה ראשונית של `fleet-cure` על מנת להתחיל למדוד את מנת ה-RC של כלל הסוכנים כל 5 דקות ולהפעיל אוטומטית את פעולת ה-weave כאשר RC זמין.
+## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימות
+1. [fleet-cure] הפעלת הסוכן האוטומטי למעקב אחר RC וביצוע weave כאשר RC ≥ 230M + אימות ה-txid ב-foundry.
+2. [he_powerup] הפעלת `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי להגדלת רגן RC + אימות עליית RC במדידה חיה.
+3. [external-signer] המשך פעילות ה-external-signer עם שערי סמכות ו-RC לאימוץ וביצוע פעולות על הרשת + אימות הצלחת פעולות.
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-אישור הפעלת `fleet-cure` כמערכת אוטומטית לניהול צווארי הבקבוק ב-RC של צי הסוכנים ב-HIVE. אישור להמשך פעילות מסילת ה-DEX להמרות פנימיות בין נכסים, תוך הקפדה על שערי האבטחה הקיימים.
+- אישור הפעלת fleet-cure כסוכן אוטומטי לטיפול בבעיית ה-RC ב-HIVE.
+- פיקוח על תהליך ה-powerup ואימות תוצאותיו.
+- המשך ניטור ובקרת איכות של מערכת ה-external-signer וה-DEX.
 
-## נשאר לבעלים בלבד (או "כלום")
-החלטה על מימון חיצוני ל-TRX על מנת לאפשר המרה פוטנציאלית לנכסים בעלי ערך. ניהול ושימוש במפתחות הראשיים של headcorner ו-tov לכל הרשתות (STEEM, חשבון הבעלים ב-HIVE). ניהול האצת נכסים (HP delegation) כאשר יהיה ניתן לעבור את שערי הסמכות.
+## נשאר לבעלים בלבד
+- החלטה על גורל 14.39 TRX בכתובת ה-2020.
+- החלטה על מימון פוטנציאלי ל-TRON-stake.
+- אישור סופי לשחזור כספת (vault-restore) אם יידרש.
