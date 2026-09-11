@@ -136,14 +136,28 @@ export async function buildSignRequest(
   ttlMs: number
 ): Promise<SignRequest> {
   const now = Date.now();
-  const payload = canonicalize({
-    v: 1,
-    protocol: "saos.weave.v1",
-    seal: { id: seal.id, height: seal.height, root: seal.root, stateRoot: seal.stateRoot },
-    network,
-    kind,
-    forgedAtMs: now
-  });
+  // Task 80 — HIVE carries the COMPACT weave commitment: json={v,protocol,root,height}.
+  // This is exactly the ETH-calldata philosophy (root‖height IS the anchor;
+  // stateRoot/seal-id live in the platform's records). Reason, measured live
+  // 2026-09-11: the legacy out-of-project saos-dex chain-seal stream harvests
+  // EVERY account (headcorner AND the fleet) at its ~207M-RC threshold — BELOW
+  // the full weave's 231,629,405-RC cost — a structural starvation that waiting
+  // can never win (macrame was harvested at 04:33:15Z minutes before ours).
+  // The compact payload (120B ≈ ~108M RC) crosses ITS OWN threshold BEFORE the
+  // stream crosses its — the first winnable race. STEEM/BLURT keep the full
+  // format (their anchors are recorded that way and their RC is healthy).
+  const payload = canonicalize(
+    network === "HIVE"
+      ? { v: 1, protocol: "saos.weave.v1", height: seal.height, root: seal.root }
+      : {
+          v: 1,
+          protocol: "saos.weave.v1",
+          seal: { id: seal.id, height: seal.height, root: seal.root, stateRoot: seal.stateRoot },
+          network,
+          kind,
+          forgedAtMs: now
+        }
+  );
   const payloadHash = await canonicalDigest(JSON.parse(payload));
   return {
     id,

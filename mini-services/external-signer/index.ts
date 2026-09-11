@@ -996,7 +996,13 @@ async function buildSignBroadcast(network, account, wif, operations) {
     if (txid && !txid.startsWith(nodeTrxId)) {
       throw new Error(`txid-mismatch: node=${nodeTrxId} local=${txid.slice(0, 20)}… — signing/serialization drift, refusing to record`);
     }
-    return { txid, result: sync, confirmedBlock: sync?.block_num ?? null, nodeTrxId };
+    // Task 80: return the NODE-CONFIRMED canonical id (40-hex — the form
+    // get_transaction and every explorer accept). Identity vs the locally
+    // computed full sha256 was PROVED by the prefix cross-check just above;
+    // condenser get_transaction REJECTS the 64-hex form ("invalid size",
+    // proven live on the first fleet HIVE weave anchor). The fallback path
+    // below keeps the full hash (node id unavailable there).
+    return { txid: nodeTrxId, result: sync, confirmedBlock: sync?.block_num ?? null, nodeTrxId };
   } catch (e) {
     const msg = String(e?.message ?? e);
     if (/Could not find method|not found|Unknown method/i.test(msg)) {

@@ -134,7 +134,7 @@ async function pulsePost(req: Request) {
     );
   }
 
-  let body: { network?: string; authLevel?: string; confirmFresh?: boolean } = {};
+  let body: { network?: string; authLevel?: string; confirmFresh?: boolean; account?: string } = {};
   try {
     body = await req.json();
   } catch {}
@@ -142,6 +142,27 @@ async function pulsePost(req: Request) {
   const network: PulseNetwork =
     body.network === "BLURT" ? "BLURT" : body.network === "HIVE" ? "HIVE" : "STEEM";
   const authLevel = body.authLevel === "active" ? ("active" as const) : ("posting" as const);
+
+  // Task 80 — fleet-account anchoring: the RC starvation diagnosis (2026-09-11
+  // live: the legacy saos-dex chain-seal stream permanently eats headcorner's
+  // regen — its op cost ~207M RC fires before our 231.6M weave ever fills) means
+  // headcorner can NEVER carry a HIVE weave anchor. The 9 fleet accounts hold
+  // LIVE active-authority matches on HIVE (proven 9/9, Task 27) and their RC
+  // pools regenerate UNCONTESTED since the stream stopped rotating on the fleet
+  // (10.09 22:50Z). The pulse therefore accepts an explicit anchor account —
+  // the signer still fail-closes on the LIVE authority gate and runs the RC
+  // feasibility gate against THAT account, so this passthrough adds a choice,
+  // not a privilege.
+  const ACCOUNT_RE = /^[a-z0-9.-]{3,16}$/;
+  const bodyAccount =
+    typeof body.account === "string" && body.account.length > 0 ? body.account : null;
+  if (bodyAccount && !ACCOUNT_RE.test(bodyAccount)) {
+    return NextResponse.json(
+      { ok: false, error: "invalid-account: account must match /^[a-z0-9.-]{3,16}$/" },
+      { status: 400 }
+    );
+  }
+  const anchorAccount = bodyAccount;
 
   const seal = await db.sealRecord.findFirst({ orderBy: { height: "desc" } });
   if (!seal) {
@@ -155,7 +176,7 @@ async function pulsePost(req: Request) {
   // (serialized in-process: two concurrent pulses resolve the SAME intent;
   // the broadcast itself happens OUTSIDE the lock and is deduped by the
   // signer's single-flight on the deterministic requestId)
-  const { intent, requestId } = await withWriteLock(async () => {
+  const resolved = await withWriteLock(async () => {
     const existing = await db.anchorTx.findFirst({
       where: { sealId: seal.id, network, kind: PULSE_KIND, meta: { contains: '"intent":true' } },
       orderBy: { createdAt: "desc" }
@@ -163,7 +184,14 @@ async function pulsePost(req: Request) {
     if (existing) {
       const meta = safeMeta(existing.meta);
       const rid = typeof meta.requestId === "string" ? meta.requestId : null;
-      if (existing.txid) return { intent: existing, requestId: rid ?? `pulse-${network.toLowerCase()}-${Date.now()}` };
+      const metaAccount = typeof meta.account === "string" && meta.account ? meta.account : null;
+      // Task 80: the anchor account is part of the intent's identity — a retry
+      // with a DIFFERENT account must not hijack the same deterministic ledger
+      // slot (the signer would replay the original account's verdict).
+      if (anchorAccount && metaAccount && anchorAccount !== metaAccount) {
+        return { intent: existing, requestId: rid ?? "", accountConflict: { metaAccount, bodyAccount: anchorAccount } };
+      }
+      if (existing.txid) return { intent: existing, requestId: rid ?? `pulse-${network.toLowerCase()}-${Date.now()}`, accountConflict: null };
       if (body.confirmFresh === true && typeof meta.requestId === "string") {
         // human override of the only ambiguous corner (intent older than the ledger TTL)
         const freshId = `pulse-${network.toLowerCase()}-${Date.now()}`;
@@ -172,12 +200,12 @@ async function pulsePost(req: Request) {
             sealId: seal.id, network, kind: PULSE_KIND, txid: null,
             status: "transit",
             gate: "broadcast-intent (confirmFresh:true — requestId חדש לאחר עמימות לא-פתורה; הסיכון לשידור-כפול של הניסיון הקודם הוסבר ואושר)",
-            meta: JSON.stringify({ intent: true, requestId: freshId, authLevel, confirmFresh: true, supersededRequestId: meta.requestId, sealHeight: seal.height, at: new Date().toISOString() })
+            meta: JSON.stringify({ intent: true, requestId: freshId, authLevel, account: anchorAccount ?? metaAccount, confirmFresh: true, supersededRequestId: meta.requestId, sealHeight: seal.height, at: new Date().toISOString() })
           }
         });
-        return { intent: created, requestId: freshId };
+        return { intent: created, requestId: freshId, accountConflict: null };
       }
-      return { intent: existing, requestId: rid ?? `pulse-${network.toLowerCase()}-${seal.id}` };
+      return { intent: existing, requestId: rid ?? `pulse-${network.toLowerCase()}-${seal.id}`, accountConflict: null };
     }
     const requestId = `pulse-${network.toLowerCase()}-${seal.id}`; // deterministic per (seal, network, kind)
     const created = await db.anchorTx.create({
@@ -185,11 +213,22 @@ async function pulsePost(req: Request) {
         sealId: seal.id, network, kind: PULSE_KIND, txid: null,
         status: "transit",
         gate: "broadcast-intent: נרשם לפני השידור (roast 56) — retry משתמש באותו requestId דטרמיניסטי; השורה הופכת לעוגן בהצלחה",
-        meta: JSON.stringify({ intent: true, requestId, authLevel, sealHeight: seal.height, at: new Date().toISOString() })
+        meta: JSON.stringify({ intent: true, requestId, authLevel, account: anchorAccount, sealHeight: seal.height, at: new Date().toISOString() })
       }
     });
-    return { intent: created, requestId };
+    return { intent: created, requestId, accountConflict: null };
   });
+  const { intent, requestId } = resolved;
+
+  if (resolved.accountConflict) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: `account-conflict: ה-intent של (seal,network) זה נרשם עם account=${resolved.accountConflict.metaAccount} — ניסיון-חוזר עם account=${resolved.accountConflict.bodyAccount} ידרוש requestId טרי כדי לא להחזיר את-פסק-הדין-המקורי מפנקס-החותם`
+      },
+      { status: 409 }
+    );
+  }
 
   // already anchored for this (seal, network) → return the recorded anchor, NEVER re-broadcast
   if (intent.txid) {
@@ -248,7 +287,8 @@ async function pulsePost(req: Request) {
     kind: "custom_json",
     payload: sr.payload,
     id: "saos.weave.v1",
-    authLevel
+    authLevel,
+    account: anchorAccount ?? undefined
   });
 
   if (!exec.ok || !exec.txid) {
