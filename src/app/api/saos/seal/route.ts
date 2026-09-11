@@ -108,7 +108,14 @@ export async function POST(req: Request) {
     // verified txid (anchor-pulse → PATCH signer → verifyTxidPublic).
     const rcPct = Number(process.env.HIVE_RC_PCT ?? 0.6);
     const tronEnergy = Number(process.env.TRON_ENERGY ?? 0);
-    const matrix = anchoringMatrix(rcPct, tronEnergy);
+    // Task 87: fleet-effective HIVE gate — operator sets HIVE_FLEET_READY=1 +
+    // HIVE_FLEET_ACCOUNT/HIVE_FLEET_RC_PCT only after a measured fleet-RC check
+    // (rc-effective discipline). Absent env → fail-closed old behavior.
+    const hiveFleet =
+      process.env.HIVE_FLEET_READY === "1" && Number(process.env.HIVE_FLEET_RC_PCT ?? 0) > 0
+        ? { account: process.env.HIVE_FLEET_ACCOUNT ?? "fleet-rotation", rcPct: Number(process.env.HIVE_FLEET_RC_PCT) }
+        : null;
+    const matrix = anchoringMatrix(rcPct, tronEnergy, undefined, hiveFleet);
     const advisory = modeState.liveArmed
       ? "פעימת-עדות (סימולציה): שורה זו אינה שידור — העיגון האמיתי נרשם כשורת AnchorTx נפרדת עם txid מאומת מול הרשת החיה"
       : "advisory-mode: הפעימה מתועדת ומוכנה לשידור כשנתיב-החתימה יחובר";

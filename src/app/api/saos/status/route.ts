@@ -14,6 +14,7 @@ import { enforceRateLimit, ruleFor } from "@/lib/saos/rate-limit";
 import { signerRegistry } from "@/lib/saos/signer";
 import { hiveRcLive } from "@/lib/saos/hive-rc-live";
 import { tronEnergyLive } from "@/lib/saos/tron-energize-live";
+import { fleetCureStatus } from "@/lib/saos/fleet-cure";
 import { externalSignerKeyMatches } from "@/lib/saos/external-signer-client";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +34,14 @@ export async function GET(req: Request) {
     // replace the stale env fallbacks that kept the page reporting "blocked".
     const [rcLive, keys, tronLive] = await Promise.all([hiveRcLive(), externalSignerKeyMatches(), tronEnergyLive()]);
     const rcPct = rcLive?.rcPct ?? Number(process.env.HIVE_RC_PCT ?? 0.6);
+    // Task 87: fleet-effective HIVE gate — the best READY fleet account from the
+    // fleet-cure status file (fresh-gated, public data) overrides a bare
+    // "gated" when the main account's stored RC is below the floor.
+    const fc = fleetCureStatus();
+    const fleetBestRow = fc.accounts
+      .filter((a) => a.state === "ready" && a.manaPct >= 8)
+      .sort((x, y) => y.manaPct - x.manaPct)[0];
+    const hiveFleet = fleetBestRow ? { account: fleetBestRow.account, rcPct: fleetBestRow.manaPct } : null;
     // live TRON measurement (getaccount, keyless, 10-min cache) replaces the
     // frozen TRON_ENERGY field measurement as primary; env stays fail-closed.
     const tronEnergy = tronLive?.probed ? tronLive.energyUnits : Number(process.env.TRON_ENERGY ?? 0);
@@ -105,7 +114,7 @@ export async function GET(req: Request) {
         rateLimit: { active: true, status: ruleFor("status").perMinute, seal: ruleFor("seal").perMinute, auth: ruleFor("auth").perMinute },
         signer: signerRegistry().map((s) => ({ signer: s.signer, status: s.status }))
       },
-      matrix: anchoringMatrix(rcPct, tronEnergy, tronLive ?? undefined),
+      matrix: anchoringMatrix(rcPct, tronEnergy, tronLive ?? undefined, hiveFleet),
       networks: networkStatuses(rcPct, tronEnergy, keys, liveAnchors, tronLive ?? undefined),
       // Task 62: אמת-שירותי-הרקע — הטענה היחידה שמותר למסך להציג על הצי
       supervisor,

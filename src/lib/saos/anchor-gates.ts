@@ -88,10 +88,24 @@ export function hiveRcRecoveryPlan(currentPct: number): HiveRcPlan {
  * `tronMeasure` (optional, live): when present the TRON row discloses a LIVE
  * getaccount measurement instead of the frozen 2026-09-08 field claim.
  */
+/**
+ * Task 87 — fleet-effective HIVE gate. The 8% floor was calibrated for ONE account's
+ * stored RC; the fleet rotation (h17 wic → h18 woq → h19 cashmachine → h20 woq → h21 tov,
+ * 5/5 verified broadcasts) proved the EFFECTIVE fleet RC is the real resource. When the
+ * main account is below the floor but a fleet account is measured READY, the honest
+ * matrix says "pending via fleet rotation" — not a bare "gated" that hides a working
+ * path. Fail-closed preserved: no fleet measurement → old behavior, unchanged.
+ */
+export interface HiveFleetBest {
+  account: string;
+  rcPct: number;
+}
+
 export function anchoringMatrix(
   rcPct: number,
   tronEnergy: number,
-  tronMeasure?: TronEnergyMeasure
+  tronMeasure?: TronEnergyMeasure,
+  hiveFleet?: HiveFleetBest | null
 ): ChainGate[] {
   const steem: ChainGate = {
     network: "STEEM",
@@ -107,15 +121,23 @@ export function anchoringMatrix(
     detail: `חתימה קנונית ידנית (low-s loop), עמלה ${BLURT_FEE_FORMULA}, cooldown ${BLURT_COOLDOWN_MIN} דק׳ מדוד`,
     recovery: null
   };
+  const mainRcOk = rcPct >= HIVE_RC_FLOOR_LIGHT;
+  const fleetRcOk = !!hiveFleet && hiveFleet.rcPct >= HIVE_RC_FLOOR_LIGHT;
   const hive: ChainGate = {
     network: "HIVE",
-    status: rcPct >= HIVE_RC_FLOOR_LIGHT ? "pending" : "gated",
-    gate: rcPct >= HIVE_RC_FLOOR_LIGHT ? null : `rc-floor(${rcPct}%<${HIVE_RC_FLOOR_LIGHT}%)`,
+    status: mainRcOk || fleetRcOk ? "pending" : "gated",
+    gate: mainRcOk
+      ? null
+      : fleetRcOk
+        ? `rc-floor-ראשי(${rcPct}%<${HIVE_RC_FLOOR_LIGHT}%) — נעקף-ברוטציית-צי: ${hiveFleet!.account} אפקטיבי ${hiveFleet!.rcPct}%≥${HIVE_RC_FLOOR_LIGHT}% (דפוס-מוכח h17→h21)`
+        : `rc-floor(${rcPct}%<${HIVE_RC_FLOOR_LIGHT}%)`,
     detail: "אותה משפחת Graphene — dhive raw sign, chain_id קבוע; הקוד מוכח, החסם הוא RC בלבד",
     recovery:
-      rcPct >= HIVE_RC_FLOOR_LIGHT
+      mainRcOk
         ? "הפעמה הבאה תעגן בפועל"
-        : `התאוששות: ${hiveRcHoursToTarget(rcPct, HIVE_RC_FLOOR_LIGHT).toFixed(1)} שעות, או power-up מיידי`
+        : fleetRcOk
+          ? `עיגון-מיידי דרך רוטציית-הצי (${hiveFleet!.account})`
+          : `התאוששות: ${hiveRcHoursToTarget(rcPct, HIVE_RC_FLOOR_LIGHT).toFixed(1)} שעות, או power-up מיידי`
   };
   const tronGateText =
     tronEnergy > 0
