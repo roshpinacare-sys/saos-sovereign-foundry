@@ -10,6 +10,7 @@
 
 import { ethereumRpcStatus } from "./networks/ethereum";
 import { solanaRpcStatus } from "./networks/solana";
+import type { TronEnergyMeasure } from "./tron-energize-live";
 
 export interface ChainGate {
   network: "STEEM" | "BLURT" | "HIVE" | "TRON" | "ETHEREUM" | "SOLANA";
@@ -83,8 +84,15 @@ export function hiveRcRecoveryPlan(currentPct: number): HiveRcPlan {
  * may set it. A capability snapshot that fabricates "anchored" wrote lies into
  * AnchorTx rows (txid:null + status:anchored — the seal-1 legacy bug).
  * Capable networks are "pending" (ready, awaiting broadcast).
+ *
+ * `tronMeasure` (optional, live): when present the TRON row discloses a LIVE
+ * getaccount measurement instead of the frozen 2026-09-08 field claim.
  */
-export function anchoringMatrix(rcPct: number, tronEnergy: number): ChainGate[] {
+export function anchoringMatrix(
+  rcPct: number,
+  tronEnergy: number,
+  tronMeasure?: TronEnergyMeasure
+): ChainGate[] {
   const steem: ChainGate = {
     network: "STEEM",
     status: "pending",
@@ -109,10 +117,16 @@ export function anchoringMatrix(rcPct: number, tronEnergy: number): ChainGate[] 
         ? "הפעמה הבאה תעגן בפועל"
         : `התאוששות: ${hiveRcHoursToTarget(rcPct, HIVE_RC_FLOOR_LIGHT).toFixed(1)} שעות, או power-up מיידי`
   };
+  const tronGateText =
+    tronEnergy > 0
+      ? null
+      : tronMeasure?.probed
+        ? `energy-0 (נמדד חי @ ${tronMeasure.at} — כל ${tronMeasure.addresses} כתובות הכספת, אפס frozenV2-אנרגיה)`
+        : "energy-0 (כל 6 כתובות הכספת — מדידת-שדה 08.09)";
   const tron: ChainGate = {
     network: "TRON",
     status: tronEnergy > 0 ? "pending" : "transit",
-    gate: tronEnergy > 0 ? null : "energy-0 (כל 6 כתובות הכספת)",
+    gate: tronGateText,
     detail:
       tronEnergy > 0
         ? "מסלול ישיר פתוח: TriggerSmartContract עם stateRoot בנתוני הקריאה"

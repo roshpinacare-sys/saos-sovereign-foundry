@@ -77,7 +77,8 @@ export function networkStatuses(
   rcPct: number,
   tronEnergy: number,
   keys?: SignerKeyMatches | null,
-  liveAnchors?: LiveAnchorMap
+  liveAnchors?: LiveAnchorMap,
+  tronMeasure?: import("./tron-energize-live").TronEnergyMeasure
 ): NetworkStatusView[] {
   const historicOf = (n: NetworkName) => HISTORIC_ANCHORS.find((h) => h.network === n);
   // Task 26 (live forensics 2026-09-08): the external signer IS connected
@@ -255,13 +256,22 @@ export function networkStatuses(
       ? `סלוטי HIVE בחותם: ${netMatchLabel("HIVE")} תואמים`
       : "אין חותם מחובר";
   const rcAboveLight = rcPct >= HIVE_RC_FLOOR_LIGHT;
+  // 2026-09-11 measured economics: max_rc(headcorner) = 41.2B; one custom_json
+  // costs ~225M RC = 0.546% of max — the 8% light floor ≈ a 14-op burst margin.
+  // The chain ACCEPTED ops far below the floor (the dex-era chain-seal emitter
+  // succeeded at ~0.5%) — the floor is our burst budget, not a chain refusal.
+  const HIVE_RC_MAX_MEASURED = 41_240_204_792;
+  const HIVE_RC_OP_COST_MEASURED = 225_000_000;
+  const hiveOpCostPct = ((HIVE_RC_OP_COST_MEASURED / HIVE_RC_MAX_MEASURED) * 100).toFixed(3);
+  const hiveBurstOps = Math.floor((HIVE_RC_FLOOR_LIGHT / 100 * HIVE_RC_MAX_MEASURED) / HIVE_RC_OP_COST_MEASURED);
+  const hiveRcMath = `מדוד: max=41.2B RC, עלות-op≈${hiveOpCostPct}% (הסף 8% = מרווח ~${hiveBurstOps} ops רצופים)`;
   const hiveBlocker = fleetLanded || mainReady
     ? null
     : fleetScheduled
-      ? `rc-floor לחשבון-הראשי: נוכחי ${rcPct}% מתחת לסף-הקל ${HIVE_RC_FLOOR_LIGHT}% — חסום לעיגון-ראשי עכשיו; עוגן-צי אוטומטי ${fleetEtaLabel ?? ""} (${fc.best?.account} · בקשת-weave תלויה קיימת); ${keysNote}`
+      ? `rc-floor לחשבון-הראשי: נוכחי ${rcPct}% מתחת לסף-הקל ${HIVE_RC_FLOOR_LIGHT}% — חסום לעיגון-ראשי עכשיו (${hiveRcMath}); עוגן-צי אוטומטי ${fleetEtaLabel ?? ""} (${fc.best?.account} · בקשת-weave תלויה קיימת); ${keysNote}`
       : fc.best && fc.isFresh
         ? // Task 62: חלון-RC פתוח אבל אין בקשה תלויה — הצי מוכן, שום-דבר לא מתוזמן
-          `rc-floor לחשבון-הראשי: נוכחי ${rcPct}% מתחת לסף-הקל ${HIVE_RC_FLOOR_LIGHT}% — חסום לעיגון-ראשי עכשיו; הצי מוכן (${fc.best.account}, חלון-RC פתוח) אבל אין בקשת-weave תלויה — אין עוגן-צי מתוזמן, הוא ירוץ אוטומטית רק כשתיווצר בקשה; ${keysNote}`
+          `rc-floor לחשבון-הראשי: נוכחי ${rcPct}% מתחת לסף-הקל ${HIVE_RC_FLOOR_LIGHT}% — חסום לעיגון-ראשי עכשיו (${hiveRcMath}); הצי מוכן (${fc.best.account}, חלון-RC פתוח) אבל אין בקשת-weave תלויה — אין עוגן-צי מתוזמן, הוא ירוץ אוטומטית רק כשתיווצר בקשה; ${keysNote}`
         : `rc-floor: נוכחי ${rcPct}% מתחת לסף-הקל ${HIVE_RC_FLOOR_LIGHT}% / סף-הכבד ${HIVE_RC_FLOOR_HEAVY}% — אין עוגן-צי מתוזמן${fleetStaleNote ? ` (${fleetStaleNote})` : " (הדמון לא רץ)"}; ${keysNote}`;
   const hive: NetworkStatusView = {
     network: "HIVE",
@@ -325,6 +335,10 @@ export function networkStatuses(
   };
 
   const minStake = minStakeForSettlements(4); // 4 settlements/day — the working target
+  const tronMeasured = tronMeasure?.probed === true;
+  const rootAddr = tronMeasured
+    ? tronMeasure!.perAddress.find((a) => a.balanceSun > 0) ?? null
+    : null;
   const tron: NetworkStatusView = {
     network: "TRON",
     status: tronEnergy > 0 ? "pending" : "transit",
@@ -342,7 +356,9 @@ export function networkStatuses(
         : "הישארות ברכבת tronbridge היומית (root בתוך stateRoot) עד מימון ההימור",
     blocker: tronEnergy > 0
       ? keysPendingBlocker
-      : "transit לפי החלטת בעלים (decided-custom 2026-09-09): המשך רכבת tronbridge היומית · energy=0 (מדידת-שדה 08.09) · יתרות-המעבר נמדדות חי מול סף-השריפה ב'קופה חיה' — המספרים החיים שם, לא כאן (roast 10.09: מספר-מעבר מקודד ידנית התיישן תוך שעות)",
+      : tronMeasured
+        ? `transit לפי החלטת בעלים (decided-custom 2026-09-09): המשך רכבת tronbridge היומית · energy=0 (נמדד חי @ ${tronMeasure!.at}, כל ${tronMeasure!.addresses} הכתובות — אפס frozenV2-אנרגיה)${rootAddr ? ` · ראשי חי עם ${(rootAddr.balanceSun / 1_000_000).toFixed(2)} TRX (דשא רכבת-הגשר — לא מספיק להימור)` : " · אף כתובת לא מחזיקה TRX"}`
+        : "transit לפי החלטת בעלים (decided-custom 2026-09-09): המשך רכבת tronbridge היומית · energy=0 (מדידת-שדה 08.09) · יתרות-המעבר נמדדות חי מול סף-השריפה ב'קופה חיה' — המספרים החיים שם, לא כאן (roast 10.09: מספר-מעבר מקודד ידנית התיישן תוך שעות)",
     requiredResource: `TRX stake ≥ ${minStake.toLocaleString()} TRX ל-4 יישובי USDT/יום (או שריפה ~${TRX_PER_USDT_TRANSFER} TRX/tx — הקבוע הכלכלי הקנוני)`,
     unblockPlan: [
       `1. מימון הימור: ≥ ${minStake.toLocaleString()} TRX`,
@@ -361,7 +377,7 @@ export function networkStatuses(
     ownerAction: "transit אושר כברירת-מחדל הכלכלית (החלטת בעלים); מימון TRX לעיגון-ישיר נשאר אופציונלי — פעולה כלכלית באישור בעלים בלבד",
     estimatedTime: "מיידי אחרי מימון האנרגיה",
     estimatedCost: `הימור ≥ ${minStake.toLocaleString()} TRX ל-4 יישובי USDT/יום · שריפה ~${TRX_PER_USDT_TRANSFER} TRX/tx`,
-    resourceLiveChecked: false
+    resourceLiveChecked: tronMeasured
   };
 
   // Task 12: Ethereum & Solana join the matrix — dry-run only, keyless,

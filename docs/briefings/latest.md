@@ -1,37 +1,31 @@
-# בריף ראש-המטה — 2026-09-11T00:10:01.264Z
+# בריף ראש-המטה — 2026-09-11T00:39:32.785Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: 774507d
-כספת-חי (מקור-אמת מהחותם :3033 — ספירות-בלבד): main=headcorner slots STEEM 0/4 · HIVE 4/4 · BLURT 4/4 | fleet-with-keys=[cashmachine,haran,israelnews,lsa,macrame,siq,wic,wog,woq,ynet,tov] | drift ok=92 drift=0 unmatched=44 | sealedAt=2026-09-10T21:32:28.346Z
-guardian: ok=true runs=27 devMode=true tickAlive=true token=true
+HEAD: e237f85
+כספת-חי (מקור-אמת מהחותם :3033 — ספירות-בלבד): main=headcorner slots STEEM 4/4 · HIVE 4/4 · BLURT 4/4 | fleet-with-keys=[cashmachine,haran,israelnews,lsa,macrame,siq,wic,wog,woq,ynet,tov] | drift ok=136 drift=0 unmatched=0 | sealedAt=2026-09-10T21:32:28.346Z
+guardian: ok=true runs=49 devMode=true tickAlive=true token=true
+- e237f85 Task 74 — עוגן-החי הראשון + המנוע-האוטומטי + איחוד-המפתחות על-השרשרת
 - 774507d sovereign-takeover(73): 'קח לו את הכוח אין מה לעשות איתו ותמשיך עוד הרבה' — the owner pulled the plug on second-agent coordination and asked for much more, and both halves landed: (1) THE TAKEOVER — the guardian-caught forbidden path (scripts/anchor-sovereign-mnemonic.ts, still live at second-agent v58 head 5826ddccf8) was removed by a NORMAL commit 34c298af4d pushed directly by PM (history intact, zero force-push); pre-deletion re-forensics by fingerprints on both sensitive blobs: 0 hex64, 0 WIF, generic-words-only — policy violation, never a leak; remote verified 0 hits; guardian cycle #13 verdict: saos-sovereign-platform CLEAN (314 files, head 34c298af4d). (2) THE GATE — the audit's single remaining architectural gap (§F5: sovereign plane on disk with no live interface) is CLOSED: mini-services/key-broker on :3040 — fail-closed (missing token/registry → all secured endpoints 503), Bearer timingSafeEqual, ZERO key egress (pk/seed/mnemonic live only in process memory; log choke-point redaction), endpoints /ping /health /keys/sovereign-plane /sign/capabilities POST /sign POST /verify; boot-time integrity measurement pk→address: EVM 12/12 · TRON 12/12 · SOL 12/12 (registry internally consistent; evm.pk≠tron.pk per-account by design; BTC watch-only — pub without pk, no signing claim); LIVE sign→verify roundtrip proven on all three planes (EVM EIP-191 65B r||s||v, TRON 0x19-header, SOL ed25519) + negatives (401×2, unknown agent 400, btc-plane 400, oversized 400, bad-v 400, well-shaped forgery → honest refusal, no crash); born via the documented one-shot guardian hatch (spawn-detached-unref, marker-guarded, hatch removed immediately), permanently registered in the internal supervisor (SAOS_NO_KEY_BROKER); reaper survival 60s+ measured. (3) THE SCREEN — keys-map now carries connection.sovereignPlane (server-side token proxy, no-store) and the overview renders the live sovereign section: 12 agents × EVM-7nets+TRON+SOL+BTC-watchonly, consistency badge 12/12×3, derived-or-silence (gate down → section disappears); browser-verified 390px+1280px: zero console errors, zero h-scroll, natural footer. GATES: tsc clean · lint clean · api-check 149/0 (25 SKIP owner-held) incl. 5 new sovereign regressions (reachable · 12 agents · integrity 12/12×3 · regex sweep zero pk/pub/seed fields over the whole keys-map body · btc watch-only) and supervisor-truth updated to 5 services. HONEST OPEN QUESTION (non-blocking, documented): the original sovereign phrase from which the registry was derived exists in NO bundle we hold (the second agent's unified 21:37Z seal carries no sovereign-mnemonic.json) — the gate does not depend on it (explicit pks, 36/36 consistent); its rotated key-broker token (cdd09f3d907a vs installed 73c053cb74b8) recorded as a rotation candidate for owner decision. HYGIENE: /tmp/z10x (decrypted KEYS-ZIP-2026-09-10 incl. vault.json), recovery-meta + password files, forensic probe scripts — all shredded ×3; zero secrets in git/chat/logs; zero force-push; askpass only during push. DOCS: evidence/SOVEREIGN-TAKEOVER-AND-GATE-2026-09-10.md (full testimony) · HUB §2 (key-broker row: gate LIVE + token-rotation candidate) · LEDGER §16 · worklog 73.
-- c078d78 roast(72): 'כשהכל מחובר יש מלא בעיות' — the owner asked for a full limitations audit and the connected system delivered five truths: (1) THE GUARDIAN WAS NEVER ON DUTY — vault-guardian (:3031) sat with runCount=0 its whole life because the sandbox reset (16:32) wiped ~/.secrets and ~/.secrets/github-token was never reinstalled; token restored (0600, recovery point documented in HUB §2) → auto-resume → and on its FIRST-EVER cycle it caught a forbidden path (scripts/anchor-sovereign-mnemonic.ts) live in saos-sovereign-platform head 229e2deae1 (introduced 31a9c1bded 09-08); FORENSICS BY FINGERPRINTS ONLY across all three versions vs the canonical material: 0 mnemonics, 0/12 tron words, 0/12 legacy words, sovereign 96-char seed ABSENT, 0 hex64, 0 WIF — the code takes the phrase via SOVEREIGN_PHRASE env only ⇒ POLICY VIOLATION, NOT A LEAK, zero damage; removal queued as a normal commit (no force-push) coordinated with the second agent (its v57 head is from today 22:24). (2) SILENT MONITOR DEATH — fleet-cure (:3034) status file frozen 19:25→22:49 (3h24m) with zero logs: a bun --hot reload killed the cycle loop quietly; fixed with a no-overlap lock + mandatory cycle start/end logs + revive — measured: 'cycle end in 3167ms', file live again (a monitor that dies quietly is worse than one that fails loudly). (3) FOUR VERSIONS IN ONE SERVICE — /health said 2.5.2-task38 while /keys/status said 2.4.5, backup-export said 2.4.1 and the boot lo
+- c078d78 roast(72): 'כשהכל מחובר יש מלא בעיות' — the owner asked for a full limitations audit and the connected system delivered five truths: (1) THE GUARDIAN WAS NEVER ON DUTY — vault-guardian (:3031) sat with runCount=0 its whole life because the sandbox reset (16:32) wiped ~/.secrets and ~/.secrets/github-token was never reinstalled; token restored (0600, recovery point documented in HUB §2) → auto-resume → and on its FIRST-EVER cycle it caught a forbidden path (scripts/anchor-sovereign-mnemonic.ts) live in saos-sovereign-platform head 229e2deae1 (introduced 31a9c1bded 09-08); FORENSICS BY FINGERPRINTS ONLY across all three versions vs the canonical material: 0 mnemonics, 0/12 tron words, 0/12 legacy words, sovereign 96-char seed ABSENT, 0 hex64, 0 WIF — the code takes the phrase via SOVEREIGN_PHRASE env only ⇒ POLICY VIOLATION, NOT A LEAK, zero damage; removal queued as a normal commit (no force-push) coordinated with the second agent (its v57 head is from today 22:24). (2) SILENT MONITOR DEATH — fleet-cure (:3034) status file frozen 19:25→22:49 (3h24m) with zero logs: a bun --hot reload killed the cycle loop quietly; fixed with a no-overlap lock + mandatory cycle start/end logs + revive — measured: 'cycle end in 3167ms', file live again (a monitor that dies quietly is worse than one that fails loudly). (3) FOUR VERSIONS IN ONE SERVICE — /health said 2.5.2
 ```
 </details>
-## מצב רשת
-רשת SAOS פעילה עם ראש קומיט 774507d. כספת-חי מראה 4/4 סלוטים מאומתים ב-HIVE ו-BLURT, 0/4 ב-STEEM. צי הסוכנים כולל 11 סוכנים, מתוכם 10 עם מפתחות (cashmachine, haran, israelnews, lsa, macrame, siq, wic, wog, woq, ynet). headcorner מחזיק 9.682 HIVE נזילים. חוצץ-הרשת (drift) תקין (0 לא מתאימים מתוך 44). שער הרגן (RC) על HIVE נמוך מאוד (0.003%), מה שמגביל פעילות לפעולה אחת בכל ~25 דקות.
+## מצב רשת (2-4 שורות)
+הרשת יציבה עם כל הסלוטים מאומתים (4/4 ב-STEEM, HIVE, BLURT). מערכת השמירה (guardian) פעילה ופועלת במצב פיתוח (devMode=true). חשבון headcorner ב-HIVE מחזיק 9.682 HIVE נזילים עם RC נמוך (0.003%), מה שמגביל את קצב הפעולות לאחת כל ~25 דקות. מסילת ההמרה של DEX פעילה ומאומתת.
 
 ## סיכונים / דברים מדממים (או "אין")
-- סיכון קריטי: רמת הרגן (RC) ב-HIVE נמוכה מאוד (0.003%), מה שמגביל קצב ביצוע פעולות ברשת לפעולה אחת בכל ~25 דקות בלבד.
-- סיכון בינוני: חשבון ynet ב-HIVE ו-STEEM אינו מחובר לסביבת הפיתוח בשל מפתחות חסרים (ynet posting authority threshold=1 כולל headcorner, אך נדרש גם המפתח המקורי של ynet).
-- סיכון נמוך: חשבון tov ו-headcorner ב-STEEM אינם מחוברים לסביבת הפיתוח בשל מפתחות חסרים.
-- נמצא ותוקן: דליפת DATABASE_URL ב-DEX שגרמה לכתיבת 2 קבלות-זרות לשרשרת ה-foundry (תוקן ב-commit ade0b5e).
+הסיכון העיקרי הוא רמת ה-RC הנמוכה ב-HIVE שמגבילה את קצב הפעולות ומאטה את יציאת הכספים. כל המערכות אובטחו ונבדקו, ולא נמצאו דליפות מפתחות. הגילוי האחרון של תקרית דליפת מסד נתונים ב-DEX טופל ותוקן.
 
 ## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
-1. [fleet-cure] הפעלת האוטומציה fleet-cure כדי לנהל את רמות ה-RC של הצי ב-HIVE, עם קריטריון אימות: המערכת תמדוד את רמות ה-RC של 9 החיילות כל 5 דקות ותבצע את הפעולה הממתינה כאשר רמת RC תעלה מעל 230M (כפי שנמדד דרך ה-API).
-2. [he_powerup] הפעלת הסקריפט `he_powerup.cjs` עם הפרמטר `--amount ALL` על חשבון headcorner כדי להעביר את כל ה-HIVE הנזילים (9.682) ל-power-up, עם קריטריון אימות: בדיקה שהפעולה הושלמה בהצלחה ושרמת ה-RC עלתה (מדידה חיה דרך ה-API).
-3. [external-signer] בדיקת פעולת שער הסמכות (authority gate) ב-external-signer v2 על ידי ניסיון ביצוע פעולת power-up דרך ה-DEX, עם קריטריון אימות: קבלת שגיאת 403 (authority-mismatch) מהשרת, מה שמוכיח שהבטיחות פועלת כראוי.
+1. [rental] הפעלת `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי כדי להגדיל את רזרבות ה-RC.
+2. [rental] המתנה עד ש-RC של macrame יגיע לרמה מספקת (~232 דקות) וביצוע ה-withdraw של lsa (0.00248 SWAP.HIVE).
+3. [rental] הפעלת `fleet-cure` כדי לטפל בפעולות ה-weave הממתינות כאשר RC מספיק.
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-- מאשר את הפעלת fleet-cure כמנגנון אוטומטי לניהול רמות RC ב-HIVE.
-- מאשר את הפעלת הסקריפט he_powerup.cjs עם `--amount ALL` על חשבון headcorner.
-- מאשר את המשך השימוש ב-external-signer v2 עם שערי סמכות ו-RC כמנגנון בטיחות.
+הפעלת `he_powerup.cjs` עם `--amount ALL` כדי להגדיל את רזרבות ה-RC על הרנטיים החי, תוך הסתמכות על האימות המקדים של הסקריפט (exit 2 על אי-התאמה).
 
 ## נשאר לבעלים בלבד (או "כלום")
-- החלטה על גישה למפתחות המקוריים של ynet (STEEM+HIVE) כדי לסגור את הפער האחרון בחיבור הסוכנים.
-- החלטה על שימוש במפתחות המקוריים של tov ו-headcorner ב-STEEM כדי לסגור את הפערים בחיבור הסוכנים.
-- החלטה על מימון TRX עבור staking (אם נדרש) והפעלת פעולות ברשת TRON.
+החלטה סופית על שימוש במפתחות headcorner ו-tov (שמוחזקים אצל הבעלים בלבד) וכל החלטה על מימון טרנזיט של TRX.

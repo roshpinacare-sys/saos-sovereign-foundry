@@ -18,6 +18,7 @@
 | **מישור-STEEM (steemit)** | **12/12 קיימים-על-השרשרת (2018) · 11/12 מחוברים-מלא 4/4 (עץ-ROT1 — Task 69) · ynet היחיד (STEEM≡HIVE מקורי — דורש-סיסמתו-המקורית) · יתרות 3.982 STEEM + 0.041 SBD + 5,621 HP** | `GET :3033/keys/steem-plane` (v2.4.4) · `keys-map → connection.steemPlane` |
 | מפקח-שירותים | **4/4 חיים** — vault-guardian:3031 · chief-of-staff:3032 · external-signer:3033 · fleet-cure:3034 | `supervisorStatus()` — מוצג חי במסך |
 | עגינות-שרשרת | **שתי-עגנים-חיים-מאומתים**: BLURT `16b0f861…` (בלוק 63534122) + STEEM `c0b2b74e…` (בלוק 109,471,749) — seal h=15 · **מנוע-פעימה-אוטומטי :3032** (שערי-כנות, שער-כלכלי 360דק') · HIVE בחלון-RC | `GET /api/saos/anchor-pulse` (Bearer) · `:3032/status → anchorPulse` |
+| משאבי-חוץ (חי) | **TRON נמדד-חי**: אנרגיה=0 ב-12/12 כתובות · ראשי 0.5 TRX (דשא-רכבת) · HIVE RC חי + מתמטיקה נמדדת (max 41.2B · op≈0.546% · סף-8%≈14 ops) — נמדד 00:44Z 11.09 | `GET /api/saos/status → tronMeasure/tronSource/rcSource` |
 | מסד-נתונים | ok — 15 חותמות · 303 קבלות · השרשרת 0-forks | `GET /api/saos/live-proof` |
 
 ## 2. מפת-הסודות (נתיבים בלבד — מה מחזיק מה)

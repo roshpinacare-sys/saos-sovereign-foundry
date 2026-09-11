@@ -185,7 +185,7 @@ export function NetworksTab() {
           </ul>
         )}
         <p className="mt-3 text-[11px] leading-relaxed text-zinc-500">
-          מקור רמות המשאבים: HIVE RC = מדידה-חיה (rc_api, cache-10 דק׳ — Task 26-c) עם HIVE_RC_PCT כ-fallback · TRON = TRON_ENERGY (מדידה-שדה אחרונה 2026-09-08) · עיגון-הצי רץ אוטומטית רק כשדמון fleet-cure (:3034) חי וסטטוסו טרי (עד 15 דק׳) — פסקי-הדין למעלה הם הראייה החיה, לא הבטחה מקובץ קפוא.
+          מקור רמות המשאבים: HIVE RC = מדידה-חיה (rc_api, cache-10 דק׳ — Task 26-c) עם HIVE_RC_PCT כ-fallback · TRON = מדידה-חיה (getaccount על כל כתובות הכספת, cache-10 דק׳ — 2026-09-11) עם TRON_ENERGY כ-fallback · עיגון-הצי רץ אוטומטית רק כשדמון fleet-cure (:3034) חי וסטטוסו טרי (עד 15 דק׳) — פסקי-הדין למעלה הם הראייה החיה, לא הבטחה מקובץ קפוא.
         </p>
       </Panel>
     </div>

@@ -13,6 +13,7 @@ import { authConfigured } from "@/lib/saos/auth";
 import { enforceRateLimit, ruleFor } from "@/lib/saos/rate-limit";
 import { signerRegistry } from "@/lib/saos/signer";
 import { hiveRcLive } from "@/lib/saos/hive-rc-live";
+import { tronEnergyLive } from "@/lib/saos/tron-energize-live";
 import { externalSignerKeyMatches } from "@/lib/saos/external-signer-client";
 
 export const dynamic = "force-dynamic";
@@ -30,9 +31,11 @@ export async function GET(req: Request) {
   try {
     // Task 33: live RC + live key-match snapshot (both cached, fail-closed)
     // replace the stale env fallbacks that kept the page reporting "blocked".
-    const [rcLive, keys] = await Promise.all([hiveRcLive(), externalSignerKeyMatches()]);
+    const [rcLive, keys, tronLive] = await Promise.all([hiveRcLive(), externalSignerKeyMatches(), tronEnergyLive()]);
     const rcPct = rcLive?.rcPct ?? Number(process.env.HIVE_RC_PCT ?? 0.6);
-    const tronEnergy = Number(process.env.TRON_ENERGY ?? 0);
+    // live TRON measurement (getaccount, keyless, 10-min cache) replaces the
+    // frozen TRON_ENERGY field measurement as primary; env stays fail-closed.
+    const tronEnergy = tronLive?.probed ? tronLive.energyUnits : Number(process.env.TRON_ENERGY ?? 0);
     const mode = await saosModeFresh(); // roast 61: broadcastCapable from a FRESH signer verdict, never the sync cache
 
     // Task 12: opt-in read-only probe (?probe=1) — keyless public RPCs only,
@@ -102,11 +105,13 @@ export async function GET(req: Request) {
         rateLimit: { active: true, status: ruleFor("status").perMinute, seal: ruleFor("seal").perMinute, auth: ruleFor("auth").perMinute },
         signer: signerRegistry().map((s) => ({ signer: s.signer, status: s.status }))
       },
-      matrix: anchoringMatrix(rcPct, tronEnergy),
-      networks: networkStatuses(rcPct, tronEnergy, keys, liveAnchors),
+      matrix: anchoringMatrix(rcPct, tronEnergy, tronLive ?? undefined),
+      networks: networkStatuses(rcPct, tronEnergy, keys, liveAnchors, tronLive ?? undefined),
       // Task 62: אמת-שירותי-הרקע — הטענה היחידה שמותר למסך להציג על הצי
       supervisor,
       rcSource: rcLive ? `live ${rcLive.account} @ ${rcLive.at}` : "env fallback",
+      tronSource: tronLive?.probed ? `live getaccount @ ${tronLive.sourceHost} (${tronLive.addresses} כתובות) @ ${tronLive.at}` : "env fallback (TRON_ENERGY)",
+      tronMeasure: tronLive && tronLive.probed ? { at: tronLive.at, addresses: tronLive.addresses, activated: tronLive.activated, withResources: tronLive.withResources, totalBalanceSun: tronLive.totalBalanceSun, totalEnergyStakedSun: tronLive.totalEnergyStakedSun, reason: tronLive.reason } : undefined,
       ...(probes ? { probes } : {}),
       historic: HISTORIC_ANCHORS,
       seals: seals.map((s) => ({
