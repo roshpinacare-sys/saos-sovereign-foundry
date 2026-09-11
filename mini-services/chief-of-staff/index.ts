@@ -37,6 +37,117 @@ const GUARDIAN_URL = "http://127.0.0.1:3031/status";
 const KEEP_BRIEFS = 30;
 const CHIEF_LOG = path.join(import.meta.dir, "chief.log");
 
+// ── Task 74: anchor-pulse driver (מנוע-העיגון האוטומטי) ──────────────────────
+// 2026-09-10 00:04Z: the FIRST live anchor ever fired (BLURT txid 16b0f861…,
+// seal h=15, block 63534122, independently verified). Until now the pulses
+// waited for a human to curl them — the seals kept saying "ממתין" while the
+// network panel said "מוכנה לעוגן". The driver closes that gap WITHOUT
+// bypassing any gate: it calls the app's own POST /api/saos/anchor-pulse
+// (Bearer admin key, same as a human), which keeps every fail-closed gate
+// (mode, authority-gate, cooldown, ambiguity discipline, public verification).
+//   kill-switch: SAOS_NO_ANCHOR_PULSE=1   ·   economic gate: ANCHOR_PULSE_INTERVAL_MIN
+const APP_URL = "http://127.0.0.1:3000";
+const PULSE_CHECK_MS = 5 * 60_000;
+const PULSE_FIRST_DELAY_MS = 45_000;
+const PULSE_INTERVAL_MIN = Math.max(35, Number(process.env.ANCHOR_PULSE_INTERVAL_MIN ?? 360));
+const PULSE_STATE_FILE = path.join(import.meta.dir, "pulse-state.json");
+const ADMIN_KEY_FILE = path.join(process.env.HOME ?? "/home/z", ".secrets", "saos-admin-key");
+const PULSE_NETWORKS = ["BLURT", "STEEM", "HIVE"] as const;
+type PulseNet = (typeof PULSE_NETWORKS)[number];
+
+let pulseState: { lastFiredByNet: Record<string, string>; lastResult: Record<string, string> } = {
+  lastFiredByNet: {},
+  lastResult: {}
+};
+try {
+  const raw = JSON.parse(fs.readFileSync(PULSE_STATE_FILE, "utf8")) as typeof pulseState;
+  if (raw && typeof raw === "object" && raw.lastFiredByNet && raw.lastResult) pulseState = raw;
+} catch {}
+
+const savePulseState = () => {
+  try { fs.writeFileSync(PULSE_STATE_FILE, JSON.stringify(pulseState, null, 2)); } catch {}
+};
+
+const safeMetaObj = (raw: unknown): Record<string, unknown> => {
+  try {
+    const p = JSON.parse(String(raw ?? "{}")) as unknown;
+    return p && typeof p === "object" && !Array.isArray(p) ? (p as Record<string, unknown>) : {};
+  } catch { return {}; }
+};
+
+async function pulseFire(net: PulseNet, sealHeight: number): Promise<void> {
+  let key = "";
+  try { key = fs.readFileSync(ADMIN_KEY_FILE, "utf8").trim(); } catch {}
+  if (!key) {
+    log("WARN", `pulse[${net}]: admin key file missing — skip (fail-closed)`);
+    return;
+  }
+  try {
+    const r = await fetch(`${APP_URL}/api/saos/anchor-pulse`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+      body: JSON.stringify({ network: net }),
+      signal: AbortSignal.timeout(90_000)
+    });
+    const body = (await r.json().catch(() => ({}))) as { ok?: boolean; anchor?: { txid?: string | null; verified?: boolean }; error?: string; alreadyAnchored?: boolean };
+    const txid = body.anchor?.txid ? `${String(body.anchor.txid).slice(0, 16)}…` : null;
+    if (r.ok && body.ok) {
+      pulseState.lastFiredByNet[net] = new Date().toISOString();
+      pulseState.lastResult[net] = body.alreadyAnchored ? `already-anchored (seal ${sealHeight})` : `ok txid=${txid} verified=${body.anchor?.verified ?? "?"}`;
+      log("INFO", `pulse[${net}]: ${pulseState.lastResult[net]} (seal h=${sealHeight})`);
+    } else {
+      pulseState.lastResult[net] = `refused HTTP ${r.status}: ${String(body.error ?? "?").slice(0, 140)}`;
+      log("WARN", `pulse[${net}]: refused HTTP ${r.status} — ${String(body.error ?? "?").slice(0, 160)}`);
+    }
+  } catch (e) {
+    pulseState.lastResult[net] = `transport-error: ${String((e as Error)?.message ?? e).slice(0, 120)}`;
+    log("ERROR", `pulse[${net}]: transport error — ${pulseState.lastResult[net]}`);
+  }
+  savePulseState();
+}
+
+async function pulseOnce(): Promise<void> {
+  if ((process.env.SAOS_NO_ANCHOR_PULSE ?? "").trim() === "1") return;
+  try {
+    const st = await fetchJson(`${APP_URL}/api/saos/status`, 6000);
+    const nets = (st?.networks ?? null) as Array<{ network?: string; isReadyForAnchor?: boolean; isDryRunOnly?: boolean }> | null;
+    if (!Array.isArray(nets)) return; // app not answering — stay silent, next tick retries
+    const ready = new Set(
+      nets.filter((n) => n.network && n.isReadyForAnchor === true && n.isDryRunOnly !== true).map((n) => String(n.network))
+    );
+    const pulseJson = await (async () => {
+      try {
+        const k = fs.readFileSync(ADMIN_KEY_FILE, "utf8").trim();
+        if (!k) return null;
+        const r = await fetch(`${APP_URL}/api/saos/anchor-pulse`, { headers: { authorization: `Bearer ${k}` }, signal: AbortSignal.timeout(6000) });
+        return r.ok ? ((await r.json()) as Record<string, unknown>) : null;
+      } catch { return null; }
+    })();
+    if (!pulseJson || pulseJson.broadcastCapable !== true) return; // not armed — honest skip
+    const seal = pulseJson.latestSeal as { height?: number } | null;
+    const sealHeight = typeof seal?.height === "number" ? seal.height : null;
+    if (sealHeight === null) return;
+    const anchors = (pulseJson.anchors ?? []) as Array<{ network?: string; txid?: string | null; status?: string; meta?: string | null; createdAt?: string }>;
+    const now = Date.now();
+    for (const net of PULSE_NETWORKS) {
+      if (!ready.has(net)) continue;
+      const rows = anchors.filter((a) => a.network === net);
+      const anchoredThisSeal = rows.some((a) => a.txid && safeMetaObj(a.meta).sealHeight === sealHeight);
+      if (anchoredThisSeal) continue;
+      const inFlight = rows.some((a) => !a.txid && a.createdAt && now - new Date(a.createdAt).getTime() < 65 * 60_000);
+      if (inFlight) continue; // ambiguity window — the app owns retry discipline
+      // economic gate — anchored in the DB itself (source of truth), so a
+      // restart can never re-fire a fresh broadcast (restart-spam guard)
+      const dbLast = rows.filter((a) => a.txid && a.createdAt).map((a) => new Date(a.createdAt as string).getTime());
+      const lastAt = Math.max(pulseState.lastFiredByNet[net] ? new Date(pulseState.lastFiredByNet[net]).getTime() : 0, ...(dbLast.length ? dbLast : [0]));
+      if (lastAt && now - lastAt < PULSE_INTERVAL_MIN * 60_000) continue;
+      await pulseFire(net, sealHeight);
+    }
+  } catch (e) {
+    log("WARN", `pulse-once failed: ${String((e as Error)?.message ?? e).slice(0, 140)}`);
+  }
+}
+
 let lastTickAt = Date.now();
 let cycles = 0;
 let llmCalls = 0;
@@ -274,6 +385,11 @@ Bun.serve({
         cycles, llmCalls, busy,
         lastBriefAt, lastBriefFile, lastError,
         cadence: { cycleMinutes: CYCLE_MS / 60000 },
+        anchorPulse: {
+          enabled: (process.env.SAOS_NO_ANCHOR_PULSE ?? "").trim() !== "1",
+          intervalMin: PULSE_INTERVAL_MIN,
+          state: pulseState
+        },
       });
     }
     if (u.pathname === "/brief" && req.method === "POST") {
@@ -304,4 +420,8 @@ setTimeout(() => {
   void cycle(true); // בריף ראשוני מיידי
 }, FIRST_CYCLE_DELAY_MS);
 
-log("INFO", `chief-of-staff up on :${PORT} — first briefing in ${FIRST_CYCLE_DELAY_MS / 1000}s, cycle every ${CYCLE_MS / 60000}min`);
+// Task 74: העיגון-האוטומטי — כל 5 דק' בדיקת-שערים; ירי רק דרך-שערי-האפליקציה עצמה
+setInterval(() => { void pulseOnce(); }, PULSE_CHECK_MS);
+setTimeout(() => { void pulseOnce(); }, PULSE_FIRST_DELAY_MS);
+
+log("INFO", `chief-of-staff up on :${PORT} — first briefing in ${FIRST_CYCLE_DELAY_MS / 1000}s, cycle every ${CYCLE_MS / 60000}min, anchor-pulse every ${PULSE_CHECK_MS / 60000}min (interval gate ${PULSE_INTERVAL_MIN}min)`);

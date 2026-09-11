@@ -55,3 +55,6 @@ docs/evidence/fleet-cure-status.json
 *.evm
 .secrets/
 scripts/sync-push.log
+
+# Task 74: runtime state (chief-of-staff anchor-pulse driver)
+mini-services/chief-of-staff/pulse-state.json

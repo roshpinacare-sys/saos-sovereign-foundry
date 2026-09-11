@@ -78,7 +78,7 @@ const MAX_OP_HIVE = Number(process.env.SIGNER_MAX_OP_HIVE ?? 50);
 // (/health 2.5.2-task38 · /keys/steem-plane + /keys/status 2.4.5 ·
 // backup-export 2.4.1 · startup log 2.5.4-roast64) — Task-71's bump was
 // partial. Every surface now serves this single constant.
-const SIGNER_VERSION = "2.5.5";
+const SIGNER_VERSION = "2.5.6";
 const AUTH_CACHE_TTL_MS = 10 * 60_000;
 /** token resolution: env → ~/.secrets/external-signer-token (secrets never in trees) */
 function resolveToken() {
@@ -603,22 +603,39 @@ function createHmacSha256(key, msg) {
   return createHmac("sha256", key).update(msg).digest();
 }
 
-/** public-data view of a role slot — never any WIF material */
-async function slotView(net, acct, wif, role) {
-  if (!wif) return { loaded: false, role };
-  let derived = null;
-  try { derived = steem.auth.wifToPublic(wif); } catch {}
-  let expected = null, match = null;
+/** public-data view of a role slot — never any WIF material.
+ *  Task 74: match = ANY held candidate (cross-net-tag payload identity) — the
+ *  requested net's own slot is tried first and `via` names the winner's tag. */
+async function slotView(net, acct, target, role) {
+  const candidates = target ? heldWifCandidates(target, role, net) : [];
+  if (!candidates.length) return { loaded: false, role };
+  let via = null;
+  let viaDerived = null;
+  let expected = null, match: boolean | null = null;
   try {
     const auth = await chainAuthorities(net, acct);
     // Task 64: memo slots are real slots (16/16 drift coverage) — the view used
     // to compare a memo WIF against the POSTING authority (silently false).
     expected = role === "active" ? auth.active : role === "owner" ? auth.owner : role === "memo" ? auth.memo : auth.posting;
-    // Task 36: prefix-aware — same payload decides (STM render vs BLT authority)
-    match = derived !== null && expected !== null && derived.slice(3) === expected.slice(3);
+    // Task 36/74: payload decides (STM/HIVE/BLT renders of the same key)
+    for (const wif of candidates) {
+      let d = null;
+      try { d = steem.auth.wifToPublic(wif); } catch {}
+      if (d && expected && d.slice(3) === expected.slice(3)) { via = netTagOf(target, wif, role) ?? "candidate"; viaDerived = d; break; }
+    }
+    match = expected ? via !== null : null;
   } catch { match = null; }
   const prefix = NET_PREFIX[net] ?? "STM";
-  return { loaded: true, role, derived: derived ? prefix + derived.slice(3) : null, expected, match };
+  return { loaded: true, role, derived: viaDerived ? prefix + viaDerived.slice(3) : null, expected, match, ...(via ? { via } : {}) };
+}
+
+/** which net tag supplied the matching candidate (display only — no secret) */
+function netTagOf(target, wif, role) {
+  for (const n of ["STEEM", "HIVE", "BLURT"]) {
+    const s = target?.net?.[n];
+    if (s && (role === "active" ? s.activeWif : role === "owner" ? s.ownerWif : role === "memo" ? s.memoWif : s.postingWif) === wif) return n;
+  }
+  return "generic";
 }
 
 loadState();
@@ -735,15 +752,26 @@ async function verifyLiveAllInner() {
       };
       let auth: Record<string, string | null> | null = null;
       try { auth = await chainAuthorities(net, t.account); } catch { errCount++; continue; }
-      for (const [role, wif] of Object.entries(slots)) {
-        if (!wif) continue;
+      for (const [role, slotWif] of Object.entries(slots)) {
+        if (!slotWif) continue;
+        // Task 74: a slot is OURS iff ANY held candidate for the role derives to
+        // the authority's payload (cross-net-tag identity — the 23:25Z rotation
+        // re-pointed STEEM at the BLURT-payload keys we already hold). The
+        // requested net's own slot is still the FIRST candidate, so a true
+        // net-local match behaves exactly as before.
+        const candidates = heldWifCandidates(t, role, net);
+        let matched: string | null = null; // the matching candidate's derived payload render
         let derived: string | null = null;
-        try { derived = steem.auth.wifToPublic(wif); } catch { errCount++; continue; }
+        try { derived = steem.auth.wifToPublic(slotWif); } catch {}
+        for (const cand of candidates) {
+          let d: string | null = null;
+          try { d = steem.auth.wifToPublic(cand); } catch {}
+          if (d && auth?.[role] && auth[role].slice(3) === d.slice(3)) { matched = d; break; }
+        }
         const expected = auth?.[role] ?? null;
         const slotKey = `${t.account}|${net}|${role}`;
         const prev = prevMatch.has(slotKey) ? prevMatch.get(slotKey) : null;
-        // Task 36: prefix-aware live verification (payload decides, not the prefix)
-        if (expected && derived && expected.slice(3) === derived.slice(3)) {
+        if (expected && matched) {
           okCount++;
           prevMatch.set(slotKey, true);
         } else if (expected) {
@@ -841,6 +869,29 @@ function keyFor(account, authLevel, network) {
   const suffixed = target?.net?.[net] ? (authLevel === "active" ? (target.net[net].activeWif ?? null) : authLevel === "owner" ? (target.net[net].ownerWif ?? null) : (target.net[net].postingWif ?? null)) : null;
   const wif = suffixed ?? generic;
   return { target, wif, targetAccount: target.username ?? target.account };
+}
+
+// Task 74 (2026-09-10 23:25Z rotation forensics): the chain can re-point a
+// network's authorities at key material we ALREADY hold under a DIFFERENT net
+// tag (the STEEM rotation unified STEEM onto the BLURT-payload keys — payload
+// identity proven live: STM8m3rB… ≡ BLT8m3rB…). A slot is therefore "ours" iff
+// ANY held candidate for that role derives to the authority's payload — the
+// chain decides, prefixes are renders. This helper lists every held WIF for
+// (target, role), REQUESTED net first (so the old behavior is the first
+// candidate, never lost), then sibling nets, then generic/legacy slots —
+// deduped. Fail-closed unchanged: verifyAuthority still checks every candidate
+// against the LIVE chain before anything is signed.
+function heldWifCandidates(target, role, net) {
+  const out = [];
+  const seen = new Set();
+  const push = (w) => { if (w && !seen.has(w)) { seen.add(w); out.push(w); } };
+  const netTags = [net, ...["STEEM", "HIVE", "BLURT"].filter((n) => n !== net)];
+  for (const n of netTags) {
+    const s = target?.net?.[n];
+    if (s) push(role === "active" ? s.activeWif : role === "owner" ? s.ownerWif : role === "memo" ? s.memoWif : s.postingWif);
+  }
+  push(role === "active" ? target.activeWif : role === "owner" ? target.ownerWif : role === "memo" ? target.memoWif : target.postingWif);
+  return out;
 }
 
 // Task 35: steem@0.7.10 cannot serialize the HIVE asset symbol (legacy STEEM/SBD/VESTS
@@ -1180,10 +1231,10 @@ const server = Bun.serve({
         const mainNet = {};
         for (const net of ["STEEM", "HIVE", "BLURT"]) {
           mainNet[net] = {
-            posting: await slotView(net, STATE.main.account, STATE.main.net?.[net]?.postingWif ?? STATE.main.postingWif, "posting"),
-            active: await slotView(net, STATE.main.account, STATE.main.net?.[net]?.activeWif ?? STATE.main.activeWif, "active"),
-            owner: await slotView(net, STATE.main.account, STATE.main.net?.[net]?.ownerWif ?? STATE.main.ownerWif, "owner"),
-            memo: await slotView(net, STATE.main.account, STATE.main.net?.[net]?.memoWif ?? STATE.main.memoWif, "memo")
+            posting: await slotView(net, STATE.main.account, STATE.main, "posting"),
+            active: await slotView(net, STATE.main.account, STATE.main, "active"),
+            owner: await slotView(net, STATE.main.account, STATE.main, "owner"),
+            memo: await slotView(net, STATE.main.account, STATE.main, "memo")
           };
         }
         // Task 64 (חיבור-הכל): the fleet display used to show only generic
@@ -1467,8 +1518,27 @@ const server = Bun.serve({
         : kind === "claim_rewards"
           ? "posting"
           : (authLevel === "active" ? "active" : "posting"); // custom_json: explicit authLevel wins, default posting
-      const { target, wif, targetAccount } = keyFor(account, roleForKind, net);
-      if (!target) return Response.json({ ok: false, error: `unknown account ${account ?? "(main)"}` }, { status: 400 });
+        // Task 74: candidate resolution — the requested net's own slot wins when
+        // it verifies; otherwise EVERY held net-tagged candidate for this role is
+        // tried against the LIVE authority (payload identity). Fail-closed: zero
+        // verifying candidates ⇒ the same honest authority-mismatch refusal.
+        const target = keyFor(account, roleForKind, net).target;
+        if (!target) return Response.json({ ok: false, error: `unknown account ${account ?? "(main)"}` }, { status: 400 });
+        const targetAccount = target.username ?? target.account;
+        const candidates = heldWifCandidates(target, roleForKind, net);
+        if (!candidates.length) return Response.json({ ok: false, error: `no ${roleForKind} key in envelope for ${targetAccount}` }, { status: 403 });
+        let wif = null;
+        let lastVerdict = null;
+        for (const cand of candidates) {
+          const v = await verifyAuthority(net, targetAccount, cand, roleForKind);
+          if (v.ok) { wif = cand; break; }
+          lastVerdict = v;
+        }
+        if (!wif) {
+          const err = lastVerdict?.error ?? `authority-mismatch: no held candidate matches the live ${net} ${roleForKind} authority (fail-closed, nothing broadcast)`;
+          log("REFUSED", `requestId=${requestId} kind=${kind} network=${net} account=${targetAccount}: ${err}`);
+          return Response.json({ ok: false, error: err, refused: "authority-gate" }, { status: 403 });
+        }
 
       const started = Date.now();
       try {
@@ -1556,12 +1626,9 @@ const server = Bun.serve({
           return Response.json({ ok: false, error: `unsupported kind ${kind ?? "?"} for ${net} (scope: ${scopes[net] ?? "custom_json"})` }, { status: 400 });
         }
 
-        // AUTHORITY VERIFICATION GATE — nothing broadcasts without a live match
-        const verdict = await verifyAuthority(net, targetAccount, wif, role);
-        if (!verdict.ok) {
-          log("REFUSED", `requestId=${requestId} kind=${kind} network=${net} account=${targetAccount}: ${verdict.error}`);
-          return Response.json({ ok: false, error: verdict.error, refused: "authority-gate" }, { status: 403 });
-        }
+        // AUTHORITY VERIFICATION GATE — the winning candidate already verified
+        // against the LIVE chain above (verifyAuthority per candidate); nothing
+        // broadcasts without that match.
         // RC FEASIBILITY GATE — no doomed broadcasts (posting weave is RC-free-light, skip it)
         if (net === "HIVE" && !(kind === "custom_json" && authLevel !== "active")) {
           const rcv = await verifyRcFeasibility(net, targetAccount);

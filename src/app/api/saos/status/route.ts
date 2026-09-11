@@ -61,6 +61,35 @@ export async function GET(req: Request) {
       supervisorStatus()
     ]);
 
+    // Task 74: latest VERIFIED live anchors per network — the freshest truth
+    // replaces the static historic ref on the network views (derived, never
+    // invented; only the pulse writes "anchored" rows — truth contract kept).
+    const verifiedRows = await db.anchorTx.findMany({
+      where: { txid: { not: null }, status: "anchored" },
+      orderBy: { createdAt: "desc" },
+      take: 24,
+      select: { network: true, txid: true }
+    });
+    const liveAnchors: Record<string, string> = {};
+    for (const row of verifiedRows) {
+      if (row.txid && !liveAnchors[row.network]) liveAnchors[row.network] = row.txid;
+    }
+
+    // Task 74: collapse per-network anchor rows for the seals view — a seal can
+    // carry BOTH a seal-time matrix snapshot row ("pending", txid:null) and the
+    // REAL verified anchor row (txid set by the pulse). Showing both made the
+    // screen say "ממתין" and "נעוגן" side by side. The strongest honest state
+    // wins: a txid-bearing row beats a snapshot row; within the same class the
+    // newest wins.
+    const collapseSealAnchors = (rows: Array<{ network: string; status: string; txid: string | null; gate: string | null; createdAt: Date }>) => {
+      const byNet = new Map<string, { network: string; status: string; txid: string | null; gate: string | null; createdAt: Date }>();
+      for (const a of [...rows].sort((x, y) => y.createdAt.getTime() - x.createdAt.getTime())) {
+        const cur = byNet.get(a.network);
+        if (!cur || (!cur.txid && a.txid)) byNet.set(a.network, a);
+      }
+      return [...byNet.values()];
+    };
+
     return NextResponse.json({
       ok: true,
       motto: "אנחנו מנצחים את הבלוקצ'יין",
@@ -74,7 +103,7 @@ export async function GET(req: Request) {
         signer: signerRegistry().map((s) => ({ signer: s.signer, status: s.status }))
       },
       matrix: anchoringMatrix(rcPct, tronEnergy),
-      networks: networkStatuses(rcPct, tronEnergy, keys),
+      networks: networkStatuses(rcPct, tronEnergy, keys, liveAnchors),
       // Task 62: אמת-שירותי-הרקע — הטענה היחידה שמותר למסך להציג על הצי
       supervisor,
       rcSource: rcLive ? `live ${rcLive.account} @ ${rcLive.at}` : "env fallback",
@@ -88,7 +117,7 @@ export async function GET(req: Request) {
         leaves: s._count.leaves,
         gasUsed: s.gasUsed,
         createdAt: s.createdAt,
-        anchors: s.anchors.map((a) => ({
+        anchors: collapseSealAnchors(s.anchors).map((a) => ({
           network: a.network,
           status: a.status,
           txid: a.txid,

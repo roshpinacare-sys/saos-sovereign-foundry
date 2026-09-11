@@ -349,6 +349,7 @@ const bootState = loadState();
 // lock — a slow cycle can never pile up; (2) every cycle logs start/end so a
 // dead loop is visible in the log within one cadence.
 let cycling = false;
+let lastCycleEnd = Date.now(); // Task 74: watchdog heartbeat — set on every completed cycle
 async function loop() {
   if (cycling) { log("WARN", "cycle skipped — previous cycle still running (no-overlap lock)"); return; }
   cycling = true;
@@ -360,6 +361,7 @@ async function loop() {
   } catch (e) {
     log("ERROR", `cycle error: ${String((e as Error)?.message ?? e).slice(0, 200)}`);
   } finally {
+    lastCycleEnd = Date.now();
     cycling = false;
   }
 }
@@ -382,3 +384,20 @@ Bun.serve({
 log("INFO", `fleet-cure listening on :${PORT} (signer=${SIGNER_URL}, opCost=${OP_COST_RC} RC, fleet=${FLEET.length}, admin=${adminKey() ? "token" : "MISSING-record-fail-closed"})`);
 void loop();
 setInterval(() => void loop(), CYCLE_MS);
+
+// Task 74: self-watchdog — the 22:49→23:03Z relapse proved the loop can go
+// silent while Bun.serve keeps LISTENING (the exact "HTTP alive, daemon dead"
+// lie the UI then repeats from the frozen status file). Root cause this time:
+// bun --hot re-eval aborted mid-module (port still bound by the old server),
+// so the new intervals never registered — a walking-dead state no log shows.
+// Two-layer defense: (1) the dev script no longer uses --hot (package.json —
+// the hot-reloader itself was the killer; the supervisor revives on exit),
+// (2) if no cycle completes within 3 cadences the process EXITS on purpose —
+// loud death beats quiet zombification.
+setInterval(() => {
+  const silentMs = Date.now() - lastCycleEnd;
+  if (silentMs > 3 * CYCLE_MS) {
+    log("ERROR", `self-watchdog: no completed cycle for ${Math.round(silentMs / 60000)}min — walking-dead detected, exiting for supervisor revival`);
+    try { process.exit(1); } catch {}
+  }
+}, 60_000);

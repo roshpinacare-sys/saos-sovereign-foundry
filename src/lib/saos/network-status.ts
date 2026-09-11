@@ -64,7 +64,21 @@ export interface NetworkStatusView {
   liveProbePossible?: boolean;
 }
 
-export function networkStatuses(rcPct: number, tronEnergy: number, keys?: SignerKeyMatches | null): NetworkStatusView[] {
+/**
+ * Task 74: latest VERIFIED live anchors per network (from AnchorTx — txid != null,
+ * status "anchored" = independently verified by the public network). When present
+ * they REPLACE the static HISTORIC_ANCHORS ref on the views — the screen shows
+ * the freshest truth, derived, never invented. The pulse itself remains the
+ * ONLY writer of verified rows (truth contract, roast 50).
+ */
+export type LiveAnchorMap = Record<string, string> | undefined;
+
+export function networkStatuses(
+  rcPct: number,
+  tronEnergy: number,
+  keys?: SignerKeyMatches | null,
+  liveAnchors?: LiveAnchorMap
+): NetworkStatusView[] {
   const historicOf = (n: NetworkName) => HISTORIC_ANCHORS.find((h) => h.network === n);
   // Task 26 (live forensics 2026-09-08): the external signer IS connected
   // (mini-services/external-signer :3033, envelope GCM-genuine), but the sealed
@@ -87,6 +101,27 @@ export function networkStatuses(rcPct: number, tronEnergy: number, keys?: Signer
   const keysPendingBlocker = signerConnected
     ? "keys-owner-held: מפתחות בחזקת הבעלים; החותם-החיצוני מחובר אך אין סלוטים מאומתים לרשת זו — נדרש ingest (verify-then-write) דרך /keys/ingest"
     : "vault: אין מפתחות חתימה בסנדבוקס (שלב 2 — שחזור כספת)";
+
+  // Task 74 (live forensics 2026-09-10 23:25Z): the STEEM chain rotated EVERY
+  // fleet account's authorities to keys NOT in the signer's custody — the old
+  // text ("keys-owner-held … נדרש ingest") lied about WHO holds the live key.
+  // The blocker is now derived from the measured match matrix itself:
+  //   loaded slots exist but matched == 0  ⇒ the chain moved AWAY from our keys
+  //   (chain-rotated) — re-ingest of the CURRENT key is required;
+  //   partial match                         ⇒ drift/sync needed;
+  //   no loaded slots at all                ⇒ owner-held wording (unchanged).
+  const keysBlockerFor = (net: string): string => {
+    if (!signerConnected) return keysPendingBlocker;
+    const m = netMatch(net);
+    if (!m || m.total === 0) return keysPendingBlocker;
+    if (m.matched === 0) {
+      return `chain-rotated: הרשויות-החיות בשרשרת אינן תואמות את המפתחות-הטעונים בחותם (נמדד חי ${m.matched}/${m.total} סלוטים) — רוטציית-שרשרת חוץ מעבירה את הסמכות למפתח שאינו בחזקתנו; נדרש ingest מחדש של המפתח-החי (verify-then-write דרך /keys/ingest) או הבהרת-חזקה מהבעלים`;
+    }
+    if (!m.allMatched) {
+      return `key-drift: חלק מהסלוטים אינו תואם את הרשויות-החיות (נמדד חי ${m.matched}/${m.total}) — נדרש סנכרון/ingest משלים דרך /keys/ingest`;
+    }
+    return keysPendingBlocker;
+  };
 
   const nowIso = new Date().toISOString();
   // Task 26-c: HIVE has a REAL broadcast path when the signer is connected —
@@ -125,11 +160,11 @@ export function networkStatuses(rcPct: number, tronEnergy: number, keys?: Signer
     rpcStatus: "public",
     liveProbePossible: true,
     lastChecked: nowIso,
-    lastVerifiedAnchor: historicOf("STEEM")?.txRef ?? null,
+    lastVerifiedAnchor: liveAnchors?.STEEM ?? historicOf("STEEM")?.txRef ?? null,
     nextAction: steemReady
       ? `מוכנה לעגן עכשיו — ${signer.mainAccount ?? "החשבון-הראשי"} מאומת חי מול השרשרת (סלוטים STEEM ${netMatchLabel("STEEM")}); הפעימה הבאה משדרת custom_json saos.weave.v1 דרך החותם-החיצוני ורושמת txid מלא`
       : "בפעימת live הבאה: שידור custom_json saos.weave.v1 + שמירת txid מלא ב-AnchorTx; בדיקת-קריאה חיה זמינה ב-/api/saos/live-proof",
-    blocker: steemReady ? null : keysPendingBlocker,
+    blocker: steemReady ? null : keysBlockerFor("STEEM"),
     requiredResource: steemReady ? null : "posting key (active למבצעים מורחבים) — שחזור כספת",
     unblockPlan: steemReady
       ? []
@@ -168,15 +203,17 @@ export function networkStatuses(rcPct: number, tronEnergy: number, keys?: Signer
     rpcStatus: "public",
     liveProbePossible: true,
     lastChecked: nowIso,
-    lastVerifiedAnchor: historicOf("BLURT")?.txRef ?? null,
+    lastVerifiedAnchor: liveAnchors?.BLURT ?? historicOf("BLURT")?.txRef ?? null,
     nextAction: blurtReady
       ? `מוכנה לעגן עכשיו — סלוטים BLURT מאומתים חי (${netMatchLabel("BLURT")}); חתימה קנונית (low-s loop) בפעימה הבאה`
       : `בפעימת live הבאה: חתימה קנונית (low-s loop), עמלה ${BLURT_FEE_FORMULA}, שמירת cooldown ${BLURT_COOLDOWN_MIN} דק'`,
     blocker: blurtReady
       ? null
-      : signerConnected
-        ? `keys-missing-blurt: לחותם-החיצוני אין סלוטי BLURT מאומתים (רשתות-חותם פעילות: ${signer.networks.join(", ") || "—"}) — עיגון BLURT דורש ingest מפתח-active + יתרת עמלה`
-        : keysPendingBlocker,
+      : signerConnected && (netMatch("BLURT")?.total ?? 0) > 0
+        ? keysBlockerFor("BLURT")
+        : signerConnected
+          ? `keys-missing-blurt: לחותם-החיצוני אין סלוטי BLURT מאומתים (רשתות-חותם פעילות: ${signer.networks.join(", ") || "—"}) — עיגון BLURT דורש ingest מפתח-active + יתרת עמלה`
+          : keysPendingBlocker,
     requiredResource: blurtReady ? null : "active key + יתרת BLURT לעמלה",
     unblockPlan: blurtReady
       ? []
@@ -236,7 +273,7 @@ export function networkStatuses(rcPct: number, tronEnergy: number, keys?: Signer
     rpcStatus: "public",
     liveProbePossible: true,
     lastChecked: nowIso,
-    lastVerifiedAnchor: fleetLanded ? (fc.lastTxid as string) : null,
+    lastVerifiedAnchor: fleetLanded ? (fc.lastTxid as string) : liveAnchors?.HIVE ?? null,
     nextAction: fleetLanded
       ? `עוגן-צי בוצע (txid ${String(fc.lastTxid).slice(0, 12)}…) — המשך קצב עם backoff לפי חלונות RC`
       : mainReady

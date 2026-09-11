@@ -585,7 +585,7 @@ export function MyKeysPanel() {
                 const slots = v.summary?.ok;
                 return (
                   <p className="mt-2 text-[11px] leading-relaxed text-zinc-400">
-                    מצב-המפתחות המלא: כל {accts} חשבונות-הכספת חיים ({slots} סלוטים מאומתים-חי) — ראשי STEEM·HIVE·BLURT × 4 תפקידים + הצי HIVE·BLURT × 4 תפקידים. הכל נגזר, נטען ומאומת מול השרשרת החיה.
+                    מצב-המפתחות המלא: כל {accts} חשבונות-הכספת חיים ({slots} סלוטים מאומתים-חי) — ראשי והצי מאומתים-חי מול כל מישורי STEEM·HIVE·BLURT, כולל זהות-payload חוצת-מתויג (Task 74: השרשרת מכריעה, המתויג הוא רינדור בלבד). הכל נגזר, נטען ומאומת מול השרשרת החיה.
                   </p>
                 );
               })()}
