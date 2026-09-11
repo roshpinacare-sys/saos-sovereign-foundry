@@ -385,9 +385,15 @@ async function verifyTron(txid: string): Promise<TxidVerification> {
         lastReason = `אימות TRON: ${new URL(url).host} לא נגיש (HTTP ${res.status}) — עובר לנקודת-הקריאה הבאה`;
         continue; // transport failure — rotate, never fake "unverified by the network"
       }
-      const json = (await res.json()) as { ret?: Array<{ result?: boolean }>; raw_data?: unknown };
-      if (json?.raw_data && Array.isArray(json.ret) && json.ret[0]?.result === true) {
-        return { verified: true, source: url, reason: `txid אומת מול ${new URL(url).host}` };
+      const json = (await res.json()) as { ret?: Array<{ result?: boolean; contractRet?: string }>; raw_data?: unknown };
+      // trongrid gettransactionbyid reports ret[0].contractRet === "SUCCESS" (never a bare
+      // `result: true` — that field belongs to other endpoints). Proven live by the first
+      // direct TRON anchor (task 81, txid 74e574fc…2d81): the untested path rejected a
+      // SUCCESSFUL on-chain transaction. Fail-closed either way: only SUCCESS verifies.
+      const ret0 = json?.ret?.[0];
+      const success = ret0?.result === true || ret0?.contractRet === "SUCCESS";
+      if (json?.raw_data && Array.isArray(json.ret) && success) {
+        return { verified: true, source: url, reason: `txid אומת מול ${new URL(url).host}${ret0?.contractRet ? ` (${ret0.contractRet})` : ""}` };
       }
       return { verified: false, source: null, reason: `${new URL(url).host} לא מכיר את ה-txid (או שהוא עדיין ב-mempool) — unverified` };
     } catch {

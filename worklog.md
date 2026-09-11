@@ -2260,3 +2260,24 @@ Stage Summary:
 - **h16 = 5/6 רשתות נעוגנות-חי-ומאומתות**: ETHEREUM + SOLANA + STEEM + BLURT + **HIVE (בפעם-הראשונה)**. TRON = השער-היחיד-שנותר והוא החלטת-אנרגיה של הבעלים.
 - **רעבת-ה-RC-של-HIVE אובחנה-מקצה-לקצה ונפתרה-בשרשרת**: מדידה-חי של-סף-הקציר, מודל-עלות-לפי-גודל-payload, ופורמט-קומפקטי-שמנצח-את-המירוץ — ידע-מבצעי-חדש-לכל-החותמות-הבאות.
 - הצי כולו (לא רק headcorner) הוא-עתה מישור-שידור-לגיטימי לעוגני-weave — 10 חשבונות עם סמכות-active-חיה על HIVE.
+
+---
+Task ID: 81
+Agent: Z.ai Code (main)
+Task: "אין בעיה אני מאשר להשתמש ולהתייעל ככל הניתן עם מה שיש במלאי תמשיך ודחוף" (trace 1a08ed7bde6e0aed) — עיגון-TRON חי מהמלאי, תיקוני-באג, דחיפה לריפו-הראשי + לכל-השותפים.
+
+Work Log:
+- מדידת-מלאי-חי TRX על 12 כתובות-הכספת (trongrid/tronstack): **0.50 TRX ב-headcorner בלבד**; 11 ריקות/לא-מופעלות. (הערכת 27.25 TRX מ-Task 26-c = כתובות-חוץ-לכספת.)
+- מפת-ערוצים נבנתה-חי, כל-כישלון חינם (שום-דבר נשמר-רק-בשידור-מוצלח): self-transfer אסור ("Cannot transfer TRX to yourself") · העברה-לכתובת-צי-טרייה = 1 TRX הפעלה · FreezeBalanceV2 מינימום 1 TRX + השדה הוא `frozen_balance` · SetAccountId = מלכודת-לגאטים (ה-endpoint בונה, השידור מת "No contract!" — SetAccountIdContract חסר מ-ContractType המודרני; 3 וריאנטי-שידור נבדקו).
+- **הערוץ-המנצח**: TransferContract ל-blackhole-הקנוני T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb (כתובת-null 41‖00…00, מאומת-חי: קיים-מ-2018, 773K TRX שרופים — אף-צד-שלישי לא מרוויח). הסכום נושא-את-הקידוד הקנוני "6 תווי-hash בשבר-ה-TRX": root[0:4]="eaea" → 60138 sun = 0.060138 TRX.
+- **באג-שידור נתפס-חי ותוקן**: שידור בלי `visible:true` → השרת מנתח-כתובות-base58 כ-hex → החוזה נשר → "No contract!". הוספת visible:true לגוף-השידור = הצלחה.
+- **🏆 עיגון-TRON-ראשון**: txid 74e574fcb6c1f99fdaa9fc7da23f8e48ca0b06acc0a4f8f7736a65a1b8002d81, ret[0].contractRet=SUCCESS, מ-headcorner (מפתח-ריבוני, secp256k1 גולמי מחוץ-לריפו, בלי-tronweb). עלות 0.060138 TRX בלבד — אפס-שריפת-bandwidth (מיכסת-600 חינמית). יתרה אחרי 0.439862.
+- **באג-פלטפורמה נתפס-חי ותוקן**: verifyTron בדק `ret[0].result===true` אך trongrid מדווח `contractRet==="SUCCESS"` — נתיב-לא-נבדק-מעולם (TRON לא נעוגן-חי-קודם) דחה עסקה-מוצלחת. תוקן fail-closed (רק-SUCCESS מאמת). tsc+lint נקיים.
+- **קליטה-מאומתת**: POST /anchor-ingest TRON h16 → ok, verifiedBy=trongrid-gettransactionbyid; CAS ללא-דריסה. **h16 = 6/6 מטריצה מלאה** (ETH+SOL+STEEM+BLURT+HIVE+TRON) — אומת מול /api/saos/status.
+- נכתבו: evidence/TRON-FIRST-ANCHOR-2026-09-11.md (§1-§9) · reports/SAOS-PULSE-2026-09-11-H16-SIX-OF-SIX.md (עברית, ארבעת-היסודות לשותפים).
+- היגיינה: מנוע-החתימה מחוץ-לריפו (~/task81) · אפס-סודות בלוגים/גיט/צ'אט · WATTOIN אפס-מגע · askpass זמני-ונמחק · אפס-force-push.
+
+Stage Summary:
+- **TRON הצטרף למטריצת-העיגון — h16 הושלם 6/6 רשתות נעוגנות-חי-ומאומתות**; החסם-האחרון ("החלטת-אנרגיה") נפתר-בשרשרת עם מלאי-קיים בהרשאת-בעלים מפורשת.
+- ידע-מבצעי-חדש: מפת-ערוצי-TRON המלאה (4 שערים + הערוץ-המנצח) · קידוד-השבר-הקנוני · מיכסת-bandwidth-חינמית-יומית = עיגון-יומי-בעלות-אפס.
+- שני-באגים שנתפסו-חי (visible:true · contractRet) היו חוסמים-כל-עיגון-TRON-עתידי — נתפסו בזכות-הביצוע-החי ותוקנו עם-הוכחה.

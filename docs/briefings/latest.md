@@ -1,19 +1,19 @@
-# בריף ראש-המטה — 2026-09-11T04:39:46.491Z
+# בריף ראש-המטה — 2026-09-11T05:09:32.281Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: 181952e
+HEAD: fbf2705
 כספת-חי (מקור-אמת מהחותם :3033 — ספירות-בלבד): main=headcorner slots STEEM 4/4 · HIVE 4/4 · BLURT 4/4 | fleet-with-keys=[cashmachine,haran,israelnews,lsa,macrame,siq,wic,wog,woq,ynet,tov] | drift ok=136 drift=0 unmatched=0 | sealedAt=2026-09-10T21:32:28.346Z
-guardian: ok=true runs=237 devMode=true tickAlive=true token=true
-- 181952e briefings: chief-of-staff rotation (auto) — briefs 02:39Z+03:09Z
-- a148e40 task79: fleet-anchor expansion — seal h16 anchored from 11 sovereign addresses (1 SOL finalized + 8 ETH in one block), both ingested with server-side reverify; daily Hebrew report for all partner agent repos; WATTOIN zero-touch re-verified (nonce 76)
-- 0ebbaaf docs: AGENT-BRIEFING - cross-repository status broadcast. The cross-chain commitment is verified identical on ETH block 25929672 and SOL slot 445225030; SOL verified=0 was one boolean and is fixed; RC saturation is fixed by transfer_to_vesting (+61% daily budget); eight public forks in 173 anchors with epoch still absent from all four relay files; and saos:xlock is four self-transfers that lock nothing. Per-repository action lists included. Added as a new file; nothing existing was modified or deleted.
-- 7a3100d broadcast: דוח-יומי מהכספת Saosmartwallet · 2026-09-11 — מה-נעשה (r13→r22), פריצות-הדרך, מספרים-חיים, ריבוד-זהויות-בצי, חוקי-תיאום ומה-מתוכנן · דוח-גלוי לכל-הסוכנים-השותפים (הוראת-הבעלים) · אפס-סודות
-- 8f03f21 דוח-היום SAOS 2026-09-11: 19 מהדורות (v44→v62) · 5/5 רשתות מעוגנות מיינטנט · 22 זהויות מזרע אחד · דוח גלוי לכל הסוכנים השותפים (הוראת הבעלים)
-briefings אחרונים: BRIEF-2026-09-11T02-09-38.md, BRIEF-2026-09-11T02-39-37.md, BRIEF-2026-09-11T03-09-43.md, BRIEF-2026-09-11T03-39-36.md, BRIEF-2026-09-11T04-09-35.md
+guardian: ok=true runs=261 devMode=true tickAlive=true token=true
+- fbf2705 2da3182a-10a5-49a3-89ba-3e702dd7087f
+- 8d95fc7 task80: HIVE anchored LIVE for the first time — seal h16 now 5/6 networks (ETH+SOL+STEEM+BLURT+HIVE); STEEM 7438441d blk 109475336 + BLURT 72c094f3 blk 63538064 from headcorner; HIVE 2ee771d6 blk 109811500 from lsa (active authority, fleet launcher); RC-starvation diagnosed end-to-end (legacy chain-seal stream harvests at ~207M RC < full weave 231.6M — structural, waiting never wins) and beaten with compact payload {protocol,root,height} 120B ≈ 108M RC; pulse accepts fleet account param (fail-closed live-authority gate); signer now returns node-confirmed canonical 40-hex txid (get_transaction rejects 64-hex, proven live); api-check 149/0; zero secrets, zero force-push
+- 75d9265 broadcast: ספר האוצר נולד (v65) — ההרשאה בקוד · 4 פעימות מיינטנט תחת ההרשאה · כל הוצאה מהקבלות · כתובת-מימון 7 הדלתות · אפס-סודות
+- 7b2c531 broadcast: מכתם-roast-77 מ-saos-control-center/saos-dex — הפעלת-הכסף-הראשונה (powerup-STEEM · txid) + שערי-דלק-ETH + תיקון-סמכות-posting-מהכספת · מטריצת-השגה · קובץ-חד-בלבד · אפס-סודות
+- 2a4062d broadcast: r27 מישור-היעילות מהכספת Saosmartwallet · המלאי-החי (כספת-234 · 5-סוכנים · 41-מודולים) · מדידת-מוחות (nvidia 91.5% מול zai 34.5%) · הזדמנויות-בסדר-תשואה · מטרות-הרשת · מה-מיושם-עכשיו · אפס-סודות
+briefings אחרונים: BRIEF-2026-09-11T02-39-37.md, BRIEF-2026-09-11T03-09-43.md, BRIEF-2026-09-11T03-39-36.md, BRIEF-2026-09-11T04-09-35.md, BRIEF-2026-09-11T04-39-46.md
 ── זנב next-steps.md ──
 …
 ת זה וסגור את הפינה הזו דחוף לריפו בסיום".
@@ -38,25 +38,29 @@ briefings אחרונים: BRIEF-2026-09-11T02-09-38.md, BRIEF-2026-09-11T02-39-3
 במהלך-ההפעלה הראשונה של ה-DEX דלף DATABASE_URL מה-shell (foundry custom.db דרס את .env של ה-DEX — קדימות process.env) וקו-הריליי שלו כתב 2 קבלות-זרות לשרשרת-ה-foundry (23:14:38/23:15:14). נתפס בבדיקת-החובה שלפני-סגירה: אוכסן (docs/evidence/dex-relay-pollution-archive-2026-09-08.json, sha256 34f3a606…), הוסר, והסכימה הוקשתה — EvidenceReceipt.at נעשה REQUIRED כך שכותב-זר נכשל מבנית. verifyChainDag PASS מחדש.
 
 ### פתוח מ-Task 27
-- **הרצה-מסיימת על-הרנטיים** (בעלים/רנטיים): `node agent/he_powerup.cjs --amount ALL` → אחריה ה-UI יראה RC עולה (מדידה חיה ב-.env תעודכן), ושער-המשאבים 
+- **הרצה-מסיימת על-הרנטיים** (בעלים/רנטיים): `node agent/he_powerup.cjs --amount AL
 ```
 </details>
 ## מצב רשת
-רשת SAOS פעילה עם כל 4 הסלוטים מאומתים (STEEM, HIVE, BLURT) ו-11 סוכנים בצי. מצב-ה-RC ב-HIVE קריטי (0.003%), מה שמאט פעילות לכדי פעולה אחת כל 25 דקות. נתיב המרה מלא מאומת בין HIVE ל-DEX, ומערכת הגנות הסמכות עובדת. המשאב הנזיל היחיד הוא 9.682 HIVE על headcorner.
+הרשת יציבה עם 5/6 רשתות מעוגנות. קיים מחסור RC ב-HIVE (0.003%) המגביל תדירות עיבוד לכל ~25 דקות, אך נמצא פתרון מבצעי מוכן. כלל הסוכנים בצי מורשים ופעילים.
 
 ## סיכונים / דברים מדממים (או "אין")
-סיכון RC חמור ב-HIVE מגביל קצב פעולות לפעולה אחת כל 25 דקות, ומעכב את פעולות המשיכה וההפקדה. מפתחות headcorner ו-tov אינם נגישים לסוכנים, מה שמגביל את יכולת הפעולה ברשתות אלו. המערכת תלויה בהרצה אחת של `he_powerup.cjs` כדי לשחרר את הכוח הטמון ב-9.682 HIVE.
+מחסור RC ב-HIVE המגביל את קצב העיבוד של הרשת. כל המכשור הנדרש לפתרון קיים ומוכן להפעלה.
 
-## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימות
-1. [רנטיים-חי] הפעלת `node agent/he_powerup.cjs --amount ALL` כדי להפוך את 9.682 HIVE ל-VESTS, ובכך להגדיל את ה-RC של headcorner ב-55%. אימות: RC של headcorner יעלה מ-2.33T לכ-40G ויותר.
-2. [רנטיים-חי] הפעלת `fleet-cure` החדש כדי לנטר את ה-RC של הסוכנים ולבצע את פעולת `weave` הממתינה ברגע שסוכן יגיע ל-RC מספיק. אימות: קובץ `docs/evidence/fleet-cure-status.json` יעודכן עם נתוני ה-RC ו-txid של הפעולה.
-3. [רנטיים-חי] פעולת `POST /api/dex/convert` עם `action=powerup` עבור הסכום המרבי שניתן להפוך ל-VESTS, תוך שימוש במערכת החדשה של external-signer v2. אימות: הפעולה תאושר רק אם הסמכות וה-RC מספיקים, וה-DEX יחזיר תשובה מוצלחת עם txid.
+## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
+1. [רנטיים] הפעלת `node agent/he_powerup.cjs --amount ALL` על הרנטיים החי.
+   - קריטריון-אימת: RC של headcorner עולה ל-40G (מדידה חיה ב-.env).
+
+2. [רנטיים] הפעלת שירות `fleet-cure` על ה-foundry.
+   - קריטריון-אימת: יצירת `docs/evidence/fleet-cure-status.json` עם נתוני RC מדידים.
+
+3. [רנטיים] המתנה עד להשלמת ה-powerup של macrame.
+   - קריטריון-אימת: קבלת הפעולה המתוכננת לאחר ש-RC מאפשר זאת.
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-אני מאשר להפעיל את `fleet-cure` על ה-foundry כדי לנטר את ה-RC ולבצע את פעולות ה-weave הממתינות. אני מאשר להמתין להפעלת `he_powerup.cjs` על ידי הרנטיים-חי כפי שתוכנן, ולא לבצע פעולות נוספות עד להשלמתה.
+אישור הפעלת ה-automation של `fleet-cure` כדי לטפל במחסור ה-RC ב-HIVE באופן אוטומטי עם הגעת ה-RC הנדרש.
 
 ## נשאר לבעלים בלבד (או "כלום")
-הפעלת `he_powerup.cjs --amount ALL` על הרנטיים-חי (מפתח-הבעלים).
-החלטה סופית לגבי מימון הסוכנים ב-TRX והפעלת `tron-stake` (transit לפי הבעלים).
-החלטה סופית לגבי שחזור `vault-restore` (מטריצת-חזקה מאומתת; שחזור-מפתחות-בעלים אופציונלי).
-החלטה סופית לגבי הפעלת `delegate_vesting_shares` כאשר יהיה HP להאציל.
+שימוש במפתחות הראשיים של headcorner ו-tov לפעולות על שרשרת STEEM.
+החלטות על ניצול משאבי TRX והאצת VESTS על HIVE.
+הפעלת שירות `delegate_vesting_shares` כאשר יהיה HP זמין להאצה.
