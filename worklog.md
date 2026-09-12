@@ -2486,3 +2486,41 @@ Stage Summary:
 - הפנקס-הריבוני-נשמר: ה-UI-החדש קורא את era-2 (h23/h24) ישירות-מה-DB.
 - עידן-ה-UI-הישן (Sovereign Foundry v4 / task-10) הוצא-משירות-בהתאם-להוראת-הבעלים "שלא תעבוד שוב על הדברים".
 - פתוח: מפתח-אב-גרפני (החלטת-בעלים) · עוגן-TRON-השלמה-אחרי-איפוס-המיכסה-ב-00:00 UTC.
+
+---
+Task ID: S-1
+Agent: ops-services
+Task: revive platform mini-services (keeper/gate-agent/swarm-agents/evm-mesh) after sandbox reset, platform v73 live
+
+Work Log:
+- Baseline: only :3000 (next-server) alive; 3005/3006/3007/8545 all down. Started keeper per doctrine: `cd mini-services/keeper && (nohup bun --hot src/index.ts > /tmp/mini-service-keeper.log 2>&1 &)` — SHOMER v39 LIVE on 127.0.0.1:3005 in ~6s.
+- Read keeper source/journal to map its watch scope BEFORE manual starts: it manages gate-herald :3006 + swarm :3007 (30s checks, boot-grace 180s, revive on ×3 connection-refused, one revive per 150s shared window), evm-mesh runner (60s /proc scan → detached `bun run dev`), anvil :8545 (journal-only — "mesh runner watchdog owns the respawn").
+- Waited out keeper boot-grace; at 22:50:56 keeper itself revived gate-herald :3006 (revive #1) and at 22:53:55 revived swarm-agents :3007 (revive #1) — no manual starts needed, honoring the "keeper claims management" doctrine.
+- evm-mesh first keeper revive attempts (#1-#3) FAILED: `posix_spawn '/home/z/.foundry/bin/anvil' ENOENT` — the sandbox reset had wiped the foundry toolchain. Root-caused, then installed foundryup (curl foundry.paradigm.xyz) + ran `foundryup` → anvil/cast/forge/chisel 1.8.1 at /home/z/.foundry/bin. Did NOT start evm-mesh manually (keeper actively managing it); keeper's runner-revive #4 (22:50:26) then succeeded → anvil :8545 answering (block 19).
+- Final verification: HTTP 200 on 3000/3005/3006/3007 + anvil eth_blockNumber = 0x13; log tails collected (keeper log, herald.log, swarm.log, .zscripts/mini-service-evm-mesh.log).
+- Side observation (keeper working as designed, no action taken): pre-OOM web recycle #1 fired at 22:46 (RSS ≥1350MB ×2) — next-server respawned and recovered HTTP 200 on its own.
+- Security hygiene: read-only git (no push), zero secret material displayed, zero WATTOIN/external-address contact.
+
+Stage Summary:
+- ALL FIVE UP: :3000 web (v73) · :3005 keeper SHOMER v39 · :3006 gate-herald v36 · :3007 swarm-agents (gold-scout+night-scout) · :8545 anvil chainId 31337 block 19.
+- Only manual start performed: keeper itself. :3006/:3007/:8545 revived by the keeper after the anvil binary was restored — self-healing doctrine proven live (revive journal: runner-revive #1-#4, herald-revive #1, swarm-revive #1).
+- One-time environment fix: foundry toolchain reinstalled post-reset (anvil 1.8.1).
+
+---
+Task ID: S-3/S-4
+Agent: pm-direct (session continuation)
+Task: v74/v75 QA sweep — examine repo so nothing is missed in the display, everything served at highest quality (owner trace 1a092e9652c2e055 "תמשיך ודחוף"); fix 9 QA-blocked rooms; push
+
+Work Log:
+- QA agent (S-2) swept all 35 rooms of the live console: 26 OK, 8 ERROR, 1 EMPTY; 0 console errors; mobile 375 clean; footer perfect; v73.0.0 confirmed
+- Ops agent (S-1) revived keeper :3005; keeper auto-revived gate-agent :3006, swarm-agents :3007, evm-mesh :8545; foundry toolchain rebuilt (anvil/cast/forge 1.8.1) after sandbox reset wiped it
+- Fixes (S-3, 8 files): agents-net token resolved from 3 candidate paths (cwd/parent/canonical) with path-only honest diagnosis; security/roses/sovereign-key/smartvault/networkmap — "שגיאה לא ידועה" abolished, every failure now carries a precise Hebrew diagnosis (vault burned by destruction order 2026-09-08, seed unsealed, hardware findings); security DISPLAY_HOSTS + steemblockexplorer.com (display-only)
+- SAOSExchange v4 deployed LIVE on lab chain (block 302, 10 contracts + full wiring + rails) after diagnosing transient anvil contention; /api/saos/exchange ok:true
+- v75 numbering: parallel machine pushed its own v74 (sync-radar, ba50bbe) mid-flight; rebased cleanly onto it, resolved version.ts conflict, bumped combined release to v75 (no two different v74s)
+- Pushed 33bed11 to roshpinacare-sys/saos-sovereign-platform main (no force-push), ls-remote verified local==remote, askpass deleted
+- E2E: tsc 0 on merged tree; sync-radar ok:true v75.0.0 live; exchange ok:true live
+
+Stage Summary:
+- origin/main saos-sovereign-platform = 33bed11 (v75 תצוגה-מדברת-אמת on top of v74 מכ"ם-הסנכרון)
+- 35/35 rooms: green or honestly-diagnosed (operator-level gates stay honest — vault/seed keys await operator)
+- All 5 mini-services UP (3000/3005/3006/3007/8545)
