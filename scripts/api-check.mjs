@@ -63,6 +63,16 @@ function report(name, cond, detail = "") {
   else { fail++; failures.push(name); console.error(`  ❌ ${name}${detail ? ` — ${detail}` : ""}`); }
 }
 
+// Task 43: environment-held skip — for assertions that require LIVE owner-held
+// infrastructure (the signer token, the key-broker token). When the plane is
+// unreachable SPECIFICALLY because its token is owner-held, the live
+// assertions become explicit skips (same doctrine as Task 33: never a silent
+// pass, never a fake failure). Any OTHER reachability failure still fails.
+function envReport(name, envHeld, reason, cond, detail = "") {
+  if (envHeld) { skipped++; console.log(`  ⏭️  ${name} — SKIP (${reason})`); }
+  else report(name, cond, detail);
+}
+
 async function j(path, init) {
   const res = await fetch(BASE + path, init);
   let body;
@@ -753,13 +763,20 @@ async function main() {
   const { execSync } = await import("child_process");
   const { readdirSync } = await import("fs");
   try {
+    // Task 43: the drill is self-sufficient — it first creates a FRESH verified
+    // backup (VACUUM INTO + manifest + chain-proof of THIS run's database)
+    // and only then dry-run-restores the newest one. A drill that depends on
+    // a backup someone happened to leave behind proves nothing on a fresh
+    // checkout: CI caught exactly that (empty backups dir failed the suite
+    // instead of exercising the recovery path it exists to prove).
+    execSync("bun scripts/backup.mjs", { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] });
     const bdirs = readdirSync("backups").filter((d) => d.startsWith("backup-")).sort().reverse();
     if (bdirs.length > 0) {
       const out = execSync(`bun scripts/restore.mjs backups/${bdirs[0]}`, { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] });
       const passed = out.includes("verification: ✅ pass") && out.includes("chain-proof: ok");
       report("roast-59: restore dry-run on newest backup passes WITH chain-proof", passed, `backup=${bdirs[0]}`);
     } else {
-      report("roast-59: restore dry-run on newest backup passes WITH chain-proof", false, "no backups dir");
+      report("roast-59: restore dry-run on newest backup passes WITH chain-proof", false, "backup.mjs produced no backup dir");
     }
   } catch (e) {
     report("roast-59: restore dry-run on newest backup passes WITH chain-proof", false, String(e.message ?? e).slice(0, 80));
@@ -772,10 +789,14 @@ async function main() {
 {
   const km = await j("/api/saos/keys-map");
   const sp = km.body?.connection?.steemPlane;
-  report("steem-plane: keys-map carries the live plane (reachable)", sp?.reachable === true, `reachable=${sp?.reachable} err=${sp?.error ?? "-"}`);
-  report("steem-plane: all 12 fleet accounts measured on-chain", Array.isArray(sp?.accounts) && sp.accounts.length >= 12 && sp.accounts.filter((a) => a.exists).length >= 12, `accounts=${sp?.accounts?.length} exists=${sp?.accounts?.filter((a) => a.exists).length}`);
+  // Task 43: CI holds no secrets — when the plane is unreachable SPECIFICALLY
+  // because the signer token is owner-held, the live assertions become
+  // explicit skips. Any other reachability failure still fails the suite.
+  const steemHeld = sp?.reachable === false && /token-unavailable/.test(String(sp?.error ?? ""));
+  envReport("steem-plane: keys-map carries the live plane (reachable)", steemHeld, "signer token owner-held (CI holds no secrets)", sp?.reachable === true, `reachable=${sp?.reachable} err=${sp?.error ?? "-"}`);
+  envReport("steem-plane: all 12 fleet accounts measured on-chain", steemHeld, "signer token owner-held", Array.isArray(sp?.accounts) && sp.accounts.length >= 12 && sp.accounts.filter((a) => a.exists).length >= 12, `accounts=${sp?.accounts?.length} exists=${sp?.accounts?.filter((a) => a.exists).length}`);
   report("steem-plane: public data only — no WIF/pivate-key shapes in the payload", !JSON.stringify(km.body).match(/5[HJK][1-9A-HJ-NP-Za-km-z]{49}/), "regex sweep over the whole keys-map body");
-  report("steem-plane: summary carries live totals (liquid+SBD+HP)", typeof sp?.summary?.totalLiquid === "number" && typeof sp?.summary?.totalSbd === "number" && typeof sp?.summary?.totalHp === "number", `${sp?.summary?.totalLiquid} STEEM + ${sp?.summary?.totalSbd} SBD + ${sp?.summary?.totalHp} HP`);
+  envReport("steem-plane: summary carries live totals (liquid+SBD+HP)", steemHeld, "signer token owner-held", typeof sp?.summary?.totalLiquid === "number" && typeof sp?.summary?.totalSbd === "number" && typeof sp?.summary?.totalHp === "number", `${sp?.summary?.totalLiquid} STEEM + ${sp?.summary?.totalSbd} SBD + ${sp?.summary?.totalHp} HP`);
   const gapSteem = (km.body?.openGaps ?? []).find((g) => g.id === "steem-plane");
   const connectedAccounts = sp?.accounts?.filter((a) => a.exists && Object.values(a.roles ?? {}).every((s) => s.match === true)).length ?? 0;
   report("steem-plane: derived gap present iff accounts hold no matching key (heals itself)", (gapSteem !== undefined) === (connectedAccounts < (sp?.accounts?.filter((a) => a.exists).length ?? 0)), `gap=${gapSteem !== undefined} connected=${connectedAccounts}`);
@@ -788,11 +809,14 @@ async function main() {
 {
   const km = await j("/api/saos/keys-map");
   const sov = km.body?.connection?.sovereignPlane;
-  report("sovereign-plane: keys-map carries the live gate plane (reachable)", sov?.reachable === true, `reachable=${sov?.reachable} err=${sov?.error ?? "-"}`);
-  report("sovereign-plane: all 12 sovereign agents present", Array.isArray(sov?.accounts) && sov.accounts.length === 12, `accounts=${sov?.accounts?.length}`);
-  report("sovereign-plane: integrity verdicts measured on every plane", sov?.integrity?.evm === "12/12" && sov?.integrity?.tron === "12/12" && sov?.integrity?.sol === "12/12", `evm=${sov?.integrity?.evm} tron=${sov?.integrity?.tron} sol=${sov?.integrity?.sol}`);
+  // Task 43: same environment-held honesty — the key-broker token is
+  // owner-held; when it is absent the live gate assertions skip explicitly.
+  const sovHeld = sov?.reachable === false && /token-unavailable/.test(String(sov?.error ?? ""));
+  envReport("sovereign-plane: keys-map carries the live gate plane (reachable)", sovHeld, "key-broker token owner-held (CI holds no secrets)", sov?.reachable === true, `reachable=${sov?.reachable} err=${sov?.error ?? "-"}`);
+  envReport("sovereign-plane: all 12 sovereign agents present", sovHeld, "key-broker token owner-held", Array.isArray(sov?.accounts) && sov.accounts.length === 12, `accounts=${sov?.accounts?.length}`);
+  envReport("sovereign-plane: integrity verdicts measured on every plane", sovHeld, "key-broker token owner-held", sov?.integrity?.evm === "12/12" && sov?.integrity?.tron === "12/12" && sov?.integrity?.sol === "12/12", `evm=${sov?.integrity?.evm} tron=${sov?.integrity?.tron} sol=${sov?.integrity?.sol}`);
   report("sovereign-plane: public data only — no pk/pub/seed fields in the whole keys-map body", !/"(pk|pub|seed)"\s*:/.test(JSON.stringify(km.body)), "regex sweep over the whole keys-map body");
-  report("sovereign-plane: btc carried watch-only (no signing claim)", Array.isArray(sov?.accounts) && sov.accounts.every((a) => a.btc?.watchOnly === true), "every btc row watchOnly:true");
+  envReport("sovereign-plane: btc carried watch-only (no signing claim)", sovHeld, "key-broker token owner-held", Array.isArray(sov?.accounts) && sov.accounts.every((a) => a.btc?.watchOnly === true), "every btc row watchOnly:true");
 }
 console.log(`\napi-check: ${pass} passed, ${fail} failed${skipped ? `, ${skipped} skipped (owner-held auth)` : ""}${fail ? ` → ${failures.join(", ")}` : ""}\n`);
   process.exit(fail === 0 ? 0 : 1);

@@ -42,7 +42,20 @@ async function main() {
   const dir = path.join(BACKUPS_DIR, `backup-${stamp}`);
   fs.mkdirSync(dir, { recursive: true });
 
-  const dbPath = path.join(ROOT, "db", "custom.db");
+  // Task 43: resolve the DB path from the DATABASE the environment actually
+  // uses (via the engine itself), not a hardcoded filename — CI runs on
+  // db/ci.db, the sovereign box on db/custom.db. PRAGMA database_list names
+  // the exact file Prisma opened, so the backup always snapshots the truth.
+  let dbPath = path.join(ROOT, "db", "custom.db");
+  {
+    const probe = new PrismaClient();
+    try {
+      const rows = await probe.$queryRawUnsafe("PRAGMA database_list");
+      const mainFile = Array.isArray(rows) ? rows.find((r) => r.name === "main")?.file : null;
+      if (mainFile) dbPath = mainFile;
+    } catch { /* fall back to the historical default */ }
+    await probe.$disconnect();
+  }
   if (!fs.existsSync(dbPath)) {
     console.error(`❌ database not found: ${dbPath}`);
     process.exit(1);
