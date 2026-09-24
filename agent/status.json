@@ -1,0 +1,12 @@
+{
+ "agent": "foundry-selftest",
+ "generatedAt": "2026-09-24T20:12:50Z",
+ "verdict": "PASS",
+ "checks": {
+  "install": "pass",
+  "prismaGenerate": "pass",
+  "typecheck": "pass",
+  "productionBuild": "skipped-local"
+ },
+ "reason": "install+typecheck pass (local gate: build skipped by sandbox policy)"
+}
