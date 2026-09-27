@@ -1,6 +1,6 @@
 {
  "agent": "foundry-selftest",
- "generatedAt": "2026-09-24T20:12:50Z",
+ "generatedAt": "2026-09-27T15:58:12Z",
  "verdict": "PASS",
  "checks": {
   "install": "pass",
