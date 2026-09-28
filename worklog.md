@@ -56,3 +56,24 @@ Stage Summary:
 - The internal→external loop is now CLOSED: grids(sim) → peg.mjs(offer) → offer.json published by Action → mover signs only via X-1 gate → grid-pulse observes
 - Honest position: all keyless L0/L1 claims DONE by the fleet; remaining = C-3 (content campaign) + operator gates X-1 (key rotation) / X-2 (capital L2). $1000/day remains gated by X-1+X-2 — measured truth stands at ~$4.39/day fuel + sim grid fees until operator arms the machine
 - Artifacts: saos-dex@main bb3bdbc (peg.mjs, peg-selftest.mjs 31 vectors, offer.json, workflow wiring) · Defi/fleet CLAIMS.md + 2 broadcasts · worklog updated
+
+---
+Task ID: 4 (OPERATOR-AUTHORIZED ACTIVATION · "תמשיך ודחוף... יש מפתחות בכספת")
+Agent: AGENT-A (Z.ai Code · שיחת-המקור · main orchestrator)
+Task: Operator opened X-1 in chat — use the vault keys, coordinate, push. Activate the machine for real.
+
+Work Log:
+- Vault recovery path reconstructed from git history itself: agent/vault/KEYS-BACKUP (backup material — headcorner keys mismatch live, honestly flagged as dead by README) → KEYS-ACCESS-2026-09-12.tar.enc found in history (deleted from HEAD, preserved) → sha256 verified → fleet_keys.enc opened (AES-256-GCM, scrypt, tag verified) → 14 files restored to /tmp/keystation (0600, no secrets printed/committed)
+- Key derivation verified per steem-rearm.ts R10-measured discipline: FIRST master password in hed-soldiers-source.txt (P5/P7 token) → sha256('headcorner'+role+password) → pub with ripemd160(pub) checksum DIRECTLY (my first attempt used graphene double-hash — WRONG, caught by cross-check, fixed per R10 comment; all my earlier "MISMATCH" verdicts on backup material were real, the derivation bug only affected the final live test)
+- ALL FOUR live authorities matched 4/4 (owner/active/posting/memo) vs condenser_api.get_accounts at execution time
+- BUILT A-5: saos-dex/grids/mover.mjs — offer.json → real orders. Keyless in git; master source fed via MASTER_SOURCE_PATH at runtime; verify-then-sign (fail-closed), RC fuel floor, fresh-parity cross-check (300bps), per-level parity enforcement, R24 atomic refresh (cancel stale → place ladder), orderid YYYYMMDD*100+seq
+- Dry-run verified (6 stale to cancel, 10 placements planned, all doctrine-clean) → LIVE EXECUTION: 16/16 txs succeeded (6 cancels + 5 asks ≥ parity + 5 bids ≤ parity), 0 failed, 0 blocked; txids in grids/state/mover-log.jsonl (public evidence only)
+- Independent on-chain read-back: 10 live open orders confirmed exactly as planned; powerdown injected +128 STEEM mid-run (measured 421.9→549.8) — next peg cycle widens the ladder automatically
+- Secret sweep before every commit (WIF-pattern grep) — clean; selftests peg 31/31 + grids 9/9 PASS post-execution
+- Merged A-5 to saos-dex main (4bccf7a after rebase over AGENT-Z's heartbeat twin)
+- Coordination: X-1 marked operator-opened-in-chat (rotation recommendation honestly kept open), A-5 DONE, ACTIVATION broadcast filed; second CLAIMS rebase race resolved preserving AGENT-Z's C-3 DONE (txid 3105ba0a…, by שיחה-3/AGENT-C!) + Z-10/Z-11 twins
+
+Stage Summary:
+- THE MACHINE IS LIVE: grids(sim shape) → peg(parity-anchored offer) → mover(verify-then-sign) → STEEM chain (16 real txs) → observers/triggers. The full thing-drags-thing loop executed for real for the first time
+- Honest position: this is engine-proof on ~$24 notional, NOT $1000/day. Path to target = X-2 capital + daily peg/mover refresh + other mission rails (MISSION-1000.md). Key rotation (PHASE-0) remains urgently recommended — material is historically burned, operator chose availability-first knowingly
+- Fleet status: all L0/L1 keyless claims DONE across 3 agents; C-3 now DONE (content live); remaining OPEN = X-2 (operator capital) + proposed A-7 (safe mover automation via Actions secret) + A-8 (daily ladder refresh + real-fill KPI feed)
