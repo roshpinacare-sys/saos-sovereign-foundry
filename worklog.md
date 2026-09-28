@@ -36,3 +36,23 @@ Stage Summary:
 - System verdict: fabric ALIVE and verified (kernel/anchors/52 agents/trigger grid); real measured revenue $4.39/day (SP fuel) vs $1000/day target — gap documented with full break-even math ($33K–$16.7M capital depending on capture/turnover), operator gates X-1 (key rotation) and X-2 (capital) remain the blockers, exactly as AGENT-Z ladder defines
 - Inter-agent coordination worked in practice: two agents converged on shared files, protocol held (no deletions, evidence-linked claims)
 - Artifacts: saos-dex/grids/ + saos-dex/mission/ + Console/SYSTEM-ACTIVATION-REPORT.md + Console/FLEET-LOG.md + Defi/fleet/{AGENTS,CLAIMS,broadcast}
+
+---
+Task ID: 3 (B-1 + B-3 continuation · session-continuation "תמשיך")
+Agent: AGENT-A (Z.ai Code · שיחת-המקור · main orchestrator)
+Task: Continue fleet ops — resume from filebin-expiry discovery, verify prior state, build the claimed B-1 peg engine + B-3 ladder upgrade, coordinate with AGENT-Z via Defi/fleet
+
+Work Log:
+- Verified filebin bin u79d88ici4tit6x8 is EMPTY via API (files:null, 0B) — but recovered full state: prior sessions already downloaded pat.rar, cloned all 16 repos to /home/z/audit, completed Task-1 audit + Task-2a..2f (FLEET-LOG, hardening merges, grids/, mission/, activation sweep)
+- Read fleet state: AGENT-Z active (Z-1..Z-9, B-2, C-1, C-2 done during this session — C-1 first on-chain broadcast txid 4c98a9fb…), CLAIMS board rebase-race resolved twice preserving both agents' rows
+- B-1 BUILT: saos-dex/grids/peg.mjs — the missing link: internal grid params → external offer. Pure deterministic computeOffer core + keyless measurements (binance→CoinGecko→money.json ladder, condenser_api snapshot) + publisher grids/state/offer.json. Doctrine: price-truth-or-nothing, parity band 5000bps refuse, asks≥parity floor/bids≤parity ceiling, no naked short, no self-printing (internal µ is shape-only), time injected. Trigger-loop wired: reads Console/triggers book (Z-5 pattern), reports consumed, emits offer.published/blocked into grids events bus
+- B-1 selftest: 22 deterministic vectors, zero network — PASS; live cycle: OFFER-READY, parity 0.10696, parityBps −267, 3 asks + 3 bids on real balances
+- B-3 BUILT: 5-level ladder + dynamic drag dragK=clamp(1+spreadBps/2000,1,3) published inside offer.json; selftest now 31/31; live k=1.0015 @ 3bps spread, totals == commits exactly
+- Wired peg cycle into grid-trigger.yml Action (continue-on-error, offer.json committed in heartbeat)
+- Merged fleet/r130 → main (bb3bdbc) per A-3 precedent; both selftests re-verified PASS on main; pushed
+- Board: B-1 CLAIMED→DONE→evidence-updated (main merge), B-3 OPEN→CLAIMED→DONE(code; actual placement stays operator gate X-1); 2 broadcasts filed (b1-peg-engine, b3-ladder-drag)
+
+Stage Summary:
+- The internal→external loop is now CLOSED: grids(sim) → peg.mjs(offer) → offer.json published by Action → mover signs only via X-1 gate → grid-pulse observes
+- Honest position: all keyless L0/L1 claims DONE by the fleet; remaining = C-3 (content campaign) + operator gates X-1 (key rotation) / X-2 (capital L2). $1000/day remains gated by X-1+X-2 — measured truth stands at ~$4.39/day fuel + sim grid fees until operator arms the machine
+- Artifacts: saos-dex@main bb3bdbc (peg.mjs, peg-selftest.mjs 31 vectors, offer.json, workflow wiring) · Defi/fleet CLAIMS.md + 2 broadcasts · worklog updated
