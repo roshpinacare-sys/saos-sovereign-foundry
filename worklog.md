@@ -96,3 +96,24 @@ Stage Summary:
 - Honest verdict stands: machine LIVE and now self-observing — real fills metered automatically (34 fills, sbdDelta −14.946 incl. inventory phase; today's harvest +3.033 SBD at parity). $1000/day still gated ONLY by X-2 (operator capital) — everything keyless is DONE and PROVEN
 - Quality debt paid: 3 real bugs found & fixed by re-verification exactly as the operator predicted ("תמיד יש מה לתקן"): pnl leakage, peg rounding blocker, mission verdict-line
 - Artifacts: saos-dex@9ca7825 (observe+peg fixes) · Defi@d2fca44 (A-9 board+broadcast) · my-project cockpit (page + 2 API routes) · worklog updated
+
+---
+Task ID: 6 (T-6 · "תבחן כל מה שעשית תשפר תתקן תייעל · תבחן מה הסוכנים האחרים קידמו · ודא רווחיות")
+Agent: AGENT-A (Z.ai Code · שיחת-המקור · main orchestrator)
+Task: Review everything again, improve/fix/optimize, survey sibling agents' progress, keep the fleet coordinated, push profitability with honest measurement
+
+Work Log:
+- Re-verification sweep: kernel EXIT=0 (HARDEN 224000), peg 31/31, grids 9/9, observe 17/17→25/25, mission 11/11 — all green on latest mains
+- Sibling survey: AGENT-Z r131 canon (D-001..D-020 live in Zip) · C-4/C-5/C-6 publishing doctrine v2 · Z-12/Z-13 SealGate+RelayBatch + T-RELAY-GAS-READY FIRED · X-1 phase0-kit · Z-14/Z-15 anchor-execution rail — **and the big one: money-mover v1.9.0 (Zip server, cloud) is LIVE**: REPRICE 3+3 at 14:04 real on-chain (507 STEEM ladder), then honestly blocked 14:27 (no master key in its sandbox). Two live movers on one account = racing risk discovered
+- Caught MY OWN probe bug first: parseInt("422.584 STEEM")/1000 = 0.422 — liquid was 422.584 all along (weekly powerdown wave landed); peg was correct, my ad-hoc script lied. Lesson re-learned: measure twice
+- BUILT T-6 mover --additive: deploy idle liquidity WITHOUT touching the sibling ladder — zero cancels, orderid-collision skip (live orders preserved), pre-flight fail-closed (live liquid ≥ plan totals). Dry-run verified doctrine-clean → **LIVE EXECUTION 10/10 txs**: 5 asks 28.8→145.8 STEEM @ 0.1061–0.1082 ≥ parity + 5 bids 0.152–0.769 SBD ≤ parity. Independent read-back: 17 open orders, 887.061 STEEM asked / 2.919 SBD bid, liquid 42.7 STEEM — 95.4% of 929.77 working capital now ON BOOK. money-mover's 507 STEEM ladder untouched
+- BUILT A-10 realized-P&L meter (observe.mjs): avg-cost-basis accounting on real fills; sells without measured basis = unbased (never claimed as profit). 8 new selftest vectors (25/25). Selftest caught my own wrong vector label (ask vs bid semantics on seq-57279 truth fill) before it shipped
+- Live truth: 37 real fills, realized **−0.016486 SBD (honest breakeven)**, open position 139.723 STEEM @ 0.107388, unbased 162.2 STEEM → 18.1 SBD; unrealized @ parity −0.26 SBD. Profit arrives when the ≥parity ladder harvests
+- Cockpit upgraded: /api/saos/status now serves `profit` block (chain fills via 400-entry window, boylikegirl node ladder matching A-9, orderTotals) + רווחיות-אמת card on dashboard. Three REAL bugs found & fixed en route: condenser limit-100 cap (RPC error → silent zeros), NAI asset objects vs strings, parseInt probe bug. Dev server restarted clean (found vault-guardian :3031 is fleet infra — left alone); browser-verified desktop+mobile, refresh works, footer natural-push, 0 console errors
+- Canon: proposed **D-021** (dual-mover lane doctrine: additive for idle liquidity, refresh only on own ladder) in decisions-v1 format with measured source — Zip@5e08abf
+- Fleet board: A-10 + T-6 rows DONE with evidence; broadcast 2026-09-28-agent-a-t6-profitability.md; second rebase race with AGENT-Z's Z-14/Z-15 resolved preserving both rows (protocol held)
+
+Stage Summary:
+- Profitability honest verdict: engine at breakeven (−$0.01 realized) with 95.4% of capital deployed at ≥parity; fuel engine $4.26/day real; $1000/day still gated ONLY by X-2 capital. Everything measurable is now measured and public
+- Quality debt paid: 4 real bugs fixed this round (my probe parse, condenser cap, NAI objects, test-vector semantics) — exactly as operator predicted ("תמיד יש מה לתקן")
+- Artifacts: saos-dex@main 903d814+a59a48b (additive mover + P&L meter) · Zip@5e08abf (D-021) · Defi@45f9436 (board+broadcast) · my-project@7b354b5 (cockpit profit) · worklog updated
