@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import {
-  Activity, Anchor, BatteryCharging, CircleCheck, GitBranch, Radio,
+  Activity, Anchor, Banknote, BatteryCharging, CircleCheck, GitBranch, Radio,
   RefreshCw, Scale, Sigma, Target, Wallet
 } from 'lucide-react'
 
@@ -23,7 +23,13 @@ type Status = {
   }
   pnl?: { real?: { fills?: number; sbdDelta?: number }; sim?: { fills?: number; feesMu?: number } }
   offer?: { verdict?: string; parityBps?: number; blocker?: string[] | null; marks?: { paritySbdPerSteem?: number }; plan?: { asks?: unknown[]; bids?: unknown[] }; publishedAt?: string }
-  live?: { orders?: Order[]; balances?: { steem: string; sbd: string; vests: string } | null; chainReadOk?: boolean }
+  live?: { orders?: Order[]; orderTotals?: { askedSteem?: number; bidSbd?: number }; balances?: { steem: string; sbd: string; vests: string } | null; chainReadOk?: boolean }
+  profit?: {
+    fills?: number; buys?: number; sells?: number
+    realizedSbd?: number; positionSteem?: number; positionAvgCost?: number | null
+    unbasedSteem?: number; unbasedSbd?: number; unrealizedAtParitySbd?: number | null
+    parityRef?: number | null
+  }
   kpi?: { revenuePerDayReal?: { usd?: number }; ladder?: { current?: string; next?: string; consecutiveGreenDays?: number; proven?: boolean } }
   fleet?: { claims?: { rows: number; done: number; open: number; other: number } }
   mover?: { tail?: { at?: string; cancelled?: unknown[]; placed?: unknown[]; dryRun?: boolean }[] }
@@ -137,6 +143,33 @@ export default function Home() {
                   <div><dt className="text-xs text-slate-500">דלתא-SBD נטו</dt><dd className={`font-bold tabular-nums ${(sbdDelta ?? 0) >= 0 ? 'text-emerald-400' : 'text-amber-400'}`}>{typeof sbdDelta === 'number' ? `${sbdDelta.toFixed(3)} SBD` : '—'}</dd></div>
                   <div><dt className="text-xs text-slate-500">seq-אחרון</dt><dd className="font-bold tabular-nums">{s?.grid?.feeMeter?._lastRealSeq ?? '—'}</dd></div>
                 </dl>
+              </CardContent>
+            </Card>
+
+            {/* רווחיות-אמת (A-10) */}
+            <Card className="border-amber-500/25 bg-gradient-to-br from-amber-500/10 to-slate-900/60">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm text-amber-300">
+                  <Banknote className="h-4 w-4" aria-hidden /> רווחיות-אמת · יסוד-עלות ממומש
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-baseline gap-2">
+                  <span className={`text-3xl font-black tabular-nums ${((s?.profit?.realizedSbd ?? 0) >= 0 ? 'text-emerald-400' : 'text-amber-400')}`}>
+                    {typeof s?.profit?.realizedSbd === 'number' ? `${s.profit.realizedSbd.toFixed(3)} SBD` : '—'}
+                  </span>
+                  <span className="text-xs text-slate-400">ממומש (A-10)</span>
+                </div>
+                <Separator className="my-3 bg-slate-800" />
+                <dl className="grid grid-cols-2 gap-2 text-sm">
+                  <div><dt className="text-xs text-slate-500">פוזיציה פתוחה</dt><dd className="font-bold tabular-nums">{typeof s?.profit?.positionSteem === 'number' ? s.profit.positionSteem.toFixed(1) : '—'} STEEM</dd></div>
+                  <div><dt className="text-xs text-slate-500">יסוד-עלות ממוצע</dt><dd className="font-bold tabular-nums">{s?.profit?.positionAvgCost ?? '—'}</dd></div>
+                  <div><dt className="text-xs text-slate-500">בלתי-ממומש @ פאריטי</dt><dd className={`font-bold tabular-nums ${((s?.profit?.unrealizedAtParitySbd ?? 0) >= 0 ? 'text-emerald-400' : 'text-amber-400')}`}>{typeof s?.profit?.unrealizedAtParitySbd === 'number' ? `${s.profit.unrealizedAtParitySbd.toFixed(3)} SBD` : '—'}</dd></div>
+                  <div><dt className="text-xs text-slate-500">ספר · נזיל</dt><dd className="font-bold tabular-nums">{s?.live?.orderTotals?.askedSteem ?? '—'} / {s?.live?.balances?.steem ?? '—'}</dd></div>
+                </dl>
+                <p className="text-[11px] leading-relaxed text-slate-500 mt-2">
+                  כנות: מכירה בלי יסוד-עלות נמדד ({typeof s?.profit?.unbasedSteem === 'number' ? s.profit.unbasedSteem.toFixed(1) : '—'} STEEM → {typeof s?.profit?.unbasedSbd === 'number' ? s.profit.unbasedSbd.toFixed(1) : '—'} SBD) נרשמת unbased — לא נטענת כרווח.
+                </p>
               </CardContent>
             </Card>
 

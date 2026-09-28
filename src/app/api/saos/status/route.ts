@@ -58,7 +58,7 @@ async function rpc<T>(method: string, params: unknown): Promise<T | null> {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jsonrpc: "2.0", method, params, id: 1 }),
-        signal: AbortSignal.timeout(9000),
+        signal: AbortSignal.timeout(12000),
       });
       if (!r.ok) continue;
       const d = await r.json();
@@ -73,20 +73,134 @@ async function rpc<T>(method: string, params: unknown): Promise<T | null> {
 
 const NAI: Record<string, string> = { "@@000000013": "SBD", "@@000000021": "STEEM" };
 
+/* ── A-10 מד-רווחיות: יסוד-עלות-ממוצע על מילויים-אמת (מראה grids/observe.mjs) ──
+   כנות: מכירה-בלי-יסוד-נמדד = unbased (לא רווח). מחשב-חי מהשרשרת בכל-בקשה. */
+type Fill = { seq: number; side: "ask" | "bid"; steem: number; sbd: number };
+
+function pnlFromFills(fills: Fill[]) {
+  const r6 = (v: number) => Math.round(v * 1e6) / 1e6;
+  let position = 0, cost = 0, realized = 0, unbasedSbd = 0, unbased = 0;
+  let bought = 0, spent = 0, sold = 0, proceeds = 0, buys = 0, sells = 0;
+  for (const f of fills) {
+    if (f.side === "bid") {
+      buys++; bought = r6(bought + f.steem); spent = r6(spent + f.sbd);
+      position = r6(position + f.steem); cost = r6(cost + f.sbd);
+    } else {
+      sells++; sold = r6(sold + f.steem); proceeds = r6(proceeds + f.sbd);
+      if (position > 1e-9) {
+        const based = Math.min(f.steem, position);
+        const avg = cost / position;
+        realized = r6(realized + f.sbd * (based / f.steem) - avg * based);
+        const rest = r6(f.steem - based);
+        cost = r6(cost - avg * based); position = r6(position - based);
+        if (rest > 1e-9) { unbased = r6(unbased + rest); unbasedSbd = r6(unbasedSbd + f.sbd * (rest / f.steem)); }
+      } else {
+        unbased = r6(unbased + f.steem); unbasedSbd = r6(unbasedSbd + f.sbd);
+      }
+    }
+  }
+  return {
+    fills: fills.length, buys, sells,
+    boughtSteem: bought, spentSbd: spent,
+    soldSteem: sold, proceedsSbd: proceeds,
+    realizedSbd: realized,
+    unbasedSteem: unbased, unbasedSbd: unbasedSbd,
+    positionSteem: position, positionCostSbd: cost,
+    positionAvgCost: position > 1e-9 ? Math.round((cost / position) * 1e6) / 1e6 : null,
+  };
+}
+
+async function liveFills(): Promise<Fill[]> {
+  /* אותו-סולם-צמתים של observe.mjs (A-9): boylikegirl ראשון — מאפשר 400;
+   * steemit.com מוגבל ל-100 גם ב-account_history_api. חלון-זהה = מדידה-זהה. */
+  const nodes = ["https://steemapi.boylikegirl.club", "https://api.justyy.com", "https://api.steemit.com"];
+  let hist: [number, { op?: unknown; timestamp?: string }][] = [];
+  for (const node of nodes) {
+    try {
+      const r = await fetch(node, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", method: "account_history_api.get_account_history", params: { account: "headcorner", start: -1, limit: 400 }, id: 1 }),
+        signal: AbortSignal.timeout(12000),
+      });
+      if (!r.ok) continue;
+      const d = await r.json();
+      if (d.error) continue;
+      hist = d.result?.history ?? [];
+      if (hist.length > 0) break;
+    } catch {
+      /* try next node */
+    }
+  }
+  if (hist.length === 0) {
+    for (const node of nodes) {
+      try {
+        const r = await fetch(node, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jsonrpc: "2.0", method: "condenser_api.get_account_history", params: ["headcorner", -1, 100], id: 1 }),
+          signal: AbortSignal.timeout(12000),
+        });
+        if (!r.ok) continue;
+        const d = await r.json();
+        if (d.error) continue;
+        hist = d.result ?? [];
+        if (hist.length > 0) break;
+      } catch {
+        /* try next node */
+      }
+    }
+  }
+  const dbg = { histLen: hist.length, parseErr: "" };
+  const out: Fill[] = [];
+  try {
+  const amt = (x: unknown): { v: number; sym: string } | null => {
+    /* צורת-string "0.284 STEEM" (condenser) · צורת-NAI {amount,nai,precision} (account_history_api) */
+    if (typeof x === "string") {
+      const [v, sym] = x.split(" ");
+      return sym && Number(v) > 0 ? { v: Number(v), sym } : null;
+    }
+    const o = x as { amount?: string; nai?: string; precision?: number } | null;
+    if (o?.amount != null && o?.nai) {
+      const v = Number(o.amount) / 10 ** (o.precision ?? 3);
+      const sym = NAI[o.nai] ?? o.nai;
+      return v > 0 ? { v, sym } : null;
+    }
+    return null;
+  };
+  for (const [, x] of hist ?? []) {
+    /* condenser מחזיר op כמערך ["fill_order", {…}] · account_history_api כ-{type,value} — שניהם */
+    const rawOp = (x as { op?: unknown })?.op;
+    const op = Array.isArray(rawOp) ? { type: rawOp[0], value: rawOp[1] } : (rawOp ?? {}) as { type?: string; value?: Record<string, unknown> };
+    const v = op.value ?? {};
+    if (op.type !== "fill_order_operation" && op.type !== "fill_order") continue;
+    const cur = amt(v.current_pays), opn = amt(v.open_pays);
+    if (!cur || !opn) continue;
+    const isCur = v.current_owner === "headcorner";
+    const mine = isCur ? cur : opn, theirs = isCur ? opn : cur;
+    if (mine.sym === "STEEM" && theirs.sym === "SBD") out.push({ seq: 0, side: "ask", steem: mine.v, sbd: theirs.v });
+    else if (mine.sym === "SBD" && theirs.sym === "STEEM") out.push({ seq: 0, side: "bid", steem: theirs.v, sbd: mine.v });
+  }
+  } catch (e) { dbg.parseErr = String((e as Error)?.message ?? e).slice(0, 120); }
+  (globalThis as Record<string, unknown>).__liveFillsDbg = dbg;
+  return out;
+}
+
 export async function GET() {
   if (cache && Date.now() - cache.at < CACHE_TTL_MS) {
     return NextResponse.json(cache.data);
   }
-  const [state, pnl, offer, kpi, claimsMd, moverTail, ordersRaw, rcRaw, accRaw] = await Promise.all([
+  const [state, pnl, offer, kpi, claimsMd, moverTail, ordersRaw, rcRaw, accRaw, fills] = await Promise.all([
     readJsonSafe(PATHS.state),
     readJsonSafe(PATHS.pnl),
     readJsonSafe(PATHS.offer),
     readJsonSafe(PATHS.kpi),
     readFile(PATHS.claims, "utf8").catch(() => ""),
     readMoverTail(PATHS.moverLog, 4),
-    rpc<Record<string, unknown>[]>("condenser_api.get_open_orders", ["headcorner"]),
+    rpc<Record<string, unknown>>("condenser_api.get_open_orders", ["headcorner"]).then((r) => r as Record<string, unknown>[] | null),
     rcFromRcApi(),
     rpc<Record<string, string>[]>("condenser_api.get_accounts", [["headcorner"]]),
+    liveFills(),
   ]);
 
   const orders = (ordersRaw ?? []).map((o) => {
@@ -112,6 +226,27 @@ export async function GET() {
     : null;
   const rc = rcRaw ? { rcPct: rcRaw } : null;
 
+  const orderTotals = orders.reduce(
+    (acc, o) => {
+      const amt = Number(String(o.base).split(" ")[0]) || 0;
+      if (o.side === "ask") acc.askedSteem = Math.round((acc.askedSteem + amt) * 1e3) / 1e3;
+      else acc.bidSbd = Math.round((acc.bidSbd + amt) * 1e3) / 1e3;
+      return acc;
+    },
+    { askedSteem: 0, bidSbd: 0 }
+  );
+  const parityRef = (offer as { fair?: { externalParity?: number } } | null)?.fair?.externalParity ?? null;
+  const p = pnlFromFills(fills);
+  const profit = {
+    ...p,
+    parityRef,
+    unrealizedAtParitySbd:
+      p.positionSteem > 1e-9 && parityRef
+        ? Math.round((p.positionSteem * parityRef - p.positionCostSbd) * 1e6) / 1e6
+        : null,
+    method: "יסוד-עלות-ממוצע על fill_order חי (A-10) · מכירה-בלי-יסוד = unbased, לא רווח",
+  };
+
   const data = {
     ok: true,
     asof: new Date().toISOString(),
@@ -119,10 +254,12 @@ export async function GET() {
     grid: state,
     pnl,
     offer,
-    live: { orders, balances, rc, chainReadOk: orders.length > 0 || balances !== null },
+    live: { orders, orderTotals, balances, rc, chainReadOk: orders.length > 0 || balances !== null },
+    profit,
     kpi,
     fleet: { claims: countClaims(claimsMd) },
     mover: { tail: moverTail },
+    debugFills: (globalThis as Record<string, unknown>).__liveFillsDbg,
     sources: PATHS,
     notes: [
       "אמת-מוטבעת-על-שרשרת בלבד — real.fills נמדד מ-fill_order חי",
