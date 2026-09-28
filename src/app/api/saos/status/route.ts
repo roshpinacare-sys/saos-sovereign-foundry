@@ -10,6 +10,7 @@ const PATHS = {
   pnl: `${AUDIT}/saos-dex/grids/state/pnl.json`,
   offer: `${AUDIT}/saos-dex/grids/state/offer.json`,
   moverLog: `${AUDIT}/saos-dex/grids/state/mover-log.jsonl`,
+  dailyReport: `${AUDIT}/saos-dex/grids/state/daily-report.json`,
   kpi: `${AUDIT}/Defi/fleet/KPI.json`,
   claims: `${AUDIT}/Defi/fleet/CLAIMS.md`,
 };
@@ -190,17 +191,18 @@ export async function GET() {
   if (cache && Date.now() - cache.at < CACHE_TTL_MS) {
     return NextResponse.json(cache.data);
   }
-  const [state, pnl, offer, kpi, claimsMd, moverTail, ordersRaw, rcRaw, accRaw, fills] = await Promise.all([
+  const [state, pnl, offer, kpi, claimsMd, moverTail, ordersRaw, rcRaw, accRaw, fills, dailyReport] = await Promise.all([
     readJsonSafe(PATHS.state),
     readJsonSafe(PATHS.pnl),
     readJsonSafe(PATHS.offer),
     readJsonSafe(PATHS.kpi),
     readFile(PATHS.claims, "utf8").catch(() => ""),
-    readMoverTail(PATHS.moverLog, 4),
+    readMoverTail(PATHS.moverLog, 6),
     rpc<Record<string, unknown>>("condenser_api.get_open_orders", ["headcorner"]).then((r) => r as Record<string, unknown>[] | null),
     rcFromRcApi(),
     rpc<Record<string, string>[]>("condenser_api.get_accounts", [["headcorner"]]),
     liveFills(),
+    readJsonSafe(PATHS.dailyReport),
   ]);
 
   const orders = (ordersRaw ?? []).map((o) => {
@@ -237,6 +239,9 @@ export async function GET() {
   );
   const parityRef = (offer as { fair?: { externalParity?: number } } | null)?.fair?.externalParity ?? null;
   const p = pnlFromFills(fills);
+  /* T-7: יסוד-מהחלון-העמוק (daily-cycle, window 2000) — כשהוא קיים הוא האמת-המלאה;
+   * החישוב-המקומי (חלון 400) נשאר כתצוגת-עצמאות ולאימות-צליבה. */
+  const deepPnl = (pnl as { realPnl?: { realizedSbd?: number; positionSteem?: number; positionCostSbd?: number; openAvgCost?: number | null; unbasedSteem?: number; unbasedSbd?: number; basisSeededSteem?: number } } | null)?.realPnl ?? null;
   const profit = {
     ...p,
     parityRef,
@@ -244,7 +249,25 @@ export async function GET() {
       p.positionSteem > 1e-9 && parityRef
         ? Math.round((p.positionSteem * parityRef - p.positionCostSbd) * 1e6) / 1e6
         : null,
-    method: "יסוד-עלות-ממוצע על fill_order חי (A-10) · מכירה-בלי-יסוד = unbased, לא רווח",
+    deepPnl,
+    method: "יסוד-עלות-ממוצע על fill_order חי (A-10) · מכירה-בלי-יסוד = unbased, לא רווח · deepPnl = יסוד מהחלון-העמוק 2000 (T-7)",
+  };
+
+  /* ── T-7 מסילות-מהקיים: מה זורם, מה מוכן, מה חסום — הכל מדידה ── */
+  const kpiObj = kpi as { revenuePerDayReal?: { usd?: number; breakdown?: { fuelEngineUsdPerDay?: number; missionBookUsdPerDay?: number } } } | null;
+  const daily = dailyReport as { ok?: boolean; startedAt?: string; finishedAt?: string; steps?: Record<string, { ok?: boolean; skipped?: boolean; verdict?: string; planned?: number; executed?: number; reason?: string }> } | null;
+  const convertArb = (offer as { marks?: { convertArb?: { verdict?: string; marketUsd?: number; discountPct?: number } } } | null)?.marks?.convertArb ?? null;
+  const rails = {
+    fuel: kpiObj?.revenuePerDayReal?.breakdown?.fuelEngineUsdPerDay ?? null,
+    book: kpiObj?.revenuePerDayReal?.breakdown?.missionBookUsdPerDay ?? null,
+    deployedSteem: orderTotals.askedSteem,
+    bidSbd: orderTotals.bidSbd,
+    convertArb,
+    curation: daily?.steps?.curate
+      ? { planned: daily.steps.curate.planned ?? null, executed: daily.steps.curate.executed ?? 0, status: daily.steps.curate.skipped ? "planned-awaiting-posting-wif (A-12 · Domain wiring)" : "executing" }
+      : { planned: null, executed: 0, status: "daily-cycle not yet run in cockpit view" },
+    autonomy: daily ? { ok: daily.ok ?? false, lastCycle: daily.finishedAt ?? daily.startedAt ?? null, steps: Object.fromEntries(Object.entries(daily.steps ?? {}).map(([k, v]) => [k, v.ok === false ? "fail" : v.skipped ? "skip" : "ok"])) } : null,
+    note: "קיורציה/המרה/פריסה נבנו-מהקיים (T-7) — אפס-הון-חוץ; המדידה-החיה בקובץ-הדוח וב-offer.json",
   };
 
   const data = {
@@ -256,6 +279,8 @@ export async function GET() {
     offer,
     live: { orders, orderTotals, balances, rc, chainReadOk: orders.length > 0 || balances !== null },
     profit,
+    rails,
+    daily,
     kpi,
     fleet: { claims: countClaims(claimsMd) },
     mover: { tail: moverTail },

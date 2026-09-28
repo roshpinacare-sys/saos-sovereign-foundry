@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import {
   Activity, Anchor, Banknote, BatteryCharging, CircleCheck, GitBranch, Radio,
-  RefreshCw, Scale, Sigma, Target, Wallet
+  RefreshCw, Route, Scale, Sigma, Target, Wallet
 } from 'lucide-react'
 
 type Order = { orderid: number; side: string; base: string; quote: string; unit: number; created: string }
@@ -31,6 +31,13 @@ type Status = {
     parityRef?: number | null
   }
   kpi?: { revenuePerDayReal?: { usd?: number }; ladder?: { current?: string; next?: string; consecutiveGreenDays?: number; proven?: boolean } }
+  rails?: {
+    fuel?: number | null; book?: number | null
+    deployedSteem?: number; bidSbd?: number
+    convertArb?: { verdict?: string; marketUsd?: number; discountPct?: number } | null
+    curation?: { planned?: number | null; executed?: number; status?: string }
+    autonomy?: { ok?: boolean; lastCycle?: string | null; steps?: Record<string, string> } | null
+  }
   fleet?: { claims?: { rows: number; done: number; open: number; other: number } }
   mover?: { tail?: { at?: string; cancelled?: unknown[]; placed?: unknown[]; dryRun?: boolean }[] }
 }
@@ -169,6 +176,39 @@ export default function Home() {
                 </dl>
                 <p className="text-[11px] leading-relaxed text-slate-500 mt-2">
                   כנות: מכירה בלי יסוד-עלות נמדד ({typeof s?.profit?.unbasedSteem === 'number' ? s.profit.unbasedSteem.toFixed(1) : '—'} STEEM → {typeof s?.profit?.unbasedSbd === 'number' ? s.profit.unbasedSbd.toFixed(1) : '—'} SBD) נרשמת unbased — לא נטענת כרווח.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* מסילות-מהקיים (T-7) */}
+            <Card className="border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 to-slate-900/60">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm text-emerald-300">
+                  <Route className="h-4 w-4" aria-hidden /> מסילות-מהקיים · T-7 (אפס-הון-חוץ)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <dl className="grid grid-cols-2 gap-2 text-sm">
+                  <div><dt className="text-xs text-slate-500">דלק SP/יום</dt><dd className="font-bold tabular-nums text-emerald-400">{typeof s?.rails?.fuel === 'number' ? `$${s.rails.fuel.toFixed(4)}` : '—'}</dd></div>
+                  <div><dt className="text-xs text-slate-500">ספר/יום (KPI)</dt><dd className="font-bold tabular-nums">{typeof s?.rails?.book === 'number' ? `$${s.rails.book.toFixed(4)}` : '—'}</dd></div>
+                  <div><dt className="text-xs text-slate-500">הון-עובד מוצב</dt><dd className="font-bold tabular-nums">{typeof s?.rails?.deployedSteem === 'number' ? s.rails.deployedSteem.toFixed(1) : '—'} STEEM</dd></div>
+                  <div><dt className="text-xs text-slate-500">המרת-SBD</dt><dd className={`font-bold ${(s?.rails?.convertArb?.verdict ?? '').includes('POSITIVE') ? 'text-emerald-400' : 'text-slate-400'}`}>{s?.rails?.convertArb?.verdict === 'CONVERT-POSITIVE' ? `+${s.rails.convertArb?.discountPct?.toFixed(1)}% אדג׳` : s?.rails?.convertArb?.verdict === 'NO-EDGE' ? 'ללא-אדג׳' : '—'}</dd></div>
+                  <div className="col-span-2">
+                    <dt className="text-xs text-slate-500">קיורציה (A-12 · posting-only)</dt>
+                    <dd className="font-bold">{s?.rails?.curation?.planned != null ? `${s.rails.curation.planned} הצבעות מתוכננות · ${s.rails.curation.executed ?? 0} בוצעו · ${s.rails.curation.status}` : '—'}</dd>
+                  </div>
+                  <div className="col-span-2">
+                    <dt className="text-xs text-slate-500">אוטונומיה (A-8 · מחזור-יומי)</dt>
+                    <dd className="font-bold flex items-center gap-2">
+                      <Badge variant={s?.rails?.autonomy?.ok ? 'default' : 'secondary'} className={s?.rails?.autonomy?.ok ? 'bg-emerald-500/20 text-emerald-300' : ''}>
+                        {s?.rails?.autonomy?.ok ? 'CYCLE-OK' : s?.rails?.autonomy ? 'DEGRADED' : 'טרם-רץ'}
+                      </Badge>
+                      {s?.rails?.autonomy?.steps && <span className="text-xs text-slate-500">{Object.entries(s.rails.autonomy.steps).map(([k, v]) => `${k}:${v}`).join(' · ')}</span>}
+                    </dd>
+                  </div>
+                </dl>
+                <p className="text-[11px] leading-relaxed text-slate-500 mt-2">
+                  הרוסט-שהפך-לקוד: "מוגבל-רק-ע"י הון" היה פסיביות — קיורציה, המרה, פריסה-אוטומטית ויסוד-אמת נבנו מהקיים. המכפיל-השקט: הכל מזין SP → הדלק גדל.
                 </p>
               </CardContent>
             </Card>
