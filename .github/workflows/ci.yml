@@ -14,6 +14,12 @@
 
 name: CI
 
+# 2026-09-28 audit: pin least privilege — without a permissions block this
+# workflow inherits the org/repo default token permissions (which may include
+# contents:write). This CI only reads code and builds; it needs nothing.
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main]
