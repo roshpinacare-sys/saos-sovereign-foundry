@@ -1,0 +1,607 @@
+     1→     1→/**
+     2→     2→ * mini-services/evm-mesh/src/deploy.ts — deploys the SAOS CONTRACT MESH
+     3→     3→ * (10 chained contracts: Hub → Relay → Identity → Ledger → Solutions →
+     4→     4→ * Bridge → WorkBoard → Microgrid → Exchange → ValueEngine) on SAOS-EVM,
+     5→     5→ * the sovereign laboratory chain (anvil, chainId 31337, port 8545), then
+     6→     6→ * writes state/deployment.json for the platform backend.
+     7→     7→ *
+     8→     8→ * v2 — SAOSWorkBoard (פקודות עבודה): the HQ posts work orders; every mesh
+     9→     9→ * run that reaches the board delivers the oldest open order and pays the
+    10→    10→ * soldier through the zero-fee ledger rail. The ledger funds the board's
+    11→    11→ * payroll with a small mint on every run (setPayroll).
+    12→    12→ *
+    13→    13→ * v3 — SAOSMicrogrid (GRID-98 on-chain, mesh link #6): the historic
+    14→    14→ * micro-grid engine. The HQ posts REAL measured DEX prices (oracle), grids
+    15→    15→ * trade their ladder on every mesh run (inside the same transaction), and
+    16→    16→ * the accrued profit is swept to the work-board payroll — the flywheel.
+    17→    17→ *
+    18→    18→ * v4 — SAOSExchange (הבורסה, mesh link #7): AMM פנימי על שרשרת-המעבדה
+    19→    19→ *      המתמשכת. ה-HQ רושם את המז'ורים העטופים עם הערות-גיבוי בעברית
+    20→    20→ *      (אמת גלויה), מטביע אספקת-גיבוי לפי מדידת-המכ"ם החיה, מגלגל float
+    21→    21→ *      ריבוני (wSAOS 1:1 מול פיקדון SAOS-M אמיתי), ממלא 8 חיילים,
+    22→    22→ *      וזורע 3 בריכות (WTRX/WSOL/WETH × wSAOS) במחיר-המדיניות
+    23→    23→ *      (SAOS_M_USD_POLICY = $0.001) — 80% מהגיבוי לבריכה, 20% הון-יוצר-
+    24→    24→ *      שוק לאוצר (signer 9, "אוצר-הבורסה / reserve custodian").
+    25→    25→ *
+    26→    26→ * The deployment uses anvil's unlocked dev accounts through
+    27→    27→ * eth_sendTransaction — no private keys exist in this service at all.
+    28→    28→ * The operator (account #0) is the mesh owner + the HQ; the fleet's REAL
+    29→    29→ * public EVM identities are registered as mesh agents (addresses only).
+    30→    30→ */
+    31→    31→
+    32→    32→import * as fs from "fs";
+    33→    33→import * as path from "path";
+    34→    34→import { ethers } from "ethers";
+    35→    35→
+    36→    36→const ROOT = path.resolve(import.meta.dir, "..", "..", "..");
+    37→    37→export const ARTIFACT_PATH = path.join(ROOT, "src", "lib", "saos", "generated", "SAOSMesh.json");
+    38→    38→export const STATE_PATH = path.join(import.meta.dir, "..", "state", "deployment.json");
+    39→    39→
+    40→    40→export const MESH_RPC = "http://127.0.0.1:8545";
+    41→    41→export const MESH_CHAIN_ID = 31337;
+    42→    42→
+    43→    43→export const LINK_ORDER = ["SAOSIdentity", "SAOSLedger", "SAOSSolutions", "SAOSBridge", "SAOSWorkBoard", "SAOSMicrogrid", "SAOSExchange"];
+    44→    44→export const MESH_CHAINS = ["SAOS-NET", "STEEM", "BLURT", "HIVE", "TRON", "ETHEREUM", "BSC", "SOLANA"];
+    45→    45→
+    46→    46→export interface MeshArtifactContract {
+    47→    47→  name: string;
+    48→    48→  // v61 אמת-הסוגים — ה-ABI של ה-artifact הוא InterfaceAbi של ethers (היה
+    49→    49→  // unknown[]: כל העברתו ל-ContractFactory/Contract נדחתה בטיפוסים).
+    50→    50→  abi: ethers.InterfaceAbi;
+    51→    51→  bytecode: string;
+    52→    52→  // האמת מה-artifact החי (build-pipeline כותב את ספירת הבתים) — אופציונלי
+    53→    53→  // כי עצים ישנים עשויים שלא לשאת אותו.
+    54→    54→  bytecodeBytes?: number;
+    55→    55→}
+    56→    56→export interface MeshArtifact {
+    57→    57→  version: string;
+    58→    58→  contracts: MeshArtifactContract[];
+    59→    59→}
+    60→    60→
+    61→    61→// ─── v61 אמת-הסוגים של חוזי-הרשת (the mesh contract faces) ──────────────────
+    62→    62→// ethers.Contract הוא פרוקסי דינמי בזמן-ריצה — ושרשרת .connect(x).method()
+    63→    63→// מאבדת את הפרוקסי בטיפוסים (connect מחזיר BaseContract חסר-שיטות). אלה
+    64→    64→// פני החוזים כפי שהפריסה והראנר באמת מפעילים אותם: בדיקת-סוגים מלאה לכל
+    65→    65→// קריאה, אפס שינוי בזמן-ריצה (הטלה בלבד). connect() מוחזר כטיפוס-הבן
+    66→    66→// כדי שהשרשראות ייבדקו לכל אורכן.
+    67→    67→export type MeshTx = Promise<ethers.ContractTransactionResponse>;
+    68→    68→
+    69→    69→export interface HubContract extends ethers.BaseContract {
+    70→    70→  connect(runner: ethers.ContractRunner): HubContract;
+    71→    71→  dispatch(message: string): MeshTx;
+    72→    72→  // שאר שיטות ה-ABI נותרות הפרוקסי הדינמי של ethers (אותה הרשאה
+    73→    73→  // שלעצמה בזמן-ריצה) — הפנים המסומנים מכסים את מה שהטיפוסים באמת
+    74→    74→  // צריכים: את שרשראות ה-connect ואת יעדי waitTx.
+    75→    75→  [method: string]: any;
+    76→    76→}
+    77→    77→
+    78→    78→export interface LedgerContract extends ethers.BaseContract {
+    79→    79→  connect(runner: ethers.ContractRunner): LedgerContract;
+    80→    80→  transfer(to: string, amount: bigint): MeshTx;
+    81→    81→  [method: string]: any;
+    82→    82→}
+    83→    83→
+    84→    84→export interface ExchangeContract extends ethers.BaseContract {
+    85→    85→  connect(runner: ethers.ContractRunner): ExchangeContract;
+    86→    86→  swapExactIn(poolId: number | bigint, assetToAsset: boolean, amountIn: bigint, minOut: bigint): MeshTx;
+    87→    87→  transfer(assetId: number, to: string, amount: bigint): MeshTx;
+    88→    88→  depositSaos(amount: bigint): MeshTx;
+    89→    89→  withdrawSaos(amount: bigint): MeshTx;
+    90→    90→  balanceOf(assetId: number, who: string): Promise<bigint>;
+    91→    91→  quote(poolId: number | bigint, assetToAsset: boolean, amountIn: bigint): Promise<bigint>;
+    92→    92→  // v61 — האמת מהשרשרת: uint256 חוזר כ-bigint (poolCount-1n עובד חי);
+    93→    93→  // assetIdOf נקרא תמיד בתוך Number(...) — bigint מדויק לשניהם.
+    94→    94→  assetIdOf(symbol: string): Promise<bigint>;
+    95→    95→  poolCount(): Promise<bigint>;
+    96→    96→  [method: string]: any;
+    97→    97→}
+    98→    98→
+    99→    99→export interface DeploymentState {
+   100→   100→  ok: boolean;
+   101→   101→  chain: string;
+   102→   102→  chainId: number;
+   103→   103→  rpc: string;
+   104→   104→  artifactVersion: string;
+   105→   105→  deployedAt: string;
+   106→   106→  deployBlock: number;
+   107→   107→  operator: string;
+   108→   108→  contracts: Record<string, string>;
+   109→   109→  links: string[];
+   110→   110→  rails: string[];
+   111→   111→  seedRuns: number;
+   112→   112→}
+   113→   113→
+   114→   114→// ─── best-effort platform integration (public addresses only) ──────────────
+   115→   115→
+   116→   116→export async function fetchJson(url: string, timeoutMs = 4000): Promise<Record<string, unknown> | null> {
+   117→   117→  try {
+   118→   118→    // v24 מגן (runner): the mesh service talks ONLY to the local platform
+   119→   119→    // (127.0.0.1) — any other host is blocked before connect (fail-closed,
+   120→   120→    // anti-phishing: unknown hosts are never probed from the runner).
+   121→   121→    const u = new URL(url);
+   122→   122→    if (u.hostname !== "127.0.0.1" && u.hostname !== "localhost") {
+   123→   123→      console.error(`[magen] blocked outbound fetch to ${u.hostname} (loopback only)`);
+   124→   124→      return null;
+   125→   125→    }
+   126→   126→    // v55 לולאת-המוות שנתפסה חי (restart #1/#2): בזמן מצוקת-ווב (RSS 1.5GB ·
+   127→   127→    // page-hang) הווב מחזיר 200+כותרות אבל הגוף נתקע — ו-bun לעולם לא דוחה
+   128→   128→    // את res.json() ב-abort (הוכח בריפרו repro-abort.ts ניסוי B: תלייה>15ש'
+   129→   129→    // למרות abort). הטיפול: ה-abort ממשיך לכסות גם את קריאת-הגוף (clearTimeout
+   130→   130→    // רק ב-finally), וקריאת-הגוף עצמה רצה במירוץ קשיח נגד deadline שתמיד
+   131→   131→    // מסתיים — לא סומכים על ה-abort, ה-fetch-כולו חסום-זמן.
+   132→   132→    const ctl = new AbortController();
+   133→   133→    const t = setTimeout(() => ctl.abort(), timeoutMs);
+   134→   134→    try {
+   135→   135→      const res = await fetch(url, { signal: ctl.signal });
+   136→   136→      if (!res.ok) return null;
+   137→   137→      // v55 — המירוץ הקשיח עם ניקוי-טיימר: המנצח מנקה את ה-deadline (אין
+   138→   138→      // לוגי-שקר מאוחרים); המפסיד מוחזר כ-null כנה.
+   139→   139→      const body = await new Promise<Record<string, unknown> | null>((resolve) => {
+   140→   140→        const t2 = setTimeout(() => {
+   141→   141→          console.log(`[evm-mesh] v55 body-deadline: ${u.pathname} stalled >${timeoutMs}ms — honest null (bun abort does not reject a stalled body read)`);
+   142→   142→          resolve(null);
+   143→   143→        }, timeoutMs);
+   144→   144→        res.json().then(
+   145→   145→          (v) => { clearTimeout(t2); resolve(v as Record<string, unknown>); },
+   146→   146→          () => { clearTimeout(t2); resolve(null); }
+   147→   147→        );
+   148→   148→      });
+   149→   149→      return body;
+   150→   150→    } finally {
+   151→   151→      clearTimeout(t);
+   152→   152→    }
+   153→   153→  } catch {
+   154→   154→    return null;
+   155→   155→  }
+   156→   156→}
+   157→   157→
+   158→   158→/** LIVE anchors from the platform's 8-chain grid (best-effort). */
+   159→   159→export async function fetchLiveAnchors(): Promise<{
+   160→   160→  chains: string[];
+   161→   161→  heights: bigint[];
+   162→   162→  digests: string[];
+   163→   163→} | null> {
+   164→   164→  const [probes, status] = await Promise.all([
+   165→   165→    fetchJson("http://127.0.0.1:3000/api/saos/live-probes"),
+   166→   166→    fetchJson("http://127.0.0.1:3000/api/saos/status")
+   167→   167→  ]);
+   168→   168→  const h: Record<string, number> = {};
+   169→   169→  const stats = status?.stats as { lastHeight?: number } | undefined;
+   170→   170→  if (stats?.lastHeight != null) h["SAOS-NET"] = Number(stats.lastHeight);
+   171→   171→  const eth = probes?.eth as { blockNumber?: number } | undefined;
+   172→   172→  const bsc = probes?.bsc as { blockNumber?: number } | undefined;
+   173→   173→  const sol = probes?.sol as { slot?: number } | undefined;
+   174→   174→  if (eth?.blockNumber != null) h["ETHEREUM"] = Number(eth.blockNumber);
+   175→   175→  if (bsc?.blockNumber != null) h["BSC"] = Number(bsc.blockNumber);
+   176→   176→  if (sol?.slot != null) h["SOLANA"] = Number(sol.slot);
+   177→   177→
+   178→   178→  const chains: string[] = [];
+   179→   179→  const heights: bigint[] = [];
+   180→   180→  const digests: string[] = [];
+   181→   181→  for (const c of MESH_CHAINS) {
+   182→   182→    const v = h[c];
+   183→   183→    if (v != null && Number.isFinite(v) && v > 0) {
+   184→   184→      chains.push(c);
+   185→   185→      heights.push(BigInt(v));
+   186→   186→      digests.push(ethers.id(`saos:${c}:${v}`));
+   187→   187→    }
+   188→   188→  }
+   189→   189→  return chains.length > 0 ? { chains, heights, digests } : null;
+   190→   190→}
+   191→   191→
+   192→   192→// ─── v4 — הבורסה: הנכסים האמיתיים שמגובים באוצר (מדידת-מכ"ם) ────────────────
+   193→   193→
+   194→   194→/** מחיר-המדיניות של SAOS-M — הנחיית הבעלים: שווי נמוך בכוונה (לא $3);
+   195→   195→ *  ערך נמוך מאפשר לזרוע בריכות רבות ולסחור בהיקפים חיים. */
+   196→   196→export const SAOS_M_USD_POLICY = 0.001;
+   197→   197→
+   198→   198→export interface RealAsset {
+   199→   199→  symbol: string; // "TRX" | "SOL" | "ETH"
+   200→   200→  units: number;  // היתרה האמיתית שנמדדה (אוצר headcorner)
+   201→   201→  usd: number;    // מחיר אורקל חי (Binance) — או תמונת-מצב מדודה
+   202→   202→  source: string; // תיעוד המקור — אמת גלויה בהערת-הגיבוי
+   203→   203→  address: string;
+   204→   204→}
+   205→   205→
+   206→   206→/** תמונת-המצב המדודה (2026-09-09) — גיבוי כנה כשהמכ"ם לעונה. */
+   207→   207→const MEASURED_SNAPSHOT: Record<string, { units: number; usd: number; address: string }> = {
+   208→   208→  // v32: הכתובות תוקנו לאמיתיות (קידומות נכונות, זנבות משובשים — כל
+   209→   209→  // שלוש הכתובות היו עותקים פגומים; רק fallback כשהמכ"ם לא עונה בזמן פריסה)
+   210→   210→  TRX: { units: 17.599234, usd: 0.339, address: "TG6SrsMJjRqnqAyYM8kGZu1rgkpsgizKEn" },
+   211→   211→  SOL: { units: 0.023981117, usd: 103.41, address: "9knfnFMLmhUNjKRDbR1BmVnVkq4BRczyYjJ7BqiZSgiL" },
+   212→   212→  ETH: { units: 0.000095303910636035, usd: 2491.01, address: "0x2767e8146c11baD1d9B0784f11325375195c1b0f" }
+   213→   213→};
+   214→   214→
+   215→   215→/** יחס wSAOS ליחידת נכס = oracleUsd / 0.001 — בנקודה-קבועה 1e6 (חישוב מדויק לשרשרת). */
+   216→   216→export function saosPerAssetE6(usd: number): bigint {
+   217→   217→  return BigInt(Math.round((usd / SAOS_M_USD_POLICY) * 1e6));
+   218→   218→}
+   219→   219→
+   220→   220→/**
+   221→   221→ * הנכסים הגדולים של האורגניזם כפי שנמדדו במכ"ם הנזילות (TRX/SOL/ETH של
+   222→   222→ * headcorner מה-API של הפלטפורמה). אין מקור חי? תמונת-המצב המדודה — עם
+   223→   223→ * תיוג כנה. לעולם לא מומצא (honest fallback), לעולם לא זורק.
+   224→   224→ */
+   225→   225→export async function fetchRealAssets(): Promise<{ assets: Record<string, RealAsset>; live: number }> {
+   226→   226→  const flow = await fetchJson("http://127.0.0.1:3000/api/saos/flow", 25000);
+   227→   227→  const rows = (((flow?.radar as { assets?: unknown[] } | undefined)?.assets) ?? []) as Array<{
+   228→   228→    symbol?: string;
+   229→   229→    holder?: string;
+   230→   230→    address?: string;
+   231→   231→    balanceNum?: number;
+   232→   232→    priceUsd?: number | null;
+   233→   233→  }>;
+   234→   234→  const pick = (symbol: string, prefix: string): RealAsset | null => {
+   235→   235→    const a = rows.find(
+   236→   236→      (x) => x.symbol === symbol && x.holder === "headcorner" && typeof x.address === "string" && x.address.startsWith(prefix)
+   237→   237→    );
+   238→   238→    if (!a || typeof a.balanceNum !== "number" || !(a.balanceNum > 0)) return null;
+   239→   239→    if (typeof a.priceUsd !== "number" || !(a.priceUsd > 0)) return null;
+   240→   240→    return {
+   241→   241→      symbol,
+   242→   242→      units: a.balanceNum,
+   243→   243→      usd: a.priceUsd,
+   244→   244→      source: `מכ"ם חי ${new Date().toISOString().slice(0, 10)}`,
+   245→   245→      address: a.address as string
+   246→   246→    };
+   247→   247→  };
+   248→   248→  const out: Record<string, RealAsset> = {};
+   249→   249→  let live = 0;
+   250→   250→  for (const [sym, prefix] of [
+   251→   251→    ["TRX", "TG6Srs"],
+   252→   252→    ["SOL", "9knfnF"],
+   253→   253→    ["ETH", "0x2767"]
+   254→   254→  ] as const) {
+   255→   255→    const got = pick(sym, prefix);
+   256→   256→    if (got) {
+   257→   257→      out[sym] = got;
+   258→   258→      live += 1;
+   259→   259→    } else {
+   260→   260→      const fb = MEASURED_SNAPSHOT[sym]!;
+   261→   261→      out[sym] = { symbol: sym, units: fb.units, usd: fb.usd, source: "תמונת-מצב מדודה 2026-09-09", address: fb.address };
+   262→   262→    }
+   263→   263→  }
+   264→   264→  return { assets: out, live };
+   265→   265→}
+   266→   266→
+   267→   267→/** The REAL fleet EVM identities (public addresses only — never keys). */
+   268→   268→export async function fetchFleetAgents(): Promise<Array<{ handle: string; address: string }>> {
+   269→   269→  // the fleet route does live multi-chain balance probes — it can take ~10s
+   270→   270→  const fleet = await fetchJson("http://127.0.0.1:3000/api/saos/fleet", 25000);
+   271→   271→  const out: Array<{ handle: string; address: string }> = [];
+   272→   272→  const sovereign = fleet?.sovereign as { evm?: { address?: string } } | undefined;
+   273→   273→  if (sovereign?.evm?.address) out.push({ handle: "headcorner", address: sovereign.evm.address });
+   274→   274→  const soldiers = (fleet?.soldiers ?? []) as Array<{ agent?: string; evm?: { address?: string } }>;
+   275→   275→  for (const s of soldiers) {
+   276→   276→    if (s?.evm?.address && s?.agent) out.push({ handle: s.agent, address: s.evm.address });
+   277→   277→  }
+   278→   278→  return out;
+   279→   279→}
+   280→   280→
+   281→   281→// ─── the deployment ────────────────────────────────────────────────────────
+   282→   282→
+   283→   283→async function sendTx(label: string, call: () => Promise<ethers.ContractTransactionResponse>): Promise<ethers.ContractTransactionReceipt | null> {
+   284→   284→  const tx = await call();
+   285→   285→  // v91 receipt-poll fix (measured 2026-09-13): tx.wait() hung forever even
+   286→   286→  // though the tx DID mine (block 11 carried the hub.wire selector, zero "✓"
+   287→   287→  // lines, 1019 blockNumber heartbeats, empty txpool) — the ethers polling
+   288→   288→  // transaction-subscriber race from the v61 Promise-Guard family. We no
+   289→   289→  // longer blindly trust wait(): poll the chain for the receipt ourselves
+   290→   290→  // and fail LOUDLY on timeout so the watchdog loop recovers honestly.
+   291→   291→  let rc: ethers.ContractTransactionReceipt | null = null;
+   292→   292→  for (let i = 0; i < 240 && !rc; i++) {
+   293→   293→    try {
+   294→   294→      rc = (await tx.provider.getTransactionReceipt(tx.hash)) as ethers.ContractTransactionReceipt | null;
+   295→   295→    } catch {
+   296→   296→      // transient RPC hiccup — keep polling, the chain is the truth
+   297→   297→    }
+   298→   298→    if (!rc) await new Promise((r) => setTimeout(r, 250));
+   299→   299→  }
+   300→   300→  if (!rc) {
+   301→   301→    console.error(`[mesh] sendTx ${label}: no receipt in 60s for ${tx.hash} — fail-loud (watchdog recovers)`);
+   302→   302→    throw new Error(`sendTx ${label}: receipt timeout for ${tx.hash}`);
+   303→   303→  }
+   304→   304→  console.log(`[mesh] ✓ ${label} (block ${rc.blockNumber})`);
+   305→   305→  return rc;
+   306→   306→}
+   307→   307→
+   308→   308→export function loadArtifact(): MeshArtifact {
+   309→   309→  return JSON.parse(fs.readFileSync(ARTIFACT_PATH, "utf8")) as MeshArtifact;
+   310→   310→}
+   311→   311→
+   312→   312→export function readState(): DeploymentState | null {
+   313→   313→  try {
+   314→   314→    return JSON.parse(fs.readFileSync(STATE_PATH, "utf8")) as DeploymentState;
+   315→   315→  } catch {
+   316→   316→    return null;
+   317→   317→  }
+   318→   318→}
+   319→   319→
+   320→   320→export async function deployMesh(): Promise<DeploymentState> {
+   321→   321→  const artifact = loadArtifact();
+   322→   322→  fs.mkdirSync(path.dirname(STATE_PATH), { recursive: true });
+   323→   323→
+   324→   324→  // v54 מכוון-הרשת — ריעוף 120ms לפריסה/המתנות
+   325→   325→  const provider = new ethers.JsonRpcProvider(MESH_RPC, MESH_CHAIN_ID, { batchMaxCount: 1, pollingInterval: 120 });
+   326→   326→  const operator = await provider.getSigner(0);
+   327→   327→  const operatorAddr = await operator.getAddress();
+   328→   328→
+   329→   329→  const abiOf = (name: string): ethers.InterfaceAbi => {
+   330→   330→    const c = artifact.contracts.find((x) => x.name === name);
+   331→   331→    if (!c) throw new Error(`artifact missing ${name}`);
+   332→   332→    return c.abi;
+   333→   333→  };
+   334→   334→
+   335→   335→  // 1. deploy all seven contracts
+   336→   336→  const addr: Record<string, string> = {};
+   337→   337→  for (const c of artifact.contracts) {
+   338→   338→    const factory = new ethers.ContractFactory(c.abi, c.bytecode, operator);
+   339→   339→    const deployed = await factory.deploy();
+   340→   340→    await deployed.waitForDeployment();
+   341→   341→    addr[c.name] = await deployed.getAddress();
+   342→   342→    console.log(`[mesh] deployed ${c.name} → ${addr[c.name]} (${c.bytecodeBytes}B)`);
+   343→   343→  }
+   344→   344→
+   345→   345→  const C = (name: string) => new ethers.Contract(addr[name] as string, abiOf(name), operator);
+   346→   346→  const hub = C("SAOSMeshHub") as unknown as HubContract;
+   347→   347→  const relay = C("SAOSMeshRelay");
+   348→   348→  const identity = C("SAOSIdentity");
+   349→   349→  const ledger = C("SAOSLedger") as unknown as LedgerContract;
+   350→   350→  const solutions = C("SAOSSolutions");
+   351→   351→  const bridge = C("SAOSBridge");
+   352→   352→  const workboard = C("SAOSWorkBoard");
+   353→   353→  const microgrid = C("SAOSMicrogrid");
+   354→   354→  const exchange = C("SAOSExchange") as unknown as ExchangeContract;
+   355→   355→  const value = C("SAOSValueEngine");
+   356→   356→
+   357→   357→  // v4 — אוצר-הבורסה / reserve custodian: חותם 9 (anvil unlocked). כל הקציר
+   358→   358→  //      וההון-יוצר-השוק של הבורסה יושבים כאן — כתובת פומבית בלבד, אין מפתח.
+   359→   359→  const treasurySigner = await provider.getSigner(9);
+   360→   360→  const treasuryAddr = await treasurySigner.getAddress();
+   361→   361→
+   362→   362→  // 2. wire the chain — every arrow below is a real contract-to-contract link
+   363→   363→  await sendTx("hub → relay + valueEngine", () => hub.wire(addr.SAOSMeshRelay, addr.SAOSValueEngine));
+   364→   364→  await sendTx("relay → hub", () => relay.wireHub(addr.SAOSMeshHub));
+   365→   365→  for (const link of LINK_ORDER) {
+   366→   366→    await sendTx(`relay link + ${link}`, () => relay.addLink(addr[link] as string));
+   367→   367→  }
+   368→   368→  await sendTx("identity → relay", () => identity.wire(addr.SAOSMeshRelay as string));
+   369→   369→  await sendTx("ledger → relay", () => ledger.wire(addr.SAOSMeshRelay as string));
+   370→   370→  await sendTx("solutions → relay", () => solutions.wire(addr.SAOSMeshRelay as string));
+   371→   371→  await sendTx("bridge → relay", () => bridge.wire(addr.SAOSMeshRelay as string));
+   372→   372→  await sendTx("workboard → relay + ledger", () => workboard.wire(addr.SAOSMeshRelay as string, addr.SAOSLedger as string));
+   373→   373→  await sendTx("ledger payroll → workboard", () => ledger.setPayroll(addr.SAOSWorkBoard as string));
+   374→   374→  await sendTx("microgrid → relay + ledger + workboard", () => microgrid.wire(addr.SAOSMeshRelay as string, addr.SAOSLedger as string, addr.SAOSWorkBoard as string));
+   375→   375→  await sendTx("exchange → relay + ledger + treasury (אוצר-הבורסה / reserve custodian)", () =>
+   376→   376→    exchange.wire(addr.SAOSMeshRelay as string, addr.SAOSLedger as string, treasuryAddr));
+   377→   377→  await sendTx("valueEngine → hub + relay", () => value.wire(addr.SAOSMeshHub, addr.SAOSMeshRelay));
+   378→   378→
+   379→   379→  // 3. register the 8-chain rails on the bridge
+   380→   380→  for (const chain of MESH_CHAINS) {
+   381→   381→    await sendTx(`rail ${chain}`, () => bridge.registerChain(chain));
+   382→   382→  }
+   383→   383→
+   384→   384→  // 4. seed identities: the operator + the REAL fleet EVM identities
+   385→   385→  await sendTx("agent mesh-operator", () => identity.register(operatorAddr, "mesh-operator"));
+   386→   386→  for (const agent of await fetchFleetAgents()) {
+   387→   387→    await sendTx(`agent ${agent.handle} (fleet)`, () => identity.register(agent.address, agent.handle));
+   388→   388→  }
+   389→   389→
+   390→   390→  // 5. stamp LIVE external anchors (best-effort — platform may still boot)
+   391→   391→  const anchors = await fetchLiveAnchors();
+   392→   392→  if (anchors) {
+   393→   393→    await sendTx(`live anchors ×${anchors.chains.length}`, () =>
+   394→   394→      bridge.anchorExternalBulk(anchors.chains, anchors.heights, anchors.digests)
+   395→   395→    );
+   396→   396→  }
+   397→   397→
+   398→   398→  // 6. the HQ posts the first work orders — then the seed runs deliver them
+   399→   399→  await sendTx("work order #0: genesis mission", () => workboard.postOrder("genesis: map the 8-chain grid and stamp live anchors", 2, ethers.parseEther("6")));
+   400→   400→  await sendTx("work order #1: onboarding mission", () => workboard.postOrder("onboarding: auto-enlist every fleet agent and mint its first reward", 3, ethers.parseEther("8")));
+   401→   401→  await sendTx("work order #2: efficiency mission", () => workboard.postOrder("efficiency: audit value-per-gas across all mesh hops", 4, ethers.parseEther("12")));
+   402→   402→
+   403→   403→  // 7. seed runs — the chain in action immediately (each delivers an order)
+   404→   404→  const rc1 = await sendTx("genesis run: 9 contracts chained", () =>
+   405→   405→    hub.dispatch("mesh genesis: 9 contracts chained, fee-free value rail, work board + microgrid live")
+   406→   406→  );
+   407→   407→  const soldier = await provider.getSigner(1);
+   408→   408→  await sendTx("onboarding run: auto-enlist + deliver order", () =>
+   409→   409→    hub.connect(soldier).dispatch("fleet onboarding: auto-enlist + work delivery + sovereign payout")
+   410→   410→  );
+   411→   411→
+   412→   412→  // 8. v3 — MICROGRID SEEDING: the HQ posts REAL measured DEX prices
+   413→   413→  //    (oracle), creates the grids, and funds the profit pool from its
+   414→   414→  //    minted balance. Honest: prices are read-only market data; money is
+   415→   415→  //    lab SAOS-M; sweeps are capped by the real contract balance.
+   416→   416→  try {
+   417→   417→    const dex = await fetchJson("http://127.0.0.1:3000/api/saos/dex");
+   418→   418→    const pairs = (dex?.pairs ?? []) as Array<{ pair?: string; price?: string | null; exists?: boolean }>;
+   419→   419→    const priceOf = (pair: string): bigint | null => {
+   420→   420→      const p = pairs.find((x) => x.pair === pair && x.exists && x.price);
+   421→   421→      if (!p?.price) return null;
+   422→   422→      const num = Number(p.price);
+   423→   423→      if (!Number.isFinite(num) || num <= 0) return null;
+   424→   424→      return BigInt(Math.round(num * 1e6));
+   425→   425→    };
+   426→   426→    const wethUsdc = priceOf("WETH/USDC");
+   427→   427→    const wbnbUsdt = priceOf("WBNB/USDT");
+   428→   428→    if (wethUsdc) {
+   429→   429→      await sendTx("microgrid oracle: WETH/USDC live", () => microgrid.postPrice("WETH/USDC", wethUsdc));
+   430→   430→      await sendTx("microgrid grid: WETH/USDC ×24 levels", () => microgrid.createGrid("WETH/USDC", 24));
+   431→   431→    } else {
+   432→   432→      console.log("[mesh] microgrid WETH/USDC price unavailable — honest skip");
+   433→   433→    }
+   434→   434→    if (wbnbUsdt) {
+   435→   435→      await sendTx("microgrid oracle: WBNB/USDT live", () => microgrid.postPrice("WBNB/USDT", wbnbUsdt));
+   436→   436→      await sendTx("microgrid grid: WBNB/USDT ×24 levels", () => microgrid.createGrid("WBNB/USDT", 24));
+   437→   437→    } else {
+   438→   438→      console.log("[mesh] microgrid WBNB/USDT price unavailable — honest skip");
+   439→   439→    }
+   440→   440→    // fund the profit pool — the operator's genesis mint (10 SAOS-M reward)
+   441→   441→    try {
+   442→   442→      await sendTx("microgrid profit fund ← operator mint", () => ledger.transfer(addr.SAOSMicrogrid as string, ethers.parseEther("10")));
+   443→   443→    } catch {
+   444→   444→      console.log("[mesh] microgrid funding skipped (operator balance low — honest)");
+   445→   445→    }
+   446→   446→  } catch (e) {
+   447→   447→    console.log(`[mesh] microgrid seeding best-effort: ${e instanceof Error ? e.message.slice(0, 120) : "unknown"}`);
+   448→   448→  }
+   449→   449→
+   450→   450→  // 9. v4 — EXCHANGE BOOTSTRAP (mesh link #7): הבורסה שלנו על הרשת שלנו.
+   451→   451→  //    ה-HQ רושם את הנכסים העטופים (הערות-גיבוי בעברית — אמת גלויה, לא
+   452→   452→  //    כסף מומצא), מטביע אספקת-גיבוי לפי מדידת-המכ"ם, מגלגל float ריבוני
+   453→   453→  //    (wSAOS 1:1 מול פיקדון אמיתי במסילה), ממלא 8 חיילים, זורע 3 בריכות
+   454→   454→  //    במחיר-המדיניות ($0.001) ומשאיר 20% מהגיבוי לאוצר כהון-יוצר-שוק
+   455→   455→  //    (הארב' של הבורסה: מוכר לתוך כוח, קונה לתוך חולשה).
+   456→   456→  const soldierSigners: ethers.Signer[] = [];
+   457→   457→  try {
+   458→   458→    // a. רישום הנכסים — הערת-הגיבוי היא האמת הגלויה של האורגניזם
+   459→   459→    await sendTx("asset WSAOS (עטוף 1:1)", () =>
+   460→   460→      exchange.registerAsset("WSAOS", "SAOS-M עטוף 1:1 — מגובה בפיקדונות אמיתיים במסילת הערך"));
+   461→   461→    await sendTx("asset WTRX (אוצר TRON)", () =>
+   462→   462→      exchange.registerAsset("WTRX", "TRX עטוף — מגובה באוצר TRON האמיתי (מדידת מכ\"ם)"));
+   463→   463→    await sendTx("asset WSOL (אוצר SOLANA)", () =>
+   464→   464→      exchange.registerAsset("WSOL", "SOL עטוף — מגובה באוצר SOLANA האמיתי (מדידת מכ\"ם)"));
+   465→   465→    await sendTx("asset WETH (אוצר ETHEREUM)", () =>
+   466→   466→      exchange.registerAsset("WETH", "ETH עטוף — מגובה באוצר ETHEREUM האמיתי (מדידת מכ\"ם)"));
+   467→   467→
+   468→   468→    // b. הנכסים האמיתיים — מכ"ם חי (headcorner) או תמונת-מצב מדודה (כנה)
+   469→   469→    const real = await fetchRealAssets();
+   470→   470→    const wsaosId = Number(await exchange.assetIdOf("WSAOS"));
+   471→   471→
+   472→   472→    // c. float ריבוני לנזילות — mint מדיניות מתועד (FloatMinted בשרשרת)
+   473→   473→    await sendTx("float ריבוני 500,000 SAOS-M → HQ", () =>
+   474→   474→      ledger.sovereignMint(operatorAddr, ethers.parseEther("500000"), "exchange float v4"));
+   475→   475→
+   476→   476→    // d. עטיפה: ה-HQ מפקיד 400,000 SAOS-M (wSAOS 1:1); היתרה — עתודת HQ
+   477→   477→    await sendTx("HQ → מסילה: 400,000 SAOS-M לבורסה", () =>
+   478→   478→      ledger.transfer(addr.SAOSExchange as string, ethers.parseEther("400000")));
+   479→   479→    await sendTx("HQ depositSaos(400,000) — wSAOS חי 1:1", () =>
+   480→   480→      exchange.depositSaos(ethers.parseEther("400000")));
+   481→   481→
+   482→   482→    // e. למלא את החיילים — 8 × 300 SAOS-M: מסילה לחייל → החייל מפקיד
+   483→   483→    //    בעצמו בבורסה (העטיפה תמיד של המחזיק: ledger.transfer(exchange)
+   484→   484→    //    ורק אז depositSaos — החוזה בודק saosUnaccounted מול הפיקדון).
+   485→   485→    for (let i = 1; i <= 8; i++) {
+   486→   486→      const s = await provider.getSigner(i);
+   487→   487→      const sAddr = await s.getAddress();
+   488→   488→      await sendTx(`soldier-${i}: מסילה 300 SAOS-M`, () => ledger.transfer(sAddr, ethers.parseEther("300")));
+   489→   489→      await sendTx(`soldier-${i}: הפקדה בבורסה 300`, () =>
+   490→   490→        ledger.connect(s).transfer(addr.SAOSExchange as string, ethers.parseEther("300")));
+   491→   491→      await sendTx(`soldier-${i} depositSaos(300)`, () => exchange.connect(s).depositSaos(ethers.parseEther("300")));
+   492→   492→      soldierSigners.push(s);
+   493→   493→    }
+   494→   494→
+   495→   495→    // f. הטבעת אספקת-גיבוי לפי המדידה + זריעת הבריכות במחיר-המדיניות
+   496→   496→    //    (1 יחידת נכס = oracleUsd/0.001 SAOS): 80% לבריכה, 20% לאוצר.
+   497→   497→    //    wSAOS לעולם לא מוטבע ישירות — רק מול פיקדון SAOS-M אמיתי.
+   498→   498→    for (const spec of [
+   499→   499→      { symbol: "WTRX", realKey: "TRX" },
+   500→   500→      { symbol: "WSOL", realKey: "SOL" },
+   501→   501→      { symbol: "WETH", realKey: "ETH" }
+   502→   502→    ] as const) {
+   503→   503→      const r = real.assets[spec.realKey];
+   504→   504→      const id = Number(await exchange.assetIdOf(spec.symbol));
+   505→   505→      const totalWei = ethers.parseEther(String(r.units));
+   506→   506→      const poolAsset = (totalWei * 80n) / 100n;
+   507→   507→      const treasuryAsset = totalWei - poolAsset;
+   508→   508→      const poolSaos = (poolAsset * saosPerAssetE6(r.usd)) / 1_000_000n;
+   509→   509→      await sendTx(`mint ${spec.symbol} = ${r.units} (${r.source})`, () =>
+   510→   510→        exchange.mintAsset(id, operatorAddr, totalWei, `${r.units} ${spec.realKey} אמיתיים באוצר (${r.source})`));
+   511→   511→      await sendTx(`אוצר: הון-יוצר-שוק ${spec.symbol} 20%`, () =>
+   512→   512→        exchange.transfer(id, treasuryAddr, treasuryAsset));
+   513→   513→      await sendTx(`בריכה ${spec.symbol}/wSAOS נוצרה`, () => exchange.createPool(id, wsaosId));
+   514→   514→      const poolId = (await exchange.poolCount()) - 1n;
+   515→   515→      await sendTx(`בריכה ${spec.symbol}/wSAOS נזרעה (מחיר מדיניות $0.001)`, () =>
+   516→   516→        exchange.addLiquidity(poolId, poolAsset, poolSaos));
+   517→   517→    }
+   518→   518→
+   519→   519→    // g. זהויות הבורסה — אידמפוטנטי (register מזהה כפילות בשקט)
+   520→   520→    try {
+   521→   521→      await identity.register(treasuryAddr, "exchange-treasury");
+   522→   522→    } catch {
+   523→   523→      /* כבר רשום */
+   524→   524→    }
+   525→   525→    for (let i = 1; i <= 8; i++) {
+   526→   526→      try {
+   527→   527→        const sAddr = await (await provider.getSigner(i)).getAddress();
+   528→   528→        await identity.register(sAddr, `soldier-${i}`);
+   529→   529→      } catch {
+   530→   530→        /* כבר רשום */
+   531→   531→      }
+   532→   532→    }
+   533→   533→
+   534→   534→    // h. מעבר ארב' ראשון + מסחר-זרע — שה-Swap יתקיימו מה-Genesis. הבריכות
+   535→   535→    //    נזרעו במחיר המדיניות → סטייה 0 → דילוג כנה (הארב' נכנס לפעולה
+   536→   536→    //    רק כשהסוחרים יסיטו את הבריכה).
+   537→   537→    try {
+   538→   538→      const p0 = (await exchange.pools(0n)) as unknown as { rA: bigint; rB: bigint };
+   539→   539→      const implied = Number(p0.rB) / Number(p0.rA);
+   540→   540→      const target = real.assets.TRX.usd / SAOS_M_USD_POLICY;
+   541→   541→      const dev = implied / target - 1;
+   542→   542→      if (Math.abs(dev) > 0.008 && dev > 0) {
+   543→   543→        // הנכס יקר בבריכה → האוצר מוכר לתוכה (2% מרזרבת הנכס)
+   544→   544→        const wtrxId = Number(await exchange.assetIdOf("WTRX"));
+   545→   545→        const size = (p0.rA * 2n) / 100n;
+   546→   546→        const treasuryBal = (await exchange.balanceOf(wtrxId, treasuryAddr)) as bigint;
+   547→   547→        const sell = size < treasuryBal ? size : treasuryBal;
+   548→   548→        if (sell > 0n) {
+   549→   549→          const q = (await exchange.quote(0n, true, sell)) as bigint;
+   550→   550→          if (q > 0n) {
+   551→   551→            await sendTx("ארב' ראשון: האוצר מכר WTRX (תיקון סטייה)", () =>
+   552→   552→              exchange.connect(treasurySigner).swapExactIn(0n, true, sell, (q * 98n) / 100n));
+   553→   553→          }
+   554→   554→        }
+   555→   555→      } else {
+   556→   556→        console.log(`[mesh] ארב' ראשון: אין סטייה (${(dev * 100).toFixed(3)}%) — הבריכות נזרעו במחיר המדיניות (דילוג כנה)`);
+   557→   557→      }
+   558→   558→    } catch {
+   559→   559→      /* קריאת בריכה — best-effort */
+   560→   560→    }
+   561→   561→    // HQ קונה WTRX בשווי 10 wSAOS (wSAOS → נכס)
+   562→   562→    const qBuy = (await exchange.quote(0n, false, ethers.parseEther("10"))) as bigint;
+   563→   563→    if (qBuy > 0n) {
+   564→   564→      await sendTx("מסחר-זרע: HQ קנה WTRX ב-10 wSAOS", () =>
+   565→   565→        exchange.swapExactIn(0n, false, ethers.parseEther("10"), (qBuy * 98n) / 100n));
+   566→   566→      // ה-WTRX שנקנה → לחייל-1, שמוכר חצי חזרה — שני הכיוונים קיימים מה-Genesis
+   567→   567→      const wtrxId = Number(await exchange.assetIdOf("WTRX"));
+   568→   568→      const bought = (await exchange.balanceOf(wtrxId, operatorAddr)) as bigint;
+   569→   569→      if (bought > 0n && soldierSigners[0]) {
+   570→   570→        const soldier1 = soldierSigners[0];
+   571→   571→        const s1Addr = await soldier1.getAddress();
+   572→   572→        await sendTx("מילוי: HQ → soldier-1 (ה-WTRX שנקנה)", () => exchange.transfer(wtrxId, s1Addr, bought));
+   573→   573→        const sellAmt = bought / 2n;
+   574→   574→        const qSell = (await exchange.quote(0n, true, sellAmt)) as bigint;
+   575→   575→        if (qSell > 0n) {
+   576→   576→          await sendTx("מסחר-זרע: soldier-1 מכר WTRX חזרה", () =>
+   577→   577→            exchange.connect(soldier1).swapExactIn(0n, true, sellAmt, (qSell * 98n) / 100n));
+   578→   578→        }
+   579→   579→      }
+   580→   580→    }
+   581→   581→    console.log(
+   582→   582→      `[mesh] בורסה חיה: 4 נכסים · 3 בריכות (WTRX/WSOL/WETH × wSAOS) · 8 חיילים ממולאים · אוצר-הבורסה ${treasuryAddr.slice(0, 10)}…`
+   583→   583→    );
+   584→   584→  } catch (e) {
+   585→   585→    console.log(`[mesh] exchange bootstrap best-effort: ${e instanceof Error ? e.message.slice(0, 160) : "unknown"}`);
+   586→   586→  }
+   587→   587→
+   588→   588→  const state: DeploymentState = {
+   589→   589→    ok: true,
+   590→   590→    chain: "SAOS-EVM",
+   591→   591→    chainId: MESH_CHAIN_ID,
+   592→   592→    rpc: MESH_RPC,
+   593→   593→    artifactVersion: artifact.version,
+   594→   594→    deployedAt: new Date().toISOString(),
+   595→   595→    deployBlock: rc1?.blockNumber ?? 1,
+   596→   596→    operator: operatorAddr,
+   597→   597→    contracts: addr,
+   598→   598→    links: LINK_ORDER,
+   599→   599→    rails: MESH_CHAINS,
+   600→   600→    seedRuns: 2
+   601→   601→  };
+   602→   602→  fs.writeFileSync(STATE_PATH, JSON.stringify(state, null, 2) + "\n");
+   603→   603→  console.log(`[mesh] STATE → ${STATE_PATH}`);
+   604→   604→  console.log(`[mesh] MESH LIVE — 10 contracts chained on SAOS-EVM (chainId ${MESH_CHAIN_ID}), work board armed + microgrid seeded + בורסה (exchange) live`);
+   605→   605→  return state;
+   606→   606→}
+   607→   607→

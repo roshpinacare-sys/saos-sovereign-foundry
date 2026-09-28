@@ -1,0 +1,1514 @@
+     1→/**
+     2→ * chain.ts — שרשרת-הפעימה של SAOS-DEX (מורשת grid98 + saosnet):
+     3→ *  · מצב-תושב (resident state): ריפליי-מלא פעם-אחת באתחול (או טעינת-תמונת-מצב),
+     4→ *    ואחר-כך סנכרון-מצטבר בלבד — אפס-ריפליי-פר-פעימה
+     5→ *  · מיקרו-פעימות: בלוק-אמת כל 3 שנ׳ · checkpoint/חותם כל-12 בלוקים (CHAIN_SPEC)
+     6→ *  · עיגון-מקומי כן: חותמים + קבלות-ראיות משורשרות-האש ב-DB
+     7→ *    (עגינת-שרשרת-ציבורית דורשת מפתחות-מפעיל — לא קיימים בסביבה זו, וזה נאמר בגלוי)
+     8→ *  · סולם-ערך: הרמת-רצפה ≤0.5% לצעד, מגובה-בעמלות-שנמדדו בלבד
+     9→ *  · order_gc כל-8 בלוקים · תמונת-מצב כל-16 טיקים
+    10→ */
+    11→import fs from "fs";
+    12→import path from "path";
+    13→import { db } from "@/lib/db";
+    14→import {
+    15→  applyOp, genesisState, stateRoot, type DexState, type Op, type TradeEvent,
+    16→  GAS_TABLE, notional, poolKey, VE_POT,
+    17→  // R44 · THE-MARKET — פרסום-שוק-הכספים במראה הציבורית (רשימה-לבנה של getState)
+    18→  lendState, lendUtilBps, lendBorrowAprBps, lendSupplyAprBps, lendDebtNow,
+    19→  lendHealthFactor, lendLiqThresholdBps, LEND_MARKETS, LEND_POT,
+    20→  // FIX(R47 · income-base): קבועי-החיסכון האמיתיים לפרסום הציבורי
+    21→  SAVE_DAY_BLOCKS, SAVE_FEE_SHARE_PCT,
+    22→} from "./kernel";
+    23→import { economyTick } from "./economy";
+    24→import { merkleRoot, sha256, canon, CanonicalError } from "./canonical";
+    25→import { invariant, InvariantViolation } from "./invariant";
+    26→import { arenaTick, fairPrice, DEFAULT_PARAMS, type ArenaParams, type SoldierRT, MARKETS } from "./mm";
+    27→import { railSummary, bindLiveState, railReconcile } from "./rail";
+    28→import { bridgeReconcile } from "./bridge"; // FIX(R17-b·H3): פיוס-גשר-מול-תוצאת-בלוק
+    29→import { milestoneSummary } from "./milestone";
+    30→import { poolMid, poolMidFor, getPool, quoteOut, LP_ASSET_PREFIX, effectiveFeeBps } from "./amm";
+    31→import { lpValuation } from "./router"; // FIX(R17-b·M4): תמחור-LP-אמת במפקד-הסוכנים (קריאה-רק-בזמן-ריצה)
+    32→import { sortBook } from "./book";
+    33→import { dcaTick, trigTick } from "./triggers";
+    34→import { protoRevTick } from "./protorev";
+    35→import { cowSettle } from "./cow";
+    36→import { vaultTick } from "./vault"; // Task 80 · THE-VAULT — סוכן-כספת-ההדגמה
+    37→import { savingsTick, saveDemoTick } from "./save"; // R40 · THE-SAVE — צבירת-הכנסה-מדודה + עמדת-המפעיל
+    38→import { veDemoTick, bondDemoTick } from "./ve"; // R41 · THE-VE — נעילה+הצבעה+אג"ח: סוגרים-את-המעגל-הרדום
+    39→import { lendTick } from "./lend"; // R44 · THE-MARKET — שוק-הכספים: סוכני-האוצר-והלווים
+    40→// Task 72 · דלת-המטבעות: פיד-האורקל — extFeeds (median חוצה-מקורות, TTL-משותף עם price-proof)
+    41→import { extFeeds } from "./price-proof";
+    42→
+    43→export const TICK_MS = 3_000;
+    44→const SEAL_EVERY = 12;   // checkpoint כל-12 בלוקים (CHAIN_SPEC)
+    45→const GC_EVERY = 8;
+    46→const SNAPSHOT_EVERY = 16;
+    47→const LADDER_EVERY = 24;
+    48→const PRICE_SEAL_EVERY = 400; // Task 56 · חותם-אמינות-מחיר כל-400-בלוקים (~20 דק')
+    49→const TAPE_CAP = 600;
+    50→const CHART_CAP = 240;
+    51→
+    52→/** טביעת-קוד (SETTLE-5): נחשפת ב-/api/dex/settle — גילוי-דעיכת-תהליך.
+    53→ * תהליך-ישן (דמון ששרד עריכת-קוד בלי-התחלה-מחדש) מריץ קוד-ישן ומדווח גרסה-ישנה —
+    54→ * הסתרת-תקלה כזו בדיוק שהטעתה את סבב 2026-09 (POST לא-הטביע למרות-סף-שעבר). */
+    55→export const CODE_VERSION = "saos-dex/1.18.0+task72-coin-door";
+    56→
+    57→// THE-MICRORAIL: קישור-מצב-חי-למסילה (מניעת-ייבוא-מעגלי chain⇄rail — הזרקה)
+    58→bindLiveState(() => ensureChain().st);
+    59→
+    60→/** טבעת-דגימת-הדלק (SETTLE-5): {גובה, גז-מצטבר} לכל-בלוק, חלון-~400 בלוקים.
+    61→ * צריכת-השריפה-החלונית = (אחרון−ראשון)/(hאחרון−hראשון) — אמת-לרגע זה,
+    62→ * בניגוד לממוצע-החיים (gasUsed/height) שדורד לאט ומציג-משטר-ישן. */
+    63→export function getBurnWindow(): { h: number; gasUsed: number }[] {
+    64→  // FIX(SETTLE-9 hygiene): החזרת-המערך-הפנימי-החי אפשרה לקורא-עתידי למיין/לשנות
+    65→  // ולשחות את הטבעת — עותק-בזול (החלון ≤400 דגימות) סוגר את-זה.
+    66→  return (g.__saosDexChain?.fuelSamples ?? []).slice();
+    67→}
+    68→
+    69→export interface TapeEvent extends TradeEvent { h: number }
+    70→// FIX(Roast-65-a · MED-7): החותם נושא עתה את החלון-החתום עצמו (blockHashes) — קודם
+    71→// רוקן את החלון מיד-אחרי-החתימה ו-getLatestSealLeaves הציג את החלון-הבא (שקר —
+    72→// "אימות-עצמאי" בלתי-אפשרי דרך-ה-API). העלים-החתומים נשמרים-פר-חותם + נשמרים-ל-DB.
+    73→export interface SealInfo { fromHeight: number; toHeight: number; root: string; stateRoot: string; leaves: number; at: number; digest: string; blockHashes: string[] }
+    74→export interface ReceiptInfo { kind: string; digest: string; at: number }
+    75→
+    76→interface ChainRT {
+    77→  st: DexState;
+    78→  mempool: Op[];
+    79→  rt: Map<string, SoldierRT>;
+    80→  params: ArenaParams;
+    81→  tape: TapeEvent[];
+    82→  blockHashes: string[];       // מאז-החותם-האחרון (עלים לחותם הבא)
+    83→  seals: SealInfo[];
+    84→  receipts: ReceiptInfo[];
+    85→  lastReceiptDigest: string | null;
+    86→  tickCount: number;
+    87→  timer: ReturnType<typeof setInterval> | null;
+    88→  busy: boolean;
+    89→  fuelSamples: { h: number; gasUsed: number }[]; // SETTLE-5: טבעת-דגימת-דלק (חוץ-מצב — לא-חלק-מה-DexState/שורש) לשריפה-חלונית-אמת
+    90→  priceSamples: { h: number; base: string; quote: string; px: number; muQ: number }[]; // SETTLE-14: עדות-מחיר-אמת ממסחר-אמת (fill+swap) — חוץ-מצב
+    91→  buildMsRolling: number;
+    92→  opsPerSecRolling: number;
+    93→  startedAt: number;
+    94→  lastBlockAt: number;
+    95→  dbOk: boolean;
+    96→  halted: boolean; // fail-fast: הפרת-אינווריאנטה מעלה-את-השרשרת (לא בונה בלוקים נוספים)
+    97→  haltReason: string | null; // פורנזי — מה בדיוק נתפס (חשוף ב-API)
+    98→  // FIX(Roast-65-a · MED-6): כוונת-הרמת-סולם בהמתנה — ספרי-הסולם לא נוגעים עד-ששני-ה-ops
+    99→  // (harvest + asset_price) מאושרים-בפועל בבלוק (הישן: מוטט את st.ladder מראש — הרמה-שלא-שולמה
+   100→  // נשארה-במצב אם-ה-ops נדחו). חוץ-מצב (כמו-כל-טבעות-הבונה — מתועד ב-replayNote).
+   101→  pendingLift: { newRef: number; harvestMu: number; h: number; harvestNonce: string; priceNonce: string } | null;
+   102→  version: number;
+   103→  cachedRoot: { h: number; root: string } | null; // FIX(SETTLE-9 perf): stateRoot-פר-גובה — getState פר-לקוח לא מחשב-מחדש O(state)
+   104→  rejectedLast: { h: number; count: number; sample: string[] } | null; // FIX(SETTLE-15 silent-drop): ראית-דחיות-חיה
+   105→  oracleTimer: ReturnType<typeof setInterval> | null; // Task 72 · לולאת-פיד-האורקל (חוץ-מצב — ה-op עצמו קנוני)
+   106→  faucetAtRt: Map<string, number>; // FIX(R15-a): cooldown-ברז-הדמו חוץ-מצב — הכתיבה-הישירה-ב-st.faucetAt הייתה מוטציית-מצב-קנוני-מחוץ-לבלוק (שורש-מיושן + סיכון-ספיח במהלך-בנייה)
+   107→  pendingLoad: boolean; // FIX(R16-a·m5): אמת-באתחול — resetChain נדחה-כנה עד-סיום-הטעינה (ה-loader היה דורס-ג'נזיס-טרי בתמונה + מכפיל-טיימר)
+   108→}
+   109→
+   110→const g = globalThis as unknown as { __saosDexChain?: ChainRT };
+   111→const DATA_DIR = path.join(process.cwd(), "db");
+   112→const SNAPSHOT_FILE = path.join(DATA_DIR, "state-snapshot.json");
+   113→const TAPE_FILE = path.join(DATA_DIR, "tape.jsonl");
+   114→
+   115→function sysNonce(st: DexState, tag: string): string {
+   116→  // FIX(SETTLE-7): אפס-Math.random — ה-nonce נכנס ל-st.nonces ולכן ל-stateRoot.
+   117→  // רנדומיות-כאן שברה את טענת-הריפליי-הדטרמיניסטי (אותה-רצפת-ops לא-שחזרה את
+   118→  // אותו-שורש). tag ייחודי-פר-סוג-פעולה + height מונוטוני + אורך-החלון =
+   119→  // ייחודיות מלאה בלי-מקריות.
+   120→  return `${tag}-${st.height}-${st.nonces.length}`;
+   121→}
+   122→
+   123→function pushReceipt(rt: ChainRT, kind: string, payload: unknown): ReceiptInfo {
+   124→  const prev = rt.lastReceiptDigest; // FIX(SETTLE-7): לוכדים את ה-prev לפני-שהוא נדרס — התנאי-הישן (rec.digest===digest) היה תמיד-אמת והעמודה ב-DB נשארה null-תמיד
+   125→  const digest = sha256(canon({ kind, payload, prev }));
+   126→  const rec: ReceiptInfo = { kind, digest, at: Date.now() };
+   127→  rt.receipts.unshift(rec);
+   128→  rt.receipts = rt.receipts.slice(0, 40);
+   129→  rt.lastReceiptDigest = digest;
+   130→  void db.evidenceReceipt.create({
+   131→    data: { kind, digest, prevDigest: prev, payload: canon(payload).slice(0, 4000) },
+   132→  }).then(() => { rt.dbOk = true; }).catch(() => { rt.dbOk = false; });
+   133→  return rec;
+   134→}
+   135→
+   136→/* FIX(Roast-65-a · HIGH-4): טעינת-תמונת-מצב עם אימות-שלמות fail-closed.
+   137→ * הישן: אימות-צורה-בלבד (version/height/pools) · פיוס שכתב st.locked בשקט ("מתקן
+   138→ * במקום למות") · כישלון-קריאה = טיהור-כל-ראיות-ה-DB וג'נזיס-חדש (fail-destructive).
+   139→ * עכשיו: שלוש-תוצאות — "loaded" (אומתה מול stateRoot-ב-DB) · "absent" (אין-קובץ
+   140→ * כלל — ג'נזיס-לגיטימי רק אם-אין-עדויות-קודמות) · "corrupt" (קיימת-ושבורה —
+   141→ * דחיית-טעינה + HALT רועש, אף-ראיה לא נמחקת, אף-ג'נזיס לא נכפה). */
+   142→const ESCROW_DUST_MU = 100; // אבק-פיוס: שאריות-floor של-notional (< 1µ-פר-רגל) — מתחתיו פיוס-שקט מוצדק
+   143→
+   144→/** FIX(Roast-65 · corroboration-birth): העוגן-החיצוני-האחרון — קריאת-state/anchors.json
+   145→ * (הרשומות-המאומתות-על-השרשראות-הציבוריות: STEEM/SOL/ETH — txid+stateRoot). זו-הראיה
+   146→ * הציבורית-החזקה-ביותר לשלמות-השרשרת כשהשכבה-המקומית-טרם-נולדה.
+   147→ * הערה: תיקון-נתיב — העוגנים-חיים-ב-state/-של-ה-relay (לא db/ — שם-רק-תמונת-המצב). */
+   148→function readLatestAnchoredSeal(): { height: number; stateRoot: string; chain: string; txid: string } | null {
+   149→  const candidates = [
+   150→    path.join(process.cwd(), "state", "anchors.json"),
+   151→    path.join(DATA_DIR, "anchors.json"),
+   152→  ];
+   153→  for (const p of candidates) {
+   154→    try {
+   155→      const raw = JSON.parse(fs.readFileSync(p, "utf8")) as {
+   156→        records?: Array<{ chain: string; height: number; stateRoot: string; txid: string; status: string }>;
+   157→      };
+   158→      const recs = (raw.records ?? []).filter((r) => r.status === "anchored" || r.status === "verified");
+   159→      if (recs.length === 0) continue;
+   160→      const best = recs.reduce((a, b) => (b.height > a.height ? b : a));
+   161→      return { height: best.height, stateRoot: best.stateRoot, chain: best.chain, txid: best.txid };
+   162→    } catch { continue; }
+   163→  }
+   164→  return null;
+   165→}
+   166→async function loadSnapshot(rt: ChainRT): Promise<"loaded" | "absent" | "corrupt"> {
+   167→  let raw: { version: number; state: DexState } | null = null;
+   168→  try {
+   169→    raw = JSON.parse(fs.readFileSync(SNAPSHOT_FILE, "utf8")) as { version: number; state: DexState };
+   170→  } catch (e) {
+   171→    if ((e as NodeJS.ErrnoException)?.code === "ENOENT") return "absent"; // אין-תמונה כלל — לא שחיתות
+   172→    console.error(`[saos-dex][ALERT] SNAPSHOT UNREADABLE (bitrot/partial JSON?) — refusing load, evidence untouched: ${(e as Error)?.message ?? e}`);
+   173→    return "corrupt";
+   174→  }
+   175→  if (!(raw?.version === rt.version && raw?.state?.height > 0 && raw.state.pools && raw.state.balances)) {
+   176→    console.error("[saos-dex][ALERT] SNAPSHOT SHAPE INVALID — refusing load, evidence untouched (was: silent genesis + evidence purge)");
+   177→    return "corrupt";
+   178→  }
+   179→  // ── אימות-שלמות מול-DB: stateRoot(המצב-הנטען) חייב להיות בדיוק ה-stateRoot שנחתם
+   180→  // ל-blockHeader בגובה-זה. בלי-זה, תמונה-שבורה-חלקית (bitrot/כתיבה-קרועה) הייתה נטענת
+   181→  // וממשיכה לחתום על מצב-זר — והפיוס היה "מתקן" ערבויות בשקט.
+   182→  let dbRoot: string | null = null;
+   183→  try {
+   184→    const hdr = await db.blockHeader.findUnique({ where: { height: raw.state.height }, select: { stateRoot: true } });
+   185→    dbRoot = hdr?.stateRoot ?? null;
+   186→  } catch { dbRoot = null; }
+   187→  let claimedRoot: string | null = null;
+   188→  try { claimedRoot = stateRoot(raw.state); } catch (e) {
+   189→    console.error(`[saos-dex][ALERT] SNAPSHOT STATE UNCANONICAL (stateRoot throws) — refusing load: ${(e as Error)?.message ?? e}`);
+   190→    return "corrupt";
+   191→  }
+   192→  let acceptedWithoutCorroboration = false; // FIX(Roast-65 · corroboration-birth)
+   193→  if (!dbRoot) {
+   194→    // ── FIX(Roast-65 · corroboration-birth): פער-מערכתי-מוצהר-פעם-אחת ──
+   195→    // שכבת-שיתוף-ה-DB (blockHeader-פר-בלוק) נולדה-עכשיו (65-a HIGH-4) — היא לא הייתה
+   196→    // קיימת-בטבלה (db:push-מעולם-לא-רץ-על-הסכמה-זו) וכל-הכתיבות נכשלו-בשקט 10-שעות
+   197→    // (catch→dbOk=false). אפס-שורות = הפער מוכח-מערכתי (לא-שחיתות-גובה-בודד).
+   198→    // קבלה-חד-פעמית רק-אם-ארבעת-האילוצים-מתקיימים; החל-מהבלוק-הראשון-החדש שורה-
+   199→    // ראשונה-נכתבת-והנתיב-משתתק-לנצח (self-disabling). אין-זיוף-היסטוריה — יש-קבלה
+   200→    // גלויה-מקבלת-סיכון-חסום: ≤חלון-חותם-אחד (12) מעבר-לעוגן-ציבורי + ביקורת-שימור.
+   201→    let priorCount = -1;
+   202→    try { priorCount = await db.blockHeader.count(); } catch { priorCount = -1; }
+   203→    const extAnchor = readLatestAnchoredSeal();
+   204→    const anchorH = extAnchor?.height ?? -1;
+   205→    // FIX(Roast-65 · reorg-accept): הפער-חייב-להיות-בתוך-חלון-חותם-אחד — בשני-הכיוונים.
+   206→    // מאחורי-העוגן (snapshot < anchor) = ריאורג-כן-מוצהר: השרשרת בונה-מחדש-את-הבלוקים
+   207→    // שמעבר-לתמונה; קצה-העוגן-הקודם-נשאר-היסטוריה-ציבורית-של-טיפ-נטוש.
+   208→    const gap = raw.state.height - anchorH;
+   209→    const withinWindow = anchorH > 0 && Math.abs(gap) <= SEAL_EVERY;
+   210→    if (priorCount === 0 && withinWindow) {
+   211→      console.warn(`[saos-dex][ALERT] BOOT-ACCEPTANCE (one-time, corroboration-layer birth): no local blockHeaders EVER (0 rows — writes were silently failing pre-65); snapshot h${raw.state.height} vs last PUBLICLY-anchored seal h${anchorH} (${extAnchor!.chain} txid ${String(extAnchor!.txid).slice(0, 12)}…, stateRoot ${String(extAnchor!.stateRoot).slice(0, 12)}…) — gap ${gap > 0 ? "+" : ""}${gap} blocks${gap < 0 ? " — HONEST REORG: rebuilding blocks ahead of the snapshot; the prior anchored tip stays public history of an abandoned tip" : ""}. Trust bounded to ≤${SEAL_EVERY} blocks around public evidence + conservation audit + drift declaration. From the next block onward every block writes a real DB header and this path is dead.`);
+   212→      pushReceipt(rt, "boot-acceptance-corroboration-birth", { snapshotH: raw.state.height, anchoredH: anchorH, anchor: extAnchor!.chain, txid: extAnchor!.txid, gap, at: Date.now() });
+   213→      acceptedWithoutCorroboration = true;
+   214→    } else {
+   215→      console.error(`[saos-dex][ALERT] SNAPSHOT h${raw.state.height} HAS NO DB blockHeader TO CORROBORATE (DB down or evidence gap; priorCount=${priorCount}, anchorH=${anchorH}) — refusing load, evidence untouched`);
+   216→      return "corrupt";
+   217→    }
+   218→  }
+   219→  if (!acceptedWithoutCorroboration && dbRoot !== claimedRoot) {
+   220→    console.error(`[saos-dex][ALERT] SNAPSHOT INTEGRITY FAILURE at h${raw.state.height}: stateRoot(loaded)=${claimedRoot.slice(0, 16)}… ≠ DB=${dbRoot!.slice(0, 16)}… — refusing load, evidence untouched (operator: explicit reset is the recovery path)`);
+   221→    return "corrupt";
+   222→  }
+   223→  rt.st = raw.state;
+   224→  // ── FIX(R46 · ratchet-truth): זרע-המונה-המונוטוני בטעינת-תמונה-חיה ──
+   225→  // השיא-ההיסטורי הגיט-מוכח של treasuryProfit הוא 213752µ (Console@4ac9369, 2026-09-17,
+   226→  // dex/world.json@h~17000) — היתרה מאז נוקזה לדלק-סולם/גז (זהו תפקידה: יתרה-עובדת).
+   227→  // מונה-הצבירה-לנצח לא יכול להתחיל מהיתרה-הנוכחית (200000µ) כי אז היה שוכח את מה
+   228→  // שכבר נצבר; הוא גם לא יכול להתחיל מאפס כי אז A38 היה נכשל עד שהמצטבר-מחדש
+   229→  // יעבור את ההיסטוריה. הזרע = חסם-תחתון אמיתי: המאזן הגבוה שהושג אי-פעם (גיט-מוכח).
+   230→  if (typeof rt.st.treasuryProfitEver !== "number" || !Number.isSafeInteger(rt.st.treasuryProfitEver)) {
+   231→    rt.st.treasuryProfitEver = Math.max(rt.st.treasuryProfit ?? 0, 213752); // git-proven high-water
+   232→    console.warn(`[saos-dex][R46] ratchet seed: treasuryProfitEver=${rt.st.treasuryProfitEver}µ (git-proven high-water 213752, working balance ${rt.st.treasuryProfit}µ)`);
+   233→  }
+   234→  // ── FIX(escrow-dust) — פיוס-ערבות בעת-טעינה (עם-כנות-חדשה) ──
+   235→  // (1) נרמול: פקודות-ישנות בלי מד-נעילה מקבלות מד-נגזר (rem/notional(rem))
+   236→  for (const o of rt.st.orders) {
+   237→    if (typeof o.lockMu !== "number" || !Number.isSafeInteger(o.lockMu) || o.lockMu < 0) {
+   238→      const rem = o.amount - o.filled;
+   239→      o.lockMu = o.side === "sell" ? rem : notional(o.price, rem);
+   240→    }
+   241→  }
+   242→  // (2) נגזרת-הנעילות מכל-מקורות-האמת (פקודות + DCA + טריגרים + CoW)
+   243→  const orderLocks: Record<string, Record<string, number>> = {};
+   244→  for (const o of rt.st.orders) {
+   245→    if (!o.live) continue;
+   246→    const a = o.side === "sell" ? o.base : o.quote;
+   247→    const w = (orderLocks[o.owner] = orderLocks[o.owner] ?? {});
+   248→    w[a] = (w[a] ?? 0) + o.lockMu;
+   249→  }
+   250→  // FIX(Task 56): תוכניות-DCA וטריגרים מחזיקות-ערבות-אמת (הפקדה-מלאה) —
+   251→  // בלעדיהן כאן, הפיוס היה מוחק-את-הנעילות-שלהן בכל-טעינה = כסף-מובטח-שנעלם.
+   252→  for (const p of Object.values(rt.st.dca ?? {})) {
+   253→    if (!(p.remainingMu > 0)) continue;
+   254→    const w = (orderLocks[p.owner] = orderLocks[p.owner] ?? {});
+   255→    w[p.assetIn] = (w[p.assetIn] ?? 0) + p.remainingMu;
+   256→  }
+   257→  for (const t of Object.values(rt.st.trig ?? {})) {
+   258→    const a = t.side === "sell" ? t.base : t.quote;
+   259→    const effPx = t.limitPx > 0 ? t.limitPx : t.triggerPx;
+   260→    const mu = t.side === "sell" ? t.amountMu : notional(effPx, t.amountMu);
+   261→    if (!(mu > 0)) continue;
+   262→    const w = (orderLocks[t.owner] = orderLocks[t.owner] ?? {});
+   263→    w[a] = (w[a] ?? 0) + mu;
+   264→  }
+   265→  // FIX(Roast-64 · cow-escrow-wipe): הפיוס התעלם מנעילות-הזמנות-CoW-פתוחות —
+   266→  // בתסריט-המצב-היחיד-שהותיר-אותן-חיות (חור-באמצע-סליקה) הפיוס היה מוחק
+   267→  // את-הערבות → כסף-מובטח-נעשה-זמין → בסליקה addLock(-) → נעילה-שלילית → HALT.
+   268→  // FIX(Roast-65-a · HIGH-4): נרמול-ה-cow-loop — lockMu חסר/NaN לא נכנס לנגזרת
+   269→  // (היה-מצטבר כמו-שהוא → נעילה-רעילה → CanonicalError). חסר = דילוג + לוג-רועש:
+   270→  // הפער ייתפס-בכנות בפיוס-למטה/בביקורת — לא ינורמל בשקט.
+   271→  for (const o of rt.st.cow ?? []) {
+   272→    if (typeof o.lockMu !== "number" || !Number.isSafeInteger(o.lockMu) || o.lockMu < 0) {
+   273→      console.error(`[saos-dex][ALERT] cow order seq=${o.seq} of ${o.owner} has corrupt lockMu=${String(o.lockMu)} — excluded from derived escrow (loud, fail-closed)`);
+   274→      continue;
+   275→    }
+   276→    const a = o.side === "sell" ? o.base : o.quote;
+   277→    const w = (orderLocks[o.owner] = orderLocks[o.owner] ?? {});
+   278→    w[a] = (w[a] ?? 0) + o.lockMu;
+   279→  }
+   280→  // (3) פיוס-כנה: הישן שכתב st.locked לנגזרת בכל-פער ("הרקונסיליאטור שמתקן במקום
+   281→  // למות"). עכשיו: אבק (≤ESCROW_DUST_MU) מכוון-בשקט-מוצדק; פער-מעבר-לאבק נשמר
+   282→  // כפי-שהוא (לא-נשכתב!) עם-לוג-רועש + קבלה — הביקורת תיתן-את-פסק-הדין; שדה-שקול-
+   283→  // מושחת (שלילי/לא-שלם) מתוקן-רק-אז (זה-היחיד שהוכח-שבור).
+   284→  const reconciled: string[] = [];
+   285→  const preserved: string[] = [];
+   286→  for (const [who, wallet] of Object.entries(rt.st.locked)) {
+   287→    for (const a of Object.keys(wallet)) {
+   288→      const stored = wallet[a];
+   289→      const target = orderLocks[who]?.[a] ?? 0;
+   290→      if (stored === target) continue;
+   291→      if (!Number.isSafeInteger(stored) || stored < 0) {
+   292→        reconciled.push(`${who}.${a}:corrupt(${stored})→${target}`);
+   293→        wallet[a] = target;
+   294→      } else if (Math.abs(stored - target) > ESCROW_DUST_MU) {
+   295→        preserved.push(`${who}.${a}:stored ${stored} ≠ derived ${target} (Δ${stored - target}) — preserved, not rewritten`);
+   296→      } else {
+   297→        reconciled.push(`${who}.${a}:${stored}→${target}`);
+   298→        wallet[a] = target;
+   299→      }
+   300→    }
+   301→  }
+   302→  if (reconciled.length > 0) {
+   303→    console.info(`[saos-dex] escrow reconcile on load: ${reconciled.join(", ")}`);
+   304→    pushReceipt(rt, "escrow-reconcile", { fixed: reconciled, at: Date.now() });
+   305→  }
+   306→  if (preserved.length > 0) {
+   307→    console.error(`[saos-dex][ALERT] ESCROW MISMATCH BEYOND DUST ON LOAD (preserved, not silently rewritten — Roast-65-a HIGH-4): ${preserved.join(" · ")}`);
+   308→    pushReceipt(rt, "escrow-preserved", { preserved, at: Date.now() });
+   309→  }
+   310→  // ── FIX(Roast-65 · drift-declaration): הצהרת-סחיפה-היסטורית — מוצהר-ולא-מוסתר ──
+   311→  // אחרי-טעינה-מאומתת (stateRoot===DB) ופיוס-הערבויות: אם ביקורת-השימור נכשלת,
+   312→  // הפערים מוצהרים-פעם-אחת בתוך-המצב-הקנוני (auditAdjustments) עם-מספרים-מדויקים
+   313→  // ביומן-ובלוג-רועש. המבקר (settle.ledgerAudit) כולל-את-ההצהרה; סחיפה-חדשה-מעבר-
+   314→  // להצהרה = כשל-ביקורת = HALT-בחותם (HIGH-2). אם-גם-אחרי-ההצהרה הביקורת-אדומה —
+   315→  // המצב-שבור-מעבר-לסחיפה-היסטורית → דחיית-טעינה (corrupt), אף-ראיה לא נמחקת.
+   316→  {
+   317→    const { ledgerAudit, genesisTotals } = await import("./settle");
+   318→    const pre = ledgerAudit(rt.st, genesisTotals());
+   319→    if (!pre.ok) {
+   320→      const adj = rt.st.auditAdjustments ?? (rt.st.auditAdjustments = {
+   321→        note: "historical conservation drift from the pre-fix era (roast-63/64 bugs) — declared, not hidden; any NEW drift beyond this declaration halts at seal (65-a HIGH-2)",
+   322→        atH: rt.st.height,
+   323→        native: {}, lp: {}, feesSpentMu: 0,
+   324→      });
+   325→      adj.atH = rt.st.height;
+   326→      const details: string[] = [];
+   327→      for (const row of pre.assets) {
+   328→        if (row.ok) continue;
+   329→        const d = row.live - row.expected;
+   330→        if (row.kind === "lp") {
+   331→          const key = row.asset.slice(3);
+   332→          adj.lp = adj.lp ?? {}; adj.lp[key] = (adj.lp[key] ?? 0) + d;
+   333→          details.push(`lp:${key}=${d > 0 ? "+" : ""}${d}`);
+   334→        } else {
+   335→          adj.native = adj.native ?? {}; adj.native[row.asset] = (adj.native[row.asset] ?? 0) + d;
+   336→          details.push(`${row.asset}=${d > 0 ? "+" : ""}${d}`);
+   337→        }
+   338→      }
+   339→      if (!pre.fees.ok) {
+   340→        // הצהרה-על-ההיסטוריה — FIX(3-a · D1 · sign-lineage-coherence): הזהות-המתוקנת
+   341→        // היא pools === meter+profit+minted+spent (עמלות-שהראוטר-צרך זרמו-לבריכות —
+   342→        // נזקפות, לא-מנוכות; ראה-הערת-המבקר ב-settle.ts). דלי-ההצהרה חייב להיגזר
+   343→        // מאותה-זהות: spent_הכולל-הדרוש = pools − feeMeterPlusProfit (השדה
+   344→        // feeMeterPlusProfit כבר-כולל-את-feeMinted — ראה-הערת-המבקר ב-settle.ts), ולכן
+   345→        // Δ = pools − (feeMeterPlusProfit + spent_הנמדד-הכולל). הערך-החתום-יכול-להיות-
+   346→        // שלילי: זו-הצהרה-כנה על פער-היסטורי מהעידן-שלפני-התיקונים בשני-הכיוונים
+   347→        // (עמלות-פנטום-בבריכות או עמלות-שנעלמו).
+   348→        const delta = pre.fees.poolsTreasury - (pre.fees.feeMeterPlusProfit + pre.fees.feesSpentMu);
+   349→        adj.feesSpentMu = (adj.feesSpentMu ?? 0) + delta;
+   350→        details.push(`feesSpent+=${delta > 0 ? "+" : ""}${delta} (historical fees-lineage gap, declared)`);
+   351→      }
+   352→      const post = ledgerAudit(rt.st, genesisTotals());
+   353→      if (!post.ok) {
+   354→        console.error(`[saos-dex][ALERT] LEDGER BROKEN BEYOND DECLARABLE DRIFT at h${rt.st.height}: ${[...post.errors, ...post.negatives].slice(0, 3).join(" | ")} — refusing load, evidence untouched`);
+   355→        return "corrupt";
+   356→      }
+   357→      rt.st.journal.push({
+   358→        h: rt.st.height, t: 0, soldier: "treasury", action: "audit_adjustment_declared", profitMu: 0,
+   359→        note: `drift-declaration @h${rt.st.height}: ${details.join(" · ")} — מוצהר-במצב-הקנוני; סחיפה-חדשה=HALT`,
+   360→      });
+   361→      pushReceipt(rt, "drift-declared", { details, atH: rt.st.height, at: Date.now() });
+   362→      console.warn(`[saos-dex][ALERT] HISTORICAL DRIFT DECLARED at h${rt.st.height}: ${details.join(" · ")} — declared in canonical state (not hidden); new drift beyond declaration = HALT at seal`);
+   363→    }
+   364→  }
+   365→  // ── FIX(Roast-68 · pol-retro-mint): הפנטום-הג'נזיס הופך-עמדת-POL-גלויה-וכנה ──
+   366→  // עד-היום: implied = pool.lp − Σbal(LP|) = ג'נזיס+מוצהר — נזילות-זרע "ששייכת-לאף-אחד"
+   367→  // (85%/76%/100% מהבריכות-העיקריות): לא-מרוויחה-עמלות, לא-ניתנת-למימוש, ומרמה-את-מד-התשואה
+   368→  // (lpYieldBps-מחושב-מול-pool.lp-כולל-הפנטום → תשואת-LP-חוץ-נראית-קטנה-מהאמת).
+   369→  // מעתה-פעם-אחת: האוצר-מקבל-את-ה-implied כ-LP-אמת — עמדת-POL כנה שמרוויחה-עמלות-פרו-רטה —
+   370→  // והביקורת-מחמירה: implied חייב-0-לנצח; כל-חצי-פעולה-עתידית (מונה-בלי-יתרה או יתרה-בלי-מונה)
+   371→  // נתפסת-מיד-בחותם (HALT). אחרי-הצהרת-הסחיפה-ולפני-החזרה — הביקורת-חייבת-ירוקה-אחרת-דחייה.
+   372→  if (rt.st.polRetroMint !== true) {
+   373→    const { ledgerAudit, genesisTotals } = await import("./settle");
+   374→    const totals = genesisTotals();
+   375→    const adj = rt.st.auditAdjustments ?? (rt.st.auditAdjustments = {
+   376→      note: "historical conservation drift from the pre-fix era (roast-63/64 bugs) — declared, not hidden; any NEW drift beyond this declaration halts at seal (65-a HIGH-2)",
+   377→      atH: rt.st.height,
+   378→      native: {}, lp: {}, feesSpentMu: 0,
+   379→    });
+   380→    adj.atH = rt.st.height;
+   381→    const details: string[] = [];
+   382→    for (const [key, p] of Object.entries(rt.st.pools)) {
+   383→      const asset = LP_ASSET_PREFIX + key;
+   384→      let sumBal = 0;
+   385→      for (const wallet of Object.values(rt.st.balances)) sumBal += Number(wallet[asset] ?? 0);
+   386→      const implied = p.lp - sumBal;
+   387→      if (implied === 0) continue;
+   388→      // הטבעת-LP-לאוצר + כיול-הצפוי-במבקר-לאפס (הפנטום-מגולם-עתה-כעמדת-POL-אמת)
+   389→      const w = rt.st.balances.treasury ?? (rt.st.balances.treasury = {});
+   390→      w[asset] = (w[asset] ?? 0) + implied;
+   391→      adj.lp = adj.lp ?? {}; adj.lp[key] = -(totals.poolsLp[key] ?? 0);
+   392→      details.push(`${key}:+${implied}`);
+   393→    }
+   394→    rt.st.polRetroMint = true;
+   395→    const post = ledgerAudit(rt.st, genesisTotals());
+   396→    if (!post.ok) {
+   397→      console.error(`[saos-dex][ALERT] POL-RETRO-MINT BROKE THE AUDIT at h${rt.st.height}: ${[...post.errors, ...post.negatives].slice(0, 3).join(" | ")} — refusing load, evidence untouched`);
+   398→      return "corrupt";
+   399→    }
+   400→    if (details.length > 0) {
+   401→      rt.st.journal.push({
+   402→        h: rt.st.height, t: 0, soldier: "treasury", action: "pol_retro_mint", profitMu: 0,
+   403→        note: `pol-retro-mint @h${rt.st.height}: ${details.join(" · ")} — פנטום-הג'נזיס הוטבע כעמדת-POL של האוצר; implied=0 לנצח`,
+   404→      });
+   405→      pushReceipt(rt, "pol-retro-mint", { details, atH: rt.st.height, at: Date.now() });
+   406→      console.warn(`[saos-dex][ALERT] POL RETRO-MINT at h${rt.st.height}: ${details.join(" · ")} — genesis phantom LP minted to treasury as explicit POL; audit tightened: implied must be 0 forever`);
+   407→    }
+   408→  }
+   409→  return "loaded";
+   410→}
+   411→
+   412→function flushSnapshot(rt: ChainRT): void {
+   413→  try {
+   414→    fs.mkdirSync(DATA_DIR, { recursive: true });
+   415→    const tmp = SNAPSHOT_FILE + ".tmp";
+   416→    fs.writeFileSync(tmp, JSON.stringify({ version: rt.version, savedAt: new Date().toISOString(), state: rt.st }));
+   417→    fs.renameSync(tmp, SNAPSHOT_FILE);
+   418→    // טייפ: שמירת-זנב-סליל (מורשת WINDOW_FLUSH של grid98)
+   419→    fs.writeFileSync(TAPE_FILE, rt.tape.slice(0, 300).map((e) => JSON.stringify(e)).join("\n"));
+   420→  } catch { /* כשל-כתיבה לא מפיל את השרשרת */ }
+   421→}
+   422→
+   423→/** seal — חותם-קיבוצי כל-12 בלוקים: שורש-מרקל על hashי-הבלוקים + stateRoot קנוני.
+   424→ * SECURITY INTENT: החותם הוא העדות-הקריפטוגרפית היחידה שיוצאת מהמערכת —
+   425→ * כל-hash-בלוק בחלון נכלל בשורש (מרקל), וה-stateRoot מחייב את מצב-העולם המלא.
+   426→ * כל-שינוי-בדיעבד בבלוק או במצב = שורש אחר = גילוי מיידי באימות-עצמאי.
+   427→ * הסדר קריטי: קבלה ל-DB → ואז relaySeal (לעולם לא-חוסם, לא-זורק — כשל-Relay
+   428→ * אינו רשאי להפיל את השרשרת, ואילו כשל-DB מסומן dbOk לתצפית).
+   429→ */
+   430→async function seal(rt: ChainRT, blockRoot: string): Promise<void> {
+   431→  const st = rt.st;
+   432→  if (rt.blockHashes.length === 0) return;
+   433→  // FIX(Roast-65-a · HIGH-2): ביקורת-השימור רצה-עתה בתוך-החותם, לפני-כל-פרסום.
+   434→  // הישן: invariant() נקרא רק בנתיבי-ספר/בריכה (טענות-צרות) ו-ledgerAudit רץ רק ב-GET
+   435→  // /settle ו-/metrics (דוחות-קריאה עם-cache) — השרשרת הייתה ממשיכה לחתום 12-בלוקים-
+   436→  // חותמות "תקינות" על מצב-מנופח ושרשרת-העדויות כולה מאמתת את השקר. עכשיו: !ok =
+   437→  // InvariantViolation → HALT עם-פסק-דין-פורנזי (אין-חותמות-שלמות על-לדגר-שבור).
+   438→  // ייבוא-דינמי — settle.ts מייבא-מ-chain.ts (getWallets) ואנחנו לא יוצרים-מעגל-סטטי.
+   439→  const { ledgerAudit, genesisTotals } = await import("./settle");
+   440→  const audit = ledgerAudit(st, genesisTotals());
+   441→  if (!audit.ok) {
+   442→    const forensic = [...audit.errors, ...audit.negatives].slice(0, 3).join(" | ") || "unknown";
+   443→    throw new InvariantViolation(`ledger-audit-failed@seal h${st.height}: ${forensic}`);
+   444→  }
+   445→  const root = merkleRoot(rt.blockHashes);
+   446→  const info: SealInfo = {
+   447→    fromHeight: st.height - rt.blockHashes.length + 1,
+   448→    toHeight: st.height,
+   449→    root, stateRoot: stateRoot(st),
+   450→    leaves: rt.blockHashes.length,
+   451→    at: Date.now(),
+   452→    digest: "",
+   453→    // FIX(Roast-65-a · MED-7): החלון-החתום עצמו — העדות למה שהשורש מחייב (היה-רק count)
+   454→    blockHashes: [...rt.blockHashes],
+   455→  };
+   456→  info.digest = sha256(canon(info));
+   457→  /* ── Formal Assertions (Fail-Fast) — חוקי-הברזל לפני-פרסום-החותם ──
+   458→   * החותם הוא העדות-הקריפטוגרפית היוצאת-מהמערכת; אי-עקביות בין החלון,
+   459→   * שורש-המרקל וה-stateRoot = עדות-שקרית בפוטנציה. הבדיקות מתבצעות לפני
+   460→   * כל-פרסום (מדדים/DB/Relay) — ומפרסמות fail-closed: אם אחת-מהן נופלת,
+   461→   * שום-דבר לא יוצא, חלון-הבלוקים נשמר, והחותם-הבא ינסה-שוב (ריפוי-עצמי). */
+   462→  // (1) החלון מכסה בדיוק את טווח-הגבהים הרציף שהחותם מצהיר עליו
+   463→  invariant(info.toHeight - info.fromHeight + 1 === rt.blockHashes.length, "seal-window-contiguity");
+   464→  // (2) שורש-המרקל אכן נגזר מhashי-הבלוקים שבחלון (עדות-מחייבת את הבלוקים עצמם)
+   465→  invariant(merkleRoot(rt.blockHashes) === root, "seal-merkle-root");
+   466→  // (3) FIX(SETTLE-9 perf): ה-stateRoot הקנוני מחייב את מצב-העולם שממנו נבנה הבלוק.
+   467→  // היה-פה חישוב-O(state)-מלא שני (טאוטולוגיה — אותה-פונקציה טהורה על אותו-מצב)
+   468→  // בכל-חותם. עכשיו: השוואה-מול-שורש-זמן-הבלוק שהועבר-מ-buildBlock —
+   469→  // אימות-הקפאה אמיתי (מוטציה בין-בניית-הבלוק לחותם = נפילה) בעלות-אפס.
+   470→  invariant(info.stateRoot === blockRoot, "seal-state-root");
+   471→  // (4) ה-digest אכן ההאש של תוכן-החותם עצמו (אימות-עצמי לפני-יציאה).
+   472→  // ה-digest חושב על canon(info) כאשר info.digest עוד היה "" — הבדיקה בונה
+   473→  // מחדש את אותה-צורה (בלי-ה-digest) ומשווה; הכללה-עצמית של ההאש בתוך עצמו
+   474→  // היא מתמטית-בלתי-אפשרית (נתפס-בהרצה-הראשונה — עדות-לעבודת-ה assertions).
+   475→  invariant(sha256(canon({ ...info, digest: "" })) === info.digest, "seal-digest");
+   476→  rt.seals.unshift(info);
+   477→  rt.seals = rt.seals.slice(0, 24);
+   478→  pushReceipt(rt, "seal", info);
+   479→  // FIX(Roast-65-a · LOW-9): תווית-אמת — אין-מפתחות ואין-חתימות במערכת-כולה.
+   480→  // אלו ארבעה-רישומי-ג'ורנל (attest) מאותו-תהליך-שכתב-את-השורש-עצמו — הד-פנימי,
+   481→  // לא "קוורום" ולא חתימות. נשמרים-כראית-יומן-בלבד (הערה-כנה גם-ב-note של הרישום).
+   482→  for (const s of ["soldier-1", "soldier-2", "soldier-3", "soldier-4"]) {
+   483→    rt.mempool.push({ type: "attest", issuer: s, nonce: sysNonce(st, `att-${s}`), claim: root.slice(0, 16) });
+   484→  }
+   485→  rt.blockHashes = [];
+   486→  try {
+   487→    await db.sealRecord.create({
+   488→      data: {
+   489→        fromHeight: info.fromHeight, toHeight: info.toHeight, root: info.root, stateRoot: info.stateRoot, leavesCount: info.leaves,
+   490→        // FIX(Roast-65-a · MED-7): החלון-החתום נשמר-ל-DB (note = JSON של העלים) —
+   491→        // שחזור-החותם אפשרי-גם-אחרי-ריסטארט (היה: החלון נעלם מיד-אחרי-החתימה)
+   492→        note: canon({ kind: "SAOS-DEX checkpoint", blockHashes: info.blockHashes }),
+   493→      },
+   494→    });
+   495→    rt.dbOk = true; // הצלחה מאשרת מחדש — הדגל לא נשאר דומם-לשלילה
+   496→  } catch { rt.dbOk = false; }
+   497→  // ── RELAY: הדלת לשרשראות-הציבוריות — לא-חוסם, לא-זורק (anchor חי ל-Steem/Hive/TRON) ──
+   498→  try {
+   499→    const relay = await import("./relay");
+   500→    relay.relaySeal(info);
+   501→  } catch { /* כשל-Relay לעולם לא מפיל את השרשרת */ }
+   502→}
+   503→
+   504→/** ── SETTLE-14 PRICE-TRUTH: עדות-מחיר-אמת ──
+   505→ * כל-אירוע-מסחר אמת (fill על-הספר, swap בבריכה) נרשם: מה-נמכר, באיזה-מחיר,
+   506→ * כמה-ציטוט-זרם (muQ = amountMu×px/1000). הטוויאפ-השקול-נוטיונל הוא המדד
+   507→ * היחיד ל"מחיר-אמת" — הספר והבריכה עלולים-לצוף (וצפו — ממצא-חי +15%/+25%),
+   508→ * אבל עסקאות-שקרו-בפועל הן-העדות. חוץ-מצב (לא-בשורש) — טבעת 600. */
+   509→function feedPriceOracle(rt: ChainRT, events: TradeEvent[] | undefined, h: number): void {
+   510→  if (!events || events.length === 0) return;
+   511→  for (const ev of events) {
+   512→    if (ev.kind !== "fill" && ev.kind !== "swap") continue;
+   513→    if (!(ev.price > 0) || !(ev.amountMu > 0)) continue;
+   514→    rt.priceSamples.push({ h, base: ev.base, quote: ev.quote, px: ev.price, muQ: ev.quoteMu ?? Math.floor((ev.amountMu * ev.price) / 1000) }); // FIX(R15-a): quoteMu — משקל-ציטוט-אמת (קניות-בריכה היו ×price/1000-מנופפות)
+   515→  }
+   516→  if (rt.priceSamples.length > 600) rt.priceSamples.splice(0, rt.priceSamples.length - 600);
+   517→}
+   518→
+   519→export interface PriceTruth { base: string; quote: string; twap: number; samples: number; devBpsVsRef: number; windowHeights: number }
+   520→
+   521→/** טוויאפ-שקול-נוטיונל לזוג (שני-הכיוונים — base/quote או quote/base) */
+   522→export function priceTruthFor(rt: ChainRT, base: string, quote: string): PriceTruth | null {
+   523→  const st = rt.st;
+   524→  let wSum = 0, pxSum = 0, n = 0, hMin = Infinity, hMax = 0;
+   525→  for (const s of rt.priceSamples) {
+   526→    const same = s.base === base && s.quote === quote;
+   527→    const flip = s.base === quote && s.quote === base;
+   528→    if (!same && !flip) continue;
+   529→    const px = same ? s.px : Math.floor(1_000_000 / (s.px > 0 ? s.px : 1)); // יחס-הפוך: pxFlip = (1000/px)×1000 = 10^6/px
+   530→    wSum += s.muQ; pxSum += px * s.muQ; n++;
+   531→    if (s.h < hMin) hMin = s.h; if (s.h > hMax) hMax = s.h;
+   532→  }
+   533→  if (n === 0 || wSum <= 0) return null;
+   534→  const twap = Math.floor(pxSum / wSum);
+   535→  const ref = st.assets[base]?.refPrice ?? 0;
+   536→  return { base, quote, twap, samples: n, devBpsVsRef: ref > 0 ? Math.floor(((twap - ref) / ref) * 10_000) : 0, windowHeights: hMax >= hMin ? hMax - hMin + 1 : 0 };
+   537→}
+   538→
+   539→function ladderCheck(rt: ChainRT): void {
+   540→  const st = rt.st;
+   541→  if (rt.pendingLift) return; // FIX(Roast-65-a · MED-6): הרמה-קודמת עוד-לא-אושרה — אין-ערימת-כוונות
+   542→  if (st.height - st.ladder.lastLiftHeight < LADDER_EVERY) return;
+   543→  /* ── SETTLE-14 PRICE-TRUTH: הסולם-כמו-שדרה (keel), לא-מדרגות ──
+   544→   * היה: newRef = ref×1.005 בלי-קשר-לשוק — מדרגות-עולות-בלבד (2500→2686
+   545→   * מונוטוני, 15-הזזות). המפעיל צדק: "מטפס-ולא-נראה-כמו-נתון-אמת".
+   546→   * עכשיו: הסולם זז רק-אחרי-עדות-מסחר-אמת (טוויאפ-מהטבעת), בשני-הכיוונים,
+   547→   * מדומם (חצי-הפער, עד-0.5%), וממשיך-לשלם-עמלות-על-כל-הזזה (harvest).
+   548→   * אין-עדות-מספקת (<40-מסחרות או |dev|<100bps) → הסולם לא-זז. */
+   549→  const truth = priceTruthFor(rt, "SAOS", "USDS");
+   550→  if (!truth || truth.samples < 40) return;
+   551→  const ref = st.ladder.refPrice;
+   552→  const devBps = truth.devBpsVsRef;
+   553→  if (Math.abs(devBps) < 100) return;
+   554→  if (st.feeMeter < st.ladder.stepCostMu) return; // עדיין-משלמים-בעמלות-אמת-על-כל-הזזה
+   555→  const dir = devBps > 0 ? 1 : -1;
+   556→  const halfDev = Math.floor(Math.abs(ref - truth.twap) / 2);
+   557→  // מדומם-חצי-פער, עד-0.5%; פער-גולמי (|dev|>1000bps — מעגן-מיושן) מותר-עד-2%
+   558→  // כדי-שהסולם-יתפוס-במהירות את-המציאות-שנצברה — באותה-מידה למעלה ולמטה.
+   559→  const capPct = Math.abs(devBps) > 1_000 ? 0.02 : 0.005;
+   560→  const step = Math.max(1, Math.min(Math.floor(ref * capPct), halfDev));
+   561→  const newRef = Math.max(1, ref + dir * step);
+   562→  const harvestMu = Math.min(st.ladder.stepCostMu, st.feeMeter);
+   563→  const harvestNonce = sysNonce(st, "harv");
+   564→  const priceNonce = sysNonce(st, "ladder");
+   565→  rt.mempool.push({ type: "harvest", issuer: "treasury", nonce: harvestNonce, amount: harvestMu, memo: `keel-${dir > 0 ? "up" : "down"}` });
+   566→  rt.mempool.push({ type: "asset_price", issuer: "treasury", nonce: priceNonce, asset: "SAOS", refPrice: newRef });
+   567→  // FIX(Roast-65-a · MED-6): הספרים לא נוגעים-כאן-עוד. הישן מוטט את st.ladder בשעת-הדחיפה
+   568→  // (refPrice/lastLiftHeight/lifts/spentMu/stats.ladders) לפני-שה-ops אושרו — אם-harvest
+   569→  // נדחה (אוצר/מד-עמלות ירדו-בין-הדחיפה לביצוע) המצב העיד הרמה-שלא-שולמה וה-op-log לא
+   570→  // משחזר אותה. עכשיו: כוונה-בלבד (rt.pendingLift) — הספרים זזים רק-אחרי-r.ok של שני-
+   571→  // ה-ops (buildBlock), ודחייה מתועדת-כנה בלי-שינוי-מצב.
+   572→  rt.pendingLift = { newRef, harvestMu, h: st.height, harvestNonce, priceNonce };
+   573→  pushReceipt(rt, "keel-intent", { height: st.height, newRef, dir, devBps, step, harvestMu, twap: truth.twap, samples: truth.samples });
+   574→}
+   575→
+   576→async function buildBlock(rt: ChainRT): Promise<void> {
+   577→  const t0 = Date.now();
+   578→  const st = rt.st;
+   579→  const ops = rt.mempool.splice(0, 160);
+   580→  let applied = 0;
+   581→  let rejected = 0;
+   582→  const rejSample: string[] = [];
+   583→  // FIX(Roast-65-a · MED-6): מעקב-אישור-ה-ops-של-הרמה-הממתינה (harvest + asset_price)
+   584→  let keelHarvest: boolean | null = null;
+   585→  let keelPrice: boolean | null = null;
+   586→  const trackKeel = (op: Op, ok: boolean): void => {
+   587→    if (!rt.pendingLift) return;
+   588→    if (op.nonce === rt.pendingLift.harvestNonce) keelHarvest = ok;
+   589→    if (op.nonce === rt.pendingLift.priceNonce) keelPrice = ok;
+   590→  };
+   591→  // FIX(Roast-66 · dose-truth): מעקב-תוצאות-המנות-של-המסילה (נונס rail-*) — המנה
+   592→  // נספרת-כבוצעה רק-מתוצאת-הבלוק-בפועל (היה: נספרה-בדחיפה, minOut-fail נספר-כמנה).
+   593→  const railResults: { nonce: string; ok: boolean }[] = [];
+   594→  const trackRail = (op: Op, ok: boolean): void => {
+   595→    if (op.nonce.startsWith("rail-")) railResults.push({ nonce: op.nonce, ok });
+   596→  };
+   597→  // FIX(R17-b·H3): אותו-מעקב-ל-ops-הגשר (brg-*/blo-*) — paid/locked נסגרים-על-האמת
+   598→  // (reject → היפוך-ל-pending/lock-failed + ניקוי-הרישום-הקבוע), לא-על-התור.
+   599→  const bridgeResults: { nonce: string; ok: boolean }[] = [];
+   600→  const trackBridge = (op: Op, ok: boolean): void => {
+   601→    if (op.nonce.startsWith("brg-") || op.nonce.startsWith("blo-")) bridgeResults.push({ nonce: op.nonce, ok });
+   602→  };
+   603→  for (const op of ops) {
+   604→    // FIX(Roast-65-a · MED-8): אטומיות-בלוק. הישן: זריקה-מ-applyOp באמצע-הלולאה הפילה
+   605→    // את-כל-הבלוק אחרי-שה-ops-המוקדמים כבר שינו את st — מוטציות-חיות בלי blockHash/DB,
+   606→    // 160-ה-ops נשפכו. עכשיו: try/catch-פר-op — כשל-לא-אינווריאנטי נרשם-כדחייה-כנה
+   607→    // (אותו-נתיב של-r.err) והבלוק ממשיך-שלם. InvariantViolation עדיין-זורק (HALT-מוסדי).
+   608→    let r: ReturnType<typeof applyOp>;
+   609→    try {
+   610→      r = applyOp(st, op, t0);
+   611→    } catch (e) {
+   612→      if (e instanceof InvariantViolation) throw e;
+   613→      trackKeel(op, false);
+   614→      trackRail(op, false);
+   615→      trackBridge(op, false);
+   616→      rejected++;
+   617→      if (rejSample.length < 5) rejSample.push(`${op.type}(${(op as { issuer?: string }).issuer ?? "?"}):${String(e instanceof Error ? e.message : e).slice(0, 60)}`);
+   618→      continue;
+   619→    }
+   620→    trackKeel(op, r.ok);
+   621→    trackRail(op, r.ok);
+   622→    trackBridge(op, r.ok);
+   623→    if (r.ok) {
+   624→      applied++;
+   625→      for (const ev of r.events ?? []) rt.tape.unshift({ ...ev, h: st.height });
+   626→      feedPriceOracle(rt, r.events, st.height); // SETTLE-14: עדות-מחיר-אמת מכל-מסחר
+   627→    } else {
+   628→      // FIX(SETTLE-15 silent-drop): דחייה-שקטה הייתה-חור-תפעולי-ישן ("queued" אך-
+   629→      // נופלת-בבלוק-בלי-עדה). עכשיו: לוג-מדוד (דגימה-עד-5-פר-בלוק) — כל-דחייה
+   630→      // נראית ב-dev.log עם-הסיבה, והמונה-החי-חשוף ב-getState.rejectedLast.
+   631→      rejected++;
+   632→      if (rejSample.length < 5) rejSample.push(`${op.type}(${(op as { issuer?: string }).issuer ?? "?"}):${r.err}`);
+   633→    }
+   634→  }
+   635→  // FIX(Roast-66 · dose-truth): פיוס-המנות-של-המסילה אחרי-הבלוק (ספירה-בהצלחה-בלבד)
+   636→  if (railResults.length > 0) railReconcile(railResults);
+   637→  // FIX(R17-b·H3): פיוס-הגשר — סטטוסי-paid/locked נסגרים-מול-תוצאת-הבלוק-בפועל
+   638→  if (bridgeResults.length > 0) bridgeReconcile(bridgeResults);
+   639→  // FIX(Roast-65-a · MED-6): אישור-הספרים-רק-אחרי-ששני-ה-ops-של-הכוונה אכן היו-בבלוק
+   640→  // ואושרו. דחייה = לוג-רועש + קבלה-כנה, אפס-שינוי-ב-st.ladder (הכוונה נזרקת).
+   641→  if (rt.pendingLift && keelHarvest !== null && keelPrice !== null) {
+   642→    const pl = rt.pendingLift;
+   643→    rt.pendingLift = null;
+   644→    if (keelHarvest && keelPrice) {
+   645→      st.ladder.refPrice = pl.newRef;
+   646→      st.ladder.lastLiftHeight = pl.h;
+   647→      st.ladder.lifts++;
+   648→      st.ladder.spentMu += pl.harvestMu;
+   649→      st.stats.ladders++;
+   650→      pushReceipt(rt, "keel", { height: pl.h, newRef: pl.newRef, harvestMu: pl.harvestMu, confirmed: true });
+   651→    } else {
+   652→      console.warn(`[saos-dex][ALERT] keel lift at h${pl.h} NOT CONFIRMED (harvest=${keelHarvest} price=${keelPrice}) — ladder books untouched (Roast-65-a MED-6: no unpaid lifts in state)`);
+   653→      pushReceipt(rt, "keel-rejected", { height: pl.h, newRef: pl.newRef, harvestOk: keelHarvest, priceOk: keelPrice });
+   654→    }
+   655→  }
+   656→  if (rejected > 0) {
+   657→    rt.rejectedLast = { h: st.height, count: rejected, sample: rejSample };
+   658→    console.warn(`[saos-dex] block h${st.height}: ${rejected}/${ops.length} ops rejected — ${rejSample.join(" · ")}`);
+   659→  }
+   660→  rt.tape = rt.tape.slice(0, TAPE_CAP);
+   661→  // FIX(SETTLE-7 journal-bleed): st.journal הוא חלק-מה-DexState (ולכן מוטבע
+   662→  // בתמונת-מצב ובשורש) — attest ×4/חותם + pay/refuel/mint/relay הצטברו-לנצח
+   663→  // (זיכרון + דיסק + stateRootOf O(n) פעמיים-בבלוק). תקרה-קשה — ההיסטוריה
+   664→  // המלאה חיה ב-evidenceReceipt/arenaJournal ב-DB, לא במצב-החי.
+   665→  if (st.journal.length > 600) st.journal.splice(0, st.journal.length - 500);
+   666→
+   667→  // פעימה-אוטומטית (heartbeat — מדידת-חיות על-הספר)
+   668→  applyOp(st, { type: "heartbeat", issuer: "treasury", nonce: sysNonce(st, "hb") }, t0);
+   669→
+   670→  // Task 54 · הטיק-הכלכלי הקנוני: revenue-router (קנייה-ושריפה) + אפוק-פליפ-ve —
+   671→  // גובה-טריגר-טהור (אפס-שעון/רנדומליות) → ריפליי דטרמיניסטי.
+   672→  // FIX(Roast-64): nowMs מוזרק — רשומות-הג'ורנל-של-הכלכלה נושאות את-זמן-הבלוק
+   673→  // (היו t:0 — זמן-מזויף שנגל-את-חוב-ה-determinism-של-journal.t באופן-גרוע יותר).
+   674→  economyTick(st, t0);
+   675→
+   676→  // Task 56 · מסחר-אוטומטי-חסר-קיפרים: DCA-פריסה + טריגרים (stop/take) —
+   677→  // בונה-הבלוקים הוא ה-keper: הטיקים מבצעים applyOp ישירות-על-המצב (אטומי,
+   678→  // סינכרוני, ללא-ממפול) והמסחר-שנוצר נכנס לטייפ ולעדות-המחיר-אמת.
+   679→  // Task 58 · ProtoRev (ארב-סוף-בלוק) + CoW (סליקת-אצווה-מחיר-אחיד) —
+   680→  // אותו-חוק: בונה-הבלוקים הוא ה-keeper/solver — אפס-תשתית-חוץ, ריפליי-אמת.
+   681→  {
+   682→    const exec = (op: Op) => applyOp(st, op, t0);
+   683→    // FIX(Roast-65-a · LOW-13): nowMs מוזרק-גם-ל-DCA/טריגרים — רישומי-הג'ורנל שלהם
+   684→    // היו t:0 (זמן-מזויף) בניגוד-לתיקון-63/64 על-שאר-הנתיבים.
+   685→    // Task 80 · THE-VAULT: סוכן-הכספת אינו-סוחר — אין-לו-אירועי-טייפ (ריבית ≠ עמלת-סוואפ).
+   686→    vaultTick(st, rt.tickCount, exec, t0);
+   687→    // R40 · THE-SAVE: דבר-גורר-דבר — פירעון-כספת באותו-בלוק מזרים ריבית-אמת
+   688→    // לחוסכים (אחרי-סוכן-הכספת, לפני-שאר-הטיקים — הזרימה נראית-בבלוק-עצמו).
+   689→    savingsTick(st, t0);
+   690→    saveDemoTick(st, rt.tickCount, exec, t0);
+   691→    // R41 · THE-VE: דבר-גורר-דבר — נעילה ← הצבעה ← אפוק-פליפ מרוקן את-קרן-ה-ve
+   692→    // לנועלים-החיים (בכל-אפוק, h%1200); האג"ח ממירה USDS-סוחר ל-SAOS-נעול — שתי
+   693→    // החוליות-האחרונות של צינור-המפקיד: הפקדה ← זיכוי ← חיסכון ← הכנסה ← פדיון
+   694→    // ← וגם: מסחר ← עמלות ← קרן ← נועלים. אותם-חוקים לכל-אחד.
+   695→    veDemoTick(st, rt.tickCount, exec, t0);
+   696→    bondDemoTick(st, rt.tickCount, exec, t0);
+   697→    // R44 · THE-MARKET: דבר-גורר-דבר — האוצר מזרים-נזילות-עודפת לבריכת-האשראי
+   698→    // (אספקה-אדפטיבית לפי-ביקוש), וחיילי-הצי לווים-ופורעים-במחזורים — הריבית
+   699→    // זורמת-לאוצר-ולמלווים ב-µ-אמת, והניצולת-החיה מזיזה-את-העקומה.
+   700→    lendTick(st, rt.tickCount, exec, t0);
+   701→    const tickEvents = [...dcaTick(st, exec, t0), ...trigTick(st, exec, t0), ...protoRevTick(st, exec, t0), ...cowSettle(st, exec, t0)];
+   702→    for (const ev of tickEvents) rt.tape.unshift({ ...ev, h: st.height });
+   703→    feedPriceOracle(rt, tickEvents.length > 0 ? tickEvents : undefined, st.height);
+   704→    if (tickEvents.length > 0) rt.tape = rt.tape.slice(0, TAPE_CAP);
+   705→  }
+   706→
+   707→  // Task 56 · חותם-אמינות-מחיר (price-credibility seal): כל-400-בלוקים —
+   708→  // תמונת-קנונית-שלמים (mid/טוויאפ/רף/עומק-1%) נחתמת-כקבלה-משורשרת-האש
+   709→  // (חוץ-מצב — לא-נוגע-בריפליי; הראייה חיה-ב-DB-וב-/api/dex/price-proof).
+   710→  if (st.height > 0 && st.height % PRICE_SEAL_EVERY === 0) {
+   711→    const truth = priceTruthFor(rt, "SAOS", "USDS");
+   712→    const saosPool = st.pools["SAOS/USDS"];
+   713→    const mid = saosPool ? poolMid(saosPool) : 0;
+   714→    pushReceipt(rt, "price-seal", {
+   715→      h: st.height, mid, ref: st.ladder.refPrice,
+   716→      twap: truth?.twap ?? 0, twapSamples: truth?.samples ?? 0,
+   717→      backingWsteemMu: st.backing["WSTEEM"] ?? 0,
+   718→      note: "price-credibility-seal",
+   719→    });
+   720→  }
+   721→
+   722→  st.height++;
+   723→  // FIX(SETTLE-9 perf): stateRoot חושב-פעמיים-פר-בלוק (hash בלוק + כתיבת-DB) —
+   724→  // O(state) מלא כל-פעם (~3ms בתקרת-מצב). חישוב-אחד + העברה-לחותם (והחותם
+   725→  // משתמש-בו כאימות-הקפאה: אם-המצב זז בין-בניית-הבלוק לחותם — ה-invariant נופל).
+   726→  const root = stateRoot(st);
+   727→  rt.cachedRoot = { h: st.height, root }; // אותו-גובה — מנצלים-את-החישוב-גם-ל-getState
+   728→  const bh = sha256(canon({ h: st.height, ops: applied, gas: st.gasUsed, root }));
+   729→  rt.blockHashes.push(bh);
+   730→  const buildMs = Date.now() - t0;
+   731→  rt.buildMsRolling = Math.floor(rt.buildMsRolling * 0.8 + buildMs * 0.2);
+   732→  // TPS מדוד-אמת: ops שיושמו בפועל בבלוק, ממוצע-נע על קצב-הפעימה
+   733→  rt.opsPerSecRolling = Math.floor(rt.opsPerSecRolling * 0.7 + (applied / (TICK_MS / 1000)) * 0.3);
+   734→  rt.lastBlockAt = Date.now();
+   735→
+   736→  try {
+   737→    await db.blockHeader.create({
+   738→      data: { height: st.height, hash: bh, stateRoot: root, opsCount: applied, gasUsed: st.gasUsed, buildMs },
+   739→    });
+   740→    rt.dbOk = true; // הצלחה מאשרת מחדש — הדגל לא נשאר דומם-לשלילה
+   741→  } catch { rt.dbOk = false; }
+   742→
+   743→  if (st.height % SEAL_EVERY === 0) await seal(rt, root);
+   744→  if (st.height % GC_EVERY === 0) {
+   745→    rt.mempool.push({ type: "order_gc", issuer: "treasury", nonce: sysNonce(st, "gc") });
+   746→  }
+   747→  ladderCheck(rt);
+   748→}
+   749→
+   750→async function tick(rt: ChainRT): Promise<void> {
+   751→  if (rt.busy || rt.halted) return;
+   752→  rt.busy = true;
+   753→  try {
+   754→    rt.tickCount++;
+   755→    // ארנה + בוטים → ממפול
+   756→    arenaTick(rt.st, rt.tickCount, rt.params, rt.rt, (op) => {
+   757→      if (rt.mempool.length < 512) rt.mempool.push(op);
+   758→    });
+   759→    await buildBlock(rt);
+   760→    // דגימת-דלק (SETTLE-5): כל-בלוק — טבעת-400 (≈20 דק׳) לשריפה-חלונית-אמת.
+   761→    // חוץ-מצב בכוונה: ה-DexState/שורש-המצב נשארים-דטרמיניסטיים-לריפליי.
+   762→    rt.fuelSamples.push({ h: rt.st.height, gasUsed: rt.st.gasUsed });
+   763→    // FIX(SETTLE-9): ה-trim הישן (splice(0,100)) רטט 301–401 דגימות — חיתוך-מדויק לתקרה
+   764→    if (rt.fuelSamples.length > 400) rt.fuelSamples.splice(0, rt.fuelSamples.length - 400);
+   765→    if (rt.tickCount % SNAPSHOT_EVERY === 0) flushSnapshot(rt);
+   766→  } catch (e) {
+   767→    // FIX(Roast-65-a · HIGH-1): CanonicalError (מצב-קנוני-רעיל — float/NaN/לא-שלם
+   768→    // שחדר-למצב) היה-נופל-ל-catch-הגנרי: השרשרת המשיכה-להעלות-גובה-עיוור בכל-טיק
+   769→    // בלי blockHash/seal/DB (halted=false), ו-getState/getMetrics/settle מתו 500 —
+   770→    // שקט-מוחלט. עכשיו: אותו-משטר-כמו-InvariantViolation — HALT מוכרז עם-סיבה-פורנזית.
+   771→    if (e instanceof InvariantViolation || e instanceof CanonicalError) {
+   772→      /* ── Fail-Fast מוסדי: הפרת-אינווריאנטה = מצב-עולם לא-מוגדר.
+   773→       * השרשרת מעלה-את-עצמה (HALT) — נשארת-חיה לקריאה/תצפית, אך מסרבת
+   774→       * לבנות בלוקים נוספים ממצב-חשוד. הזנקת-ALERT קשה לתצפית-תפעולית. */
+   775→      rt.halted = true;
+   776→      rt.haltReason = String(e.message).slice(0, 300); // פורנזי — חשוף ב-API ושרד-אתחול-מחדש
+   777→      if (rt.timer) { clearInterval(rt.timer); rt.timer = null; }
+   778→      console.error(`[saos-dex][ALERT] INVARIANT VIOLATION / STATE-POISON — chain HALTED (fail-fast, refuses undefined state): ${e.message}`);
+   779→      return;
+   780→    }
+   781→    console.error("[saos-dex] tick error:", e instanceof Error ? e.message : e);
+   782→  } finally {
+   783→    rt.busy = false;
+   784→  }
+   785→}
+   786→
+   787→// ─── Task 72 · פיד-האורקל (דלת-המטבעות) ──────────────────────────────────────
+   788→// extFeeds מחזיר median חוצה-מקורות ($ ליחידה) → ממפה ל-µ-USDS-ל-יחידה (×1e6,
+   789→// עיגול-שלמים) על נכסי-הרשת הרלוונטיים. דחיפה רק-כשערך-שונה מהאורקל-הקנוני —
+   790→// אין-רעש-מצב. ה-op עצמו אוצר-חתום + nonce-מערכת → ריפליי דטרמיניסטי.
+   791→const ORACLE_MAP: Array<{ asset: string; feed: "steem" | "hive" | "sbd" | "blurt" | "eth" | "sol" | "trx" | "btc" }> = [
+   792→  { asset: "WTRX", feed: "trx" },
+   793→  { asset: "WSOL", feed: "sol" },
+   794→  { asset: "WSTEEM", feed: "steem" },
+   795→  { asset: "PHIVE", feed: "hive" },   // R23: הנכס-הרשום הוא PHIVE (לא HIVE) — עד-עתה העוגן שלו לא זז כלל
+   796→  { asset: "HIVE", feed: "hive" },    // R28: מפתח-מורשת שנתקע ב-h9913 אחרי מעבר R23 — מוחזר למפה כדי שכל מפתח באורקל הציבורי יישאר חי (אותו פיד, אפס השפעה מסחרית)
+   797→  { asset: "WSBD", feed: "sbd" },     // R23: WSBD עוקב אחרי SBD אמת (steem-dollars, ~$0.44) — לא HBD של Hive
+   798→  { asset: "WBLURT", feed: "blurt" },
+   799→  { asset: "ETH", feed: "eth" },
+   800→  { asset: "BTC", feed: "btc" },
+   801→];
+   802→
+   803→async function oracleTick(rt: ChainRT, force = false): Promise<void> {
+   804→  if (rt.halted) return;
+   805→  try {
+   806→    const feeds = await extFeeds(force);
+   807→    if (!feeds.ok || feeds.stale) return; // אין-פיד-חי = אין-דחיפה (כנות: last-good נשאר במצב)
+   808→    const prices: Record<string, number> = {};
+   809→    const srcs: string[] = [];
+   810→    for (const { asset, feed } of ORACLE_MAP) {
+   811→      const v = feeds.usd[feed];
+   812→      if (typeof v !== "number" || !(v > 0)) continue;
+   813→      const mu = Math.round(v * 1_000_000);
+   814→      if (!Number.isSafeInteger(mu) || mu <= 0) continue;
+   815→      if (rt.st.oracle?.[asset]?.mu === mu) continue; // לא-השתנה — אין-רעש-מצב
+   816→      prices[asset] = mu;
+   817→      const cross = feeds.cross?.[feed];
+   818→      srcs.push(`${asset}×${cross?.sources ?? "?"}`);
+   819→    }
+   820→    if (Object.keys(prices).length === 0) return;
+   821→    const src = `median(${srcs.slice(0, 4).join(",")})`;
+   822→    // FIX(R16-a·m10): הפעימה-הקבועה (60ש׳) ו-refresh-oracle (דלת-המפעיל) יכלו לרוץ
+   823→    // במקביל לפני-צריכת-הנונס → אותו sysNonce פעמיים → השני נדחה replay-rejected
+   824→    // (עדכון-מחיר-שונה נשרק בשקט). עתה: הסיומת כוללת גם את מספר-ה-oracle-הממתנים
+   825→    // בממפול — קבוע-מהמצב (קביעות-ריפליי נשמרת — בלי-רנדומיות) ויחודי-לכל-דחיפה.
+   826→    const pendingOracle = rt.mempool.filter((o) => String((o as { nonce?: string }).nonce ?? "").startsWith("oracle-")).length;
+   827→    rt.mempool.push({
+   828→      type: "oracle_set", issuer: "treasury", nonce: `${sysNonce(rt.st, "oracle")}-p${pendingOracle}`, prices, claim: src,
+   829→    });
+   830→    console.info(`[saos-dex] oracle_set queued: ${Object.entries(prices).map(([a, m]) => `${a}=${(m / 1e6).toPrecision(6)}$`).join(" · ")} (${src})`);
+   831→  } catch {
+   832→    // fail-כנה — פיד-חוץ לא מוריד את השרשרת; הניסיון-הבא בעוד-60ש׳
+   833→  }
+   834→}
+   835→
+   836→/** דחיפת-אורקל-מיידית (שער-מפעיל — /api/dex/door action=refresh-oracle). */
+   837→export function requestOracleRefresh(): { queued: boolean; reason?: string } {
+   838→  const rt = ensureChain();
+   839→  if (rt.halted) return { queued: false, reason: "halted" };
+   840→  void oracleTick(rt);
+   841→  return { queued: true };
+   842→}
+   843→
+   844→export function ensureChain(): ChainRT {
+   845→  if (g.__saosDexChain) return g.__saosDexChain;
+   846→  const rt: ChainRT = {
+   847→    st: genesisState(),
+   848→    mempool: [], rt: new Map(), params: { ...DEFAULT_PARAMS },
+   849→    tape: [], blockHashes: [], seals: [], receipts: [],
+   850→    lastReceiptDigest: null, tickCount: 0, timer: null, busy: false,
+   851→    fuelSamples: [],
+   852→    priceSamples: [],
+   853→    buildMsRolling: 0, opsPerSecRolling: 0, startedAt: Date.now(), lastBlockAt: 0,
+   854→    dbOk: true, halted: false, haltReason: null, version: 1,
+   855→    pendingLift: null, // FIX(Roast-65-a · MED-6)
+   856→    cachedRoot: null,
+   857→    rejectedLast: null,
+   858→    oracleTimer: null,
+   859→    faucetAtRt: new Map(),
+   860→    pendingLoad: true, // FIX(R16-a·m5)
+   861→  };
+   862→  g.__saosDexChain = rt;
+   863→  // Task 72 · לולאת-פיד-האורקל (דלת-המטבעות): כל-60ש׳ בודקת את פידי-השוק-האמת
+   864→  // (extFeeds — TTL-קאש משותף, רשת-אמיתית רק כשה-TTL פג) ודוחפת oracle_set אוצר
+   865→  // רק-כשמחיר-שינה. ה-op קנוני (בתוך ה-stateRoot); הלולאה עצמה חוץ-מצב וכשלה
+   866→  // שקט-כנה — פיד-חוץ לא מוריד את השרשרת.
+   867→  rt.oracleTimer = setInterval(() => void oracleTick(rt), 60_000);
+   868→  void oracleTick(rt); // דחיפה-ראשונה מיד-באתחול
+   869→  // אתחול-אסינכרוני: תמונת-מצב (מאומתת) → אחרת ג'נזיס-מוצדק; אחר-כך טיימר
+   870→  void (async () => {
+   871→    const loaded = await loadSnapshot(rt);
+   872→    if (loaded === "corrupt") {
+   873→      // FIX(Roast-65-a · HIGH-4): תמונה-קיימת-ופגומה = דחיית-אתחול fail-closed.
+   874→      // הישן: !loaded → deleteMany על blockHeader+sealRecord+evidenceReceipt+arenaJournal
+   875→      // (= טיהור-כל-שרשרת-העדויות) וג'נזיס-חדש בשקט. עכשיו: אף-ראיה לא נמחקת,
+   876→      // אין-ג'נזיס-כפוי — השרשרת עוצרת-עם-haltReason-פורנזי (ה-DB כולו נשאר ראיה).
+   877→      rt.halted = true;
+   878→      rt.haltReason = "snapshot-integrity-failed: load refused, evidence preserved (operator reset is the explicit recovery path)";
+   879→      console.error("[saos-dex][ALERT] BOOT REFUSED — snapshot failed integrity verification; chain HALTED without touching any evidence row. Recovery: explicit operator reset.");
+   880→      rt.pendingLoad = false; // FIX(R16-a·m5)
+   881→      return;
+   882→    }
+   883→    if (loaded === "absent") {
+   884→      // אין-תמונה כלל: ג'נזיס לגיטימי רק אם-אין-עדויות-קודמות ב-DB — אחרת זה
+   885→      // "ג'נזיס-מעל-היסטוריה" שמנותק את שרשרת-העדויות בשקט (השקר-הישן: deleteMany).
+   886→      let prior = 0;
+   887→      // FIX(R15-a · fail-closed-genesis): count-שגוי היה ממשיך-לג'נזיס עם "verified empty DB"
+   888→      // — האימות מעולם-לא-קרה (fail-open בדיוק-הרגע-הקריטי). עתה: לא-ניתן-לאמת = עצירה-כנה.
+   889→      try { prior = await db.blockHeader.count(); } catch (e) {
+   890→        rt.dbOk = false;
+   891→        rt.halted = true;
+   892→        rt.haltReason = `genesis-refused: DB unreachable while verifying emptiness (${String(e).slice(0, 60)}) — continuity cannot be verified; retry on next boot`;
+   893→        console.error(`[saos-dex][ALERT] BOOT REFUSED — blockHeader.count() failed; cannot prove DB empty. Chain HALTED fail-closed.`);
+   894→        rt.pendingLoad = false; // FIX(R16-a·m5)
+   895→        return;
+   896→      }
+   897→      if (prior > 0) {
+   898→        rt.halted = true;
+   899→        rt.haltReason = `genesis-refused: ${prior} block headers exist in DB but no snapshot — continuity cannot be fabricated; explicit operator reset required`;
+   900→        console.error(`[saos-dex][ALERT] BOOT REFUSED — no snapshot but ${prior} block headers in DB; genesis would orphan that evidence. Chain HALTED, evidence untouched.`);
+   901→        rt.pendingLoad = false; // FIX(R16-a·m5)
+   902→        return;
+   903→      }
+   904→      // ג'נזיס-טרי אמת (בסיס-ריק בהכרח) — עוגן-ג'נזיס חתום מיד (בלוק-ראשון)
+   905→      await buildBlock(rt);
+   906→      pushReceipt(rt, "genesis", { root: stateRoot(rt.st), at: Date.now() });
+   907→      console.info(`[saos-dex] chain live · height ${rt.st.height} · root ${stateRoot(rt.st).slice(0, 12)}… (genesis — verified empty DB)`);
+   908→      if (!rt.timer) rt.timer = setInterval(() => void tick(rt), TICK_MS); // FIX(R16-a·m5): לא-לכפול-טיימר אם-reset הקדים
+   909→      rt.pendingLoad = false; // FIX(R16-a·m5)
+   910→      return;
+   911→    }
+   912→    // ראיות-מעבר-לתמונת-המצב הן-שאריות-מריצה-קודמת (נחתמו-אחרי-הסנפלוט האחרון
+   913→    // ולא הספיקו-להיכלל) — ניקוי-צר-וכנה בלבד: רק-גבהים-מעל-התמונה-המאומתת
+   914→    // (הישן היה-מוכן-למחוק-הכל; כאן הכלל-הוא רק-הזנב שמעבר לגובה-המאומת)
+   915→    try {
+   916→      const stale = await db.blockHeader.deleteMany({ where: { height: { gt: rt.st.height } } });
+   917→      if (stale.count > 0) console.info(`[saos-dex] purged ${stale.count} stale block headers beyond snapshot h${rt.st.height} (prior-run evidence)`);
+   918→      // FIX(R15-a · stale-seals): רק-blockHeader נוקה — SealRecords מעל-התמונה נשארו:
+   919→      // השרשרת-המשוחזרת מייצרת חותמות-חדשות בגבהים-שכבר-חתומים (root @unique) →
+   920→      // create נכשל-בשקט → dbOk=false-רעש + חותמת-של-טיפ-נטוש-שהגרעין-החדש יסתור.
+   921→      const staleSeals = await db.sealRecord.deleteMany({ where: { toHeight: { gt: rt.st.height } } });
+   922→      if (staleSeals.count > 0) console.info(`[saos-dex] purged ${staleSeals.count} stale seal records beyond snapshot h${rt.st.height}`);
+   923→    } catch { rt.dbOk = false; }
+   924→    // FIX(R17-b·L2): שרשרת-ה-digest-של-הקבלות הייתה מתאפסת-בכל-הפעמה
+   925→    // (lastReceiptDigest=null באתחול) → כל-קבלה-חדשה נקשרה-ל-null והרצף-הפורנזי
+   926→    // נשבר-בשקט בכל-restart (בדיוק-ה-artifact ש-R15-b גילה-ותיעד-כ-linkageLost).
+   927→    // עתה: הידרציה-מהשורה-האחרונה-ב-DB — ההמשכיות נשמרת-על-פני-הפעמות.
+   928→    try {
+   929→      const lastRec = await db.evidenceReceipt.findFirst({ orderBy: { createdAt: "desc" }, select: { digest: true } });
+   930→      if (lastRec?.digest) {
+   931→        rt.lastReceiptDigest = lastRec.digest;
+   932→        console.info(`[saos-dex] receipt-digest chain rehydrated (${lastRec.digest.slice(0, 12)}…) — linkage continues across restarts (R17-b·L2)`);
+   933→      }
+   934→    } catch { rt.dbOk = false; }
+   935→    if (!rt.timer) rt.timer = setInterval(() => void tick(rt), TICK_MS); // FIX(R16-a·m5)
+   936→    rt.pendingLoad = false; // FIX(R16-a·m5): סוף-הטעינה — reset מותר מעתה
+   937→    console.info(`[saos-dex] chain live · height ${rt.st.height} · root ${stateRoot(rt.st).slice(0, 12)}… (snapshot — verified vs DB stateRoot)`);
+   938→  })();
+   939→  return rt;
+   940→}
+   941→
+   942→// ─── ממשק-ציבורי ────────────────────────────────────────────────────────────
+   943→
+   944→export function submitOp(op: Op): { queued: boolean; reason?: string } {
+   945→  const rt = ensureChain();
+   946→  if (rt.mempool.length >= 512) return { queued: false, reason: "mempool-full" };
+   947→  if (!op.issuer || !op.nonce) return { queued: false, reason: "issuer+nonce-required" };
+   948→  if (GAS_TABLE[op.type] === undefined) return { queued: false, reason: "unknown-op" };
+   949→  // FIX(Roast-64 · free-op-flood): פעולות-אפס-גז (relay/xfer_free/relay_ack) היו
+   950→  // יכולות למלא את כל-512-הממפול ואת-160-חריצי-הבלוק ולחנוק את כל-הפעולות-שמשלמות
+   951→  // (DoS-על-השרשרת-עצמה בפעולה-חינמית). עכשיו: הקצבה-פר-חשבון על-הממפול — חינם
+   952→  // עדיין-חינם, אבל אזרח-אחד לא חונק-את-הרשת.
+   953→  if (GAS_TABLE[op.type] === 0) {
+   954→    const pendingFree = rt.mempool.filter((o) => o.issuer === op.issuer && GAS_TABLE[o.type] === 0).length;
+   955→    if (pendingFree >= 48) return { queued: false, reason: "free-op-cap" };
+   956→  }
+   957→  rt.mempool.push(op);
+   958→  return { queued: true };
+   959→}
+   960→
+   961→// FIX(SETTLE-9 determinism): ה-Math.random האחרון בליבה — ה-nonce הוא תוכן-op
+   962→// הנכנס ל-st.nonces ולכן ל-stateRoot. מונה-תהליך-מונוטוני = ייחודיות מלאה בלי-מקריות
+   963→// (ה-uniqueness הוא כל-מה-ש-dedupe הגרעין צריך; אין-כאן קריפטו).
+   964→let nonceSeq = 0;
+   965→export function nextNonce(prefix: string): string {
+   966→  const rt = ensureChain();
+   967→  nonceSeq = (nonceSeq + 1) % 1_000_000_000;
+   968→  return `${prefix}-${Date.now().toString(36)}-${nonceSeq.toString(36)}-${rt.st.nonces.length}`;
+   969→}
+   970→
+   971→export function operatorFaucet(): { ok: boolean; reason?: string } {
+   972→  const rt = ensureChain();
+   973→  // FIX(Roast-65-a · LOW-11): cooldown-שורד-ריסטארט.
+   974→  // FIX(R15-a · out-of-band): הכתיבה-הייתה ישר-ב-st.faucetAt (מצב-קנוני) מחוץ-ל-op/בלוק —
+   975→  // שורש-מיושן-עד-החותם-הבא + מוטציה שיכולה-להימלט-ממקור-שחושב-בדיוק-עכשיו
+   976→  // (seal-freeze-check-כוזב). עתה: cooldown-בראנטיים (Map) — שקול-פונקציונלית,
+   977→  // אפס-נגיעה במצב; st.faucetAt נשאר-שדה-מורשת-ריק.
+   978→  const last = rt.faucetAtRt.get("operator") ?? 0;
+   979→  if (Date.now() - last < 60_000) return { ok: false, reason: "cooldown-60s" };
+   980→  rt.faucetAtRt.set("operator", Date.now());
+   981→  rt.mempool.push({ type: "transfer", issuer: "treasury", nonce: sysNonce(rt.st, "faucet-s"), to: "operator", asset: "SAOS", amount: 1_000_000 });
+   982→  rt.mempool.push({ type: "transfer", issuer: "treasury", nonce: sysNonce(rt.st, "faucet-u"), to: "operator", asset: "USDS", amount: 2_500_000 });
+   983→  return { ok: true };
+   984→}
+   985→
+   986→export interface MarketView {
+   987→  base: string; quote: string; key: string;
+   988→  fair: number; bestBid: number; bestAsk: number; spreadBps: number;
+   989→  poolMid: number; refPrice: number;
+   990→  twap: number; twapSamples: number; twapDevBps: number; // SETTLE-14: מחיר-אמת ממסחר-אמת
+   991→  bids: { price: number; total: number; orders: number }[];
+   992→  asks: { price: number; total: number; orders: number }[];
+   993→  chart: { t: number; p: number }[];
+   994→}
+   995→
+   996→function ladderAgg(st: DexState, base: string, quote: string, side: "buy" | "sell", levels = 12) {
+   997→  const book = sortBook(st, base, quote, side);
+   998→  const out: { price: number; total: number; orders: number }[] = [];
+   999→  for (const o of book) {
+  1000→    const rem = o.amount - o.filled;
+  1001→    if (rem <= 0) continue;
+  1002→    const last = out[out.length - 1];
+  1003→    if (last && last.price === o.price) { last.total += rem; last.orders++; }
+  1004→    else if (out.length < levels) out.push({ price: o.price, total: rem, orders: 1 });
+  1005→    else break;
+  1006→  }
+  1007→  return out;
+  1008→}
+  1009→
+  1010→export function getMarkets(): MarketView[] {
+  1011→  const rt = ensureChain();
+  1012→  const st = rt.st;
+  1013→  return MARKETS.map((m) => {
+  1014→    const key = poolKey(m.base, m.quote);
+  1015→    const bids = ladderAgg(st, m.base, m.quote, "buy");
+  1016→    const asks = ladderAgg(st, m.base, m.quote, "sell");
+  1017→    const bestBid = bids[0]?.price ?? 0;
+  1018→    const bestAsk = asks[0]?.price ?? 0;
+  1019→    const p = getPool(st, key);
+  1020→    // SETTLE-14: הטייפ מכיל שני-כיוונים (base/quote לפי-צד-המכירה) — מנרמל
+  1021→    // לכיוון-הזוג (בלי-זה המצגת-של-WSTEEM חסרה-חצי-מהמסחרות).
+  1022→    const chart = rt.tape
+  1023→      .filter((e) => e.amountMu > 0 && ((e.base === m.base && e.quote === m.quote) || (e.base === m.quote && e.quote === m.base)))
+  1024→      .map((e) => ({ t: e.at, p: e.base === m.base ? e.price : Math.floor(1_000_000 / (e.price > 0 ? e.price : 1)) }))
+  1025→      .slice(0, CHART_CAP).reverse();
+  1026→    const truth = priceTruthFor(rt, m.base, m.quote);
+  1027→    return {
+  1028→      base: m.base, quote: m.quote, key,
+  1029→      fair: fairPrice(st, m.base, m.quote),
+  1030→      bestBid, bestAsk,
+  1031→      spreadBps: bestBid > 0 && bestAsk > 0 ? Math.floor(((bestAsk - bestBid) / ((bestAsk + bestBid) / 2)) * 10_000) : 0,
+  1032→      poolMid: p ? poolMidFor(p, m.base, m.quote) : 0,
+  1033→      refPrice: st.assets[m.base]?.refPrice ?? 0,
+  1034→      twap: truth?.twap ?? 0,
+  1035→      twapSamples: truth?.samples ?? 0,
+  1036→      twapDevBps: truth ? truth.devBpsVsRef : 0,
+  1037→      bids, asks, chart,
+  1038→    };
+  1039→  });
+  1040→}
+  1041→
+  1042→export function getPools() {
+  1043→  const rt = ensureChain();
+  1044→  return Object.entries(rt.st.pools).map(([key, p]) => {
+  1045→    // FIX(Roast-66 · pool-nourishment): מד-ההזנה-הכן לספקי-נזילות — העמלי-70%-ל-LP
+  1046→    // מוטמעים-ברזרבות (k צומח) אבל מעולם-לא-פורטו-כתשואה. נגזרת-כנה: אותו-זרימת-סוואפ
+  1047→    // שיצר feeT (30%-אוצר) יצר 70%-LP → lpFeesMu ≈ feeT×7/3. תשואה-ליחידת-LP-וחלק-POL
+  1048→    // של-האוצר חשופים — מזינות-נמדדת-ולא-מוצהרת.
+  1049→    const tLp = rt.st.balances["treasury"]?.[`LP|${key}`] ?? 0;
+  1050→    const lpFeesMu = Math.floor((p.feeAccruedTreasury * 7) / 3);
+  1051→    return {
+  1052→      key, a: p.a, b: p.b, ra: p.ra, rb: p.rb, lp: p.lp,
+  1053→      mid: poolMid(p), swaps: p.swaps, feeAccruedTreasury: p.feeAccruedTreasury,
+  1054→      k: p.ra * p.rb,
+  1055→      feeBps: effectiveFeeBps(p), // FIX(Roast-65-c · F4): העמלה-הדינמית-האפקטיבית חשופה-ל-UI (היה-חייב-ניחוש-של-30bps-קבוע)
+  1056→      lpFeesMu,                                                       // FIX(Roast-66): עמלי-ה-LP-המוטמעים (נגזרת-כנה)
+  1057→      // FIX(3-a · D5): הנגזרת-מתויגת-גלויה — lpFeesMu אינו-מדידה ישירה אלא feeT×7/3
+  1058→      // (אין-מונה-LP-נפרד במצב-הקנוני); צרכן-ה-API חייב לדעת שזו גזירה, לא ספירה.
+  1059→      derived: true,
+  1060→      lpYieldBps: p.lp > 0 ? Math.floor((lpFeesMu * 10_000) / p.lp) : 0, // תשואת-עמלות-ליחידת-LP (lifetime, bps — נגזרת-מנגזרת)
+  1061→      polShareBps: p.lp > 0 ? Math.floor((tLp * 10_000) / p.lp) : 0,   // חלק-נזילות-בעלות-הפרוטוקול
+  1062→    };
+  1063→  });
+  1064→}
+  1065→
+  1066→export function getQuote(pair: string, assetIn: string, amountIn: number) {
+  1067→  const rt = ensureChain();
+  1068→  const p = getPool(rt.st, pair);
+  1069→  if (!p) return null;
+  1070→  return quoteOut(p, assetIn, amountIn);
+  1071→}
+  1072→
+  1073→export function getWallets() {
+  1074→  const rt = ensureChain();
+  1075→  const st = rt.st;
+  1076→  const names = Array.from(new Set([...Object.keys(st.balances), "operator", "treasury"]));
+  1077→  return names.map((n) => ({
+  1078→    name: n,
+  1079→    credits: st.credits[n] ?? 0,
+  1080→    balances: st.balances[n] ?? {},
+  1081→    locked: st.locked[n] ?? {},
+  1082→  })).filter((w) => Object.keys(w.balances).length > 0 || w.credits > 0);
+  1083→}
+  1084→
+  1085→/** מפקד-הסוכנים (עמדת-הסליקה): תפקיד · הון-סימולציה · פקודות-חיות לכל-סוכן */
+  1086→export function getCensus(): { name: string; role: string; credits: number; equity: number; liveOrders: number; balances: Record<string, number>; locked: Record<string, number> }[] {
+  1087→  const st = ensureChain().st;
+  1088→  const fair = fairPrice(st, "SAOS", "USDS") || (st.assets["SAOS"]?.refPrice ?? 0);
+  1089→  const role = (n: string): string =>
+  1090→    n === "treasury" ? "central-bank" : n === "operator" ? "human" : n === "arena" ? "pegkeeper" : n.startsWith("soldier") ? "grid-mm" : "noise";
+  1091→  return getWallets().map((w) => {
+  1092→    // FIX(R17-b·M4): איזון-LP היה-מדורג-0 (ל-tokens-LP אין-refPrice) — אפס-מזויף
+  1093→    // במפקד-הסוכנים בעוד-שווי-אמת-קיים (חלק-יחסי-מהרזרבות). עתה: LP עובר-דרך
+  1094→    // lpValuation (שווי-1000µ-LP × ההחזקה). ידוע: ייבוא-מ-router (הוא-עצמו-ייבא-מ-chain)
+  1095→    // — קריאה-רק-בזמן-ריצה, אין-שימוש-טופ-לבל, ולכן-המעגל-בטוח (אומת-ב-boot).
+  1096→    let lpEquity = 0;
+  1097→    for (const [a, v] of Object.entries(w.balances)) {
+  1098→      if (!a.startsWith("LP|")) continue;
+  1099→      const lv = lpValuation(a);
+  1100→      if (lv && lv.lpMu > 0) lpEquity += Math.floor((v * lv.valueUsdsMuPer1000) / 1000);
+  1101→    }
+  1102→    const equity =
+  1103→      (w.balances["USDS"] ?? 0) +
+  1104→      Math.floor(((w.balances["SAOS"] ?? 0) * fair) / 1000) +
+  1105→      Object.entries(w.balances)
+  1106→        .filter(([a]) => a !== "USDS" && a !== "SAOS" && !a.startsWith("LP|"))
+  1107→        .reduce((s, [a, v]) => s + Math.floor((v * (st.assets[a]?.refPrice ?? 0)) / 1000), 0) +
+  1108→      lpEquity;
+  1109→    const liveOrders = st.orders.filter((o) => o.live && o.owner === w.name).length;
+  1110→    return { name: w.name, role: role(w.name), credits: w.credits, equity, liveOrders, balances: w.balances, locked: w.locked };
+  1111→  });
+  1112→}
+  1113→
+  1114→/** מצב-חי לעמדת-הסליקה (קריאה-בלבד — המבחנים עובדים על-שיבוטים) */
+  1115→export function getLiveState(): DexState {
+  1116→  return ensureChain().st;
+  1117→}
+  1118→
+  1119→export function getArena() {
+  1120→  const rt = ensureChain();
+  1121→  const st = rt.st;
+  1122→  const soldiers = ["soldier-1", "soldier-2", "soldier-3", "soldier-4"];
+  1123→  return {
+  1124→    params: rt.params,
+  1125→    dbOk: rt.dbOk,
+  1126→    soldiers: soldiers.map((s) => {
+  1127→      const saos = st.balances[s]?.["SAOS"] ?? 0;
+  1128→      const usds = st.balances[s]?.["USDS"] ?? 0;
+  1129→      const fair = fairPrice(st, "SAOS", "USDS") || 2500;
+  1130→      const equity = usds + Math.floor((saos * fair) / 1000);
+  1131→      const live = st.orders.filter((o) => o.live && o.owner === s).length;
+  1132→      return {
+  1133→        name: s, saos, usds, equity,
+  1134→        pnl: equity - 6_000_000, // יחסית-לג'נזיס (3M USDS + 1.2M SAOS @2500)
+  1135→        liveQuotes: live,
+  1136→        locked: st.locked[s] ?? {},
+  1137→      };
+  1138→    }),
+  1139→    journal: st.journal.slice(-14).reverse(),
+  1140→    mempool: rt.mempool.length,
+  1141→  };
+  1142→}
+  1143→
+  1144→export function setArenaParams(patch: Partial<ArenaParams>): ArenaParams {
+  1145→  const rt = ensureChain();
+  1146→  // FIX(SETTLE-7 DoS): תקרות-פר-פרמטר — הבקרה-הציבורית (/api/dex/arena POST)
+  1147→  // היתה-מרשה levels=9,999,999 → arenaTick רץ 10⁸-איטרציות פר-טיק (3 שנ׳) =
+  1148→  // חנק-שרשרת/OOM ללא-אימות. גם-חוסר-היתר (v<10M) עבר כל-דבר-גדול-אחר.
+  1149→  const LIMITS: Record<keyof ArenaParams, [number, number]> = {
+  1150→    spreadBps: [5, 2_000], stepBps: [2, 2_000], levels: [1, 12],
+  1151→    sizeMu: [1_000, 2_000_000], maxInventoryMu: [100_000, 30_000_000],
+  1152→    minEdgeBps: [0, 2_000], requoteBps: [1, 2_000],
+  1153→    enabled: [0, 1], noise: [0, 1],
+  1154→  } as never;
+  1155→  const clean: Partial<ArenaParams> = {};
+  1156→  if (typeof patch.enabled === "boolean") clean.enabled = patch.enabled;
+  1157→  if (typeof patch.noise === "boolean") clean.noise = patch.noise;
+  1158→  for (const k of ["spreadBps", "stepBps", "levels", "sizeMu", "maxInventoryMu", "minEdgeBps", "requoteBps"] as const) {
+  1159→    const v = patch[k];
+  1160→    if (typeof v === "number" && Number.isSafeInteger(v)) {
+  1161→      const [lo, hi] = LIMITS[k];
+  1162→      clean[k] = Math.min(hi, Math.max(lo, v)); // clamp — לא-reject: המפעיל מקבל מה-שביקש, מרוסן
+  1163→    }
+  1164→  }
+  1165→  rt.params = { ...rt.params, ...clean };
+  1166→  return rt.params;
+  1167→}
+  1168→
+  1169→export function getProofs() {
+  1170→  const rt = ensureChain();
+  1171→  const latest = rt.seals[0] ?? null;
+  1172→  return {
+  1173→    seals: rt.seals.slice(0, 8),
+  1174→    latest,
+  1175→    // FIX(Roast-65-a · MED-7): הישן הציג rt.blockHashes.length — החלון-הבא-שטרם-נחתם
+  1176→    // (0 מיד-אחרי-כל-חותם!) מתומכת-שקרית כ"עלי-החותם". עכשיו: מספר-העלים-החתומים.
+  1177→    leaves: latest ? latest.leaves : 0,
+  1178→    sealedLeaves: latest ? latest.blockHashes : [], // העלים-שנחתמו-בפועל (החלון-החתום)
+  1179→    receipts: rt.receipts.slice(0, 10),
+  1180→    howToVerify: [
+  1181→      // FIX(Roast-65-a · MED-7): ההדרכה-הישנה כיוונה ל"רשימת-hashי-הבלוקים מה-API" —
+  1182→      // בפועל אלו היו החלון-החי-הבא (לא-החתום) והאימות-היה נכשל/מטעה לכל-אורך-מחזור-ה-12.
+  1183→      "קח את עלי-החותם-האחרון מ-/api/dex/proofs (leaves — החלון-החתום, מה-DB) או מ-sealedLeaves/latest.blockHashes",
+  1184→      "FIX(Roast-64) סכמה-מוגנת-CVE-2012-2459: עלה = sha256(0x00‖leaf) · צומת = sha256(0x01‖L‖R) · עלה-אחרון-אי-זוגי מוכפל · שורש = sha256(0x02‖uint32le(מספר-עלים)‖top)",
+  1185→      "השווה ל-root — שוויון = הבלוקים כלולים בחותם, בלי לסמוך עלינו",
+  1186→    ],
+  1187→    blockWindow: rt.blockHashes.length,
+  1188→  };
+  1189→}
+  1190→
+  1191→export function getLatestSealLeaves(): string[] | null {
+  1192→  const rt = ensureChain();
+  1193→  const latest = rt.seals[0];
+  1194→  if (!latest) return null;
+  1195→  // FIX(Roast-65-a · MED-7): הישן החזיר את החלון-הנוכחי-החי (הבא-שטרם-נחתם) וההערה
+  1196→  // "העלים נשמרים-עד-החותם-הבא" שיקרה פעמיים: הם נמחקו מיד-בחותם, ומעולם לא היו
+  1197→  // העלים-שנחתמו. עכשיו: העלים-החתומים-עצמם (SealInfo.blockHashes — נשמר-פר-חותם
+  1198→  // וגם-ב-DB ב-SealRecord.note). ההשוואה מול latest.root היא אמת.
+  1199→  return latest.blockHashes ?? null;
+  1200→}
+  1201→
+  1202→/** גרסה-מונוטונית של מצב-העולם (long-polling מבוסס-אירוע) */
+  1203→export function chainVersion(): number {
+  1204→  const rt = ensureChain();
+  1205→  return rt.st.height;
+  1206→}
+  1207→
+  1208→export function getState() {
+  1209→  const rt = ensureChain();
+  1210→  const st = rt.st;
+  1211→  // FIX(SETTLE-9 perf): כל-קריאת-GET/state (poll-כל-לקוח, כל-בלוק) חישבה O(state) מלא.
+  1212→  // cache פר-גובה: המצב החי משתנה רק בתוך tick/buildBlock (מודל-כותב-יחיד).
+  1213→  const root = rt.cachedRoot && rt.cachedRoot.h === st.height
+  1214→    ? rt.cachedRoot.root
+  1215→    : stateRoot(st);
+  1216→  if (!rt.cachedRoot || rt.cachedRoot.h !== st.height) rt.cachedRoot = { h: st.height, root };
+  1217→  return {
+  1218→    height: st.height,
+  1219→    tps: rt.opsPerSecRolling,
+  1220→    stateRoot: root,
+  1221→    gasUsed: st.gasUsed,
+  1222→    opsTotal: st.stats.opsTotal,
+  1223→    fills: st.stats.fills,
+  1224→    swaps: st.stats.swaps,
+  1225→    ladders: st.stats.ladders,
+  1226→    treasuryProfit: st.treasuryProfit,
+  1227→    feeMeter: st.feeMeter,
+  1228→    gasFundedMu: st.gasFundedMu ?? 0, // FIX(Roast-67 · ZFB-gas-tank): טלמטריית-מימון-הדלק
+  1229→    ladder: st.ladder,
+  1230→    liveOrders: st.orders.filter((o) => o.live).length,
+  1231→    buildMs: rt.buildMsRolling,
+  1232→    uptimeSec: Math.floor((Date.now() - rt.startedAt) / 1000),
+  1233→    lastBlockAgoMs: rt.lastBlockAt ? Date.now() - rt.lastBlockAt : null,
+  1234→    dbOk: rt.dbOk,
+  1235→    halted: rt.halted === true, // חשיפה-תפעולית: מצב-fail-fast נראה-ב-System Health
+  1236→    haltReason: rt.haltReason ?? null, // פורנזי: מקור-ה-ALERT (מה בדיוק נתפס)
+  1237→    rejectedLast: rt.rejectedLast, // SETTLE-15: אפס-דחיות-שקטות — הסיבה-חיה
+  1238→    // FIX(Roast-64 · replay-honesty): חוב-טכני-מוצהר בפומבי — חלק מתנועות הבונה
+  1239→    // (הסולם-כפקע, ה-rearm, ה-botseed) נשענות על טבעות-חוץ-מצב (priceSamples,
+  1240→    // מוני-תהליך) — ריפליי מהלוג בלבד לא ישחזר אותן ביט-לביט; שיחזור-מלא =
+  1241→    // ריצת-הבונה-עצמה על אותם-קלטים. זה מתועד — לא מוסתר.
+  1242→    replayNote: "deterministic-from-ops+builder-ticks; price-evidence ring & process counters are off-state (documented)",
+  1243→    tickMs: TICK_MS,
+  1244→    sealEvery: SEAL_EVERY,
+  1245→    nextSealIn: SEAL_EVERY - (st.height % SEAL_EVERY),
+  1246→    backing: st.backing,
+  1247→    assets: st.assets,
+  1248→    oracle: st.oracle, // R23 · LIVE-ANCHOR: מפת-פיד-השוק-האמיתי גלוי-לציבור מול-העוגנים (µ$-ליחידה; refPrice ב-mµ)
+  1249→    // SETTLE-15: מקור-הנזיל-שמכניס-מהכל — פנקס-ההכנסה-החי (כנות: הכל-נמדד)
+  1250→    income: {
+  1251→      poolFeesMu: Object.values(st.pools).reduce((s, p) => s + p.feeAccruedTreasury, 0),
+  1252→      feeMeterMu: st.feeMeter,
+  1253→      treasuryProfitMu: st.treasuryProfit,
+  1254→      treasuryProfitEverMu: st.treasuryProfitEver ?? 0, // FIX(R46): המונה-המונוטוני-האמיתי — עולה-רק (Σ-harvest מהזרע-הגיט-מוכח), לעולם לא נשחק-לדלק
+  1255→      ladderSpentMu: st.ladder?.spentMu ?? 0,
+  1256→      backingWsteemMu: st.backing["WSTEEM"] ?? 0,
+  1257→      hub: "USDS", // כל-ראוטר-דרך-האב משלם 30bps → 30% לאוצר
+  1258→    },
+  1259→    // SETTLE-16 THE-MICRORAIL: המסילה-הריבונית-למיקרו — תקציב, מנות, פרמיות, P&L
+  1260→    rail: railSummary(),
+  1261→    milestone: milestoneSummary(),
+  1262→    // Task 80 · THE-VAULT: הכספת-גלויה-לציבור — עמדות-חיות + מוני-חיים + חשבונאות-ההיצע.
+  1263→    // לקח-הפוך-מזיוף: אמת-שקיימת-בשרשרת-אך-נעדרת-מהמראה-הציבורית היא כיסוי-עיניים
+  1264→    // בדיוק-כמו-שקר; השדות נכנסים-לרשימה-הלבנה של getState עכשיו.
+  1265→    vaults: st.vaults ?? {},
+  1266→    vaultTot: st.vaultTot ?? { opened: 0, repaid: 0, liquidations: 0, interestMu: 0, backstopLossMu: 0, issuedMu: 0, burnedMu: 0 },
+  1267→    // R40 · THE-SAVE: החיסכון-גלוי-לציבור — קרן, חוסכים, ריבית-שחולקה-מצטברת,
+  1268→    // ושיעור-היום-האמיתי (מדוד-מחלון-הפירעונות — לא-הבטחה, לא-הטבעה).
+  1269→    savings: (() => {
+  1270→      const s = st.savings;
+  1271→      // FIX(R47 · income-base): פירוק-זרמי-ההכנסה גלוי — ריבית-כספת + עתודת-שוק-כספים + נתח-30% מחית-עמלות-הבריכות
+  1272→      const feeCut = Object.values(st.pools).reduce((s2, p) => s2 + p.feeAccruedTreasury, 0);
+  1273→      const incomeStreams = {
+  1274→        vaultInterestMu: st.vaultTot?.interestMu ?? 0,
+  1275→        lendReserveMu: st.lend?.totals?.resToTreasuryMu ?? 0,
+  1276→        feeShareMu: Math.floor((feeCut * SAVE_FEE_SHARE_PCT) / 100), // 30% מחית-העמלות (מראה-ה-TREASURY_CUT_PCT)
+  1277→      };
+  1278→      const income = incomeStreams.vaultInterestMu + incomeStreams.lendReserveMu + incomeStreams.feeShareMu;
+  1279→      if (!s) return { potMu: 0, savers: 0, paidMu: 0, dayPaidMu: 0, dayPaidPrevMu: 0, windows: 0, apyBps: null, opens: 0, closes: 0, incomeSourceMu: income, incomeStreams, dayWindowBlocks: SAVE_DAY_BLOCKS, feeSharePct: SAVE_FEE_SHARE_PCT, dayMarkH: null, demoMu: 0 };
+  1280→      const base = s.potMu > 0 ? s.potMu : 1;
+  1281→      // FIX(R48 · calibration-truth): APY נמדד-רק-מחלון-יום-שני-והלאה (windows>=2) —
+  1282→      // חלון-הפתיחה שלאחר-לידת/הרחבת-בסיס-ההכנסה קולט-הצטבר-היסטורי ואינו-מייצג-קצב-אמת
+  1283→      // (נמדד-חי: 77,184µ בחלון-המיגרציה של R47). גם-אם-הריפליי סופר-את-חלון-המיגרציה
+  1284→      // כחלון-ראשון-היסטורי — הוא-לעולם-לא-יהיה-בסיס-לפרסום-שנתי. בזמן-הכיול מתפרסם null —
+  1285→      // הצרכן מציג-קצב-חי-מהחלון-הנוכחי במקום-הבטחה-שנתית.
+  1286→      const windows = s.windows ?? 0;
+  1287→      const apyBps = windows >= 2 ? Math.floor((s.dayPaidPrevMu * 365 * 10_000) / base) : null; // יום-מלא/קרן → bps-שנתי (שניהם ב-µ — יחס-טהור)
+  1288→      // FIX(R48 · demo-disclosure): גילוי-מלא — עמדת-ההדגמה-הקבועה של המפעיל מפורסמת-בשמה —
+  1289→      // הציבור רשאי-לדעת-שהחוסך-היחיד הוא-המפעיל-עצמו (אין-להציג-"1 חוסכים" בלי-לגלות-זאת).
+  1290→      const demoMu = s.positions["operator"]?.mu ?? 0;
+  1291→      return { potMu: s.potMu, savers: Object.keys(s.positions).length, paidMu: s.paidMu, dayPaidMu: s.dayPaidMu, dayPaidPrevMu: s.dayPaidPrevMu, windows, apyBps, opens: s.opens, closes: s.closes, incomeSourceMu: income, incomeStreams, dayWindowBlocks: SAVE_DAY_BLOCKS, feeSharePct: SAVE_FEE_SHARE_PCT, dayMarkH: s.dayMarkH ?? null, demoMu };
+  1292→    })(),
+  1293→    // R44 · THE-MARKET: שוק-הכספים גלוי-לציבור — שווקים-חיים (ניצולת/עקומה/מזומן),
+  1294→    // עמדות, מוני-ריבית-ששולמה-באמת, ועמדת-האוצר. הכל-מדידה-חיה-מהשרשרת.
+  1295→    lend: (() => {
+  1296→      const ls = lendState(st);
+  1297→      const markets = Object.entries(LEND_MARKETS).map(([asset, ltvBps]) => {
+  1298→        const m = ls.markets[asset];
+  1299→        return {
+  1300→          asset,
+  1301→          ltvBps,
+  1302→          liqThresholdBps: lendLiqThresholdBps(asset),
+  1303→          sMu: m?.sMu ?? 0,
+  1304→          bMu: m?.bMu ?? 0,
+  1305→          cashMu: (st.balances[LEND_POT]?.[asset] ?? 0),
+  1306→          utilBps: lendUtilBps(m),
+  1307→          borrowAprBps: lendBorrowAprBps(m),
+  1308→          supplyAprBps: lendSupplyAprBps(m),
+  1309→          sEarnedMu: m?.sEarnedMu ?? 0,
+  1310→          resMu: m?.resMu ?? 0,
+  1311→        };
+  1312→      });
+  1313→      const positions = Object.entries(ls.positions).map(([who, p]) => ({
+  1314→        who,
+  1315→        supplies: Object.entries(p.s).map(([a, sp]) => ({ asset: a, mu: sp.mu, earned: sp.earned })),
+  1316→        borrows: Object.entries(p.b).map(([a, bp]) => ({ asset: a, mu: bp.mu, int: bp.int, atH: bp.atH, debtMu: lendDebtNow(bp, lendBorrowAprBps(ls.markets[a]), st.height) })),
+  1317→        hf: lendHealthFactor(st, who),
+  1318→      }));
+  1319→      return {
+  1320→        markets,
+  1321→        positions,
+  1322→        totals: ls.totals,
+  1323→        treasury: (() => {
+  1324→          const t = ls.positions["treasury"];
+  1325→          const m = ls.markets["USDS"];
+  1326→          return { suppliedMu: t?.s?.USDS?.mu ?? 0, earnedMu: t?.s?.USDS?.earned ?? 0, supplyAprBps: lendSupplyAprBps(m) };
+  1327→        })(),
+  1328→        invariant: Object.fromEntries(Object.keys(LEND_MARKETS).map((asset) => {
+  1329→          const sSum = Object.values(ls.positions).reduce((s2, p) => s2 + (p.s[asset]?.mu ?? 0) + (p.s[asset]?.earned ?? 0), 0);
+  1330→          const bSum = Object.values(ls.positions).reduce((s2, p) => s2 + (p.b[asset]?.mu ?? 0), 0);
+  1331→          return [asset, { pot: st.balances[LEND_POT]?.[asset] ?? 0, expect: sSum - bSum, ok: (st.balances[LEND_POT]?.[asset] ?? 0) === sSum - bSum }];
+  1332→        })),
+  1333→      };
+  1334→    })(),
+  1335→    // R41 · THE-VE: הריבונות-הנעולה גלויה-לציבור — קרן-ve שהוזנה-מההכנסה-המדודה,
+  1336→    // נועלים-חיים, הצבעות, אפוקים — והאג"ח שהומרו. הקרן מתרוקנת-בפועל בכל-אפוק-פליפ
+  1337→    // (מי-שנועל-מרוויח) — בלי-מחלק אין-חלוקה, והצבירה-ההיסטורית הולכת-לראשון-שנועל
+  1338→    // (אותו-דין-כמו-כל-רשת-ve; הכל-מתועד-ביומן).
+  1339→    ve: (() => {
+  1340→      const potMu = st.balances[VE_POT]?.USDS ?? 0;
+  1341→      const detail = Object.entries(st.ve ?? {}).map(([who, p]) => ({ who, amtMu: p.amt, unlockH: p.unlockH, weeks: p.weeks }));
+  1342→      return {
+  1343→        potMu,
+  1344→        positions: detail.length,
+  1345→        votes: Object.keys(st.veVotes ?? {}).length,
+  1346→        epoch: st.veEpoch ?? 0,
+  1347→        fundedMu: st.rev?.vePaidMu ?? 0, // Σ מימון-קרן מצטבר (העברות-שבוצעו)
+  1348→        paidOutMu: Math.max(0, (st.rev?.vePaidMu ?? 0) - potMu), // funded − standing = שחולק-בפועל-לנועלים
+  1349→        detail,
+  1350→        votesMap: st.veVotes ?? {},
+  1351→      };
+  1352→    })(),
+  1353→    bond: st.bond ?? { soldSaosMu: 0, usdsInMu: 0, count: 0 },
+  1354→    // R28 · ENGINE-TRUTH: מוני-האוטומציה-והכלכלה גלויים-לציבור. אותו-לקח-כנות
+  1355→    // של-הכספת (A44): CoW, ProtoRev, DCA, טריגרים, ראוטר-ההכנסות ו-ve חיים
+  1356→    // בשרשרת ורצים בכל-טיק — אבל נעדרו מהמראה-הציבורית. אמת-שקיימת-ונסתרת
+  1357→    // היא כיסוי-עיניים בדיוק-כמו-שקר. הכל נקרא-מהמצב-האמת, ברירות-מחדל
+  1358→    // אפסים-כנים לשדות-שלא-נולדו-עדיין (היסטוריה-קודמת-לשדה = undefined → 0).
+  1359→    engine: {
+  1360→      cow: st.cowStats ?? { matched: 0, batches: 0, surplusMu: 0, fallbackPool: 0, fallbackBook: 0 },
+  1361→      cowPending: (st.cow ?? []).length,
+  1362→      protorev: {
+  1363→        pendingMu: st.revAux?.protorevMu ?? 0,
+  1364→        launchpadMu: st.revAux?.launchpadMu ?? 0,
+  1365→        runs: st.revAux?.runs ?? 0,
+  1366→        cycles: st.revAux?.cycles ?? 0,
+  1367→        rejections: st.revAux?.rejections ?? 0,
+  1368→      },
+  1369→      router: st.rev ?? { lastH: 0, cycles: 0, burnedMu: 0, vePaidMu: 0 },
+  1370→      burnedSaosMu: st.burnedSaos ?? 0,
+  1371→      feesSpentMu: st.feesSpentMu ?? 0,
+  1372→      ve: { positions: Object.keys(st.ve ?? {}).length, epoch: st.veEpoch ?? 0 },
+  1373→      auto: {
+  1374→        dcaActive: Object.values(st.dca ?? {}).filter((p) => p.remainingMu > 0).length,
+  1375→        dcaTotal: Math.max(0, (st.dcaSeq ?? 1) - 1),
+  1376→        trigActive: Object.keys(st.trig ?? {}).length,
+  1377→        trigTotal: Math.max(0, (st.trigSeq ?? 1) - 1),
+  1378→      },
+  1379→      // עדות-חיה לאחרוני-האירועים של המשפחה (יומן-500-נכנסים, מסונן בזהירות):
+  1380→      // הציבור רואה אצוות-נסגרות, פרוסות-DCA, טריגרים-שנורו, ארב-ושריפות.
+  1381→      feed: st.journal
+  1382→        .filter((j) => ["cow", "dca", "trig", "protorev", "router"].includes(String(j.soldier)))
+  1383→        .slice(-10)
+  1384→        .reverse()
+  1385→        .map((j) => ({ h: j.h, s: String(j.soldier), a: j.action, p: j.profitMu ?? 0, n: j.note })),
+  1386→    },
+  1387→  };
+  1388→}
+  1389→
+  1390→export function getTape(limit = 30): TapeEvent[] {
+  1391→  const rt = ensureChain();
+  1392→  return rt.tape.slice(0, limit).filter((e) => e.amountMu > 0);
+  1393→}
+  1394→
+  1395→/** הוכחת-יכולת: מדידת-קצב על-מצב-טרי (מורשת grid98 --bench)
+  1396→ * FIX(SETTLE-7): התקררות-60 שנ׳ — ה-route הציבורי היה-מריץ עד-200k-ops + כותב
+  1397→ * קבלה-ל-DB בכל-קריאה = DoS-מחשוב + זיהום-שרשרת-העדויות בלי-גבול. */
+  1398→let benchCache: { at: number; res: { ops: number; ms: number; opsPerSec: number; perDay: number } } | null = null;
+  1399→export function bench(ops = 20_000): { ops: number; ms: number; opsPerSec: number; perDay: number; cached?: boolean } {
+  1400→  if (benchCache && Date.now() - benchCache.at < 60_000) {
+  1401→    return { ...benchCache.res, cached: true };
+  1402→  }
+  1403→  ops = Math.min(200_000, Math.max(1_000, Math.floor(ops)));
+  1404→  const st = genesisState();
+  1405→  const t0 = Date.now();
+  1406→  let i = 0;
+  1407→  while (i < ops) {
+  1408→    const n = `b${i}`;
+  1409→    applyOp(st, { type: "transfer", issuer: "treasury", nonce: n, to: "operator", asset: "SAOS", amount: 1 }, t0);
+  1410→    i++;
+  1411→    if (i >= ops) break;
+  1412→    applyOp(st, { type: "pool_swap", issuer: "operator", nonce: `b${i}`, pair: "SAOS/USDS", assetIn: "SAOS", amount: 1000 }, t0);
+  1413→    i++;
+  1414→    if (i >= ops) break;
+  1415→    applyOp(st, { type: "order", issuer: "arena", nonce: `b${i}`, base: "SAOS", quote: "USDS", side: i % 2 ? "buy" : "sell", price: 2500 + (i % 50), amount: 10_000 }, t0);
+  1416→    i++;
+  1417→  }
+  1418→  const ms = Math.max(1, Date.now() - t0);
+  1419→  const opsPerSec = Math.floor((ops / ms) * 1000);
+  1420→  const res = { ops, ms, opsPerSec, perDay: opsPerSec * 86_400 };
+  1421→  benchCache = { at: Date.now(), res };
+  1422→  // FIX(Roast-63 · L6): אין-עוד-רישום-בנץ' בפנקס-הקבלות-המגובה-חש (היה-מזהם-שרשרת-עדויות-בכל-סקר-ציבורי)
+  1423→  return res;
+  1424→}
+  1425→
+  1426→// FIX(R17-b·M2): reset מקביל — שתי-POST /reset היו עוברות-יחד את-השערים (busy/pendingLoad
+  1427→// נבדקו-בתחילה אך-לא-נקבעו) → deleteMany-כפול, ג'נזיס-כפול, blockHeader.create-שקט-נכשל
+  1428→// (dbOk=false-רעש) ו-buildBlock-אחד רץ-מול-rt.st-שהוחלף. עתה: דגל-in-flight נקבע-מיד
+  1429→// ומשוחרר-ב-finally — ה-reset-השני מקבל-429-כנה.
+  1430→let resetInFlight = false;
+  1431→
+  1432→export async function resetChain(): Promise<void> {
+  1433→  const rt = ensureChain();
+  1434→  if (resetInFlight) throw new Error("reset-in-flight: another reset is running — retry in a moment (R17-b·M2)");
+  1435→  // FIX(R15-a · reset-race): reset יכל להחליף rt.st בג'נזיס בזמן ש-buildBlock מושהה
+  1436→  // על-DB-await-של-המצב-הישן → בלוק-מהמצב-המנותק נכתב-ל-DB-הטרי. עתה: נדחה-כנה
+  1437→  // בזמן-בנייה (הפעלה-חוזרת אחרי-הטיק-עובדת).
+  1438→  if (rt.busy) throw new Error("reset deferred: block build in flight — retry in a moment (fail-closed, no torn state)");
+  1439→  // FIX(R16-a·m5): reset מול-טעינת-אתחול-אסינכרונית — ה-loader היה דורס את הג'נזיס-הטרי
+  1440→  // בתמונת-המצב (טיפ-מנותק) ומכפיל-טיימר. עתה: נדחה-כנה עד-שהטעינה מסתיימת.
+  1441→  if (rt.pendingLoad) throw new Error("reset deferred: boot-time snapshot load in flight — retry in a moment (fail-closed)");
+  1442→  resetInFlight = true;
+  1443→  try {
+  1444→    if (rt.timer) clearInterval(rt.timer);
+  1445→  rt.st = genesisState(); // faucetAt/extClaims/feesSpentMu — כבר-בג'נזיס-הטרי (FIX(Roast-65-a · LOW-11))
+  1446→  rt.mempool = []; rt.rt = new Map(); rt.tape = [];
+  1447→  rt.blockHashes = []; rt.seals = []; rt.receipts = [];
+  1448→  rt.lastReceiptDigest = null; rt.tickCount = 0;
+  1449→  rt.pendingLift = null; // FIX(Roast-65-a · MED-6): כוונת-סולם של-העידן-הקודם אינה-רלוונטית
+  1450→  // FIX(SETTLE-7 reset-hygiene): הטבעת-הדגימה לא-נוקתה — אחרי-reset החלון
+  1451→  // ערבב-עידנים (dh שלילי → שריפה שלילית → ריצה-שלילית = טלמטריה-משקרת —
+  1452→  // בדיוק-מה-SETTLE-5 ריפא). וגם: chain-מושהית (halted) נשארה-מתה-אחרי-reset
+  1453→  // (tick מסרב-מוקדם) — reset הוא נתיב-ההתאוששות והוא חייב להעיר.
+  1454→  // FIX(Roast-64 · evidence-leak-across-reset): טבעת-עדות-המחיר לא נוקתה — אחרי-reset
+  1455→  // הסולם המשיך-לזוז לפי מסחר-השרשרת-הישנה (עדות-מעורבת של שני עידנים).
+  1456→  rt.fuelSamples = []; rt.priceSamples = []; rt.buildMsRolling = 0; rt.opsPerSecRolling = 0;
+  1457→  rt.faucetAtRt = new Map(); // FIX(R15-a): reset = עולם-טרי — cooldown-הברז מתאפס עם-הג'נזיס (התנהגות-היסטורית)
+  1458→  rt.cachedRoot = null; // FIX(SETTLE-9): cache-השורש מת לפי-גובה — reset מתחיל-גובה-חדש
+  1459→  rt.halted = false; rt.haltReason = null;
+  1460→  try {
+  1461→    await db.blockHeader.deleteMany({});
+  1462→    await db.sealRecord.deleteMany({});
+  1463→    await db.evidenceReceipt.deleteMany({});
+  1464→    await db.arenaJournal.deleteMany({});
+  1465→  } catch { rt.dbOk = false; }
+  1466→  try { fs.rmSync(SNAPSHOT_FILE, { force: true }); fs.rmSync(TAPE_FILE, { force: true }); } catch { /* ok */ }
+  1467→  await buildBlock(rt);
+  1468→  pushReceipt(rt, "genesis", { root: stateRoot(rt.st), at: Date.now() });
+  1469→  if (!rt.timer) rt.timer = setInterval(() => void tick(rt), TICK_MS);
+  1470→  } finally {
+  1471→    // FIX(R17-b·M2): שחרור-הדגל בכל-נתיב-יציאה — כישלון-DB/בנייה לא נועל-שרשרת-לנצח
+  1472→    resetInFlight = false;
+  1473→  }
+  1474→}
+  1475→
+  1476→// ─── Task 33 · CLOUD-BEAT: ריצת-הענן חסרת-השרת ───────────────────────────────
+  1477→// השרשרת עולה ב-GitHub Actions (הריפו הפרטי, אפס-סנדבוקס): טעינת-תמונה מהריפו,
+  1478→// טיקים סנכרוניים בלי-שעון-קיר (אותם-שערי-busy/halted/pendingLoad של הטיק
+  1479→// הרגיל — שום עקיפה), שטיפת-תמונה סופית ויציאה נקייה. הריצה ממשיכה את אותה
+  1480→// שרשרת מאותה-תמונה — הריפו הוא הבית הקנוני של המצב, הענן הוא הבונה.
+  1481→
+  1482→/** צעד-בודד סנכרוני: ממתין לסוף-הטעינה (עד 60ש') ואז מריץ טיק-אחד מיד. */
+  1483→export async function stepOnce(): Promise<void> {
+  1484→  const rt = ensureChain();
+  1485→  if (rt.pendingLoad) {
+  1486→    const t0 = Date.now();
+  1487→    while (rt.pendingLoad && Date.now() - t0 < 60_000) await new Promise((r) => setTimeout(r, 250));
+  1488→  }
+  1489→  await tick(rt);
+  1490→}
+  1491→
+  1492→/** פעימת-אורקל ידנית (ריצת-ענן: בלי-לחכות לטיימר-ה-60ש׳). force מיישר-את-TTL-הקאש —
+  1493→ * R23: הריצה-העננית מסתיימת-בשניות, אז בלי-force כל-הקריאות באותה-ריצה מקבלות את-
+  1494→ * אותו-cache וההחלקה מתבצעת-פעמיים-בלבד-לכל-פעימה. עם-force: פיד-טרי בכל-120-טיקים. */
+  1495→export async function oracleTickOnce(force = false): Promise<void> {
+  1496→  const rt = ensureChain();
+  1497→  await oracleTick(rt, force);
+  1498→}
+  1499→
+  1500→/** עצירת לולאות-הקיר (טיימר-3ש׳ + אורקל-60ש׳) — לריצה-עננית נקייה. */
+  1501→export function stopLoops(): void {
+  1502→  const rt = ensureChain();
+  1503→  if (rt.timer) { clearInterval(rt.timer); rt.timer = null; }
+  1504→  if (rt.oracleTimer) { clearInterval(rt.oracleTimer); rt.oracleTimer = null; }
+  1505→}
+  1506→
+  1507→/** שטיפת-תמונה כפויה בסוף-ריצה (בלי לחכות למכפלה-ה-16). */
+  1508→export function forceFlush(): void {
+  1509→  const rt = ensureChain();
+  1510→  flushSnapshot(rt);
+  1511→}
+  1512→
+  1513→export { notional, sortBook, LP_ASSET_PREFIX };
+  1514→

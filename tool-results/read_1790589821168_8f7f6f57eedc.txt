@@ -1,0 +1,961 @@
+     1→/**
+     2→ * lib/saos/mesh-client.ts — the server-side client of the CONTRACT MESH
+     3→ * (v15): 7 chained contracts live on SAOS-EVM, the sovereign laboratory
+     4→ * chain (anvil :8545, chainId 31337, mini-service evm-mesh).
+     5→ * =====================================================================
+     6→ * "פרוס את כל החוזים… חוזה שמדבר לחוזה שמדבר לחוזה.. פתרונות. ערך יעילות"
+     7→ *
+     8→ * The chain (one transaction, seven contracts, every arrow real):
+     9→ *   SAOSMeshHub.dispatch → SAOSMeshRelay.start → SAOSIdentity →
+    10→ *   SAOSLedger (mint, fee=0) → SAOSSolutions → SAOSBridge (8 live rails)
+    11→ *   → SAOSMeshRelay → SAOSMeshHub.complete → SAOSValueEngine (score)
+    12→ *
+    13→ * Truth discipline (גבול-האמת):
+    14→ *   - state comes from the mini-service's deployment.json (never fabricated)
+    15→ *   - every number below is READ from the chain or decoded from its logs
+    16→ *   - if SAOS-EVM is down, every call answers ok:false with the honest error
+    17→ *   - no private keys anywhere — anvil's unlocked accounts via
+    18→ *     eth_sendTransaction only (laboratory chain)
+    19→ */
+    20→
+    21→import * as fs from "fs";
+    22→import * as path from "path";
+    23→import { ethers } from "ethers";
+    24→import { db } from "@/lib/db";
+    25→import { probeEthereum, probeSolana } from "./eth-sol-live";
+    26→import { meshFastProvider, waitTx } from "./mesh-provider";
+    27→import { probeBsc } from "./bsc-live";
+    28→import { guardPermission } from "./permissions";
+    29→import meshArtifact from "./generated/SAOSMesh.json";
+    30→
+    31→// ─── constants ─────────────────────────────────────────────────────────────
+    32→
+    33→const MESH_RPC = "http://127.0.0.1:8545";
+    34→const MESH_CHAIN_ID = 31337;
+    35→const STATE_PATH = path.join(process.cwd(), "mini-services", "evm-mesh", "state", "deployment.json");
+    36→
+    37→interface ArtifactContract {
+    38→  name: string;
+    39→  source: string;
+    40→  abi: ethers.InterfaceAbi;
+    41→  bytecode: string;
+    42→  bytecodeBytes: number;
+    43→}
+    44→const ARTIFACT = meshArtifact as unknown as {
+    45→  version: string;
+    46→  linkOrder: string[];
+    47→  contracts: ArtifactContract[];
+    48→};
+    49→
+    50→export interface DeploymentState {
+    51→  ok: boolean;
+    52→  chain: string;
+    53→  chainId: number;
+    54→  rpc: string;
+    55→  artifactVersion: string;
+    56→  deployedAt: string;
+    57→  deployBlock: number;
+    58→  operator: string;
+    59→  contracts: Record<string, string>;
+    60→  links: string[];
+    61→  rails: string[];
+    62→}
+    63→
+    64→/** Hebrew role of each contract — shown on the mesh map. */
+    65→export const MESH_ROLES: Record<string, string> = {
+    66→  SAOSMeshHub: "מפקדת — פותחת כל ריצה וחותמת את השלמתה",
+    67→  SAOSMeshRelay: "ממסר — מקפיץ את ההודעה מחוזה לחוזה, דבר מוביל לדבר",
+    68→  SAOSIdentity: "זהות — רישום סוכנים ריבוני + גיוס אוטומטי בריצה ראשונה",
+    69→  SAOSLedger: "מזכיר — ערך פנימי ללא עמלה + mint קטן לכל ריצה + מימון קופת העבודה",
+    70→  SAOSSolutions: "פתרונות — כל ריצה מתחייבת כפתרון על-גבי השרשרת",
+    71→  SAOSBridge: "גשר — מטביע את מצב 8 הרשתות בתוך כל ריצה",
+    72→  SAOSWorkBoard: "לוח עבודה — המפקדה מפרסמת פקודות, חיילים מבצעים ומקבלים שכר",
+    73→  SAOSMicrogrid: "מיקרו-גריד — GRID-98: אורקל מחירי-DEX אמיתיים · סולם 1.2% · רווח לקופת העבודה",
+    74→  SAOSValueEngine: "מנוע ערך — ניקוד יעילות: ערך ליחידת גז"
+    75→};
+    76→
+    77→const LINK_ORDER = ARTIFACT.linkOrder;
+    78→
+    79→// ─── infra ────────────────────────────────────────────────────────────────
+    80→
+    81→function readState(): DeploymentState | null {
+    82→  try {
+    83→    const s = JSON.parse(fs.readFileSync(STATE_PATH, "utf8")) as DeploymentState;
+    84→    return s.ok ? s : null;
+    85→  } catch {
+    86→    return null;
+    87→  }
+    88→}
+    89→
+    90→const G = globalThis as unknown as { __meshProvider?: ethers.JsonRpcProvider };
+    91→function getProvider(): ethers.JsonRpcProvider {
+    92→  // v54 מכוונן-הרשת: ה-provider המהיר המשותף (ריעוף 120ms + אצווה) —
+    93→  // כל tx.wait() במסילה חדל לשלם את 4 השנ' של ברירת-המחדל של ethers.
+    94→  if (!G.__meshProvider) {
+    95→    G.__meshProvider = meshFastProvider();
+    96→  }
+    97→  return G.__meshProvider;
+    98→}
+    99→
+   100→const IFACES = new Map<string, ethers.Interface>();
+   101→function ifaceOf(name: string): ethers.Interface | null {
+   102→  let f = IFACES.get(name);
+   103→  if (!f) {
+   104→    const c = ARTIFACT.contracts.find((x) => x.name === name);
+   105→    if (!c) return null;
+   106→    f = new ethers.Interface(c.abi);
+   107→    IFACES.set(name, f);
+   108→  }
+   109→  return f;
+   110→}
+   111→
+   112→function abiOf(name: string): ethers.InterfaceAbi | null {
+   113→  return (ARTIFACT.contracts.find((x) => x.name === name)?.abi ?? null) as ethers.InterfaceAbi | null;
+   114→}
+   115→
+   116→function contract(name: string, state: DeploymentState, runner?: ethers.Provider | ethers.Signer): ethers.Contract | null {
+   117→  const addr = state.contracts[name];
+   118→  const abi = abiOf(name);
+   119→  if (!addr || !abi) return null;
+   120→  return new ethers.Contract(addr, abi, runner ?? getProvider());
+   121→}
+   122→
+   123→const argStr = (v: unknown): string => {
+   124→  if (typeof v === "bigint") return v.toString();
+   125→  return String(v);
+   126→};
+   127→
+   128→// ─── DTOs (shared with the mesh view — single source in components/types) ──
+   129→
+   130→import type {
+   131→  MeshAgentView,
+   132→  MeshBoardData,
+   133→  MeshContractInfo,
+   134→  MeshFeedData,
+   135→  MeshLedgerData,
+   136→  MeshOrderView,
+   137→  MeshRailView,
+   138→  MeshRunHop,
+   139→  MeshRunOutcome,
+   140→  MeshRunView,
+   141→  MeshSoldierStatView,
+   142→  MeshStatusData,
+   143→  MeshTransferView,
+   144→  MeshWorkOutcome
+   145→} from "@/components/saos/types";
+   146→
+   147→export type {
+   148→  MeshAgentView,
+   149→  MeshBoardData,
+   150→  MeshContractInfo,
+   151→  MeshFeedData,
+   152→  MeshLedgerData,
+   153→  MeshOrderView,
+   154→  MeshRailView,
+   155→  MeshRunHop,
+   156→  MeshRunOutcome,
+   157→  MeshRunView,
+   158→  MeshSoldierStatView,
+   159→  MeshStatusData,
+   160→  MeshTransferView,
+   161→  MeshWorkOutcome
+   162→};
+   163→
+   164→// ─── event decoding ───────────────────────────────────────────────────────
+   165→
+   166→interface DecodedEvent {
+   167→  contract: string;
+   168→  name: string;
+   169→  values: Record<string, string>;
+   170→  block: number;
+   171→  txid: string;
+   172→}
+   173→
+   174→function decodeLog(contractName: string, log: { address: string; topics: string[]; data: string }): DecodedEvent | null {
+   175→  const iface = ifaceOf(contractName);
+   176→  if (!iface) return null;
+   177→  try {
+   178→    const parsed = iface.parseLog({ topics: log.topics, data: log.data });
+   179→    if (!parsed) return null;
+   180→    const values: Record<string, string> = {};
+   181→    parsed.fragment.inputs.forEach((inp, i) => {
+   182→      values[inp.name] = argStr(parsed.args[i]);
+   183→    });
+   184→    return { contract: contractName, name: parsed.name, values, block: -1, txid: "" };
+   185→  } catch {
+   186→    return null;
+   187→  }
+   188→}
+   189→
+   190→function decodeLogs(raw: Array<{ address: string; topics: string[]; data: string; blockNumber: number; transactionHash: string }>, state: DeploymentState): DecodedEvent[] {
+   191→  const byAddr = new Map<string, string>();
+   192→  for (const [name, addr] of Object.entries(state.contracts)) byAddr.set(addr.toLowerCase(), name);
+   193→  const out: DecodedEvent[] = [];
+   194→  for (const log of raw) {
+   195→    const cname = byAddr.get(log.address.toLowerCase());
+   196→    if (!cname) continue;
+   197→    const ev = decodeLog(cname, log);
+   198→    if (ev) {
+   199→      ev.block = log.blockNumber;
+   200→      ev.txid = log.transactionHash;
+   201→      out.push(ev);
+   202→    }
+   203→  }
+   204→  return out;
+   205→}
+   206→
+   207→// ─── run assembly ─────────────────────────────────────────────────────────
+   208→
+   209→function buildRun(
+   210→  id: number,
+   211→  runRow: { initiator: string; intent: string; startedAt: number; completedAt: number; status: number },
+   212→  events: DecodedEvent[],
+   213→  startGas: bigint | null
+   214→): MeshRunView {
+   215→  const mine = events.filter((e) => {
+   216→    const rid = e.values["runId"] ?? e.values["id"];
+   217→    return rid === String(id);
+   218→  });
+   219→
+   220→  const dispatched = mine.find((e) => e.name === "RunDispatched");
+   221→  const completed = mine.find((e) => e.name === "RunCompleted");
+   222→  const scored = mine.find((e) => e.name === "ValueScored");
+   223→  const reward = mine.find((e) => e.name === "RewardPaid");
+   224→  const solution = mine.find((e) => e.name === "SolutionCommitted");
+   225→  const hopEvents = mine
+   226→    .filter((e) => e.name === "Hop")
+   227→    .sort((a, b) => Number(a.values["index"] ?? 0) - Number(b.values["index"] ?? 0));
+   228→
+   229→  const gasUsed = completed ? Number(completed.values["gasUsed"] ?? 0) : scored ? Number(scored.values["gasUsed"] ?? 0) : null;
+   230→
+   231→  // hop gas: gasBefore[i] − gasBefore[i+1]; the last hop closes on the
+   232→  // exhaustion point (startGas − gasUsed) — honest gas trail per hop.
+   233→  const hopTrace: MeshRunHop[] = hopEvents.map((h, i) => {
+   234→    const gb = BigInt(h.values["gasBefore"] ?? "0");
+   235→    let gas: number | null = null;
+   236→    if (i + 1 < hopEvents.length) {
+   237→      gas = Number(gb - BigInt(hopEvents[i + 1]!.values["gasBefore"] ?? "0"));
+   238→    } else if (startGas !== null && gasUsed !== null) {
+   239→      gas = Math.max(0, Number(gb - (startGas - BigInt(gasUsed))));
+   240→    }
+   241→    const link = h.values["link"] ?? "";
+   242→    return {
+   243→      index: Number(h.values["index"] ?? i),
+   244→      link: state7Name(link),
+   245→      role: MESH_ROLES[state7Name(link)] ?? "",
+   246→      address: link,
+   247→      gas
+   248→    };
+   249→  });
+   250→
+   251→  const anchorEvents = mine.filter((e) => e.name === "AnchorStamped");
+   252→  const orderDelivered = mine.find((e) => e.name === "OrderDelivered");
+   253→
+   254→  return {
+   255→    id,
+   256→    intent: runRow.intent,
+   257→    initiator: runRow.initiator,
+   258→    status: runRow.status === 1 ? "completed" : "open",
+   259→    startedAt: Number(runRow.startedAt) * 1000,
+   260→    completedAt: Number(runRow.completedAt) > 0 ? Number(runRow.completedAt) * 1000 : null,
+   261→    durationMs:
+   262→      Number(runRow.completedAt) > 0 && Number(runRow.startedAt) > 0
+   263→        ? (Number(runRow.completedAt) - Number(runRow.startedAt)) * 1000
+   264→        : null,
+   265→    gasUsed,
+   266→    score: scored ? Number(scored.values["score"] ?? 0) : null,
+   267→    hops: scored ? Number(scored.values["hops"] ?? 0) : null,
+   268→    rewardTo: reward?.values["to"] ?? null,
+   269→    rewardAmount: reward ? ethers.formatEther(BigInt(reward.values["amount"] ?? "0")) : null,
+   270→    solutionTitle: solution?.values["title"] ?? null,
+   271→    solutionDigest: solution?.values["digest"] ?? null,
+   272→    order: orderDelivered
+   273→      ? {
+   274→          id: Number(orderDelivered.values["orderId"] ?? 0),
+   275→          mission: orderDelivered.values["mission"] ?? "",
+   276→          soldier: orderDelivered.values["soldier"] ?? "",
+   277→          reward: ethers.formatEther(BigInt(orderDelivered.values["reward"] ?? "0")),
+   278→          paid: (orderDelivered.values["paid"] ?? "false") === "true"
+   279→        }
+   280→      : null,
+   281→    anchors: anchorEvents.map((a) => ({
+   282→      chain: a.values["chain"] ?? "",
+   283→      height: a.values["height"] ?? "0",
+   284→      digest: a.values["digest"] ?? ""
+   285→    })),
+   286→    hopTrace,
+   287→    txid: dispatched?.txid ?? mine[0]?.txid ?? "",
+   288→    block: dispatched?.block ?? mine[0]?.block ?? 0
+   289→  };
+   290→}
+   291→
+   292→/** reverse-lookup a contract address → canonical name (via last deployment state) */
+   293→function state7Name(addr: string): string {
+   294→  const st = readState();
+   295→  if (!st) return addr;
+   296→  const found = Object.entries(st.contracts).find(([, a]) => a.toLowerCase() === addr.toLowerCase());
+   297→  return found?.[0] ?? addr;
+   298→}
+   299→
+   300→// ─── public API ───────────────────────────────────────────────────────────
+   301→
+   302→export async function meshStatus(): Promise<MeshStatusData> {
+   303→  const state = readState();
+   304→  if (!state?.ok) {
+   305→    return {
+   306→      ok: false,
+   307→      chain: "SAOS-EVM",
+   308→      chainId: null,
+   309→      blockNumber: null,
+   310→      node: null,
+   311→      artifactVersion: null,
+   312→      deployedAt: null,
+   313→      deployBlock: null,
+   314→      operator: null,
+   315→      contracts: [],
+   316→      links: [],
+   317→      stats: {
+   318→        runs: 0, completed: 0, agents: 0, solutions: 0, transfers: 0,
+   319→        totalSupply: "0", runMinted: "0", valueMoved: "0", totalGas: "0",
+   320→        avgScore: "0", bestScore: "0", scoredRuns: 0, links: 0, rails: 0,
+   321→        orders: 0, ordersDelivered: 0, ordersOpen: 0, rewardPaid: "0", payrollBalance: "0", soldiers: 0,
+   322→        microGrids: 0, microRealized: "0", microSwept: "0", microFills: 0
+   323→      },
+   324→      ledger: { symbol: "SAOS-M", fee: "0", runReward: "10" },
+   325→      error: "SAOS-EVM לא פרוס — ה-mini-service evm-mesh אינו רץ (הפעל: bun run dev ב-mini-services/evm-mesh)"
+   326→    };
+   327→  }
+   328→
+   329→  try {
+   330→    const provider = getProvider();
+   331→    const [blockNumber, node] = await Promise.all([
+   332→      provider.getBlockNumber(),
+   333→      provider.send("web3_clientVersion", []).catch(() => null)
+   334→    ]);
+   335→
+   336→    const hub = contract("SAOSMeshHub", state);
+   337→    const ledger = contract("SAOSLedger", state);
+   338→    const identity = contract("SAOSIdentity", state);
+   339→    const solutions = contract("SAOSSolutions", state);
+   340→    const bridge = contract("SAOSBridge", state);
+   341→    const value = contract("SAOSValueEngine", state);
+   342→    const relay = contract("SAOSMeshRelay", state);
+   343→    const workboard = contract("SAOSWorkBoard", state);
+   344→    const microgrid = contract("SAOSMicrogrid", state);
+   345→    if (!hub || !ledger || !identity || !solutions || !bridge || !value || !relay) throw new Error("artifact/state mismatch");
+   346→
+   347→    // v17 — work board reads (best-effort: survives a mid-redeploy state)
+   348→    const boardAddr = state.contracts["SAOSWorkBoard"] ?? null;
+   349→    const [boardOrders, boardDelivered, boardRewardPaid, boardSoldiers, boardPayroll] = await Promise.all([
+   350→      workboard ? (workboard.orderCount() as Promise<bigint>).catch(() => 0n) : Promise.resolve(0n),
+   351→      workboard ? (workboard.ordersDelivered() as Promise<bigint>).catch(() => 0n) : Promise.resolve(0n),
+   352→      workboard ? (workboard.totalRewardPaid() as Promise<bigint>).catch(() => 0n) : Promise.resolve(0n),
+   353→      workboard ? (workboard.soldierCount() as Promise<bigint>).catch(() => 0n) : Promise.resolve(0n),
+   354→      boardAddr ? (ledger.balanceOf(boardAddr) as Promise<bigint>).catch(() => 0n) : Promise.resolve(0n)
+   355→    ]);
+   356→
+   357→    // v20 — microgrid reads (best-effort, same discipline)
+   358→    const [mgGrids, mgRealized, mgSwept, mgFillSeq] = await Promise.all([
+   359→      microgrid ? (microgrid.gridCount() as Promise<bigint>).catch(() => 0n) : Promise.resolve(0n),
+   360→      microgrid ? (microgrid.totalRealized() as Promise<bigint>).catch(() => 0n) : Promise.resolve(0n),
+   361→      microgrid ? (microgrid.totalSwept() as Promise<bigint>).catch(() => 0n) : Promise.resolve(0n),
+   362→      microgrid ? (microgrid.fillSeq() as Promise<bigint>).catch(() => 0n) : Promise.resolve(0n)
+   363→    ]);
+   364→
+   365→    const [runs, completed, totalGas, totalSupply, runMinted, transfersCount, valueMoved, agents, solutionsCount, avgScore, bestScore, scoredRuns, linkCount, chainCount] =
+   366→      await Promise.all([
+   367→        hub.runCount(),
+   368→        hub.completedCount(),
+   369→        hub.totalGasUsed(),
+   370→        ledger.totalSupply(),
+   371→        ledger.runMinted(),
+   372→        ledger.transfersCount(),
+   373→        ledger.valueMoved(),
+   374→        identity.agentCount(),
+   375→        solutions.solutionCount(),
+   376→        value.averageScore(),
+   377→        value.bestScore(),
+   378→        value.scoredRuns(),
+   379→        relay.linkCount(),
+   380→        bridge.chainCount()
+   381→      ]);
+   382→
+   383→    const contracts: MeshContractInfo[] = ARTIFACT.contracts.map((c) => ({
+   384→      name: c.name,
+   385→      role: MESH_ROLES[c.name] ?? "",
+   386→      address: state.contracts[c.name] ?? "",
+   387→      bytecodeBytes: c.bytecodeBytes
+   388→    }));
+   389→
+   390→    return {
+   391→      ok: true,
+   392→      chain: state.chain,
+   393→      chainId: MESH_CHAIN_ID,
+   394→      blockNumber,
+   395→      node: node ? String(node) : null,
+   396→      artifactVersion: state.artifactVersion,
+   397→      deployedAt: state.deployedAt,
+   398→      deployBlock: state.deployBlock,
+   399→      operator: state.operator,
+   400→      contracts,
+   401→      links: LINK_ORDER.map((n) => ({
+   402→        name: n,
+   403→        role: MESH_ROLES[n] ?? "",
+   404→        address: state.contracts[n] ?? ""
+   405→      })),
+   406→      stats: {
+   407→        runs: Number(runs),
+   408→        completed: Number(completed),
+   409→        agents: Number(agents),
+   410→        solutions: Number(solutionsCount),
+   411→        transfers: Number(transfersCount),
+   412→        totalSupply: ethers.formatEther(BigInt(totalSupply)),
+   413→        runMinted: ethers.formatEther(BigInt(runMinted)),
+   414→        valueMoved: ethers.formatEther(BigInt(valueMoved)),
+   415→        totalGas: BigInt(totalGas).toString(),
+   416→        avgScore: BigInt(avgScore).toString(),
+   417→        bestScore: BigInt(bestScore).toString(),
+   418→        scoredRuns: Number(scoredRuns),
+   419→        links: Number(linkCount),
+   420→        rails: Number(chainCount),
+   421→        orders: Number(boardOrders),
+   422→        ordersDelivered: Number(boardDelivered),
+   423→        ordersOpen: Math.max(0, Number(boardOrders) - Number(boardDelivered)),
+   424→        rewardPaid: ethers.formatEther(BigInt(boardRewardPaid)),
+   425→        payrollBalance: ethers.formatEther(BigInt(boardPayroll)),
+   426→        soldiers: Number(boardSoldiers),
+   427→        microGrids: Number(mgGrids),
+   428→        microRealized: ethers.formatEther(BigInt(mgRealized)),
+   429→        microSwept: ethers.formatEther(BigInt(mgSwept)),
+   430→        microFills: Number(mgFillSeq)
+   431→      },
+   432→      ledger: { symbol: "SAOS-M", fee: "0", runReward: "10" }
+   433→    };
+   434→  } catch (e) {
+   435→    return {
+   436→      ok: false,
+   437→      chain: state.chain,
+   438→      chainId: MESH_CHAIN_ID,
+   439→      blockNumber: null,
+   440→      node: null,
+   441→      artifactVersion: state.artifactVersion,
+   442→      deployedAt: state.deployedAt,
+   443→      deployBlock: null,
+   444→      operator: null,
+   445→      contracts: [],
+   446→      links: [],
+   447→      stats: {
+   448→        runs: 0, completed: 0, agents: 0, solutions: 0, transfers: 0,
+   449→        totalSupply: "0", runMinted: "0", valueMoved: "0", totalGas: "0",
+   450→        avgScore: "0", bestScore: "0", scoredRuns: 0, links: 0, rails: 0,
+   451→        orders: 0, ordersDelivered: 0, ordersOpen: 0, rewardPaid: "0", payrollBalance: "0", soldiers: 0,
+   452→        microGrids: 0, microRealized: "0", microSwept: "0", microFills: 0
+   453→      },
+   454→      ledger: { symbol: "SAOS-M", fee: "0", runReward: "10" },
+   455→      error: e instanceof Error ? e.message.slice(0, 160) : "mesh status failed"
+   456→    };
+   457→  }
+   458→}
+   459→
+   460→export async function meshFeed(limit = 8): Promise<MeshFeedData> {
+   461→  const state = readState();
+   462→  if (!state?.ok) return { ok: false, runs: [], transfers: [], agents: [], rails: [], orders: [], error: "SAOS-EVM לא פרוס" };
+   463→  try {
+   464→    const provider = getProvider();
+   465→    const hub = contract("SAOSMeshHub", state);
+   466→    const relay = contract("SAOSMeshRelay", state);
+   467→    const ledger = contract("SAOSLedger", state);
+   468→    const bridge = contract("SAOSBridge", state);
+   469→    if (!hub || !relay || !ledger || !bridge) throw new Error("artifact/state mismatch");
+   470→
+   471→    const addresses = Object.values(state.contracts);
+   472→    const [logs, runCount] = await Promise.all([
+   473→      provider.getLogs({ address: addresses, fromBlock: state.deployBlock }),
+   474→      hub.runCount()
+   475→    ]);
+   476→    const events = decodeLogs(
+   477→      logs.map((l) => ({
+   478→        address: l.address,
+   479→        topics: [...l.topics],
+   480→        data: l.data,
+   481→        blockNumber: l.blockNumber,
+   482→        transactionHash: l.transactionHash
+   483→      })),
+   484→      state
+   485→    );
+   486→
+   487→    // ── recent runs (storage truth + event trail)
+   488→    const runs: MeshRunView[] = [];
+   489→    const n = Number(runCount);
+   490→    for (let id = n; id >= Math.max(1, n - limit + 1); id--) {
+   491→      const row = (await hub.runs(id)) as unknown as [string, string, bigint, bigint, number];
+   492→      if (!row) continue;
+   493→      const [initiator, intent, startedAt, completedAt, status] = row;
+   494→      const startGas = (await relay.startGas(id).catch(() => null)) as bigint | null;
+   495→      runs.push(
+   496→        buildRun(
+   497→          id,
+   498→          { initiator: String(initiator), intent: String(intent), startedAt: Number(startedAt), completedAt: Number(completedAt), status: Number(status) },
+   499→          events,
+   500→          startGas
+   501→        )
+   502→      );
+   503→    }
+   504→
+   505→    // ── zero-fee transfers (recent)
+   506→    const transfers: MeshTransferView[] = events
+   507→      .filter((e) => e.name === "ZeroFeeTransfer")
+   508→      .sort((a, b) => Number(b.values["seq"] ?? 0) - Number(a.values["seq"] ?? 0))
+   509→      .slice(0, 8)
+   510→      .map((t) => ({
+   511→        seq: Number(t.values["seq"] ?? 0),
+   512→        from: t.values["from"] ?? "",
+   513→        to: t.values["to"] ?? "",
+   514→        amount: ethers.formatEther(BigInt(t.values["amount"] ?? "0")),
+   515→        fee: ethers.formatEther(BigInt(t.values["fee"] ?? "0")),
+   516→        txid: t.txid,
+   517→        block: t.block
+   518→      }));
+   519→
+   520→    // ── recent agent registrations
+   521→    const agents: MeshAgentView[] = events
+   522→      .filter((e) => e.name === "AgentRegistered")
+   523→      .sort((a, b) => b.block - a.block)
+   524→      .slice(0, 12)
+   525→      .map((a) => ({
+   526→        handle: a.values["handle"] ?? "",
+   527→        address: a.values["agent"] ?? "",
+   528→        joinedAt: 0,
+   529→        runs: 0,
+   530→        balance: "0"
+   531→      }));
+   532→
+   533→    // ── v17: latest delivered work orders (the soldiers' work trail)
+   534→    const orders: MeshOrderView[] = events
+   535→      .filter((e) => e.name === "OrderDelivered")
+   536→      .sort((a, b) => Number(b.values["orderId"] ?? 0) - Number(a.values["orderId"] ?? 0))
+   537→      .slice(0, 12)
+   538→      .map((o) => ({
+   539→        id: Number(o.values["orderId"] ?? 0),
+   540→        mission: o.values["mission"] ?? "",
+   541→        difficulty: 0,
+   542→        reward: ethers.formatEther(BigInt(o.values["reward"] ?? "0")),
+   543→        status: "delivered",
+   544→        soldier: o.values["soldier"] ?? null,
+   545→        runId: Number(o.values["runId"] ?? 0) || null,
+   546→        postedAt: 0,
+   547→        deliveredAt: 0,
+   548→        paid: (o.values["paid"] ?? "false") === "true",
+   549→        txid: o.txid,
+   550→        block: o.block
+   551→      }));
+   552→
+   553→    // ── current rails (live anchor per chain)
+   554→    const chainNames = (await bridge.chains()) as unknown as string[];
+   555→    const rails: MeshRailView[] = [];
+   556→    for (const chain of chainNames) {
+   557→      const a = (await bridge.latestAnchor(chain)) as unknown as [string, bigint, string, bigint];
+   558→      if (!a) continue;
+   559→      rails.push({
+   560→        chain: String(a[0]),
+   561→        height: BigInt(a[1]).toString(),
+   562→        digest: String(a[2]),
+   563→        at: Number(a[3])
+   564→      });
+   565→    }
+   566→
+   567→    return { ok: true, runs, transfers, agents, rails, orders };
+   568→  } catch (e) {
+   569→    return { ok: false, runs: [], transfers: [], agents: [], rails: [], orders: [], error: e instanceof Error ? e.message.slice(0, 160) : "mesh feed failed" };
+   570→  }
+   571→}
+   572→
+   573→export async function meshLedger(): Promise<MeshLedgerData> {
+   574→  const state = readState();
+   575→  if (!state?.ok) return { ok: false, agents: [], totals: { supply: "0", runMinted: "0", transfers: "0", valueMoved: "0", fee: "0", symbol: "SAOS-M" }, error: "SAOS-EVM לא פרוס" };
+   576→  try {
+   577→    const provider = getProvider();
+   578→    const identity = contract("SAOSIdentity", state);
+   579→    const ledger = contract("SAOSLedger", state);
+   580→    if (!identity || !ledger) throw new Error("artifact/state mismatch");
+   581→
+   582→    const count = Number(await identity.agentCount());
+   583→    const agentRows = await Promise.all(
+   584→      Array.from({ length: count }, (_, i) => identity.agentAt(i) as Promise<[string, string, bigint, bigint]>)
+   585→    );
+   586→    const balances = await Promise.all(agentRows.map((r) => ledger.balanceOf(r[0]) as Promise<bigint>));
+   587→
+   588→    const agents: MeshAgentView[] = agentRows.map((r, i) => ({
+   589→      handle: String(r[1]),
+   590→      address: String(r[0]),
+   591→      joinedAt: Number(r[2]) * 1000,
+   592→      runs: Number(r[3]),
+   593→      balance: ethers.formatEther(BigInt(balances[i] ?? 0n))
+   594→    }));
+   595→    agents.sort((a, b) => Number(b.balance) - Number(a.balance));
+   596→
+   597→    const [supply, runMinted, transfersCount, valueMoved] = await Promise.all([
+   598→      ledger.totalSupply(),
+   599→      ledger.runMinted(),
+   600→      ledger.transfersCount(),
+   601→      ledger.valueMoved()
+   602→    ]);
+   603→
+   604→    return {
+   605→      ok: true,
+   606→      agents,
+   607→      totals: {
+   608→        supply: ethers.formatEther(BigInt(supply)),
+   609→        runMinted: ethers.formatEther(BigInt(runMinted)),
+   610→        transfers: BigInt(transfersCount).toString(),
+   611→        valueMoved: ethers.formatEther(BigInt(valueMoved)),
+   612→        fee: "0",
+   613→        symbol: "SAOS-M"
+   614→      }
+   615→    };
+   616→  } catch (e) {
+   617→    return { ok: false, agents: [], totals: { supply: "0", runMinted: "0", transfers: "0", valueMoved: "0", fee: "0", symbol: "SAOS-M" }, error: e instanceof Error ? e.message.slice(0, 160) : "mesh ledger failed" };
+   618→  }
+   619→}
+   620→
+   621→// ─── the live run (manual dispatch through the whole chain) ───────────────
+   622→
+   623→export async function runMesh(intentRaw: string, opts?: { soldier?: boolean }): Promise<MeshRunOutcome> {
+   624→  const state = readState();
+   625→  if (!state?.ok) return { ok: false, run: null, anchorsStamped: 0, error: "SAOS-EVM לא פרוס" };
+   626→  const intent = (intentRaw ?? "").trim().slice(0, 120) || "mesh run: manual dispatch";
+   627→
+   628→  try {
+   629→    const provider = getProvider();
+   630→    // v17 — work dispatches rotate REAL soldier signers (1..5); plain
+   631→    // mesh runs keep the operator (signer 0). All anvil unlocked accounts.
+   632→    let runner: ethers.Signer;
+   633→    if (opts?.soldier) {
+   634→      const hub0 = contract("SAOSMeshHub", state);
+   635→      const n = hub0 ? Number(await hub0.runCount()) : 0;
+   636→      runner = await provider.getSigner(1 + (n % 5));
+   637→    } else {
+   638→      runner = await provider.getSigner(0);
+   639→    }
+   640→    const hub = contract("SAOSMeshHub", state, runner);
+   641→    const bridge = contract("SAOSBridge", state, runner);
+   642→    if (!hub || !bridge) throw new Error("artifact/state mismatch");
+   643→
+   644→    // 1. LIVE anchors flow INTO the mesh right before the run (דבר מוביל לדבר)
+   645→    let anchorsStamped = 0;
+   646→    const heights: Array<{ chain: string; height: number }> = [];
+   647→    try {
+   648→      const lastSeal = await db.sealRecord.findFirst({ orderBy: { height: "desc" }, select: { height: true } });
+   649→      if (lastSeal) heights.push({ chain: "SAOS-NET", height: lastSeal.height });
+   650→      const [eth, bsc, sol] = await Promise.all([probeEthereum(), probeBsc(), probeSolana()]);
+   651→      if (eth.ok && eth.blockNumber) heights.push({ chain: "ETHEREUM", height: eth.blockNumber });
+   652→      if (bsc.ok && bsc.blockNumber) heights.push({ chain: "BSC", height: bsc.blockNumber });
+   653→      if (sol.ok && sol.slot) heights.push({ chain: "SOLANA", height: sol.slot });
+   654→    } catch {
+   655→      /* anchors best-effort — the run still happens */
+   656→    }
+   657→    if (heights.length > 0) {
+   658→      try {
+   659→        const tx = await bridge.anchorExternalBulk(
+   660→          heights.map((h) => h.chain),
+   661→          heights.map((h) => BigInt(h.height)),
+   662→          heights.map((h) => ethers.id(`saos:${h.chain}:${h.height}`))
+   663→        );
+   664→        const rc = await waitTx(tx); // v57 — שער שקט נסגר; העוגנים אידמפוטנטיים ויטבעו בריצה הבאה
+   665→        if (rc) anchorsStamped = heights.length;
+   666→      } catch {
+   667→        /* honest — anchors are best-effort */
+   668→      }
+   669→    }
+   670→
+   671→    // 2. dispatch through the whole chain
+   672→    const tx = await hub.dispatch(intent);
+   673→    const rc = await waitTx(tx); // v57 — null = שער-המתנה שקט נסגר (לא revert)
+   674→    if (rc === null) throw new Error("קבלת העסקה לא אושרה בחלון 15ש' — העסקה עשויה להיכרות; אמת מהשרשרת בקריאה הבאה (honest)");
+   675→    if (rc.status !== 1) throw new Error("mesh run reverted (honest)");
+   676→
+   677→    // 3. build the trace from the receipt logs + storage
+   678→    const events = decodeLogs(
+   679→      rc.logs.map((l) => ({
+   680→        address: l.address,
+   681→        topics: [...l.topics],
+   682→        data: l.data,
+   683→        blockNumber: l.blockNumber,
+   684→        transactionHash: l.transactionHash
+   685→      })),
+   686→      state
+   687→    );
+   688→    const runId = Number(events.find((e) => e.name === "RunDispatched")?.values["runId"] ?? 0);
+   689→    const row = (await hub.runs(runId)) as unknown as [string, string, bigint, bigint, number];
+   690→    const startGas = (await contract("SAOSMeshRelay", state)!.startGas(runId)) as bigint;
+   691→    const run = buildRun(
+   692→      runId,
+   693→      { initiator: String(row[0]), intent: String(row[1]), startedAt: Number(row[2]), completedAt: Number(row[3]), status: Number(row[4]) },
+   694→      events,
+   695→      startGas
+   696→    );
+   697→
+   698→    return { ok: true, run, anchorsStamped };
+   699→  } catch (e) {
+   700→    return { ok: false, run: null, anchorsStamped: 0, error: e instanceof Error ? e.message.slice(0, 160) : "mesh run failed" };
+   701→  }
+   702→}
+   703→
+   704→export function meshDeploymentSummary(): { deployed: boolean; deployedAt: string | null; contracts: number } {
+   705→  const state = readState();
+   706→  return {
+   707→    deployed: Boolean(state?.ok),
+   708→    deployedAt: state?.deployedAt ?? null,
+   709→    contracts: state ? Object.keys(state.contracts).length : 0
+   710→  };
+   711→}
+   712→
+   713→// ─── v17 — WORK ORDERS (פקודות עבודה): HQ posts, soldiers deliver ──────────
+   714→
+   715→const EMPTY_BOARD: MeshBoardData = {
+   716→  ok: false,
+   717→  chain: "SAOS-EVM",
+   718→  orders: [],
+   719→  soldiers: [],
+   720→  payroll: { balance: "0", perRun: "10", symbol: "SAOS-M", fee: "0", paidOut: "0" },
+   721→  stats: { posted: 0, delivered: 0, open: 0, rewardPaid: "0", soldiers: 0, avgDifficulty: 0 },
+   722→  contract: null,
+   723→  error: "SAOS-EVM לא פרוס — ה-mini-service evm-mesh אינו רץ"
+   724→};
+   725→
+   726→/** read the work board from the chain: orders, soldier stats, payroll. */
+   727→export async function meshBoard(): Promise<MeshBoardData> {
+   728→  const state = readState();
+   729→  if (!state?.ok) return { ...EMPTY_BOARD };
+   730→  const boardAddr = state.contracts["SAOSWorkBoard"];
+   731→  if (!boardAddr) {
+   732→    return { ...EMPTY_BOARD, error: "לוח העבודה אינו פרוס (מפתח ישן — הפעל מחדש את evm-mesh)" };
+   733→  }
+   734→  try {
+   735→    const provider = getProvider();
+   736→    const board = contract("SAOSWorkBoard", state);
+   737→    const ledger = contract("SAOSLedger", state);
+   738→    if (!board || !ledger) throw new Error("artifact/state mismatch");
+   739→
+   740→    const [orderCount, delivered, rewardPaid, soldierCount, payrollBal] = await Promise.all([
+   741→      board.orderCount() as Promise<bigint>,
+   742→      board.ordersDelivered() as Promise<bigint>,
+   743→      board.totalRewardPaid() as Promise<bigint>,
+   744→      board.soldierCount() as Promise<bigint>,
+   745→      ledger.balanceOf(boardAddr) as Promise<bigint>
+   746→    ]);
+   747→
+   748→    // latest orders (newest first, capped — the board is append-only)
+   749→    const total = Number(orderCount);
+   750→    const from = Math.max(0, total - 40);
+   751→    const orderRows = await Promise.all(
+   752→      Array.from({ length: total - from }, (_, k) => board.orderAt(from + k) as Promise<[string, bigint, bigint, number, string, bigint, bigint, bigint, boolean]>)
+   753→    );
+   754→    // Order struct order: mission, difficulty, reward, status, soldier, runId, postedAt, deliveredAt, paid
+   755→    const orders: MeshOrderView[] = orderRows
+   756→      .map((r, k) => {
+   757→        const [mission, difficulty, reward, status, soldier, runId, postedAt, deliveredAt, paid] = r;
+   758→        const st: MeshOrderView["status"] = Number(status) === 1 ? "delivered" : "open";
+   759→        return {
+   760→          id: from + k,
+   761→          mission: String(mission),
+   762→          difficulty: Number(difficulty),
+   763→          reward: ethers.formatEther(BigInt(reward)),
+   764→          status: st,
+   765→          soldier: String(soldier) !== ethers.ZeroAddress ? String(soldier) : null,
+   766→          runId: BigInt(runId) > 0n ? Number(runId) : null,
+   767→          postedAt: Number(postedAt) * 1000,
+   768→          deliveredAt: BigInt(deliveredAt) > 0n ? Number(deliveredAt) * 1000 : null,
+   769→          paid: Boolean(paid),
+   770→          txid: "",
+   771→          block: 0
+   772→        };
+   773→      })
+   774→      .reverse();
+   775→
+   776→    // per-soldier work stats (who did the work, who got paid)
+   777→    const sTotal = Number(soldierCount);
+   778→    const soldierRows = await Promise.all(
+   779→      Array.from({ length: sTotal }, (_, k) => board.soldierAt(k) as Promise<[string, bigint, bigint]>)
+   780→    );
+   781→    const soldiers: MeshSoldierStatView[] = soldierRows
+   782→      .map((r) => ({
+   783→        soldier: String(r[0]),
+   784→        orders: Number(r[1]),
+   785→        earned: ethers.formatEther(BigInt(r[2]))
+   786→      }))
+   787→      .sort((a, b) => b.orders - a.orders);
+   788→
+   789→    const deliveredN = Number(delivered);
+   790→    const avgDifficulty = orders.length > 0 ? orders.reduce((s, o) => s + o.difficulty, 0) / orders.length : 0;
+   791→
+   792→    return {
+   793→      ok: true,
+   794→      chain: state.chain,
+   795→      orders,
+   796→      soldiers,
+   797→      payroll: {
+   798→        balance: ethers.formatEther(BigInt(payrollBal)),
+   799→        perRun: "10",
+   800→        symbol: "SAOS-M",
+   801→        fee: "0",
+   802→        paidOut: ethers.formatEther(BigInt(rewardPaid))
+   803→      },
+   804→      stats: {
+   805→        posted: total,
+   806→        delivered: deliveredN,
+   807→        open: Math.max(0, total - deliveredN),
+   808→        rewardPaid: ethers.formatEther(BigInt(rewardPaid)),
+   809→        soldiers: sTotal,
+   810→        avgDifficulty: Number(avgDifficulty.toFixed(1))
+   811→      },
+   812→      contract: { address: boardAddr, role: MESH_ROLES["SAOSWorkBoard"] ?? "" }
+   813→    };
+   814→  } catch (e) {
+   815→    return { ...EMPTY_BOARD, error: e instanceof Error ? e.message.slice(0, 160) : "board read failed" };
+   816→  }
+   817→}
+   818→
+   819→/**
+   820→ * The HQ posts a REAL work order on the chain (owner-only postOrder via
+   821→ * signer 0 = the operator/HQ), then immediately dispatches a soldier mesh
+   822→ * run that delivers it and gets paid through the payroll.
+   823→ * Returns the fresh order view + the delivering run's full trace.
+   824→ */
+   825→export async function postWorkOrder(
+   826→  missionRaw: string,
+   827→  difficulty: number,
+   828→  rewardUnits: number
+   829→): Promise<MeshWorkOutcome> {
+   830→  const state = readState();
+   831→  if (!state?.ok) return { ok: false, order: null, run: null, payrollBalance: null, error: "SAOS-EVM לא פרוס" };
+   832→  const boardAddr = state.contracts["SAOSWorkBoard"];
+   833→  if (!boardAddr) return { ok: false, order: null, run: null, payrollBalance: null, error: "לוח העבודה אינו פרוס" };
+   834→
+   835→  const mission = (missionRaw ?? "").trim().slice(0, 120);
+   836→  if (mission.length < 2) return { ok: false, order: null, run: null, payrollBalance: null, error: "פקודה ריקה — כתוב משימה" };
+   837→  const difficultySafe = Math.min(5, Math.max(1, Math.round(difficulty) || 2));
+   838→  const rewardSafe = Math.min(50, Math.max(1, rewardUnits || 5));
+   839→
+   840→  // v25 RESHUT — publishing a work order is an HQ-authority act; the
+   841→  // gate fires before the transaction is built.
+   842→  const gate = await guardPermission("post-work", "hq");
+   843→  if (!gate.allowed) {
+   844→    return { ok: false, order: null, run: null, payrollBalance: null, error: `רשות נדחתה (רשות v25): ${gate.reason}` };
+   845→  }
+   846→
+   847→  try {
+   848→    const provider = getProvider();
+   849→    const hq = await provider.getSigner(0);
+   850→    const board = contract("SAOSWorkBoard", state, hq);
+   851→    const ledger = contract("SAOSLedger", state);
+   852→    if (!board || !ledger) throw new Error("artifact/state mismatch");
+   853→
+   854→    // 1. HQ posts the order (real transaction, OrderPosted event)
+   855→    const tx = await board.postOrder(mission, difficultySafe, ethers.parseEther(String(rewardSafe)));
+   856→    const rc = await waitTx(tx); // v57 — null = שער-המתנה שקט נסגר (לא revert)
+   857→    if (rc === null) throw new Error("קבלת postOrder לא אושרה בחלון 15ש' — ההזמנה עשויה להיכרות; אמת מהשרשרת בקריאה הבאה (honest)");
+   858→    if (rc.status !== 1) throw new Error("postOrder reverted (honest)");
+   859→    const events = decodeLogs(
+   860→      rc.logs.map((l) => ({
+   861→        address: l.address,
+   862→        topics: [...l.topics],
+   863→        data: l.data,
+   864→        blockNumber: l.blockNumber,
+   865→        transactionHash: l.transactionHash
+   866→      })),
+   867→      state
+   868→    );
+   869→    const posted = events.find((e) => e.name === "OrderPosted");
+   870→    const orderId = Number(posted?.values["orderId"] ?? 0);
+   871→
+   872→    // 2. REAL soldier runs deliver open orders FIFO until this one lands
+   873→    //    (each run = the full 8-contract chain; payroll pays every delivery)
+   874→    const runs: MeshRunView[] = [];
+   875→    let row = (await board.orderAt(orderId)) as unknown as [string, bigint, bigint, number, string, bigint, bigint, bigint, boolean];
+   876→    for (let attempt = 0; attempt < 4 && Number(row[3]) !== 1; attempt++) {
+   877→      const outcome = await runMesh(`work order #${orderId}: ${mission}`, { soldier: true });
+   878→      if (outcome.run) runs.push(outcome.run);
+   879→      row = (await board.orderAt(orderId)) as unknown as [string, bigint, bigint, number, string, bigint, bigint, bigint, boolean];
+   880→    }
+   881→    // the run whose OrderDelivered matches this order — else the last run
+   882→    const deliveringRun = runs.find((r) => r.order?.id === orderId) ?? runs[runs.length - 1] ?? null;
+   883→
+   884→    // 3. the fresh order view from storage (post-delivery truth)
+   885→    const order: MeshOrderView = {
+   886→      id: orderId,
+   887→      mission: String(row[0]),
+   888→      difficulty: Number(row[1]),
+   889→      reward: ethers.formatEther(BigInt(row[2])),
+   890→      status: Number(row[3]) === 1 ? "delivered" : "open",
+   891→      soldier: String(row[4]) !== ethers.ZeroAddress ? String(row[4]) : null,
+   892→      runId: BigInt(row[5]) > 0n ? Number(row[5]) : null,
+   893→      postedAt: Number(row[6]) * 1000,
+   894→      deliveredAt: BigInt(row[7]) > 0n ? Number(row[7]) * 1000 : null,
+   895→      paid: Boolean(row[8]),
+   896→      txid: rc.hash,
+   897→      block: rc.blockNumber ?? 0
+   898→    };
+   899→    const payrollBalance = ethers.formatEther(BigInt(await (ledger.balanceOf(boardAddr) as Promise<bigint>)));
+   900→
+   901→    return { ok: true, order, run: deliveringRun, payrollBalance };
+   902→  } catch (e) {
+   903→    return { ok: false, order: null, run: null, payrollBalance: null, error: e instanceof Error ? e.message.slice(0, 160) : "work order failed" };
+   904→  }
+   905→}
+   906→
+   907→// ─── v18 — REAL WORK anchor rail (מסירות אמיתיות): SAOS-WORK on the bridge ─
+   908→
+   909→const WORK_RAIL = "SAOS-WORK";
+   910→
+   911→/**
+   912→ * Anchor a REAL work deliverable digest on the mesh chain: the bridge keeps
+   913→ * a dedicated "SAOS-WORK" rail — registered once (owner-only, idempotent),
+   914→ * then every deliverable's sha256 lands on-chain via anchorExternal and is
+   915→ * stamped into EVERY subsequent mesh run (AnchorStamped) — the work becomes
+   916→ * part of the organism's anchor set, forever. The rail's height carries the
+   917→ * delivered orderId; the digest is sha256(canonical deliverable JSON).
+   918→ */
+   919→export async function anchorWorkDigest(
+   920→  orderId: number,
+   921→  digest: string
+   922→): Promise<{ ok: boolean; txid?: string; block?: number; error?: string }> {
+   923→  const state = readState();
+   924→  if (!state?.ok) return { ok: false, error: "SAOS-EVM לא פרוס" };
+   925→  const bridgeAddr = state.contracts["SAOSBridge"];
+   926→  if (!bridgeAddr) return { ok: false, error: "ה-bridge אינו פרוס" };
+   927→  try {
+   928→    const provider = getProvider();
+   929→    const hq = await provider.getSigner(0);
+   930→    const bridge = contract("SAOSBridge", state, hq);
+   931→    if (!bridge) throw new Error("artifact/state mismatch");
+   932→    // register the rail once (idempotent — "already registered" is an honest pass)
+   933→    try {
+   934→      await waitTx(await bridge.registerChain(WORK_RAIL)); // v57 — דדליין 15ש'
+   935→    } catch {
+   936→      /* rail already registered — pass */
+   937→    }
+   938→    const tx = await bridge.anchorExternal(WORK_RAIL, BigInt(orderId), digest);
+   939→    const rc = await waitTx(tx); // v57 — null = שער-המתנה שקט נסגר (לא revert)
+   940→    if (rc === null) return { ok: false, error: "קבלת העיגון לא אושרה בחלון 15ש' — העיגון עשוי להיכרות; אמת מהשרשרת בקריאה הבאה (honest)" };
+   941→    if (rc.status !== 1) throw new Error("anchorExternal reverted (honest)");
+   942→    return { ok: true, txid: rc.hash, block: rc.blockNumber ?? 0 };
+   943→  } catch (e) {
+   944→    return { ok: false, error: e instanceof Error ? e.message.slice(0, 160) : "work anchor failed" };
+   945→  }
+   946→}
+   947→
+   948→/** live state of the SAOS-WORK rail (height = last delivered orderId). */
+   949→export async function workRail(): Promise<{ chain: string; height: string; digest: string; at: number } | null> {
+   950→  const state = readState();
+   951→  if (!state?.ok) return null;
+   952→  try {
+   953→    const bridge = contract("SAOSBridge", state);
+   954→    if (!bridge) return null;
+   955→    const a = (await bridge.latestAnchor(WORK_RAIL)) as unknown as [string, bigint, string, bigint];
+   956→    return { chain: String(a[0]), height: String(a[1]), digest: String(a[2]), at: Number(a[3]) * 1000 };
+   957→  } catch {
+   958→    return null;
+   959→  }
+   960→}
+   961→
