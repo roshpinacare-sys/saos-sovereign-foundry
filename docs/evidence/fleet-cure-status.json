@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-09-28T13:25:56.892Z",
+ "updatedAt": "2026-09-28T14:10:57.103Z",
  "pendingWeave": false,
  "purpose": "Task 26-c fleet RC cure — RC windows measured live per fleet account (chain-side, keyless); execution = external-signer :3033 authority gate, which only ever signs with keys sealed in the envelope and verified live (see vault summary below). pendingWeave decides whether anything is scheduled at all (roast-62: readiness ≠ schedule).",
  "opCostRc": 230000000,

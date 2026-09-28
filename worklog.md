@@ -77,3 +77,22 @@ Stage Summary:
 - THE MACHINE IS LIVE: grids(sim shape) → peg(parity-anchored offer) → mover(verify-then-sign) → STEEM chain (16 real txs) → observers/triggers. The full thing-drags-thing loop executed for real for the first time
 - Honest position: this is engine-proof on ~$24 notional, NOT $1000/day. Path to target = X-2 capital + daily peg/mover refresh + other mission rails (MISSION-1000.md). Key rotation (PHASE-0) remains urgently recommended — material is historically burned, operator chose availability-first knowingly
 - Fleet status: all L0/L1 keyless claims DONE across 3 agents; C-3 now DONE (content live); remaining OPEN = X-2 (operator capital) + proposed A-7 (safe mover automation via Actions secret) + A-8 (daily ladder refresh + real-fill KPI feed)
+
+---
+Task ID: 5 (VERIFY-ALL round · "תמשיך עוד וודא הכל... תעבור על זה שוב ותתקן")
+Agent: AGENT-A (Z.ai Code · שיחת-המקור · main orchestrator)
+Task: Re-verify EVERYTHING from prior rounds, fix what's broken, keep the fleet flowing
+
+Work Log:
+- Full re-verification sweep: pulled all 16 repos to latest (AGENT-Z/C pushed phase0-kit X-1, C-3 live, Z-9 KPI-scribe, twins); all 4 selftest suites re-run GREEN (kernel EXIT=0 HARDEN vectors, grids 9/9, peg 31/31, mission 11/11)
+- Independent chain re-verification of A-5/T-4: read account_history directly — **34 REAL FILLS found** (29 historic bid fills = inventory phase ~230 STEEM @ 0.095–0.110 vs btsx/vfund/ecoburn/etc; 5 ask fills today +3.033 SBD @ 0.1052–0.1073 vs coin-raffle, all inside parity band). Ladder maintained autonomously by fleet cycles 13:03/13:18/13:33
+- FIXED B-1: real-fill observer `saos-dex/grids/observe.mjs` (A-9) — keyless account_history reader (3-node RPC ladder, jussi breaker-flap tolerant, condenser+plugin fallback), pure parseFills + seq-dedup, applyRealFills → feeMeter.realFills/realSbdDelta; engine live-ticks inject grid.fill real:true events (never sim-labeled); rebalance rule now reacts to REAL chain fills — the thing-drags-thing loop closed on chain truth. 17 offline vectors PASS (observe-selftest.mjs). saos-dex@bdc35a4
+- FIXED selftest hygiene: selftest leaked halted state (-5 inventory) into public pnl.json — full backup/restore (state+events+pnl), proven byte-identical post-fix
+- FOUND+FIXED peg blocker bug: "ask plan 379.23 exceeds commitable 379.229" — 0.001 rounding artifact blocked ALL peg cycles since 13:52 (why ladder went stale). Budget-assignment ladder: levels clamp to remaining (sum ≤ commitable BY CONSTRUCTION), dust-break at minLevel, min-fuel gate restored minLevel×levels after my first attempt weakened it (caught by selftest vector 6 within one run — selftests pay for themselves). saos-dex@007b0ba+9ca7825, PEG 31/31 + grids 9/9 re-verified, live OFFER-READY parity 0.106926 5+5
+- BUILT the sandbox cockpit (my-project): /api/saos/status (grid+pnl+offer+live chain+KPI+claims, 45s cache, no secrets) + /api/saos/signer?limit= (mover-log public evidence, deep key-field scrub) + RTL Hebrew dark dashboard page — the previously-404 routes now serve real fleet data; browser-verified desktop+mobile, 0 console errors, footer natural-push, refresh interaction works
+- Fleet: A-9 row DONE on CLAIMS board + broadcast 2026-09-28-agent-a-a9-real-fill-observer.md (Defi@d2fca44, rebased over other agents' pushes cleanly)
+
+Stage Summary:
+- Honest verdict stands: machine LIVE and now self-observing — real fills metered automatically (34 fills, sbdDelta −14.946 incl. inventory phase; today's harvest +3.033 SBD at parity). $1000/day still gated ONLY by X-2 (operator capital) — everything keyless is DONE and PROVEN
+- Quality debt paid: 3 real bugs found & fixed by re-verification exactly as the operator predicted ("תמיד יש מה לתקן"): pnl leakage, peg rounding blocker, mission verdict-line
+- Artifacts: saos-dex@9ca7825 (observe+peg fixes) · Defi@d2fca44 (A-9 board+broadcast) · my-project cockpit (page + 2 API routes) · worklog updated
