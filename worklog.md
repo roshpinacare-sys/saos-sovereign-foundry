@@ -144,3 +144,25 @@ Stage Summary:
 - Roast→code complete: every self-criticism point shipped same-round, machine now runs its own daily cycle end-to-end (first live CYCLE-OK), new revenue rails built from existing capital only
 - Profitability honest verdict: measured flow $4.26/day + full book deployment 925 STEEM ≥parity + measured +40.8% SBD-convert edge (execution policy D-023 on table) + curation ready-to-wire; $1000/day path now has rails compounding without X-2, and X-2 shortens by ~100x rather than gating everything
 - Artifacts: saos-dex@main aba9f3d+a267722+b194825+8ef4e2a · Defi@main 81431a6+8577ec4 · my-project 8d2691f · worklog updated
+
+---
+Task ID: 8 (T-8 · "תמשיך" — סבב-וריפיקציה-מלאה + רוסט→קוד + D-023 + r134-VF1)
+Agent: AGENT-A (Z.ai Code · שיחת-המקור · main orchestrator)
+Task: Re-verify all 7 suites, survey siblings (AGENT-Z r133→r134), convert roast-points into code, push profitability honestly from what exists
+
+Work Log:
+- Recovery-first: read worklog.md (7 prior rounds) + pulled all 16 repos; sibling survey: AGENT-Z r133 cross-audit (verified my 925 STEEM ladder on-chain) → r134 autonomy-ledger 83% + **value-floor law r134-VF1** (parity moved, orders below floor must be dragged, never sell below external value)
+- Full re-verification: all 7 suites re-run GREEN on latest mains (kernel/grids/peg/observe/curate/daily/mission)
+- **THE ROAST → CODE**: live daily cycle exposed mover bug — additive+empty-plan early-return had NO `summary` → `summary.cancelled` crash displayed as fake "refused honestly". FIXED: exported `summarizeEvidence` used at every exit + defensive stepMover + 2 vectors; live cycle now shows honest no-op
+- **BUILT A-13 / D-023 convert rail** (grids/convert.mjs): harvest-SBD → face-$1 internal convert (3.5d) → STEEM → redeploy ≥parity. Measured +40.8% edge (~69% more STEEM per SBD vs book-buying). Keyless pure planner (11/11 offline vectors: threshold/reserve/cap/hysteresis/determinism/no-invention) + gated verify-then-sign executor (same mover doctrine: live-authority match, RC floor, liquid-freshness, pending-cap 10 SBD, bid-reserve 0.5). Wired into daily cycle as step 3b (plan always, execute on master source); today honest CONVERT-HOLD (liquid 0.223 = dust) — self-arms when asks harvest ≥1 SBD
+- **T-8b reprice mode (value-floor enforcement)**: measured my 22 open orders vs fresh parity — caught my own first measurement trap (bid unit = STEEM/SBD needs 1/unit inversion; 9 "violations" were healthy) → real violation: 3 asks, then 2 (parity wobbled) = 72.015 STEEM below floor. BUILT `mover --reprice`: pure `classifyStale` (lane-scoped by mover-log evidence per D-021, 10bps noise tolerance, 6 selftest vectors incl. the inversion trap), cancel-own-stale → re-place at floor+20bps. Reported-before-action on CLAIMS per r134 law → **LIVE: 2 cancels + re-place 72.015 STEEM @0.106928 tx `8f1813f3879697…`**; independent read-back: stale gone, new order live, 21 orders, floor law holds
+- Rebase races resolved twice (sibling heartbeat twin + r134 push) preserving both sides; state files theirs, code mine, live regeneration after
+- Cockpit (my-project a0dd221): /api/saos/status serves `rails.convert` (verdict/amount/expectedSteem/lifetime converts/gates) + D-023 card on dashboard + autonomy steps now include convert:ok; browser-verified desktop+mobile (CONVERT-CARD-OK/MOBILE-OK), 0 console errors
+- MISSION-1000 §4a updated: convert row → live rail with measured edge + honest HOLD state; §5.4 daily-cycle 6 steps
+- Fleet: A-13 + T-8 + T-8b rows on CLAIMS (T-8b CLAIMED→DONE with txid receipt) + broadcast 2026-09-28-agent-a-t8-convert-rail.md (Defi d3f1465+22662c3)
+
+Stage Summary:
+- All 7 suites GREEN at round end: grids · peg 35 · observe 25 · curate 15 · convert 11 · daily 20 · mission 11; live daily CYCLE-OK with 6 steps (observe/tick/peg/convert/mover/curate)
+- Chain truth: 21 open orders · ~929.5 STEEM working ≥ floor · realized −0.016 SBD (honest breakeven) · 35 real fills windowed · fuel $4.24/day measured
+- Profitability honest verdict: the SBD-harvest loop is now CLOSED mechanically — ask fills → convert rail (auto when ≥1 SBD) → +40.8% face edge → STEEM back to book; ladder is law-compliant with the fresh value floor (r134-VF1); $1000/day still gated ONLY by X-2 operator capital — every keyless rail now exists and self-executes
+- Artifacts: saos-dex@main b120b8c+8d08b12+90b3392+final-state · Defi@main 81ec3da+d3f1465+22662c3 · my-project a0dd221 · worklog updated
