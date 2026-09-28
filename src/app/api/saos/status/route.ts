@@ -11,6 +11,8 @@ const PATHS = {
   offer: `${AUDIT}/saos-dex/grids/state/offer.json`,
   moverLog: `${AUDIT}/saos-dex/grids/state/mover-log.jsonl`,
   dailyReport: `${AUDIT}/saos-dex/grids/state/daily-report.json`,
+  convertPlan: `${AUDIT}/saos-dex/grids/state/convert-plan.json`,
+  convertLog: `${AUDIT}/saos-dex/grids/state/convert-log.jsonl`,
   kpi: `${AUDIT}/Defi/fleet/KPI.json`,
   claims: `${AUDIT}/Defi/fleet/CLAIMS.md`,
 };
@@ -191,7 +193,7 @@ export async function GET() {
   if (cache && Date.now() - cache.at < CACHE_TTL_MS) {
     return NextResponse.json(cache.data);
   }
-  const [state, pnl, offer, kpi, claimsMd, moverTail, ordersRaw, rcRaw, accRaw, fills, dailyReport] = await Promise.all([
+  const [state, pnl, offer, kpi, claimsMd, moverTail, ordersRaw, rcRaw, accRaw, fills, dailyReport, convertPlan, convertLog] = await Promise.all([
     readJsonSafe(PATHS.state),
     readJsonSafe(PATHS.pnl),
     readJsonSafe(PATHS.offer),
@@ -203,6 +205,8 @@ export async function GET() {
     rpc<Record<string, string>[]>("condenser_api.get_accounts", [["headcorner"]]),
     liveFills(),
     readJsonSafe(PATHS.dailyReport),
+    readJsonSafe(PATHS.convertPlan),
+    readMoverTail(PATHS.convertLog, 3),
   ]);
 
   const orders = (ordersRaw ?? []).map((o) => {
@@ -257,17 +261,32 @@ export async function GET() {
   const kpiObj = kpi as { revenuePerDayReal?: { usd?: number; breakdown?: { fuelEngineUsdPerDay?: number; missionBookUsdPerDay?: number } } } | null;
   const daily = dailyReport as { ok?: boolean; startedAt?: string; finishedAt?: string; steps?: Record<string, { ok?: boolean; skipped?: boolean; verdict?: string; planned?: number; executed?: number; reason?: string }> } | null;
   const convertArb = (offer as { marks?: { convertArb?: { verdict?: string; marketUsd?: number; discountPct?: number } } } | null)?.marks?.convertArb ?? null;
+  /* T-8 · D-023: מסילת-ההמרה — תוכנית-אחרונה + קציר-מבוצע-חיים */
+  const cp = convertPlan as { verdict?: string; amountSbd?: number; discountBps?: number; gates?: string[]; at?: string; expectedSteem?: number | null; evidence?: { at?: string; mode?: string; note?: string | null; txids?: { txid?: string; amount?: string; requestid?: number }[] } | null } | null;
   const rails = {
     fuel: kpiObj?.revenuePerDayReal?.breakdown?.fuelEngineUsdPerDay ?? null,
     book: kpiObj?.revenuePerDayReal?.breakdown?.missionBookUsdPerDay ?? null,
     deployedSteem: orderTotals.askedSteem,
     bidSbd: orderTotals.bidSbd,
     convertArb,
+    convert: cp
+      ? {
+          verdict: cp.verdict ?? null,
+          amountSbd: cp.amountSbd ?? 0,
+          discountBps: cp.discountBps ?? null,
+          expectedSteem: cp.expectedSteem ?? null,
+          plannedAt: cp.evidence?.at ?? cp.at ?? null,
+          executedLifetime: convertLog.length,
+          lastConvert: convertLog[convertLog.length - 1] ?? null,
+          gates: cp.gates ?? [],
+          note: cp.evidence?.note ?? null,
+        }
+      : { status: "convert rail not yet run (D-023 armed on next daily cycle)" },
     curation: daily?.steps?.curate
       ? { planned: daily.steps.curate.planned ?? null, executed: daily.steps.curate.executed ?? 0, status: daily.steps.curate.skipped ? "planned-awaiting-posting-wif (A-12 · Domain wiring)" : "executing" }
       : { planned: null, executed: 0, status: "daily-cycle not yet run in cockpit view" },
     autonomy: daily ? { ok: daily.ok ?? false, lastCycle: daily.finishedAt ?? daily.startedAt ?? null, steps: Object.fromEntries(Object.entries(daily.steps ?? {}).map(([k, v]) => [k, v.ok === false ? "fail" : v.skipped ? "skip" : "ok"])) } : null,
-    note: "קיורציה/המרה/פריסה נבנו-מהקיים (T-7) — אפס-הון-חוץ; המדידה-החיה בקובץ-הדוח וב-offer.json",
+    note: "קיורציה/המרה/פריסה נבנו-מהקיים (T-7/T-8 · D-023 חי) — אפס-הון-חוץ; המדידה-החיה בקובץ-הדוח וב-offer.json",
   };
 
   const data = {

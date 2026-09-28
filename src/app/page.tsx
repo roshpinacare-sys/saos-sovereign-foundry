@@ -35,6 +35,7 @@ type Status = {
     fuel?: number | null; book?: number | null
     deployedSteem?: number; bidSbd?: number
     convertArb?: { verdict?: string; marketUsd?: number; discountPct?: number } | null
+    convert?: { verdict?: string | null; amountSbd?: number; discountBps?: number | null; expectedSteem?: number | null; executedLifetime?: number; note?: string | null; status?: string } | null
     curation?: { planned?: number | null; executed?: number; status?: string }
     autonomy?: { ok?: boolean; lastCycle?: string | null; steps?: Record<string, string> } | null
   }
@@ -192,7 +193,21 @@ export default function Home() {
                   <div><dt className="text-xs text-slate-500">דלק SP/יום</dt><dd className="font-bold tabular-nums text-emerald-400">{typeof s?.rails?.fuel === 'number' ? `$${s.rails.fuel.toFixed(4)}` : '—'}</dd></div>
                   <div><dt className="text-xs text-slate-500">ספר/יום (KPI)</dt><dd className="font-bold tabular-nums">{typeof s?.rails?.book === 'number' ? `$${s.rails.book.toFixed(4)}` : '—'}</dd></div>
                   <div><dt className="text-xs text-slate-500">הון-עובד מוצב</dt><dd className="font-bold tabular-nums">{typeof s?.rails?.deployedSteem === 'number' ? s.rails.deployedSteem.toFixed(1) : '—'} STEEM</dd></div>
-                  <div><dt className="text-xs text-slate-500">המרת-SBD</dt><dd className={`font-bold ${(s?.rails?.convertArb?.verdict ?? '').includes('POSITIVE') ? 'text-emerald-400' : 'text-slate-400'}`}>{s?.rails?.convertArb?.verdict === 'CONVERT-POSITIVE' ? `+${s.rails.convertArb?.discountPct?.toFixed(1)}% אדג׳` : s?.rails?.convertArb?.verdict === 'NO-EDGE' ? 'ללא-אדג׳' : '—'}</dd></div>
+                  <div><dt className="text-xs text-slate-500">המרת-SBD (מד)</dt><dd className={`font-bold ${(s?.rails?.convertArb?.verdict ?? '').includes('POSITIVE') ? 'text-emerald-400' : 'text-slate-400'}`}>{s?.rails?.convertArb?.verdict === 'CONVERT-POSITIVE' ? `+${s.rails.convertArb?.discountPct?.toFixed(1)}% אדג׳` : s?.rails?.convertArb?.verdict === 'NO-EDGE' ? 'ללא-אדג׳' : '—'}</dd></div>
+                  <div className="col-span-2">
+                    <dt className="text-xs text-slate-500">מסילת-ההמרה D-023 (T-8 · פאריטי-פנים $1 → ‎3.5 ימים → STEEM)</dt>
+                    <dd className="font-bold flex flex-wrap items-center gap-2">
+                      <Badge variant={s?.rails?.convert?.verdict === 'CONVERT-PLAN' ? 'default' : 'secondary'} className={s?.rails?.convert?.verdict === 'CONVERT-PLAN' ? 'bg-emerald-500/20 text-emerald-300' : ''}>
+                        {s?.rails?.convert?.verdict ?? '—'}
+                      </Badge>
+                      {s?.rails?.convert && 'amountSbd' in s.rails.convert && (
+                        <span className="text-xs text-slate-400">
+                          {s.rails.convert.amountSbd != null && s.rails.convert.amountSbd > 0 ? `${s.rails.convert.amountSbd.toFixed(3)} SBD → ~${s.rails.convert.expectedSteem?.toFixed(1) ?? '?'} STEEM` : 'המתנה-לקציר (נזיל < 1 SBD)'} · המרות-חיים: {s.rails.convert.executedLifetime ?? 0}
+                        </span>
+                      )}
+                      {s?.rails?.convert && 'status' in s.rails.convert && <span className="text-xs text-slate-400">{s.rails.convert.status}</span>}
+                    </dd>
+                  </div>
                   <div className="col-span-2">
                     <dt className="text-xs text-slate-500">קיורציה (A-12 · posting-only)</dt>
                     <dd className="font-bold">{s?.rails?.curation?.planned != null ? `${s.rails.curation.planned} הצבעות מתוכננות · ${s.rails.curation.executed ?? 0} בוצעו · ${s.rails.curation.status}` : '—'}</dd>
@@ -208,7 +223,7 @@ export default function Home() {
                   </div>
                 </dl>
                 <p className="text-[11px] leading-relaxed text-slate-500 mt-2">
-                  הרוסט-שהפך-לקוד: "מוגבל-רק-ע"י הון" היה פסיביות — קיורציה, המרה, פריסה-אוטומטית ויסוד-אמת נבנו מהקיים. המכפיל-השקט: הכל מזין SP → הדלק גדל.
+                  הרוסט-שהפך-לקוד: "מוגבל-רק-ע"י הון" היה פסיביות — קיורציה, המרה (D-023 חי במחזור-היומי), פריסה-אוטומטית ויסוד-אמת נבנו מהקיים. המכפיל-השקט: הכל מזין SP → הדלק גדל.
                 </p>
               </CardContent>
             </Card>
