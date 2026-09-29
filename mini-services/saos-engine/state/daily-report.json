@@ -1,13 +1,13 @@
 {
-  "startedAt": "2026-09-29T17:59:52.086Z",
+  "startedAt": "2026-09-29T18:33:17.616Z",
   "account": "headcorner",
   "steps": {
     "observe": {
       "name": "observe",
       "ok": true,
-      "ms": 2145,
+      "ms": 1719,
       "parity": {
-        "steemUsd": 0.06354,
+        "steemUsd": 0.06402,
         "sbdUsd": 0,
         "parity": 0.10410183098948825,
         "source": "internal-feed-fallback",
@@ -19,12 +19,12 @@
         "reason": "band-ok",
         "bps": 0
       },
-      "steemUsd": 0.06354,
+      "steemUsd": 0.06402,
       "sbdUsd": 0,
       "inventory": {
         "steem": 925.27,
         "sbd": 3.142,
-        "spOwn": 4064.6924921132854,
+        "spOwn": 4064.6989239039335,
         "rcPct": 100
       },
       "ordersOk": true,
@@ -52,7 +52,7 @@
         "authorVestsPerDay": 0,
         "curationOps": 0,
         "authorOps": 0,
-        "windowSpanDays": 6.66,
+        "windowSpanDays": 6.68,
         "windowOps": 1001,
         "measured": true,
         "fuelUsdPerDay": 0,
@@ -66,8 +66,8 @@
     "tick": {
       "name": "tick",
       "ok": true,
-      "ms": 0,
-      "runCount": 13,
+      "ms": 1,
+      "runCount": 17,
       "simFills": 0,
       "simFeesMu": 0,
       "events": 3
@@ -89,7 +89,7 @@
       "verdict": "CONVERT-HOLD",
       "amountSbd": 0,
       "marketSbdUsd": 0,
-      "impliedSbdUsd": 0.610364,
+      "impliedSbdUsd": 0.614975,
       "marketSourceNote": "no-external-SBD-market (delisted binance/poloniex/upbit/mexc) — HOLD is honest"
     },
     "execute": {
@@ -102,7 +102,7 @@
     "report": {
       "name": "report",
       "ok": true,
-      "ms": 1,
+      "ms": 0,
       "realizedSbd": -0.016486,
       "positionSteem": 139.723,
       "positionAvgCost": 0.107388,
@@ -126,5 +126,5 @@
     "honesty": "unbased ≠ profit · signing operator-gated · all numbers measured this cycle"
   },
   "ok": true,
-  "finishedAt": "2026-09-29T17:59:54.233Z"
+  "finishedAt": "2026-09-29T18:33:19.338Z"
 }

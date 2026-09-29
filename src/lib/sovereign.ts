@@ -87,10 +87,18 @@ async function engineHealth(timeoutMs = 3500): Promise<{ up: boolean; info?: Rec
   } catch { return { up: false }; }
 }
 
-/** הרמת תהליך-מנוע נפרד (detached) — שורד גם ריסטרט של שרת-Next */
-function spawnEngine(core: Core, reason: string): void {
+/** בדיקת-בעלות: האם ה-pid הזה באמת תהליך-המנוע שלנו (מנע הריגת תהליך-זר שמיחזר pid) */
+function pidIsOurEngine(pid: number): boolean {
+  try {
+    const cmd = fs.readFileSync(`/proc/${pid}/cmdline`, "utf8");
+    return cmd.includes("index.ts");
+  } catch { return false; }
+}
+
+/** הרמת תהליך-מנוע נפרד (detached) — שורד גם ריסטרט של שרת-Next; force=ניסיון-חוזר-פנימי בתוך ריפוי */
+function spawnEngine(core: Core, reason: string, force = false): void {
   const t = Date.now();
-  if (core.state.watchdog.lastSpawnAt && t - new Date(core.state.watchdog.lastSpawnAt).getTime() < SPAWN_COOLDOWN_MS) return;
+  if (!force && core.state.watchdog.lastSpawnAt && t - new Date(core.state.watchdog.lastSpawnAt).getTime() < SPAWN_COOLDOWN_MS) return;
   try {
     fs.mkdirSync(STATE_DIR, { recursive: true });
     const logFd = fs.openSync(LOG_FILE, "a");
@@ -108,22 +116,43 @@ function spawnEngine(core: Core, reason: string): void {
   }
 }
 
-/** ריפוי: סיום-תהליך-תקוע משלנו והרמה מחדש */
+/** ריפוי: סיום-תהליך-תקוע משלנו והרמה מחדש, עם לולאת-אימות-וניסיון-חוזר (תיקון T-11: מירוץ EADDRINUSE) */
 async function healEngine(core: Core, reason: string): Promise<void> {
   appendEvent(core, "heal-attempt", { reason });
   let pid = NaN;
   try { pid = parseInt(fs.readFileSync(PID_FILE, "utf8").trim(), 10); } catch { /* no pidfile yet — first boot or externally-started engine */ }
   if (Number.isFinite(pid) && pid > 0 && pidAlive(pid)) {
-    appendEvent(core, "heal-kill-stale", { pid });
-    try { process.kill(pid, "SIGTERM"); } catch { /* already gone */ }
-    await new Promise((r) => setTimeout(r, 1500));
-    try { if (pidAlive(pid)) process.kill(pid, "SIGKILL"); } catch { /* gone */ }
+    if (!pidIsOurEngine(pid)) {
+      // pid מוחזר-לתהליך-זר או cmdline לא-זמין — לא הורגים; רק מנסים להרים (הפורט יכריע)
+      appendEvent(core, "heal-skip-foreign-pid", { pid });
+    } else {
+      appendEvent(core, "heal-kill-stale", { pid });
+      try { process.kill(pid, "SIGTERM"); } catch { /* already gone */ }
+      // המתנה-עד-מוות-אמיתי (עד 5s) — מונע EADDRINUSE בהרמה-מחדש
+      for (let i = 0; i < 10 && pidAlive(pid); i++) await new Promise((r) => setTimeout(r, 500));
+      try { if (pidAlive(pid)) process.kill(pid, "SIGKILL"); } catch { /* gone */ }
+      await new Promise((r) => setTimeout(r, 300));
+    }
   }
-  spawnEngine(core, reason);
-  await new Promise((r) => setTimeout(r, 8000));
-  const h = await engineHealth();
-  core.state.watchdog.engineUp = h.up;
-  if (h.up) {
+  // הרמה + לולאת-אימות: 3 סבבים × (4s המתנה + בדיקת-דופק); אם נפל — מרימים שוב (force)
+  let up = false;
+  for (let round = 1; round <= 3 && !up; round++) {
+    if (round > 1) {
+      appendEvent(core, "heal-retry", { round });
+      spawnEngine(core, `${reason}:retry${round}`, true);
+      await new Promise((r) => setTimeout(r, 4000));
+    } else {
+      spawnEngine(core, reason);
+      await new Promise((r) => setTimeout(r, 4000));
+    }
+    const first = await engineHealth();
+    up = first.up;
+    if (!up) await new Promise((r) => setTimeout(r, 4000));
+    const second = up ? { up: true } : await engineHealth();
+    up = second.up;
+  }
+  core.state.watchdog.engineUp = up;
+  if (up) {
     core.state.watchdog.healVerified++;
     appendEvent(core, "heal-verified", { up: true });
   } else {
@@ -154,6 +183,11 @@ async function runEngineCycle(core: Core, trigger: "auto" | "kick"): Promise<{ o
   core.cycleBusy = true;
   const t0 = Date.now();
   try {
+    // תיקון T-11: אם המנוע נפל בין-הצצות-שעון — ריפוי-מקדים במקום מחזור-שנכשל
+    const pre = await engineHealth(2000);
+    if (!pre.up && !(core.state.paused && trigger === "auto")) {
+      await healEngine(core, `cycle-preheal(${trigger})`);
+    }
     const r = await fetch(`${ENGINE_HTTP}/cycle`, { method: "POST", signal: AbortSignal.timeout(90_000), cache: "no-store" });
     const j = (await r.json()) as { ok?: boolean; steps?: Record<string, unknown>; error?: string };
     const ms = Date.now() - t0;
@@ -231,11 +265,19 @@ export function ensureSovereign(by = "auto"): Core {
       armed: true,
       paused: prev?.paused ?? false,
       watchdog: {
-        checks: 0, downs: 0, heals: 0, healVerified: 0, healFailed: 0,
+        // T-11: מונים מצטברים-על-פני-אתחולים — רציפות-אמת חוצה-הפעלות (שדות-נדיפים מתאפסים)
+        checks: prev?.watchdog?.checks ?? 0, downs: prev?.watchdog?.downs ?? 0,
+        heals: prev?.watchdog?.heals ?? 0, healVerified: prev?.watchdog?.healVerified ?? 0, healFailed: prev?.watchdog?.healFailed ?? 0,
         lastCheckAt: null, engineUp: false, lastSpawnAt: null,
       },
-      cycles: { autoRuns: 0, ok: 0, fail: 0, lastAt: null, lastOk: null, lastMs: null, nextAt: null },
-      selftest: { runs: 0, lastAt: null, lastOk: null, passed: null, total: null },
+      cycles: {
+        autoRuns: prev?.cycles?.autoRuns ?? 0, ok: prev?.cycles?.ok ?? 0, fail: prev?.cycles?.fail ?? 0,
+        lastAt: prev?.cycles?.lastAt ?? null, lastOk: prev?.cycles?.lastOk ?? null, lastMs: prev?.cycles?.lastMs ?? null, nextAt: null,
+      },
+      selftest: {
+        runs: prev?.selftest?.runs ?? 0, lastAt: prev?.selftest?.lastAt ?? null, lastOk: prev?.selftest?.lastOk ?? null,
+        passed: prev?.selftest?.passed ?? null, total: prev?.selftest?.total ?? null,
+      },
       control: prev?.control?.slice(0, 20) ?? [],
     },
     events: [],
@@ -245,7 +287,11 @@ export function ensureSovereign(by = "auto"): Core {
   };
   g.__saosSovereign = core;
   control(core, "boot", by, "SovereignCore armed");
-  appendEvent(core, "boot", { pid: process.pid, resumed: prev?.paused ?? false });
+  appendEvent(core, "boot", {
+    pid: process.pid,
+    resumed: prev?.paused ?? false,
+    carriedOver: { checks: core.state.watchdog.checks, cyclesOk: core.state.cycles.ok, heals: core.state.watchdog.heals },
+  });
 
   // immediate first check + adopt-or-heal, then cadence
   void watchdogTick(core);
