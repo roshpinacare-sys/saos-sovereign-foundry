@@ -1,85 +1,39 @@
 {
-  "verdict": "OFFER-READY",
+  "verdict": "OFFER-EMPTY",
   "parityBps": 0,
-  "blocker": null,
+  "blocker": [
+    "bid-budget-below-min-level"
+  ],
   "plan": {
-    "asks": [
-      {
-        "side": "ask",
-        "amountSteem": 237.062686,
-        "unit": 0.104311,
-        "at": "2026-09-29T18:33:17.616Z"
-      },
-      {
-        "side": "ask",
-        "amountSteem": 237.062686,
-        "unit": 0.104416,
-        "at": "2026-09-29T18:33:17.616Z"
-      },
-      {
-        "side": "ask",
-        "amountSteem": 237.062686,
-        "unit": 0.10452,
-        "at": "2026-09-29T18:33:17.616Z"
-      },
-      {
-        "side": "ask",
-        "amountSteem": 214.081942,
-        "unit": 0.104625,
-        "at": "2026-09-29T18:33:17.616Z"
-      }
-    ],
-    "bids": [
-      {
-        "side": "bid",
-        "amountSbd": 0.5,
-        "unit": 0.103893,
-        "at": "2026-09-29T18:33:17.616Z"
-      },
-      {
-        "side": "bid",
-        "amountSbd": 0.5,
-        "unit": 0.103789,
-        "at": "2026-09-29T18:33:17.616Z"
-      },
-      {
-        "side": "bid",
-        "amountSbd": 0.5,
-        "unit": 0.103685,
-        "at": "2026-09-29T18:33:17.616Z"
-      },
-      {
-        "side": "bid",
-        "amountSbd": 0.5,
-        "unit": 0.103581,
-        "at": "2026-09-29T18:33:17.616Z"
-      },
-      {
-        "side": "bid",
-        "amountSbd": 0.5,
-        "unit": 0.103478,
-        "at": "2026-09-29T18:33:17.616Z"
-      }
-    ]
+    "asks": [],
+    "bids": []
   },
   "marks": {
     "paritySbdPerSteem": 0.104102,
     "source": "internal-feed-fallback",
     "lowConfidence": true,
     "internalFeed": 0.104102,
-    "dragK": 1,
+    "dragK": 1.3025,
     "floor": 0.104311,
-    "ceiling": 0.103893
+    "ceiling": 0.103893,
+    "spreadBpsFed": 605
   },
   "skew": {
-    "skew": 0.281046,
-    "askMult": 1.281046,
-    "bidMult": 0.718954,
+    "skew": -0.3,
+    "askMult": 0.7,
+    "bidMult": 1.3,
     "reason": "hummingbot-inventory-skew"
   },
   "stale": {
     "count": 0,
     "orderids": []
   },
-  "publishedAt": "2026-09-29T18:33:17.616Z"
+  "liquidity": {
+    "deployedAsks": 910.428,
+    "deployedBids": 0,
+    "askBudget": 0,
+    "bidBudget": 0.142,
+    "deployCap": 0.6
+  },
+  "publishedAt": "2026-09-29T19:24:25.106Z"
 }

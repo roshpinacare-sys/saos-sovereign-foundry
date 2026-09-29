@@ -1,10 +1,14 @@
 /**
- * index.ts — SAOS sovereign-local engine HTTP service (port 3040).
- * Keyless: reads public chain/market data, writes local state, runs cycles.
- * NEVER holds or signs with keys — execute step is operator-gated by design.
+ * index.ts — SAOS sovereign engine HTTP service (port 3040).
+ * T-12: master credential is ENGINE-HELD (operator's standing order) —
+ * signing is doctrine-capped in signer.mjs; credentials never leave memory;
+ * every broadcast is journaled with txids (never keys).
  */
 import { runCycle } from "./daily.mjs";
 import { externalParity, internalFeed, accountState, openOrders, measureAll } from "./measure.mjs";
+import { execStatus } from "./signer.mjs";
+import { soldiersPublic } from "./soldiers.mjs";
+import { intelState } from "./intel.mjs";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -26,8 +30,11 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), { status
 async function handle(req) {
   const url = new URL(req.url);
   const p = url.pathname;
-  if (p === "/health") return json({ ok: true, service: "saos-engine", account: ACCOUNT, at: new Date().toISOString(), keyless: true });
+  if (p === "/health") return json({ ok: true, service: "saos-engine", account: ACCOUNT, at: new Date().toISOString(), keyless: false, doctrine: "capped-autonomy" });
   if (p === "/status") {
+    const execLog = (() => { try { return fs.readFileSync(path.join(STATE, "exec-log.jsonl"), "utf8").trim().split("\n").filter(Boolean).slice(-8).map((l) => { try { return JSON.parse(l); } catch { return { unparsed: l.slice(0, 80) }; } }); } catch { return []; } })();
+    let exec = null;
+    try { exec = await execStatus(); } catch (e) { exec = { ok: false, reason: String(e?.message ?? e).slice(0, 80) }; }
     return json({
       ok: true, at: new Date().toISOString(), account: ACCOUNT,
       observe: readJson(path.join(STATE, "observe.json")),
@@ -35,8 +42,12 @@ async function handle(req) {
       offer: readJson(path.join(STATE, "offer.json")),
       convertPlan: readJson(path.join(STATE, "convert-plan.json")),
       daily: readJson(path.join(STATE, "daily-report.json")),
+      intel: intelState(),
+      soldiers: soldiersPublic(),
+      execution: exec,
+      execLog,
       events: readLines(path.join(STATE, "events.jsonl"), 20),
-      notes: ["keyless sovereign-local engine · state lives inside my-project · zero repo dependency"],
+      notes: ["sovereign engine · state lives inside my-project · master credential engine-held, doctrine-capped, never logged"],
     });
   }
   if (p === "/cycle") {
@@ -54,7 +65,11 @@ async function handle(req) {
     const meas = await measureAll(ACCOUNT);
     return json({ ok: meas.ok, at: new Date().toISOString(), account: ACCOUNT, ...meas });
   }
-  return json({ ok: false, error: "not-found", routes: ["/health", "/status", "/cycle", "/live", "/fills"] }, 404);
+  if (p === "/exec-status") {
+    try { return json({ ok: true, at: new Date().toISOString(), ...(await execStatus()) }); }
+    catch (e) { return json({ ok: false, error: String(e?.message ?? e).slice(0, 160) }, 500); }
+  }
+  return json({ ok: false, error: "not-found", routes: ["/health", "/status", "/cycle", "/live", "/fills", "/exec-status"] }, 404);
 }
 
 // T-11: הרמה-עמידה — אם הפורט עדיין תפוס (תהליך-קודם גוסס / TIME_WAIT) מנסים שוב לפני כניעה

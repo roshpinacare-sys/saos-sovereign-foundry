@@ -125,5 +125,38 @@ const t3 = tick({ refPrice: 0, internalFeed: 0, inventory: { steem: 10, sbd: 10 
 ok("no-market event", t3.events.some((e) => e.type === "grid.no-market"));
 eq("no-market fills", t3.fills.length, 0);
 
+/* ── 14 · T-12 steemtx: crypto + serialization vectors (offline, throwaway seed) ── */
+import { wifEncode, wifDecode, pubkeyFromSeed, serializeTx, buildTx, SEED_ORDERS, wifFor, derivePub, pubkeyBytes } from "./steemtx.mjs";
+import { sha256 } from "@noble/hashes/sha256";
+import * as secp from "@noble/secp256k1";
+
+const seed32 = sha256(Buffer.from("saos-selftest-seed", "utf8"));
+const wifT = wifEncode(seed32);
+ok("wif roundtrip", Buffer.from(wifDecode(wifT)).equals(Buffer.from(seed32)));
+ok("wif deterministic", wifEncode(seed32) === wifT);
+const pubT = pubkeyFromSeed(seed32);
+ok("pubkey STM format", pubT.startsWith("STM") && pubT.length === 53);
+ok("pubkey bytes roundtrip", Buffer.from(pubkeyBytes(pubT)).equals(Buffer.from(secp.getPublicKey(Buffer.from(seed32), true))));
+ok("seed order determinism", derivePub(SEED_ORDERS["name+role+pw"]("acc", "active", "pw")) === derivePub(SEED_ORDERS["name+role+pw"]("acc", "active", "pw")));
+ok("seed order sensitivity", derivePub(SEED_ORDERS["name+role+pw"]("acc", "active", "pw")) !== derivePub(SEED_ORDERS["pw+role+name"]("acc", "active", "pw")));
+
+const dgpoVec = { head_block_number: 92527123, head_block_id: "00bcdeff11223344556677889900aabbccddeeff" };
+const txVec = buildTx({
+  ops: [["limit_order_create", { owner: "headcorner", orderid: 123456, amount_to_sell: "0.001 STEEM", min_to_receive: "0.000 SBD", fill_or_kill: false, expiration: 1790000000 + 60 }]],
+  dgpo: dgpoVec, wifs: [wifT], nowSec: 1790000000,
+});
+eq("tx ref_block_num", txVec.json.ref_block_num, 92527123 & 0xffff);
+ok("tx ref_block_prefix", txVec.json.ref_block_prefix === Buffer.from("11223344", "hex").readUInt32LE(0));
+eq("sig length 65B", txVec.json.signatures[0].length, 130);
+ok("sig header compressed", parseInt(txVec.json.signatures[0].slice(0, 2), 16) >= 31 && parseInt(txVec.json.signatures[0].slice(0, 2), 16) <= 34);
+ok("sig deterministic", buildTx({ ops: [["limit_order_create", { owner: "headcorner", orderid: 123456, amount_to_sell: "0.001 STEEM", min_to_receive: "0.000 SBD", fill_or_kill: false, expiration: 1790000000 + 60 }]], dgpo: dgpoVec, wifs: [wifT], nowSec: 1790000000 }).json.signatures[0] === txVec.json.signatures[0]);
+
+// VESTS 6-dp: the digits themselves are the scaled uint64
+const binV = serializeTx({ ref_block_num: 1, ref_block_prefix: 2, expiration: 3, operations: [["claim_reward_balance", { account: "headcorner", reward_steem: "0.000 STEEM", reward_sbd: "0.000 SBD", reward_vests: "96.123456 VESTS" }]] });
+ok("vests 6dp serializes", binV.length > 40);
+// cancel op deterministic size: 2+4+4 +1(opcount)+1(opid) +1+10(owner) +4(orderid) +1(ext) = 28
+const binC = serializeTx({ ref_block_num: 1, ref_block_prefix: 2, expiration: 3, operations: [["limit_order_cancel", { owner: "headcorner", orderid: 42 }]] });
+eq("cancel op exact size", binC.length, 28);
+
 console.log(`\nSELFTEST ${pass}/${pass + fail} ${fail === 0 ? "PASS" : "FAIL"}`);
 process.exit(fail === 0 ? 0 : 1);

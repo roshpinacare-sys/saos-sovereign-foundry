@@ -19,6 +19,9 @@ const PATHS = {
   dailyReport: `${ENGINE}/state/daily-report.json`,
   convertPlan: `${ENGINE}/state/convert-plan.json`,
   events: `${ENGINE}/state/events.jsonl`,
+  soldiers: `${ENGINE}/state/soldiers.json`,
+  intel: `${ENGINE}/state/intel.json`,
+  execLog: `${ENGINE}/state/exec-log.jsonl`,
 };
 const ENGINE_HTTP = "http://127.0.0.1:3040";
 const CACHE_TTL_MS = 45_000;
@@ -55,6 +58,17 @@ async function engineHealth(): Promise<{ up: boolean; info?: Record<string, unkn
     return { up: true, info: (await r.json()) as Record<string, unknown> };
   } catch {
     return { up: false };
+  }
+}
+
+/* T-12: live execution status from the engine (self-proving role check inside) */
+async function engineExecStatus(): Promise<Record<string, unknown> | null> {
+  try {
+    const r = await fetch(`${ENGINE_HTTP}/exec-status`, { signal: AbortSignal.timeout(18000), cache: "no-store" });
+    if (!r.ok) return null;
+    return (await r.json()) as Record<string, unknown>;
+  } catch {
+    return null;
   }
 }
 
@@ -202,18 +216,22 @@ export async function GET() {
   if (cache && Date.now() - cache.at < CACHE_TTL_MS) {
     return NextResponse.json(cache.data);
   }
-  const [state, offer, observe, dailyReport, convertPlan, eventsTail, ordersRaw, rcRaw, accRaw, fills, eng] = await Promise.all([
+  const [state, offer, observe, dailyReport, convertPlan, eventsTail, soldiers, intel, execLogTail, ordersRaw, rcRaw, accRaw, fills, eng, execHttp] = await Promise.all([
     readJsonSafe(PATHS.state),
     readJsonSafe(PATHS.offer),
     readJsonSafe(PATHS.observe),
     readJsonSafe(PATHS.dailyReport),
     readJsonSafe(PATHS.convertPlan),
     readLinesTail(PATHS.events, 10),
+    readJsonSafe(PATHS.soldiers),
+    readJsonSafe(PATHS.intel),
+    readLinesTail(PATHS.execLog, 8),
     rpc<any[]>("condenser_api.get_open_orders", ["headcorner"]),
     rcFromRcApi(),
     rpc<any[]>("condenser_api.get_accounts", [["headcorner"]]),
     liveFills(),
     engineHealth(),
+    engineExecStatus(),
   ]);
 
   const orders = (ordersRaw ?? []).map((o) => {
@@ -302,11 +320,32 @@ export async function GET() {
   const measuredPerDay = (daily?.rollup?.measuredTotalUsdPerDay as number | undefined) ??
     Math.round(((fuelUsdPerDay ?? 0) + (authorUsdPerDay ?? 0)) * 1e4) / 1e4;
 
+  /* ── T-12: execution + soldiers + intel (public fields ONLY — no secrets) ── */
+  const sold = soldiers as Record<string, any> | null;
+  const itel = intel as Record<string, any> | null;
+  const execution = {
+    ...(execHttp ?? null),
+    log: execLogTail,
+  };
+  const soldiersPublic = {
+    deployed: !!sold?.deployed,
+    at: sold?.at ?? null,
+    accounts: (sold?.accounts ?? []).map((a: any) => ({ name: a.name, fingerprint: a.fingerprint })),
+    fundingTxid: sold?.fundingTxid ?? null,
+    fundedEach: sold?.fundedEach ?? null,
+  };
+  const intelPublic = {
+    at: itel?.at ?? null,
+    decisions: (itel?.decisions ?? []).map((d: any) => ({ kind: d.kind, decision: d.decision, reason: d.reason })),
+    book: itel?.book ?? null,
+    spreadBpsRec: itel?.spreadBpsRec ?? null,
+  };
+
   const data = {
     ok: true,
     asof: new Date().toISOString(),
     account: "headcorner",
-    engine: { up: eng.up, info: eng.info ?? null, keyless: true },
+    engine: { up: eng.up, info: eng.info ?? null, keyless: (eng.info as any)?.keyless ?? false },
     grid: state,
     observe: obs,
     offer,
@@ -316,10 +355,13 @@ export async function GET() {
     daily,
     measuredPerDay,
     events: eventsTail,
+    execution,
+    soldiers: soldiersPublic,
+    intel: intelPublic,
     sources: { kind: "sovereign-local", paths: PATHS, engineHttp: ENGINE_HTTP },
     notes: [
       "אמת-מוטבעת-על-שרשרת בלבד — real.fills נמדד מ-fill_order חי",
-      "אפס-מפתחות בשירות-זה ובמנוע: קריאת-מצב-מקומי + RPC ציבורי בלבד",
+      "T-12: מפתח-ראשי מוחזק-מנוע, מוגבל-דוקטרינה, לעולם לא נרשם/נשלח — רק טביעות-אצבע ציבוריות",
       "T-9: האחוזה בת-16-הרפו אבדה באיפוס-סביבה — המנוע נבנה-מחדש מקומית (ראה docs/ESTATE-INVENTORY.md)",
     ],
   };

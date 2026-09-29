@@ -7,5 +7,9 @@
     "dev": "bun --hot index.ts",
     "selftest": "bun selftest.mjs",
     "cycle": "bun daily.mjs"
+  },
+  "dependencies": {
+    "@noble/hashes": "^1.5.0",
+    "@noble/secp256k1": "^2.2.3"
   }
 }

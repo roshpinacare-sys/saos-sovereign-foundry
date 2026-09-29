@@ -7,8 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import {
-  Activity, Anchor, Banknote, BatteryCharging, CircleCheck, Cpu, GitBranch, HeartPulse, PauseCircle,
-  Play, PlayCircle, Radio, RefreshCw, Route, Scale, ShieldCheck, Sigma, Target, TrendingUp, Wallet, Wrench
+  Activity, Anchor, Banknote, BatteryCharging, Brain, CircleCheck, Cpu, GitBranch, HeartPulse, KeyRound, PauseCircle,
+  Play, PlayCircle, Radio, RefreshCw, Route, Scale, ShieldCheck, Sigma, Target, TrendingUp, Users, Wallet, Wrench
 } from 'lucide-react'
 
 type Order = { orderid: number; side: string; base: string; quote: string; unit: number; created: string }
@@ -45,6 +45,26 @@ type Status = {
   }
   daily?: { ok?: boolean; finishedAt?: string; rollup?: { realizedSbd?: number | null; deployedSteem?: number | null; measuredTotalUsdPerDay?: number | null; honesty?: string } }
   measuredPerDay?: number | null
+  execution?: {
+    credentialPresent?: boolean; fingerprint?: string | null; account?: string
+    armed?: boolean; standingOrder?: boolean; operatorPaused?: boolean
+    verdict?: string | null; reason?: string | null; guidance?: string | null
+    proposedPubkeys?: Record<string, string> | null
+    roles?: Record<string, { pubkey?: string; matched?: boolean }> | null
+    caps?: Record<string, number> | null
+    log?: { at?: string; tag?: string; account?: string; ok?: boolean; txid?: string | null; ops?: string[]; error?: string | null }[]
+  } | null
+  soldiers?: {
+    deployed?: boolean; at?: string | null
+    accounts?: { name?: string; fingerprint?: string }[]
+    fundingTxid?: string | null; fundedEach?: { steem?: number; sbd?: number } | null
+  } | null
+  intel?: {
+    at?: string | null
+    decisions?: { kind?: string; decision?: string; reason?: string }[]
+    book?: { bestAsk?: number | null; bestBid?: number | null; spreadBps?: number | null } | null
+    spreadBpsRec?: number | null
+  } | null
   events?: { type?: string; at?: string; [k: string]: unknown }[]
 }
 type EngineResp = { ok?: boolean; steps?: Record<string, { ok?: boolean; skipped?: boolean; verdict?: string; error?: string }>; rollup?: { measuredTotalUsdPerDay?: number | null; realizedSbd?: number | null }; finishedAt?: string; error?: string; engine?: string }
@@ -281,7 +301,7 @@ export default function Home() {
               <CardContent>
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant={engineUp ? 'default' : 'secondary'} className={engineUp ? 'bg-emerald-500/20 text-emerald-300' : ''}>
-                    {engineUp ? 'למעלה · keyless' : 'מושבת'}
+                    {engineUp ? 'למעלה · מפתח-מוחזק-מנוע · מוגבל-דוקטרינה' : 'מושבת'}
                   </Badge>
                   <Badge variant="outline" className="border-slate-700 text-slate-300">account: {s?.engine?.info?.account ?? 'headcorner'}</Badge>
                 </div>
@@ -404,7 +424,9 @@ export default function Home() {
                 </div>
                 <Progress value={Math.min(((usdPerDay ?? 0) / target) * 100, 100)} className="mt-3 h-2 bg-slate-800 [&>div]:bg-amber-400" />
                 <p className="text-[11px] leading-relaxed text-slate-500 mt-2">
-                  כנות-מלאה (T-9): הספר ריק והקיורציה רדומה — ההכנסה-הנמדדת כרגע $0/יום. שני-שערים: X-1 (מפתחות/חתימה) לפריסת-925 ה-STEEM, ו-authority פוסטינג לקיורציה. המנוע מתכנן OFFER-READY בכל-מחזור וממתין.
+                  {s?.execution?.verdict === 'VERIFIED'
+                    ? 'מצב-חי (T-12): המנוע חתום וריבוני — ספר-פאריטי פרוס בחוקי-הרצפה, צי-חיילים על-הספר, מסילת-קידום רצה, הכל מוגבל-דוקטרינה ומתועד-על-השרשרת. ההכנסה נמדדת ממילויים אמת בלבד.'
+                    : 'כל-מסילות-הביצוע קיימות וחמושות (ספר · המרה · חיילים · קידום) — מוגבלות-דוקטרינה. החסימה-היחידה: התאמת-מפתח.'}
                 </p>
               </CardContent>
             </Card>
@@ -446,6 +468,126 @@ export default function Home() {
                 </Card>
               )
             })()}
+
+            {/* ביצוע-חי · מפתח-ראשי (T-12) */}
+            <Card className="border-violet-500/25 bg-gradient-to-br from-violet-500/10 to-slate-900/60">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm text-violet-300">
+                  <KeyRound className="h-4 w-4" aria-hidden /> ביצוע-חי · מפתח-ראשי (T-12)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="outline" className={
+                    s?.execution?.verdict === 'VERIFIED' ? 'border-emerald-500/40 text-emerald-400'
+                    : s?.execution?.operatorPaused ? 'border-amber-500/40 text-amber-400'
+                    : 'border-violet-500/40 text-violet-300'
+                  }>
+                    {s?.execution?.verdict ?? (s?.execution?.credentialPresent ? 'בודק' : 'אין-תעודה')}
+                  </Badge>
+                  {s?.execution?.fingerprint && <span className="text-[11px] text-slate-500">טביעת-אצבע: {s.execution.fingerprint}</span>}
+                  {s?.execution?.armed != null && (
+                    <span className={`text-[11px] ${s.execution.armed ? 'text-emerald-400' : 'text-amber-400'}`}>
+                      {s.execution.armed ? 'חמוש · דוקטרינה-מוגבל' : 'מושהה/מנוטרל'}
+                    </span>
+                  )}
+                </div>
+                {s?.execution?.verdict === 'CREDENTIAL-MISMATCH' && (
+                  <p className="text-[11px] leading-relaxed text-amber-400/90 mt-2">
+                    כנות: התעודה שהועלתה תקינה-מבנית אך המפתחות-הנגזרים-ממנה אינם תואמים את רשויות-השרשרת של {s.execution?.account ?? 'החשבון'} (נבדק מול הרשאות חיות). שני-מסלולים: (א) העלה את סיסמת-האם-הנוכחית כ-upload/headcorner.txt — המנוע מאבטח ומאמץ אוטומטית; (ב) ב-steemit.com → Permissions החלף את המפתחות ל-proposedPubkeys — לאחר-צעד-אחד זה המערכת ריבונית-מלאה לתמיד.
+                  </p>
+                )}
+                {s?.execution?.proposedPubkeys && (
+                  <div className="mt-2 rounded-lg border border-slate-800 bg-slate-950/80 p-2 text-[10px] leading-relaxed text-slate-400 font-mono overflow-x-auto">
+                    {Object.entries(s.execution.proposedPubkeys).map(([k, v]) => <div key={k}><span className="text-violet-300">{k}</span>: {v}</div>)}
+                  </div>
+                )}
+                {s?.execution?.roles && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {Object.entries(s.execution.roles).map(([k, v]) => (
+                      <Badge key={k} variant="outline" className={v.matched ? 'border-emerald-500/40 text-emerald-400' : 'border-slate-700 text-slate-500'}>{k}:{v.matched ? 'תואם' : 'לא-תואם'}</Badge>
+                    ))}
+                  </div>
+                )}
+                {!!s?.execution?.log?.length && (
+                  <div className="mt-2 max-h-32 overflow-y-auto rounded-lg border border-slate-800 divide-y divide-slate-800/70">
+                    {[...s.execution.log].reverse().map((l, i) => (
+                      <div key={i} className="px-2 py-1.5 text-[10px] flex flex-wrap gap-x-2 items-center">
+                        <span className="text-slate-500 tabular-nums">{l.at?.replace('T', ' ')?.slice(0, 19)}</span>
+                        <Badge variant="outline" className={l.ok ? 'border-emerald-500/40 text-emerald-400' : 'border-red-500/40 text-red-400'}>{l.tag ?? l.ops?.join('+') ?? '?'}</Badge>
+                        {l.txid && <span className="text-slate-400 font-mono">tx {l.txid.slice(0, 12)}…</span>}
+                        {l.error && <span className="text-red-400">{l.error.slice(0, 60)}</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* חיילים · צי-גרידים (T-12) */}
+            <Card className="border-cyan-500/25 bg-gradient-to-br from-cyan-500/10 to-slate-900/60">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm text-cyan-300">
+                  <Users className="h-4 w-4" aria-hidden /> חיילים · צי-גרידים (T-12)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="outline" className={s?.soldiers?.deployed ? 'border-emerald-500/40 text-emerald-400' : 'border-cyan-500/40 text-cyan-300'}>
+                    {s?.soldiers?.deployed ? `פרוס · ${s.soldiers.accounts?.length ?? 0} חיילים` : 'ממתין-לפריסה'}
+                  </Badge>
+                  {s?.soldiers?.fundedEach && (
+                    <span className="text-[11px] text-slate-500">{s.soldiers.fundedEach.steem} STEEM + {s.soldiers.fundedEach.sbd} SBD לחייל</span>
+                  )}
+                </div>
+                {!!s?.soldiers?.accounts?.length && (
+                  <div className="mt-2 space-y-1">
+                    {s.soldiers.accounts.map((a, i) => (
+                      <div key={i} className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-slate-200">{a.name}</span>
+                        <span className="text-slate-500 font-mono text-[10px]">fp {a.fingerprint}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {!s?.soldiers?.deployed && (
+                  <p className="text-[11px] leading-relaxed text-slate-500 mt-2">
+                    תוכנית-הצי: 3 חיילים (hcsoldier1..3) · מומנו מהמאסטר · כל-אחד מריץ סולם-מיקרו-משלו עם-אותן-חוקי-רצפת/פאריטי — מעמיק את האחיזה בספר. הפריסה חסומה-כנות עד-התאמת-מפתח (fail-closed).
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* אינטליגנציה · מפעילה-את-עצמה (T-12) */}
+            <Card className="border-fuchsia-500/25 bg-gradient-to-br from-fuchsia-500/10 to-slate-900/60">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm text-fuchsia-300">
+                  <Brain className="h-4 w-4" aria-hidden /> אינטליגנציה · מחליטה-בעצמה (T-12)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {s?.intel?.book?.spreadBps != null && (
+                  <div className="flex items-center gap-3 text-xs text-slate-400 mb-2">
+                    <span>מרווח-ספר: <b className="tabular-nums text-slate-200">{s.intel.book.spreadBps}bps</b></span>
+                    {s.intel.book.bestAsk != null && <span>ask {s.intel.book.bestAsk.toFixed(4)}</span>}
+                    {s.intel.book.bestBid != null && <span>bid {s.intel.book.bestBid.toFixed(4)}</span>}
+                  </div>
+                )}
+                {!s?.intel?.decisions?.length ? (
+                  <p className="text-sm text-slate-500">הסריקה-הראשונה תרוץ במחזור-הבא (כל 10 דק)</p>
+                ) : (
+                  <ul className="space-y-1.5 max-h-44 overflow-y-auto">
+                    {s.intel.decisions.map((d, i) => (
+                      <li key={i} className="text-[11px] leading-relaxed flex items-start gap-1.5">
+                        <Badge variant="outline" className="border-fuchsia-500/30 text-fuchsia-300 shrink-0">{d.kind}</Badge>
+                        <span><b className="text-slate-100">{d.decision}</b> — <span className="text-slate-400">{d.reason}</span></span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <p className="text-[11px] text-slate-500 mt-2">כל-החלטה עם-נימוק — המפעיל רואה הכל, המערכת מריצה הכל בעצמה.</p>
+              </CardContent>
+            </Card>
 
             {/* פאריטי + הצעה */}
             <Card className="border-slate-800 bg-slate-900/60">
@@ -603,8 +745,8 @@ export default function Home() {
       {/* FOOTER — sticky */}
       <footer className="mt-auto border-t border-slate-800 bg-slate-950">
         <div className="mx-auto max-w-6xl px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
-          <p>אמת-מוטבעת-על-שרשרת בלבד · אפס-מפתחות · ראיות: mini-services/saos-engine/state · docs/ESTATE-INVENTORY · docs/ADOPTIONS</p>
-          <p>T-10 · ריבונות-מתמשכת · {s?.asof?.slice(11, 19) ?? ''} UTC</p>
+          <p>אמת-מוטבעת-על-שרשרת בלבד · מפתח-מוחזק-מנוע · מוגבל-דוקטרינה · לעולם לא נרשם · ראיות: mini-services/saos-engine/state</p>
+          <p>T-12 · ריבונות-מלאה · {s?.asof?.slice(11, 19) ?? ''} UTC</p>
         </div>
       </footer>
     </div>

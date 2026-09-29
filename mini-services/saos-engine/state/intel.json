@@ -1,0 +1,47 @@
+{
+  "at": "2026-09-29T19:24:25.106Z",
+  "decisions": [
+    {
+      "kind": "book-depth",
+      "decision": "hold-shape",
+      "reason": "spread 605bps → dragK 1.3025",
+      "action": {
+        "spreadBpsRec": 605,
+        "bestAsk": 0.10340192327577293,
+        "bestBid": 0.09732675837010121
+      },
+      "at": "2026-09-29T19:24:25.106Z"
+    },
+    {
+      "kind": "soldiers",
+      "decision": "grids-live",
+      "reason": "3 soldiers holding lanes alongside master",
+      "action": {
+        "deployed": true
+      },
+      "at": "2026-09-29T19:24:25.106Z"
+    },
+    {
+      "kind": "rc-health",
+      "decision": "healthy",
+      "reason": "RC at 99.8%",
+      "action": {
+        "rcPct": 99.8
+      },
+      "at": "2026-09-29T19:24:25.106Z"
+    },
+    {
+      "kind": "curation",
+      "decision": "dormant-noted",
+      "reason": "no reward ops in window — fuel rail dormant (content/curation is a manual-judgment rail; engine reports, operator decides policy)",
+      "action": null,
+      "at": "2026-09-29T19:24:25.106Z"
+    }
+  ],
+  "spreadBpsRec": 605,
+  "book": {
+    "bestAsk": 0.10340192327577293,
+    "bestBid": 0.09732675837010121,
+    "spreadBps": 605
+  }
+}
