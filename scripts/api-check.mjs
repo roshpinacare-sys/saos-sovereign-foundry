@@ -5,7 +5,7 @@
  *
  * Checks:
  *   1. every endpoint answers HTTP 200 with ok:true (never 500)
- *   2. kernel selftest 7/7
+ *   2. kernel selftest 11/11
  *   3. seal → new monotone height
  *   4. idempotency: same batchId twice → same seal, idempotent:true
  *   5. verify-pack + verify-chain (chain/seal/leaf scopes) all verified
@@ -175,7 +175,10 @@ async function main() {
   // 2. kernel selftest
   const k = await j("/api/saos/kernel");
   report("GET /kernel ok", k.status === 200 && k.body.ok === true);
-  report("kernel selftest 7/7", k.body.result?.checks?.length === 7 && k.body.result.checks.every((c) => c.pass));
+  // FIX(canonical-merge 2026-09-29): the kernel selftest grew 7→11 checks
+  // (Roast-64-a F5a/F5b/F5c/F3a) — the canonical kernel is byte-identical across
+  // foundry/platform/control-center (Domain ecosystem-drift-guard enforces).
+  report("kernel selftest 11/11", k.body.result?.checks?.length === 11 && k.body.result.checks.every((c) => c.pass));
   // roast-59: duplicate-window — the SECOND identical kernel call inside the
   // window is ALWAYS computed-fresh-but-not-re-chained (deterministic: whether
   // the first call chained or was itself suppressed, the last same-kind

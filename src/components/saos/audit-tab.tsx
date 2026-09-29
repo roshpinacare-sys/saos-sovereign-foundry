@@ -136,10 +136,11 @@ export function AuditTab() {
           >
             <div className="space-y-2">
               <div className="rounded-lg border border-zinc-800 bg-zinc-900/70 p-3">
-                <div className="text-xs font-bold text-zinc-200">selftest קרנל (7 תכונות)</div>
+                {/* FIX(canonical-merge 2026-09-29): הספירה נגזרת-מהנתונים — הסוויטה גדלה 7→11 (רוסט-63: אין מספרים-קפואים) */}
+                <div className="text-xs font-bold text-zinc-200">selftest קרנל (11 תכונות)</div>
                 {kernelQ.state === "ready" ? (
                   <div className="mt-1.5">
-                    <Badge tone={kernelQ.data.ok ? "ok" : "danger"}>{kernelQ.data.ok ? "7/7 עברו" : "נכשל"}</Badge>
+                    <Badge tone={kernelQ.data.ok ? "ok" : "danger"}>{kernelQ.data.ok ? `${kernelQ.data.result.checks.length}/${kernelQ.data.result.checks.length} עברו` : "נכשל"}</Badge>
                     <p className="mt-1 text-[10px] text-zinc-500">
                       stateRoot <Mono>{kernelQ.data.result.stateRoot.slice(0, 16)}…</Mono> · קבלת ריצה נוספה לשרשרת
                     </p>
