@@ -165,10 +165,21 @@ function openSeal(dir) {
   const { enc, meta } = encNames(dir);
   const raw = readFileSync(path.join(dir, enc), "utf8");
   if (!raw.startsWith(MAGIC)) throw new Error("unknown seal format");
+  // P0 (2026-09-29, audit מ-2): the pass must not live beside the ciphertext.
+  // Precedence — ~/.secrets/fleet-vault-pass (external) → legacy meta.pass.
+  // Matches the platform vault-seal.ts change; after scripts/reseal-no-meta.ts
+  // runs on the platform home, legacy metas hold {externalPass:true} only.
+  let pass = null;
+  try {
+    const ext = readFileSync(path.join(process.env.HOME ?? "/home/z", ".secrets", "fleet-vault-pass"), "utf8").trim();
+    if (ext) pass = ext;
+  } catch {}
   const metaJson = JSON.parse(readFileSync(path.join(dir, meta), "utf8"));
+  if (!pass && metaJson.pass) pass = metaJson.pass;
+  if (!pass) throw new Error("no vault pass: neither external secret nor seal meta");
   const payload = Buffer.from(raw.slice(MAGIC.length).replace(/\s+/g, ""), "hex");
   const salt = payload.subarray(0, 16), iv = payload.subarray(16, 28), tag = payload.subarray(28, 44), ct = payload.subarray(44);
-  const key = scryptSync(metaJson.pass, salt, 32);
+  const key = scryptSync(pass, salt, 32);
   const d = createDecipheriv("aes-256-gcm", key, iv);
   d.setAuthTag(tag);
   return JSON.parse(Buffer.concat([d.update(ct), d.final()]).toString("utf8"));
