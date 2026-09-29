@@ -1,0 +1,87 @@
+{
+  "verdict": "OFFER-BLOCKED",
+  "parityBps": 0,
+  "blocker": [
+    "VF1-ask-below-floor",
+    "VF1-bid-above-ceiling"
+  ],
+  "plan": {
+    "asks": [
+      {
+        "side": "ask",
+        "amountSteem": 237.063057,
+        "unit": 0.104319,
+        "at": "2026-09-29T15:15:06.133Z"
+      },
+      {
+        "side": "ask",
+        "amountSteem": 237.063057,
+        "unit": 0.104423,
+        "at": "2026-09-29T15:15:06.133Z"
+      },
+      {
+        "side": "ask",
+        "amountSteem": 237.063057,
+        "unit": 0.104528,
+        "at": "2026-09-29T15:15:06.133Z"
+      },
+      {
+        "side": "ask",
+        "amountSteem": 214.080829,
+        "unit": 0.104632,
+        "at": "2026-09-29T15:15:06.133Z"
+      }
+    ],
+    "bids": [
+      {
+        "side": "bid",
+        "amountSbd": 0.5,
+        "unit": 0.103903,
+        "at": "2026-09-29T15:15:06.133Z"
+      },
+      {
+        "side": "bid",
+        "amountSbd": 0.5,
+        "unit": 0.103799,
+        "at": "2026-09-29T15:15:06.133Z"
+      },
+      {
+        "side": "bid",
+        "amountSbd": 0.5,
+        "unit": 0.103695,
+        "at": "2026-09-29T15:15:06.133Z"
+      },
+      {
+        "side": "bid",
+        "amountSbd": 0.5,
+        "unit": 0.103592,
+        "at": "2026-09-29T15:15:06.133Z"
+      },
+      {
+        "side": "bid",
+        "amountSbd": 0.5,
+        "unit": 0.103488,
+        "at": "2026-09-29T15:15:06.133Z"
+      }
+    ]
+  },
+  "marks": {
+    "paritySbdPerSteem": 0.104111,
+    "source": "internal-feed-fallback",
+    "internalFeed": 0.104111,
+    "dragK": 1,
+    "floor": 0.104319,
+    "ceiling": 0.103903
+  },
+  "skew": {
+    "skew": 0.281048,
+    "askMult": 1.281048,
+    "bidMult": 0.718952,
+    "reason": "hummingbot-inventory-skew"
+  },
+  "stale": {
+    "count": 0,
+    "orderids": []
+  },
+  "publishedAt": "2026-09-29T15:15:06.133Z"
+}

@@ -1,0 +1,243 @@
+/**
+ * measure.mjs — keyless chain/market measurement (fail-closed, ladder-nodes).
+ * Everything here is public data: no keys, no secrets, no repos.
+ *
+ * T-9 additions vs the lost estate:
+ *   - measureFuel: curation + author rewards measured DIRECTLY from
+ *     account_history (7d window) → real $/day for the fuel & content rails
+ *     (previously trusted a KPI file from a repo that vanished — now we
+ *     measure ourselves; sovereignty = own your measurements).
+ */
+
+const NODES = [
+  "https://steemapi.boylikegirl.club",
+  "https://api.justyy.com",
+  "https://api.steemit.com",
+];
+
+const NAI = { "@@000000013": "SBD", "@@000000021": "STEEM" };
+
+export async function rpcCall(method, params, timeoutMs = 12000) {
+  for (const node of NODES) {
+    try {
+      const r = await fetch(node, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", method, params, id: 1 }),
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+      if (!r.ok) continue;
+      const d = await r.json();
+      if (d.error) continue;
+      return { ok: true, result: d.result, node };
+    } catch { /* next node */ }
+  }
+  return { ok: false, error: "all-nodes-failed" };
+}
+
+const amt = (x) => {
+  if (typeof x === "string") {
+    const [v, sym] = x.split(" ");
+    return sym && Number(v) > 0 ? { v: Number(v), sym } : null;
+  }
+  const o = x;
+  if (o && o.amount != null && o.nai) {
+    const v = Number(o.amount) / 10 ** (o.precision ?? 3);
+    const sym = NAI[o.nai] ?? o.nai;
+    return v > 0 ? { v, sym } : null;
+  }
+  return null;
+};
+
+const opOf = (x) => {
+  const raw = x?.op;
+  if (Array.isArray(raw)) return { type: raw[0], value: raw[1] ?? {} };
+  return { type: raw?.type ?? "", value: raw?.value ?? {} };
+};
+
+/* ── account history: big window where nodes allow, condenser fallback ───── */
+export async function accountHistory(account, limit = 1000) {
+  let r = await rpcCall("account_history_api.get_account_history", { account, start: -1, limit });
+  if (r.ok) return { hist: r.result?.history ?? [], node: r.node, api: "ah_api" };
+  r = await rpcCall("condenser_api.get_account_history", [account, -1, Math.min(limit, 100)]);
+  if (r.ok) return { hist: r.result ?? [], node: r.node, api: "condenser" };
+  return { hist: [], node: null, api: null };
+}
+
+/* ── external prices ladder (UNITS MATTER):
+ *   steemUsd  — USD per STEEM (binance STEEMUSDT → coingecko steem)
+ *   sbdUsd    — USD per SBD  (binance SBDBTC×BTCUSDT → coingecko steem-dollars)
+ *   parity    — SBD per STEEM = steemUsd/sbdUsd  ← THE BOOK UNIT (all ladder
+ *               prices on the internal market are SBD-per-STEEM).
+ * Fallbacks degrade honestly and are marked in `source`. */
+export async function externalParity() {
+  let steemUsd = 0, sbdUsd = 0, source = "none";
+  try {
+    const [s, b] = await Promise.all([
+      fetch("https://api.binance.com/api/v3/ticker/price?symbol=STEEMUSDT", { signal: AbortSignal.timeout(8000) }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      fetch("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT", { signal: AbortSignal.timeout(8000) }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    ]);
+    const sbd = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=SBDBTC", { signal: AbortSignal.timeout(8000) }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    if (s?.price) steemUsd = Number(s.price);
+    if (sbd?.price && b?.price) sbdUsd = Number(sbd.price) * Number(b.price);
+    if (steemUsd > 0 && sbdUsd > 0) source = "binance:STEEMUSDT+SBDBTC";
+  } catch { /* ladder */ }
+  if (!(steemUsd > 0) || !(sbdUsd > 0)) {
+    try {
+      const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=steem,steem-dollars&vs_currencies=usd", { signal: AbortSignal.timeout(8000) });
+      if (r.ok) {
+        const j = await r.json();
+        if (!(steemUsd > 0)) steemUsd = Number(j?.steem?.usd) || 0;
+        if (!(sbdUsd > 0)) sbdUsd = Number(j?.["steem-dollars"]?.usd) || 0;
+        if (steemUsd > 0 && sbdUsd > 0) source = (source === "none" ? "" : source + "+") + "coingecko";
+      }
+    } catch { /* ladder */ }
+  }
+  if (steemUsd > 0 && sbdUsd > 0) {
+    return { steemUsd, sbdUsd, parity: steemUsd / sbdUsd, source };
+  }
+  // last resort: internal feed is SBD-per-STEEM by definition (marked, weaker)
+  const feed = await internalFeed();
+  if (feed.median > 0) return { steemUsd: steemUsd || 0, sbdUsd: sbdUsd || 0, parity: feed.median, source: "internal-feed-fallback" };
+  return { steemUsd: steemUsd || 0, sbdUsd: sbdUsd || 0, parity: 0, source: "none" };
+}
+
+export async function internalFeed() {
+  const r = await rpcCall("condenser_api.get_feed_history", []);
+  if (!r.ok) return { median: 0, source: "none" };
+  const cm = r.result?.current_median_history;
+  const b = amt(cm?.base), q = amt(cm?.quote);
+  if (!b || !q || b.sym !== "SBD" || q.sym !== "STEEM" || !(q.v > 0)) return { median: 0, source: "none" };
+  return { median: b.v / q.v, source: "condenser:get_feed_history" };
+}
+
+export async function accountState(account) {
+  const [a, rc, dyn] = await Promise.all([
+    rpcCall("condenser_api.get_accounts", [[account]]),
+    rpcCall("rc_api.find_rc_accounts", { accounts: [account] }),
+    rpcCall("condenser_api.get_dynamic_global_properties", []),
+  ]);
+  const acc = a.ok ? a.result?.[0] : null;
+  const rcAcc = rc.ok ? rc.result?.rc_accounts?.[0] : null;
+  const out = {
+    ok: !!acc,
+    node: a.node ?? null,
+    steem: null, sbd: null, vests: null, spOwn: null, rcPct: null,
+    totalVestingShares: null, totalVestingFund: null,
+    delegIn: null,
+  };
+  if (acc) {
+    const bal = (s) => Number(String(s ?? "0").split(" ")[0]) || 0;
+    out.steem = bal(acc.balance);
+    out.sbd = bal(acc.sbd_balance);
+    out.vests = bal(acc.vesting_shares);
+    const tvs = dyn.ok ? dyn.result?.total_vesting_shares : null;
+    const tvf = dyn.ok ? dyn.result?.total_vesting_fund_steem : null;
+    if (tvs && tvf) {
+      const V = (s) => Number(String(s).split(" ")[0]) || 0;
+      out.totalVestingShares = V(tvs);
+      out.totalVestingFund = V(tvf);
+      const vestsPerSp = V(tvs) / V(tvf);
+      const delegInV = bal(acc.delegated_vesting_shares);
+      out.delegIn = delegInV;
+      out.spOwn = (out.vests - delegInV) / vestsPerSp;
+      out.spTotal = (out.vests) / vestsPerSp;
+    }
+    if (rcAcc) {
+      const cur = parseInt(rcAcc.rc_manabar?.current_mana ?? "0", 10);
+      const max = parseInt(rcAcc.max_rc ?? "0", 10);
+      out.rcPct = max > 0 ? Math.round((cur / max) * 1000) / 10 : null;
+    }
+  }
+  return out;
+}
+
+/* ── open orders (book state, keyless read) ──────────────────────────────── */
+export async function openOrders(account) {
+  const r = await rpcCall("condenser_api.get_open_orders", [account]);
+  if (!r.ok) return { ok: false, orders: [] };
+  const orders = (r.result ?? []).map((o) => {
+    const sp = o.sell_price ?? {};
+    const [bAmt, bSym] = String(sp.base ?? "? ?").split(" ");
+    const [qAmt, qSym] = String(sp.quote ?? "? ?").split(" ");
+    const unit = Number(bAmt) > 0 ? Number(qAmt) / Number(bAmt) : 0;
+    return {
+      orderid: o.orderid,
+      side: String(bSym).includes("STEEM") ? "ask" : "bid",
+      base: `${bAmt} ${bSym}`,
+      quote: `${qAmt} ${qSym}`,
+      unit: Math.round(unit * 1e6) / 1e6,
+      created: o.created,
+    };
+  });
+  return { ok: true, orders };
+}
+
+/* ── real fills + rails fuel from ONE history window ─────────────────────── */
+export async function measureAll(account, { window = 1000, nowMs = Date.now() } = {}) {
+  const { hist, node, api } = await accountHistory(account, window);
+  const fills = [];
+  const curationVests = [];   // [tsMs, vests]
+  const authorPayouts = [];   // [tsMs, sbd, steem, vests]
+  let parseErr = "";
+  const tsOf = (x) => x?.timestamp ? Date.parse(x.timestamp + (x.timestamp.endsWith("Z") ? "" : "Z")) : 0;
+  try {
+    for (const [, x] of hist ?? []) {
+      const { type, value } = opOf(x);
+      const ts = tsOf(x);
+      if (type === "fill_order" || type === "fill_order_operation") {
+        const cur = amt(value.current_pays), opn = amt(value.open_pays);
+        if (!cur || !opn) continue;
+        const isCur = value.current_owner === account;
+        const mine = isCur ? cur : opn, theirs = isCur ? opn : cur;
+        if (mine.sym === "STEEM" && theirs.sym === "SBD") fills.push({ seq: x?.trx_id ?? fills.length, at: ts, side: "ask", steem: mine.v, sbd: theirs.v });
+        else if (mine.sym === "SBD" && theirs.sym === "STEEM") fills.push({ seq: x?.trx_id ?? fills.length, at: ts, side: "bid", steem: theirs.v, sbd: mine.v });
+      } else if (type === "curation_reward" || type === "curation_reward_operation") {
+        const v = amt(value.reward);
+        if (v && v.sym === "VESTS") curationVests.push([ts, v.v]);
+      } else if (type === "author_reward" || type === "author_reward_operation") {
+        const sbd = amt(value.sbd_payout), st = amt(value.steem_payout), vs = amt(value.vesting_payout);
+        authorPayouts.push([ts, sbd?.v ?? 0, st?.v ?? 0, vs?.v ?? 0]);
+      }
+    }
+  } catch (e) { parseErr = String(e?.message ?? e).slice(0, 140); }
+
+  const DAY = 86_400_000;
+  const stamps = (hist ?? []).map(([, x]) => tsOf(x)).filter((t) => t > 0);
+  const newest = stamps.length ? Math.max(...stamps) : 0;
+  const oldest = stamps.length ? Math.min(...stamps) : 0;
+  const spanDays = newest > oldest ? (newest - oldest) / DAY : 0;
+  // per-day rates use the ACTUAL covered span (never extrapolate from a
+  // shorter window as if it were 7d — honesty about denominators)
+  const spanFor7 = Math.min(Math.max(spanDays, 1e-9), 7);
+  const cur7 = curationVests.filter(([t]) => t >= nowMs - 7 * DAY);
+  const vestsPerDay = cur7.length ? cur7.reduce((s, [, v]) => s + v, 0) / spanFor7 : 0;
+  const auth7 = authorPayouts.filter(([t]) => t >= nowMs - 7 * DAY);
+  const authorSbdPerDay = auth7.length ? auth7.reduce((s, [, a]) => s + a, 0) / spanFor7 : 0;
+  const authorVestsPerDay = auth7.length ? auth7.reduce((s, [,, , v]) => s + v, 0) / spanFor7 : 0;
+  const lastFillAt = fills.length ? Math.max(...fills.map((f) => f.at)) : null;
+
+  return {
+    ok: hist.length > 0, node, api, histLen: hist.length, window,
+    fills, parseErr,
+    lastFillAt: lastFillAt ? new Date(lastFillAt).toISOString() : null,
+    fuel: {
+      curationVestsPerDay: Math.round(vestsPerDay * 1e3) / 1e3,
+      authorSbdPerDay: Math.round(authorSbdPerDay * 1e6) / 1e6,
+      authorVestsPerDay: Math.round(authorVestsPerDay * 1e3) / 1e3,
+      curationOps: cur7.length,
+      authorOps: auth7.length,
+      windowSpanDays: Math.round(spanDays * 100) / 100,
+      windowOps: (hist ?? []).length,
+      measured: true,
+    },
+  };
+}
+
+/* vests/day → SP/day → USD/day given chain totals + steemUsd */
+export function fuelToUsdPerDay(vestsPerDay, totalVestingShares, totalVestingFund, steemUsd) {
+  if (!(totalVestingShares > 0) || !(totalVestingFund > 0) || !(steemUsd > 0)) return null;
+  const vestsPerSp = totalVestingShares / totalVestingFund;
+  const spPerDay = vestsPerDay / vestsPerSp;
+  return Math.round(spPerDay * steemUsd * 1e4) / 1e4;
+}

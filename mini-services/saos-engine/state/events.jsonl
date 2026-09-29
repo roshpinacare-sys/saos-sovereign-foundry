@@ -1,0 +1,6 @@
+{"type":"observe.done","at":"2026-09-29T15:15:06.133Z","fills":37,"parity":0.10411085451285704}
+{"type":"grid.tick","at":"2026-09-29T15:15:06.133Z","runCount":0,"refPrice":0.10411085451285704,"internalFeed":0.10411085451285704,"dragK":1,"inv":{"steem":925.27,"sbd":3.142}}
+{"type":"sweep.scan","at":"2026-09-29T15:15:06.133Z","grid":"sweep","dustSteem":0.2699999999999818}
+{"type":"anchor.quote","at":"2026-09-29T15:15:06.133Z","grid":"anchor-quote","bid":0.10390263280383133,"ask":0.10431907622188274}
+{"type":"offer.published","at":"2026-09-29T15:15:06.133Z","verdict":"OFFER-BLOCKED","asks":4,"bids":5}
+{"type":"convert.planned","at":"2026-09-29T15:15:06.133Z","verdict":"CONVERT-HOLD","amountSbd":0}
