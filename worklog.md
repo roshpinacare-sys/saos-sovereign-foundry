@@ -166,3 +166,21 @@ Stage Summary:
 - Chain truth: 21 open orders · ~929.5 STEEM working ≥ floor · realized −0.016 SBD (honest breakeven) · 35 real fills windowed · fuel $4.24/day measured
 - Profitability honest verdict: the SBD-harvest loop is now CLOSED mechanically — ask fills → convert rail (auto when ≥1 SBD) → +40.8% face edge → STEEM back to book; ladder is law-compliant with the fresh value floor (r134-VF1); $1000/day still gated ONLY by X-2 operator capital — every keyless rail now exists and self-executes
 - Artifacts: saos-dex@main b120b8c+8d08b12+90b3392+final-state · Defi@main 81ec3da+d3f1465+22662c3 · my-project a0dd221 · worklog updated
+
+---
+Task ID: 9 (T-9 · "תמשיך מאיפה שעצרת" — sovereign-local rebuild from existing)
+Agent: AGENT-A (Z.ai Code · שיחת-המקור · main orchestrator)
+Task: Resume T-9 (per /home/z/TODO): finish engine b/c, wire cockpit d, estate docs e, verify+commit f
+
+Work Log:
+- Recovery-first: read worklog (8 prior rounds) + TODO file → found T-9a DONE (sovereignty scan: /home/z/audit 16-repo estate WIPED by env reset, filebin empty, PAT+keys gone) + T-9b in_progress (engine files existed, service DOWN)
+- T-9b/c DONE: selftest 45/45 → engine started :3040 → live cycle OK. Then 4 honesty bugs found & fixed: (1) openOrders ok-flag not propagated — empty-book vs failed-read indistinguishable → ordersOk + rollup null-honesty; (2) fuel=0 unexplained → deep-scan 10001 ops: last curation 2026-09-09 — rails DORMANT not broken → windowNote; (3) SBD external market EVAPORATED (measured: SBDBTC "Invalid symbol" binance, delisted poloniex/upbit/mexc/lbank; coinpaprika is_active:false) → added coinpaprika STEEM source + lowConfidence flag on internal-feed fallback + convert HOLD-honest with display-only impliedSbdUsd proxy ($0.61, never arms); (4) selftest return-shape bug (step response lacked new fields) + daily-report written before ok/report-step existed → DEGRADED false-alarm in cockpit — write moved to runCycle end
+- selftest now 47/47 PASS; engine clean-restarted (found + killed a stale double-process holding :3040, EADDRINUSE in log)
+- T-9d DONE: /api/saos/status fully rewired from dead /home/z/audit paths → mini-services/saos-engine/state + live chain reads; NEW /api/saos/engine proxy (GET status / POST cycle); dashboard rebuilt: engine card (up/keyless/run-cycle button), CYCLE-OK autonomy badge, honest book-empty card (925.27 STEEM idle awaiting X-1), rails with fuelHistory + convert proxy note, mission card $0.00 measured truth, events journal card; removed dead signer fetch; mobile title truncation fixed
+- T-9e DONE: docs/ESTATE-INVENTORY.md (lost/surviving/measured-today/3-gates X-1·C-1·X-2) + docs/ADOPTIONS.md (7 live adoptions: Hummingbot inventory-skew, MakerDAO PSM hysteresis, Curve dragK, Chainlink oracle ladder+lowConfidence, Uniswap v3 concentration, Aave fail-closed gates, DeFiLlama public evidence + Luna lesson: never self-anchored parity)
+- T-9f DONE: lint 0 errors · browser-verified (desktop+mobile, golden path: clicked הרץ-מחזור → all 6 steps תקין → data refreshed · footer natural-push 1872>900 · 0 console errors) · committed my-project@ff53733
+
+Stage Summary:
+- WHY no visible progress (operator's question, answered): env resets wiped /home/z/audit + cockpit kept reading dead paths — now the engine lives INSIDE my-project (state survives resets), zero external dependency
+- Honest economics today: book EMPTY (0 orders, 925.27 STEEM + 3.142 SBD liquid), fuel $0/day (curation dormant since 09-09), realized −0.016 SBD, measured $0.00/day; parity 0.1041 from chain feed (last oracle standing), OFFER-READY plan ready every cycle behind OPERATOR-GATE X-1
+- Artifacts: mini-services/saos-engine (47/47) · /api/saos/{status,engine} · page.tsx rebuilt · docs/ESTATE-INVENTORY.md · docs/ADOPTIONS.md · my-project@ff53733 · worklog updated
