@@ -59,6 +59,13 @@ type Status = {
     accounts?: { name?: string; fingerprint?: string }[]
     fundingTxid?: string | null; fundedEach?: { steem?: number; sbd?: number } | null
   } | null
+  curator?: {
+    verdict?: string | null; day?: string | null
+    votesToday?: number; totalVotes?: number; vpEff?: number | null; maxPerDay?: number | null
+    txid?: string | null; candidatesScanned?: number | null
+    lastVotes?: { author?: string; permlink?: string; weight?: number; txid?: string | null }[]
+    rejectedTop?: string[] | null
+  } | null
   intel?: {
     at?: string | null
     decisions?: { kind?: string; decision?: string; reason?: string }[]
@@ -555,6 +562,45 @@ export default function Home() {
                     תוכנית-הצי: 3 חיילים (hcsoldier1..3) · מומנו מהמאסטר · כל-אחד מריץ סולם-מיקרו-משלו עם-אותן-חוקי-רצפת/פאריטי — מעמיק את האחיזה בספר. הפריסה חסומה-כנות עד-התאמת-מפתח (fail-closed).
                   </p>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* קיורציה · מסילת-דלק (T-13) */}
+            <Card className="border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 to-slate-900/60">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm text-emerald-300">
+                  <BatteryCharging className="h-4 w-4" aria-hidden /> קיורציה · מסילת-דלק (T-13)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="outline" className={s?.curator?.verdict === 'VOTED' ? 'border-emerald-500/40 text-emerald-400' : s?.curator?.verdict === 'DAY-CAP' ? 'border-amber-500/40 text-amber-400' : 'border-slate-500/40 text-slate-400'}>
+                    {s?.curator?.verdict === 'VOTED' ? 'חי · מצביע'
+                      : s?.curator?.verdict === 'DAY-CAP' ? 'מכסה-יומית מלאה'
+                      : s?.curator?.verdict ? s.curator.verdict : 'מתחמם'}
+                  </Badge>
+                  {s?.curator?.vpEff != null && (
+                    <span className="text-[11px] text-slate-500">VP אפקטיבי <b className="tabular-nums text-slate-300">{s.curator.vpEff}%</b> · רצפה 60%</span>
+                  )}
+                </div>
+                <dl className="grid grid-cols-3 gap-2 mt-3">
+                  <div><dt className="text-xs text-slate-500">הצבעות-היום</dt><dd className="font-bold tabular-nums text-emerald-400">{s?.curator?.votesToday ?? 0}/{s?.curator?.maxPerDay ?? 10}</dd></div>
+                  <div><dt className="text-xs text-slate-500">סה״כ</dt><dd className="font-bold tabular-nums">{s?.curator?.totalVotes ?? 0}</dd></div>
+                  <div><dt className="text-xs text-slate-500">מועמדים-נסרקו</dt><dd className="font-bold tabular-nums">{s?.curator?.candidatesScanned ?? '—'}</dd></div>
+                </dl>
+                {!!s?.curator?.lastVotes?.length && (
+                  <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                    {s.curator.lastVotes.map((v, i) => (
+                      <div key={i} className="flex items-center justify-between text-xs gap-2">
+                        <span className="font-bold text-slate-200 truncate">{v.author}<span className="text-slate-500 font-normal"> · {v.permlink?.slice(0, 24)}</span></span>
+                        <span className="text-slate-500 font-mono text-[10px] shrink-0">w{(v.weight ?? 0) / 100}% · {v.txid?.slice(0, 8)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="text-[11px] leading-relaxed text-slate-500 mt-2">
+                  ה-VP המלא (98%+) ישב בטל — עכשיו 4034 SP עובדים: הצבעות-בוקר טריות עם-ירידת-משקל-לפי-גיל, מכסה-יומית, רצפת-VP, אפס-הצבעה-עצמית, סינון-ספאם. מפתח-פרסום בלבד — פעולת-הצבעה לא-יכולה להזיז כספים. התשואה נמדדת מ-curation_reward חי (מסילת-הדלק).
+                </p>
               </CardContent>
             </Card>
 

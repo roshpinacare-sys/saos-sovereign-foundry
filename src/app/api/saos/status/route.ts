@@ -20,6 +20,7 @@ const PATHS = {
   convertPlan: `${ENGINE}/state/convert-plan.json`,
   events: `${ENGINE}/state/events.jsonl`,
   soldiers: `${ENGINE}/state/soldiers.json`,
+  curator: `${ENGINE}/state/curator.json`,
   intel: `${ENGINE}/state/intel.json`,
   execLog: `${ENGINE}/state/exec-log.jsonl`,
 };
@@ -216,7 +217,7 @@ export async function GET() {
   if (cache && Date.now() - cache.at < CACHE_TTL_MS) {
     return NextResponse.json(cache.data);
   }
-  const [state, offer, observe, dailyReport, convertPlan, eventsTail, soldiers, intel, execLogTail, ordersRaw, rcRaw, accRaw, fills, eng, execHttp] = await Promise.all([
+  const [state, offer, observe, dailyReport, convertPlan, eventsTail, soldiers, curator, intel, execLogTail, ordersRaw, rcRaw, accRaw, fills, eng, execHttp] = await Promise.all([
     readJsonSafe(PATHS.state),
     readJsonSafe(PATHS.offer),
     readJsonSafe(PATHS.observe),
@@ -224,6 +225,7 @@ export async function GET() {
     readJsonSafe(PATHS.convertPlan),
     readLinesTail(PATHS.events, 10),
     readJsonSafe(PATHS.soldiers),
+    readJsonSafe(PATHS.curator),
     readJsonSafe(PATHS.intel),
     readLinesTail(PATHS.execLog, 8),
     rpc<any[]>("condenser_api.get_open_orders", ["headcorner"]),
@@ -289,7 +291,9 @@ export async function GET() {
     fuel: fuelUsdPerDay,
     author: authorUsdPerDay,
     fuelWindowNote: obs?.fuel?.windowNote ?? null,
-    fuelHistory: "קיור-אחרון נמדד 2026-09-09 (סריקה-עמוקה 10001 ops) — המסילה רדומה, ממתינה ל-authority פוסטינג",
+    fuelHistory: obs?.fuel?.curationOps > 0
+      ? `מסילת-הדלק חיה — ${obs.fuel.curationOps} פעולות-קיורציה בחלון-המדידה (${obs.fuel.windowSpanDays}d)`
+      : "קיורציה אחרונה נמדדה 2026-09-09 — המסילה הוצתה-מחדש ב-T-13 (curator חי), התשואה תימדד מהפאייאוטים-הבאים",
     deployedSteem: orderTotals.askedSteem,
     bidSbd: orderTotals.bidSbd,
     bookEmpty: orders.length === 0,
@@ -334,6 +338,21 @@ export async function GET() {
     fundingTxid: sold?.fundingTxid ?? null,
     fundedEach: sold?.fundedEach ?? null,
   };
+  /* T-13: curation rail — live measured state (public fields only) */
+  const curatorPublic = curator
+    ? {
+        verdict: curator.verdict ?? null,
+        day: curator.day ?? null,
+        votesToday: Array.isArray(curator.votesToday) ? curator.votesToday.length : 0,
+        totalVotes: curator.totalVotes ?? 0,
+        vpEff: curator.vpEff ?? null,
+        maxPerDay: curator.maxPerDay ?? null,
+        txid: curator.txid ?? null,
+        candidatesScanned: curator.candidatesScanned ?? null,
+        lastVotes: (curator.votesToday ?? []).slice(-5).map((v: any) => ({ author: v.author, permlink: v.permlink, weight: v.weight, txid: v.txid })),
+        rejectedTop: curator.rejectedTop ?? null,
+      }
+    : null;
   const intelPublic = {
     at: itel?.at ?? null,
     decisions: (itel?.decisions ?? []).map((d: any) => ({ kind: d.kind, decision: d.decision, reason: d.reason })),
@@ -357,6 +376,7 @@ export async function GET() {
     events: eventsTail,
     execution,
     soldiers: soldiersPublic,
+    curator: curatorPublic,
     intel: intelPublic,
     sources: { kind: "sovereign-local", paths: PATHS, engineHttp: ENGINE_HTTP },
     notes: [

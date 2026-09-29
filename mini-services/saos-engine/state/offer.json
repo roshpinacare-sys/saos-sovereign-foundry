@@ -13,10 +13,10 @@
     "source": "internal-feed-fallback",
     "lowConfidence": true,
     "internalFeed": 0.104102,
-    "dragK": 1.3025,
+    "dragK": 1.0205,
     "floor": 0.104311,
     "ceiling": 0.103893,
-    "spreadBpsFed": 605
+    "spreadBpsFed": 41
   },
   "skew": {
     "skew": -0.3,
@@ -35,5 +35,5 @@
     "bidBudget": 0.142,
     "deployCap": 0.6
   },
-  "publishedAt": "2026-09-29T19:24:25.106Z"
+  "publishedAt": "2026-09-29T19:49:10.329Z"
 }

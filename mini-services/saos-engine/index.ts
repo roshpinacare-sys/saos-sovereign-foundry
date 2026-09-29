@@ -9,6 +9,7 @@ import { externalParity, internalFeed, accountState, openOrders, measureAll } fr
 import { execStatus } from "./signer.mjs";
 import { soldiersPublic } from "./soldiers.mjs";
 import { intelState } from "./intel.mjs";
+import { curatorState } from "./curator.mjs";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -43,6 +44,7 @@ async function handle(req) {
       convertPlan: readJson(path.join(STATE, "convert-plan.json")),
       daily: readJson(path.join(STATE, "daily-report.json")),
       intel: intelState(),
+      curator: curatorState(),
       soldiers: soldiersPublic(),
       execution: exec,
       execLog,

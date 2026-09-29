@@ -158,5 +158,57 @@ ok("vests 6dp serializes", binV.length > 40);
 const binC = serializeTx({ ref_block_num: 1, ref_block_prefix: 2, expiration: 3, operations: [["limit_order_cancel", { owner: "headcorner", orderid: 42 }]] });
 eq("cancel op exact size", binC.length, 28);
 
+/* vote op serializes (posting-authority op — T-13 curator rail) */
+const binVote = serializeTx({ ref_block_num: 1, ref_block_prefix: 2, expiration: 3, operations: [["vote", { voter: "headcorner", author: "someone", permlink: "a-permlink", weight: 5000 }]] });
+ok("vote op serializes", binVote.length > 30);
+// negative weight (downvote) must serialize too — policy never emits it, chain accepts it
+// (tiny names ⇒ 21 bytes total: 11 header + 1 count + 1 opid + 2+2+2 strs + 2 weight)
+const binDown = serializeTx({ ref_block_num: 1, ref_block_prefix: 2, expiration: 3, operations: [["vote", { voter: "a", author: "b", permlink: "c", weight: -1000 }]] });
+eq("vote negative weight size", binDown.length, 21);
+
+/* ── 15 · T-13 curator: pure planner vectors (deterministic, offline) ── */
+import { filterCandidates, weightForAge, vpEffPct, dayKeyOf, curatorPolicy } from "./curator.mjs";
+
+const CP = curatorPolicy();
+const NOW = Date.parse("2026-09-29T19:00:00Z");
+const mkPost = (author, permlink, ageMin, extra = {}) => ({
+  author, permlink, tag: "steem", createdMs: NOW - ageMin * 60000,
+  title: `A reasonable title ${permlink}`, bodyLen: 900, pendingSbd: 0.5, archived: false, votedByUs: false, ...extra,
+});
+const posts = [
+  mkPost("alice", "fresh", 30),
+  mkPost("bob", "stale", 1300),                                    // too old
+  mkPost("carol", "young", 5),                                     // too young
+  mkPost("dave", "spam", 60, { bodyLen: 50 }),                     // short body
+  mkPost("headcorner", "self", 60),                                // self-fleet
+  mkPost("erin", "voted", 60, { votedByUs: true }),                // already voted on-chain
+  mkPost("frank", "hot", 60, { pendingSbd: 99 }),                  // bandwagon
+  mkPost("grace", "closed", 60, { archived: true }),               // payout closed
+  mkPost("alice", "second", 60),                                   // author-cap (2nd alice)
+  mkPost("heidi", "caps", 60, { title: "SCREAMING SPAM TITLE HERE" }), // spam-title
+  mkPost("ivan", "ok1", 240),
+  mkPost("judy", "ok2", 720),
+];
+const planC = filterCandidates({ posts, voter: "headcorner", policy: CP, nowMs: NOW });
+eq("curator selected", planC.selected.map((v) => v.author), ["alice", "ivan", "judy"]);
+eq("curator alice weight decays", planC.selected[0].weight, weightForAge(30, CP));
+ok("curator fresh > old weight", planC.selected[0].weight > planC.selected[2].weight);
+eq("curator weight in band", weightForAge(30, CP) <= CP.baseWeightPct * 100 && weightForAge(1300, CP) === CP.minWeightPct * 100, true);
+ok("curator rejections honest", planC.rejected.some((r) => r.reason === "too-old") && planC.rejected.some((r) => r.reason === "short-body") && planC.rejected.some((r) => r.reason === "self-fleet") && planC.rejected.some((r) => r.reason === "already-voted") && planC.rejected.some((r) => r.reason === "bandwagon") && planC.rejected.some((r) => r.reason === "author-cap"));
+
+/* day-cap: 10 already voted today ⇒ nothing new */
+const capped = filterCandidates({ posts: [mkPost("kate", "late", 60)], voter: "x", policy: CP, nowMs: NOW, votesToday: 10 });
+eq("curator day-cap", capped.selected.length, 0);
+ok("curator day-cap reason", capped.rejected.some((r) => r.reason === "day-cap"));
+
+/* determinism: same input twice ⇒ byte-identical plan */
+const again = filterCandidates({ posts, voter: "headcorner", policy: CP, nowMs: NOW });
+eq("curator deterministic", again.selected, planC.selected);
+
+/* VP effective: mana/(vests×1e6) */
+eq("vpEff math", vpEffPct(6.094470913801e12, 7123991.568646), 85.5);
+eq("vpEff zero vests", vpEffPct(100, 0), null);
+eq("day key", dayKeyOf("2026-09-29T19:00:00.000Z"), "2026-09-29");
+
 console.log(`\nSELFTEST ${pass}/${pass + fail} ${fail === 0 ? "PASS" : "FAIL"}`);
 process.exit(fail === 0 ? 0 : 1);

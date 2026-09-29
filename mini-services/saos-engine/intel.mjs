@@ -97,7 +97,19 @@ export async function runIntel({ obs, offer, convert, now }) {
   if (rc != null) push("rc-health", rc < 20 ? "conserve" : "healthy", `RC at ${rc}%`, { rcPct: rc });
 
   const fuel = obs?.fuel;
-  if (fuel?.curationOps === 0 && fuel?.authorOps === 0) {
+  /* T-13: the curation rail is LIVE (curator.mjs) — intel reports its real
+   * state each cycle instead of only noting dormancy. When disabled by the
+   * operator, the honest dormant note returns. */
+  const cur = readJson(path.join(STATE, "curator.json"), null);
+  const curConf = cur?.enabled ?? true;
+  if (cur && curConf) {
+    const live = cur.verdict === "VOTED";
+    push("curation", live ? "curator-live" : "curator-armed",
+      live
+        ? `voted ${cur.voted?.length ?? 0} today (${cur.totalVotes ?? 0} total) · VP ${cur.vpEff ?? "?"}% · txid ${String(cur.txid ?? "").slice(0, 12)}`
+        : `rail armed, verdict ${cur.verdict} today (VP ${cur.vpEff ?? "?"}%) — gates hold until candidates pass`,
+      { votesToday: cur.votesTodayCount ?? 0, vpEff: cur.vpEff ?? null, verdict: cur.verdict });
+  } else if (fuel?.curationOps === 0 && fuel?.authorOps === 0) {
     push("curation", "dormant-noted", "no reward ops in window — fuel rail dormant (content/curation is a manual-judgment rail; engine reports, operator decides policy)", null);
   }
 

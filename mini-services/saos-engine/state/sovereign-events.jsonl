@@ -103,3 +103,8 @@
 {"at":"2026-09-29T19:24:10.082Z","kind":"heal-kill-stale","pid":3478}
 {"at":"2026-09-29T19:24:10.911Z","kind":"heal-spawn","reason":"operator-forced","pid":3637}
 {"at":"2026-09-29T19:24:14.918Z","kind":"heal-verified","up":true}
+{"at":"2026-09-29T19:32:42.398Z","kind":"cycle-ok(auto)","ms":9787,"steps":8,"verdict":"OFFER-EMPTY"}
+{"at":"2026-09-29T19:42:32.614Z","kind":"heal-attempt","reason":"cycle-preheal(auto)"}
+{"at":"2026-09-29T19:42:32.639Z","kind":"heal-spawn","reason":"cycle-preheal(auto)","pid":4796}
+{"at":"2026-09-29T19:42:36.643Z","kind":"heal-verified","up":true}
+{"at":"2026-09-29T19:42:44.676Z","kind":"cycle-error(auto)","ms":12065,"error":"fetch failed"}

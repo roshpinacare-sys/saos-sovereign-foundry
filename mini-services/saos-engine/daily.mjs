@@ -22,6 +22,7 @@ import { runIntel } from "./intel.mjs";
 import { executeOps, executeAs, armedConf, execPaused, masterAccount } from "./signer.mjs";
 import { deploySoldiers, runSoldierGrids, soldiersState } from "./soldiers.mjs";
 import { postDailyReport } from "./promo.mjs";
+import { runCurator } from "./curator.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const STATE = path.join(DIR, "state");
@@ -169,6 +170,13 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
       appendLine(path.join(STATE, "events.jsonl"), { type: "convert.planned", at: now, verdict: plan.verdict, edgeBps: plan.edgeBps, amountSbd: plan.amountSbd });
     }
     return { verdict: plan.verdict, amountSbd: plan.amountSbd, edgeBps: plan.edgeBps, marketSbdUsd: out.marketSbdUsd, impliedSbdUsd: out.impliedSbdUsd, marketSourceNote: out.marketSourceNote };
+  });
+
+  /* 5b · curate (T-13): the measured fuel rail — VP put to work. Posting-key
+   * only; a vote op can never move funds. Daily-capped, VP-floored, journaled. */
+  report.steps.curate = await stepWrap("curate", async () => {
+    const out = await runCurator({ now });
+    return { verdict: out.verdict, votes: out.voted?.length ?? 0, txid: out.txid ?? null, vpEff: out.vpEff ?? null, votesToday: out.votesTodayCount ?? 0, error: out.error ?? null };
   });
 
   /* 6 · execute (SIGNING — the X-1 rail, engine-held, doctrine-capped) */

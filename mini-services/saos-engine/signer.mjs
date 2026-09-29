@@ -77,15 +77,22 @@ export function defaultArmedConf() {
     minRcPct: 20,
     soldiers: { enabled: true, count: 3, prefix: "hcsoldier", steemEach: 10, sbdEach: 2, minLevel: 0.2 },
     promo: { armed: true, perDay: 1, tags: ["steem", "defi", "marketmaking", "saos"] },
+    // T-13: the measured fuel rail — VP put to work (posting key only, vote op
+    // can never move funds). The operator ordered it implemented and running.
+    curate: { enabled: true, maxPerDay: 10, baseWeightPct: 50, minWeightPct: 20, minVpEffPct: 60 },
   };
 }
 
 export function armedConf() {
   const d = readJson(ARMED_FILE, null);
-  if (d) return d;
-  const def = defaultArmedConf();
-  try { fs.mkdirSync(SECRETS, { recursive: true }); fs.writeFileSync(ARMED_FILE, JSON.stringify(def, null, 2)); } catch { /* read-only fs */ }
-  return def;
+  if (!d) {
+    const def = defaultArmedConf();
+    try { fs.mkdirSync(SECRETS, { recursive: true }); fs.writeFileSync(ARMED_FILE, JSON.stringify(def, null, 2)); } catch { /* read-only fs */ }
+    return def;
+  }
+  // shallow-merge: the operator's file wins on keys it defines, new doctrine
+  // blocks (e.g. T-13 curate) appear without touching the operator's file
+  return { ...defaultArmedConf(), ...d };
 }
 
 export function execPaused() { return readJson(PAUSE_FILE, { paused: false })?.paused === true; }
@@ -201,6 +208,7 @@ export async function execStatus() {
     caps: { maxOpsPerCycle: conf.maxOpsPerCycle, maxAskSteemPerCycle: conf.maxAskSteemPerCycle, maxBidSbdPerCycle: conf.maxBidSbdPerCycle, minRcPct: conf.minRcPct },
     soldiers: conf.soldiers,
     promo: conf.promo,
+    curate: conf.curate ?? null,
     roles: ver?.roles ?? null,
     matchedOrder: ver?.matchedOrder ?? null,
     reason: ver?.reason ?? null,

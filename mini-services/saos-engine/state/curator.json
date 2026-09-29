@@ -1,0 +1,240 @@
+{
+  "enabled": true,
+  "at": "2026-09-29T19:45:06.126Z",
+  "day": "2026-09-29",
+  "votesTodayCount": 0,
+  "maxPerDay": 10,
+  "verdict": "VOTED",
+  "txid": "8fd4f634bf83e6487fb15a0384f2d03947fb1a76",
+  "error": null,
+  "vpEff": 85.5,
+  "voted": [
+    {
+      "author": "tradelover",
+      "permlink": "my-daily-steem-hop-gaming-c92da0ca18e81",
+      "weight": 4948,
+      "ageMinutes": 31,
+      "tag": "steem",
+      "ok": true,
+      "txid": "8fd4f634bf83e6487fb15a0384f2d03947fb1a76",
+      "error": null
+    },
+    {
+      "author": "nhriyad",
+      "permlink": "jamshed-jhal-bitan-char-majlishpur",
+      "weight": 4942,
+      "ageMinutes": 33,
+      "tag": "steem",
+      "ok": true,
+      "txid": "ff69bc5c50c414150cd038e5317fdcbbe69ce2af",
+      "error": null
+    },
+    {
+      "author": "snehuu",
+      "permlink": "ja2ty-jugando-a-mi-favorito-de-la-infancia-el-juego-sky-tower",
+      "weight": 4927,
+      "ageMinutes": 39,
+      "tag": "steem",
+      "ok": true,
+      "txid": "e74b148e4899dd69ed2bd8ee748b106b6c28b164",
+      "error": null
+    },
+    {
+      "author": "bountyportals",
+      "permlink": "what-to-keep-until-the-payout-is-complete",
+      "weight": 4915,
+      "ageMinutes": 44,
+      "tag": "crypto",
+      "ok": true,
+      "txid": "d0f0d937f25b686f684ec200c522bcc644769996",
+      "error": null
+    },
+    {
+      "author": "jannat7",
+      "permlink": "black-and-white-flower-and-tree-art",
+      "weight": 4869,
+      "ageMinutes": 62,
+      "tag": "steem",
+      "ok": true,
+      "txid": "2ba3716ddf131eafbf64ede0f13d096cba41b3aa",
+      "error": null
+    },
+    {
+      "author": "d3an",
+      "permlink": "daily-ronin-price-report-29-9-2026",
+      "weight": 4796,
+      "ageMinutes": 91,
+      "tag": "crypto",
+      "ok": true,
+      "txid": "7b1fbeab835361d80065dd8498c808feb6391163",
+      "error": null
+    },
+    {
+      "author": "steemburnup",
+      "permlink": "burn-pool-1790705018857",
+      "weight": 4769,
+      "ageMinutes": 101,
+      "tag": "steem",
+      "ok": true,
+      "txid": "9fd2ffb379e16c3aeb34e4baa08413cedc21fe2f",
+      "error": null
+    },
+    {
+      "author": "rakib078",
+      "permlink": "the-diary-game-or-29-09-2026-or-a-day-by-the-river-and-our-jute-greens-field",
+      "weight": 4670,
+      "ageMinutes": 141,
+      "tag": "steem",
+      "ok": true,
+      "txid": "d93911355f00d897768b6497620e0fa9392726bb",
+      "error": null
+    },
+    {
+      "author": "sagor1233",
+      "permlink": "starlight-by-nygilia-nft-collection",
+      "weight": 4644,
+      "ageMinutes": 151,
+      "tag": "crypto",
+      "ok": true,
+      "txid": "5f0d770a57c17c0e45275fa80ab07d2145ac04e3",
+      "error": null
+    },
+    {
+      "author": "awesome-american",
+      "permlink": "how-i-have-gained-80-000-steem-100-profit-within-57-days-for-you-20260929t163337",
+      "weight": 4542,
+      "ageMinutes": 192,
+      "tag": "crypto",
+      "ok": true,
+      "txid": "64aa0e96c6f4e5a1ce106bc9d4bca72f51d9ede5",
+      "error": null
+    }
+  ],
+  "failedVotes": [],
+  "rejectedTop": [
+    "faisalamin/20-steem-powerup-8ec7ffb61f61c:too-young",
+    "headcorner/saos-transparency-20260929:self-fleet",
+    "jannat7/farid-store-dagonbhuiyan:author-cap",
+    "tagai-sync2/co8af62433ad74364d12:short-body",
+    "mister-omortson/photography-290:spam-title",
+    "toufiq777/no-matter-how-great-the-danger-the-wise-thing-to-do-is-to-make-the-right-decision-instead-of-giving-in-to-despair:day-cap",
+    "ziomar/the-strategic-bifurcation-of-ai-openai-and-anthropics-competing-trajectories-1790698489:day-cap",
+    "steemburnup/burn-pool-1790697818783:author-cap"
+  ],
+  "candidatesScanned": 120,
+  "votesToday": [
+    {
+      "author": "tradelover",
+      "permlink": "my-daily-steem-hop-gaming-c92da0ca18e81",
+      "weight": 4948,
+      "at": "2026-09-29T19:45:06.126Z",
+      "txid": "8fd4f634bf83e6487fb15a0384f2d03947fb1a76"
+    },
+    {
+      "author": "nhriyad",
+      "permlink": "jamshed-jhal-bitan-char-majlishpur",
+      "weight": 4942,
+      "at": "2026-09-29T19:45:06.126Z",
+      "txid": "ff69bc5c50c414150cd038e5317fdcbbe69ce2af"
+    },
+    {
+      "author": "snehuu",
+      "permlink": "ja2ty-jugando-a-mi-favorito-de-la-infancia-el-juego-sky-tower",
+      "weight": 4927,
+      "at": "2026-09-29T19:45:06.126Z",
+      "txid": "e74b148e4899dd69ed2bd8ee748b106b6c28b164"
+    },
+    {
+      "author": "bountyportals",
+      "permlink": "what-to-keep-until-the-payout-is-complete",
+      "weight": 4915,
+      "at": "2026-09-29T19:45:06.126Z",
+      "txid": "d0f0d937f25b686f684ec200c522bcc644769996"
+    },
+    {
+      "author": "jannat7",
+      "permlink": "black-and-white-flower-and-tree-art",
+      "weight": 4869,
+      "at": "2026-09-29T19:45:06.126Z",
+      "txid": "2ba3716ddf131eafbf64ede0f13d096cba41b3aa"
+    },
+    {
+      "author": "d3an",
+      "permlink": "daily-ronin-price-report-29-9-2026",
+      "weight": 4796,
+      "at": "2026-09-29T19:45:06.126Z",
+      "txid": "7b1fbeab835361d80065dd8498c808feb6391163"
+    },
+    {
+      "author": "steemburnup",
+      "permlink": "burn-pool-1790705018857",
+      "weight": 4769,
+      "at": "2026-09-29T19:45:06.126Z",
+      "txid": "9fd2ffb379e16c3aeb34e4baa08413cedc21fe2f"
+    },
+    {
+      "author": "rakib078",
+      "permlink": "the-diary-game-or-29-09-2026-or-a-day-by-the-river-and-our-jute-greens-field",
+      "weight": 4670,
+      "at": "2026-09-29T19:45:06.126Z",
+      "txid": "d93911355f00d897768b6497620e0fa9392726bb"
+    },
+    {
+      "author": "sagor1233",
+      "permlink": "starlight-by-nygilia-nft-collection",
+      "weight": 4644,
+      "at": "2026-09-29T19:45:06.126Z",
+      "txid": "5f0d770a57c17c0e45275fa80ab07d2145ac04e3"
+    },
+    {
+      "author": "awesome-american",
+      "permlink": "how-i-have-gained-80-000-steem-100-profit-within-57-days-for-you-20260929t163337",
+      "weight": 4542,
+      "at": "2026-09-29T19:45:06.126Z",
+      "txid": "64aa0e96c6f4e5a1ce106bc9d4bca72f51d9ede5"
+    }
+  ],
+  "authorsToday": {
+    "tradelover": 1,
+    "nhriyad": 1,
+    "snehuu": 1,
+    "bountyportals": 1,
+    "jannat7": 1,
+    "d3an": 1,
+    "steemburnup": 1,
+    "rakib078": 1,
+    "sagor1233": 1,
+    "awesome-american": 1
+  },
+  "totalVotes": 10,
+  "history": [
+    {
+      "at": "2026-09-29T19:42:16.117Z",
+      "day": "2026-09-29",
+      "verdict": "BROADCAST-FAIL",
+      "n": 0,
+      "txid": "03c30744c035c5bc765b0f7d21a992fd31263935"
+    },
+    {
+      "at": "2026-09-29T19:42:36.645Z",
+      "day": "2026-09-29",
+      "verdict": "BROADCAST-FAIL",
+      "n": 0,
+      "txid": "59c2fa98bdce727249155678a409d7fbce1623ba"
+    },
+    {
+      "at": "2026-09-29T19:43:56.155Z",
+      "day": "2026-09-29",
+      "verdict": "BROADCAST-FAIL",
+      "n": 0,
+      "txid": "93faf874ece2752884aca52c19f4e2495b2a1ad7"
+    },
+    {
+      "at": "2026-09-29T19:45:06.126Z",
+      "day": "2026-09-29",
+      "verdict": "VOTED",
+      "n": 10,
+      "txid": "8fd4f634bf83e6487fb15a0384f2d03947fb1a76"
+    }
+  ]
+}
