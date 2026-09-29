@@ -1,6 +1,6 @@
 # API — SAOS Sovereign Foundry v2
 
-עודכן: 2026-09-07 (Task 5) · כל הנתיבים תחת `/api/saos/*` · 13 endpoints · כולם `dynamic = "force-dynamic"`.
+עודכן: 2026-09-29 (Task 7-b — רישום-מלא) · כל הנתיבים תחת `/api/saos/*` · **28 endpoints** (27 מסלולים + `auth/revoke-all`) · כולם `dynamic = "force-dynamic"`.
 
 ## כלל על
 
@@ -60,7 +60,7 @@
 
 ## 2. `GET /api/saos/kernel`
 
-**מה**: selftest הקרנל — 7 בדיקות תכונה, כל ריצה נחתמת בקבלה (התנגשות digest בריצה חוזרת זהה נסבלת בכוונה ולא שוברת את השרשרת).
+**מה**: selftest הקרנל — **11 בדיקות תכונה** (Task 7-b 2026-09-29: הקרנל-הקנוני — validation-before-dedupe + Roast-64-a F5a/F5b/F5c/F3a; הקובץ byte-identical בשלושת-הריפואים וה-CI ecosystem-drift-guard אוכף ב-sha256), כל ריצה נחתמת בקבלה (התנגשות digest בריצה חוזרת זהה נסבלת בכוונה ולא שוברת את השרשרת).
 
 **קלט**: ללא.
 
@@ -79,7 +79,11 @@
       { "name": "value-preservation", "pass": true, "detail": "supply 1000500 == 1000500" },
       { "name": "fail-closed",        "pass": true, "detail": "insufficient balance rejected" },
       { "name": "order-sensitivity",  "pass": true, "detail": "reordered ops yield different stateRoot" },
-      { "name": "the-door",           "pass": true, "detail": "relay/relay_ack = 0 gas — sponsored real work" }
+      { "name": "the-door",           "pass": true, "detail": "relay/relay_ack = 0 gas — sponsored real work" },
+      { "name": "role-gate",          "pass": true, "detail": "harvest by non-treasury rejected (treasury-only mint)" },
+      { "name": "relay-linkage",      "pass": true, "detail": "relay_ack without open relay rejected (no-open-relay)" },
+      { "name": "seal-increments",    "pass": true, "detail": "first seal = 2 leaves, second seal = only the 1 new stamp" },
+      { "name": "canonical-bigint",   "pass": true, "detail": "2^90n rejected in canonicalizer (was 1.2379e+27)" }
     ]
   },
   "receipt": "<digest>"
@@ -88,7 +92,7 @@
 
 **שגיאות אפשריות**: `selftest failed` (מעטפת), שגיאת DB על כתיבת קבלה — נסבלת.
 
-**סטטוס**: ✅ עובד — נבדק חי 2026-09-07: 7/7 pass.
+**סטטוס**: ✅ עובד — נבדק 2026-09-29: 11/11 pass (bun + tsc נקי).
 
 ---
 
@@ -536,18 +540,38 @@
 
 ---
 
+## Task 7-b (2026-09-29) — רישום-המלא: 9 הנתיבים שנותרו בלתי-מתועדים
+
+המאזן הסופי: **28 מסלולים** — הסעיפים לעיל כיסו 19, הטבלה-למטה משלימה את התשיעייה החסרה (1-2 שורות-כנות כל-אחד; המקור-הכובל הוא הקוד + api-check):
+
+| Route | Method | Auth | מה |
+|---|---|---|---|
+| `/keys-map` | GET | אנונימי: masked בלבד · חומר-גולמי: requireAuth | מפת-כתובות-המאגר + probe יתרות-חי. מ-Task 5 שער-Task-46 הושב: `material` מוחזר רק לקוראים מאומתים; אנונימי מקבל גרסה מוסתרת + `materialAuthRequired:true` |
+| `/owner-keys` | GET/POST | GET: ללא (rate-limited) · POST: requireAuth (6/min) | נקודת-חיבור מפתח-הבעלים: GET = סטטוס-מפתחות מהחותם (:3033); POST מקדם את ה-WIF ישירות לחותם לאלפי-שניות — לעולם לא נשמר/נרשם; מפתח-זר מקבל no-match כנה ולא נכתב דבר |
+| `/treasury` | GET | ללא (קריאה-בלבד, 20/min) | "קופה חיה" חוצת-שרשראות — יתרות TRX/HIVE/BLURT/ETH/SOL מ-RPC חי; single-flight; degraded כנה כשמקור-נתונים נופל |
+| `/treasury-ops` | GET/POST | GET: ללא · POST: requireAuth (admin-gated) | GET = מפת-פעולות-אפשריות פר-שרשרת/פר-חשבון מבלדנים חיים (מה אפשר לעשות עכשיו); POST = ביצוע פעולה בפועל דרך החותם-החיצוני |
+| `/verify-live` | POST | requireAuth (מ-Task 5 — היה פתוח) | בדיקת-חיבור-חי מלאה לכל סלוטי המעטפת מול רשויות-השרשרת — מקור-האמת של "הכל מחובר?"; ננעל כי הטריגר היקר (~90ש׳) היה פתוח-לכל-מגיע |
+| `/agent-bridge` | GET/PATCH/POST | GET+PATCH: requireAuth · POST: טוקן-סוכן (`x-agent-token`, הונפק-ידי-הבעלים — 401 בלי) | גשר-הסוכנים: מסילת AgentMessage — קריאת-תור ללוח, עדכון-סטטוס מאומת, ושליחת-סוכן עם טוקן-ייעודי |
+| `/anchor-ingest` | POST | requireAuth | רישום עוגן ששודר **מחוץ** לפלטפורמה (txid חיצוני, למשל ידנית מסול/אתריום) לתוך אותו פנקס-עגינה — "שנדע מה אנחנו עושים" |
+| `/anchor-pulse` | POST/GET | requireAuth | מבצע-הפעימה החי: intent-row (transit) → חותם-חיצוני → אימות-עצמאי → `anchored` רק לאחר אישור-הרשת; GET = מצב-הפעימה (חוזה-מלא בטבלת roast-63 לעיל) |
+| `/anchor-reverify` | POST | requireAuth (6/min) | קידום transit→anchored: מריץ `verifyTxidPublic` על ה-txid הלא-מאומת האחרון; כישלון = נשאר transit בכנות |
+
+**הערה**: הטבלה-הממופה של roast 63 (למטה) עודכנה ל-28 מסלולים ותוקנו שלוש שורות שהתיישנו (auth של `verify-live`/`keys-map`/`agent-bridge`).
+
+---
+
 ## מפה-מרוכזת: 7 משטחי-כסף/מפתחות שלא תועדו (roast 63)
 
-עודכן roast 63: ה-API מונה **25 routes**; הסעיפים לעיל כיסו 13. המשטחים הכספיים/רגישים שחסרו — מתועדים עכשיו (חוזים מקוצרים; המקור-הכובל הוא הקוד + api-check):
+עודכן roast 63 + Task 7-b: ה-API מונה **28 routes**; הסעיפים לעיל כיסו 13. המשטחים הכספיים/רגישים שחסרו — מתועדים עכשיו (חוזים מקוצרים; המקור-הכובל הוא הקוד + api-check):
 
 | Route | Method | Auth | Rate | חוזה-מרכזי |
 |---|---|---|---|---|
 | `/anchor-pulse` | GET/POST | requireAuth | 4/min | **שער-השידור החי**: mode fresh (saosModeFresh) → intent-row לפני שידור (status=transit, txid=null) → requestId דטרמיניסטי `pulse-<net>-<sealId>` → חותם-חיצוני → verifyTxidPublic עצמאי; "anchored" נכתב רק לאחר אישור-הרשת. עמימות (>55דק' בלי txid) → 409 עד confirmFresh:true אנושי. BLURT cooldown 30דק' משידור אמיתי |
 | `/anchor-reverify` | POST | requireAuth | 6/min | קידום transit→anchored: מריץ verifyTxidPublic על ה-txid האחרון הלא-מאומת; כל תוצאה אחרת מוחזרת בכנות והשורה נשארת transit — אין קידום-זמן-אוטומטי |
 | `/owner-keys` | GET/POST | POST: requireAuth (roast 63) · GET: ללא | GET 30/min · POST 6/min | נקודת-חיבור מפתח-בעלים: ה-WIF עובר ישירות לחותם (:3033 /keys/ingest) — לעולם לא נשמר/נרשם; מפתח זר נדחה מול רשויות-השרשרת (לא נכתב דבר); פלט: verdicts + מפתחות-ציבוריים בלבד |
-| `/keys-map` | GET | ללא (מפת-כתובות ציבורית — הנחיית-בעלים) | 20/min | מפת-כתובות-מאגר + live-balance probe; **labels ללא מספרים מתיישנים** (roast 63); XFF-מודע ל-rate |
+| `/keys-map` | GET | אנונימי: masked · חומר-גולמי: requireAuth (Task 5) | 20/min | מפת-כתובות-מאגר + live-balance probe; אנונימי מקבל masked בלבד (שער-Task-46 הושב); **labels ללא מספרים מתיישנים** (roast 63); XFF-מודע ל-rate |
 | `/treasury` | GET | ללא | 20/min | 'קופה חיה': יתרות חיות (TRX/HIVE/BLURT/ETH/SOL) בקריאה-בלבד; single-flight; degraded כנה כש-RPC נכשל; מספרים חיים בלבד — אף מספר מקודד |
-| `/agent-bridge` | GET/POST | POST: requireAuth (roast 57) | 30/min | מסילת-הודעות-סוכנים (AgentMessage); סימטריית-auth כמו שאר הפעולות הרגישות |
-| `/verify-live` | POST | ללא | 10/min | בדיקת-חיבור-חי לכל סלוטי המעטפת מול הרשויות-בשרשרת (מקור-האמת של "הכל מחובר?"); fail-closed כשאין טוקן-חותם |
+| `/agent-bridge` | GET/PATCH/POST | GET+PATCH: requireAuth · POST: `x-agent-token` (401 בלי) | 30/min | מסילת-הודעות-סוכנים (AgentMessage); ה-POST אינו session-auth אלא טוקן-סוכן שהבעלים הנפיק |
+| `/verify-live` | POST | requireAuth (מ-Task 5) | 10/min | בדיקת-חיבור-חי לכל סלוטי המעטפת מול הרשויות-בשרשרת (מקור-האמת של "הכל מחובר?"); fail-closed כשאין טוקן-חותם |
 
 **כלל-המפה:** כל route מחזיר JSON; שגיאות לעולם לא 500 (`coarseError` → 200 `{ok:false}`, אלא אם צוין); כל כתיבה מאומתת ב-AuditEvent; ה-API מדווח רק מה שנמדד — טענה בלי ראיה = באג (ה-harness אוכף).
