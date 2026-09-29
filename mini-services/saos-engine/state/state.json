@@ -1,10 +1,10 @@
 {
-  "runCount": 42,
+  "runCount": 56,
   "simFills": 0,
   "simFeesMu": 0,
-  "asof": "2026-09-29T20:12:32.616Z",
+  "asof": "2026-09-29T22:32:32.760Z",
   "market": {
-    "refPrice": 0.10410183119323965,
+    "refPrice": 0.10410183588876558,
     "source": "engine",
     "stale": false
   },
