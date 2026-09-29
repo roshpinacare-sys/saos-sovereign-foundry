@@ -1,30 +1,30 @@
 {
-  "startedAt": "2026-09-29T17:08:10.929Z",
+  "startedAt": "2026-09-29T17:59:52.086Z",
   "account": "headcorner",
   "steps": {
     "observe": {
       "name": "observe",
       "ok": true,
-      "ms": 2835,
+      "ms": 2145,
       "parity": {
-        "steemUsd": 0.06373,
+        "steemUsd": 0.06354,
         "sbdUsd": 0,
-        "parity": 0.1041018320493972,
+        "parity": 0.10410183098948825,
         "source": "internal-feed-fallback",
         "lowConfidence": true
       },
-      "feed": 0.1041018320493972,
+      "feed": 0.10410183098948825,
       "band": {
         "ok": true,
         "reason": "band-ok",
         "bps": 0
       },
-      "steemUsd": 0.06373,
+      "steemUsd": 0.06354,
       "sbdUsd": 0,
       "inventory": {
         "steem": 925.27,
         "sbd": 3.142,
-        "spOwn": 4364.681891808977,
+        "spOwn": 4064.6924921132854,
         "rcPct": 100
       },
       "ordersOk": true,
@@ -52,7 +52,7 @@
         "authorVestsPerDay": 0,
         "curationOps": 0,
         "authorOps": 0,
-        "windowSpanDays": 6.63,
+        "windowSpanDays": 6.66,
         "windowOps": 1001,
         "measured": true,
         "fuelUsdPerDay": 0,
@@ -61,13 +61,13 @@
         "node": "https://steemapi.boylikegirl.club",
         "windowNote": "no reward ops inside the measured window — rails dormant, not a parse failure (deep-scan documented separately)"
       },
-      "summary": "parity 0.1041018320493972 (internal-feed-fallback) · fills 37 · fuel 0$"
+      "summary": "parity 0.10410183098948825 (internal-feed-fallback) · fills 37 · fuel 0$"
     },
     "tick": {
       "name": "tick",
       "ok": true,
       "ms": 0,
-      "runCount": 9,
+      "runCount": 13,
       "simFills": 0,
       "simFeesMu": 0,
       "events": 3
@@ -89,7 +89,7 @@
       "verdict": "CONVERT-HOLD",
       "amountSbd": 0,
       "marketSbdUsd": 0,
-      "impliedSbdUsd": 0.612189,
+      "impliedSbdUsd": 0.610364,
       "marketSourceNote": "no-external-SBD-market (delisted binance/poloniex/upbit/mexc) — HOLD is honest"
     },
     "execute": {
@@ -126,5 +126,5 @@
     "honesty": "unbased ≠ profit · signing operator-gated · all numbers measured this cycle"
   },
   "ok": true,
-  "finishedAt": "2026-09-29T17:08:13.767Z"
+  "finishedAt": "2026-09-29T17:59:54.233Z"
 }

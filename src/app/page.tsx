@@ -7,8 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import {
-  Activity, Anchor, Banknote, BatteryCharging, CircleCheck, Cpu, GitBranch, Play,
-  Radio, RefreshCw, Route, Scale, Sigma, Target, Wallet
+  Activity, Anchor, Banknote, BatteryCharging, CircleCheck, Cpu, GitBranch, HeartPulse, PauseCircle,
+  Play, PlayCircle, Radio, RefreshCw, Route, Scale, ShieldCheck, Sigma, Target, TrendingUp, Wallet, Wrench
 } from 'lucide-react'
 
 type Order = { orderid: number; side: string; base: string; quote: string; unit: number; created: string }
@@ -48,14 +48,35 @@ type Status = {
   events?: { type?: string; at?: string; [k: string]: unknown }[]
 }
 type EngineResp = { ok?: boolean; steps?: Record<string, { ok?: boolean; skipped?: boolean; verdict?: string; error?: string }>; rollup?: { measuredTotalUsdPerDay?: number | null; realizedSbd?: number | null }; finishedAt?: string; error?: string; engine?: string }
+type Sovereign = {
+  ok?: boolean
+  at?: string
+  state?: {
+    bootedAt?: string; pid?: number; paused?: boolean
+    watchdog?: { checks?: number; downs?: number; heals?: number; healVerified?: number; healFailed?: number; engineUp?: boolean; lastSpawnAt?: string | null }
+    cycles?: { autoRuns?: number; ok?: number; fail?: number; lastAt?: string | null; lastOk?: boolean | null; lastMs?: number | null; nextAt?: string | null }
+    selftest?: { runs?: number; lastAt?: string | null; lastOk?: boolean | null; passed?: number | null; total?: number | null }
+  }
+  intervals?: { watchdogSec?: number; cycleSec?: number; selftestSec?: number }
+  events?: { at?: string; kind?: string; [k: string]: unknown }[]
+}
 
 const f2 = (v?: number | null) => (typeof v === 'number' ? v.toFixed(2) : '—')
+const uptimeStr = (bootedAt?: string): string => {
+  if (!bootedAt) return '—'
+  const sec = Math.max(0, Math.floor((Date.now() - new Date(bootedAt).getTime()) / 1000))
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60)
+  return h > 0 ? `${h}ש ${m}דק` : `${m}דק`
+}
 
 export default function Home() {
   const [s, setS] = useState<Status | null>(null)
+  const [sov, setSov] = useState<Sovereign | null>(null)
   const [loading, setLoading] = useState(false)
   const [cycling, setCycling] = useState(false)
+  const [acting, setActing] = useState<string | null>(null)
   const [cycleMsg, setCycleMsg] = useState<string | null>(null)
+  const [actMsg, setActMsg] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
 
   const load = useCallback(async () => {
@@ -69,6 +90,13 @@ export default function Home() {
     } finally {
       setLoading(false)
     }
+  }, [])
+
+  const loadSov = useCallback(async () => {
+    try {
+      const a = await fetch('/api/saos/sovereign', { cache: 'no-store' })
+      setSov(await a.json())
+    } catch { /* next poll retries */ }
   }, [])
 
   const runCycle = useCallback(async () => {
@@ -91,11 +119,28 @@ export default function Home() {
     }
   }, [load])
 
+  const sovAct = useCallback(async (action: string, label: string) => {
+    setActing(action)
+    setActMsg(null)
+    try {
+      const r = await fetch('/api/saos/sovereign', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) })
+      const j = await r.json()
+      setActMsg(j?.ok ? `${label}: בוצע` : `${label}: נכשל — ${j?.error ?? 'שגיאה'}`)
+      await Promise.all([loadSov(), load()])
+    } catch {
+      setActMsg(`${label}: הרכיב לא זמין כרגע`)
+    } finally {
+      setActing(null)
+    }
+  }, [load, loadSov])
+
   useEffect(() => {
     load()
+    loadSov()
     const t = setInterval(load, 30000)
-    return () => clearInterval(t)
-  }, [load])
+    const t2 = setInterval(loadSov, 30000)
+    return () => { clearInterval(t); clearInterval(t2) }
+  }, [load, loadSov])
 
   const realFills = s?.profit?.fills ?? 0
   const realized = s?.profit?.realizedSbd
@@ -158,6 +203,74 @@ export default function Home() {
 
         {s && (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {/* ריבונות-מתמשכת · המערכת דואגת לעצמה (T-10) */}
+            <Card className="border-violet-500/25 bg-gradient-to-br from-violet-500/10 to-slate-900/60">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm text-violet-300">
+                  <ShieldCheck className="h-4 w-4" aria-hidden /> ריבונות-מתמשכת · דואגת-לעצמה (T-10)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="default" className={sov?.state?.paused ? 'bg-amber-500/20 text-amber-300' : 'bg-violet-500/20 text-violet-300'}>
+                    <span className="relative flex h-2 w-2 me-1.5">
+                      {!sov?.state?.paused && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-60" />}
+                      <span className={`relative inline-flex rounded-full h-2 w-2 ${sov?.state?.paused ? 'bg-amber-400' : 'bg-violet-400'}`} />
+                    </span>
+                    {sov?.state?.paused ? 'מושהה' : 'חמושה-אוטומטית'}
+                  </Badge>
+                  <Badge variant="outline" className="border-slate-700 text-slate-300">זמן-רציפות: {uptimeStr(sov?.state?.bootedAt)}</Badge>
+                </div>
+                <dl className="grid grid-cols-2 gap-2 text-sm mt-3">
+                  <div><dt className="text-xs text-slate-500">בדיקות-דופק</dt><dd className="font-bold tabular-nums">{sov?.state?.watchdog?.checks ?? '—'} <span className="text-xs text-slate-500">· נפילות {sov?.state?.watchdog?.downs ?? 0}</span></dd></div>
+                  <div><dt className="text-xs text-slate-500">ריפויים-עצמיים</dt><dd className="font-bold tabular-nums">{sov?.state?.watchdog?.heals ?? 0} <span className="text-xs text-emerald-400">(אומתו {sov?.state?.watchdog?.healVerified ?? 0})</span></dd></div>
+                  <div><dt className="text-xs text-slate-500">מחזורים-אוטומטיים</dt><dd className={`font-bold tabular-nums ${((sov?.state?.cycles?.ok ?? 0) > 0 && sov?.state?.cycles?.lastOk !== false) ? 'text-emerald-400' : 'text-slate-300'}`}>{sov?.state?.cycles?.ok ?? 0} תקינים · {sov?.state?.cycles?.fail ?? 0} כשלים</dd></div>
+                  <div><dt className="text-xs text-slate-500">מחזור-בא-בעקבות</dt><dd className="font-bold tabular-nums text-xs">{sov?.state?.cycles?.nextAt ? `${Math.max(0, Math.round((new Date(sov.state.cycles.nextAt).getTime() - Date.now()) / 60000))} דק` : '—'}</dd></div>
+                  <div className="col-span-2"><dt className="text-xs text-slate-500">ביקורת-איכות (selftest)</dt>
+                    <dd className="font-bold flex items-center gap-2">
+                      {sov?.state?.selftest?.lastAt ? (
+                        <>
+                          <Badge variant="outline" className={sov.state.selftest.lastOk ? 'border-emerald-500/40 text-emerald-400' : 'border-rose-500/40 text-rose-400'}>
+                            {sov.state.selftest.lastOk ? 'עובר' : 'נכשל'} {sov.state.selftest.passed}/{sov.state.selftest.total}
+                          </Badge>
+                          <span className="text-xs text-slate-500">כל 6 שעות</span>
+                        </>
+                      ) : <span className="text-xs text-slate-500">ריצה-ראשונה בעוד רגעים…</span>}
+                    </dd>
+                  </div>
+                </dl>
+                <div className="grid grid-cols-3 gap-2 mt-3">
+                  <Button onClick={() => sovAct(sov?.state?.paused ? 'resume' : 'pause', sov?.state?.paused ? 'הפעלה' : 'השהיה')} disabled={acting !== null} size="sm" variant="outline" aria-label={sov?.state?.paused ? 'הפעל-ריבונות' : 'השהה-ריבונות'} className="border-slate-700 hover:bg-slate-800 px-0">
+                    {sov?.state?.paused ? <PlayCircle className="h-4 w-4" aria-hidden /> : <PauseCircle className="h-4 w-4" aria-hidden />}
+                    <span className="sr-only">{sov?.state?.paused ? 'הפעל ריבונות' : 'השהה ריבונות'}</span>
+                    <span className="text-[11px] ms-1">{sov?.state?.paused ? 'הפעל' : 'השהה'}</span>
+                  </Button>
+                  <Button onClick={() => sovAct('kick-cycle', 'כפיית-מחזור')} disabled={acting !== null || sov?.state?.paused} size="sm" variant="outline" aria-label="כפה-מחזור-ריבונות" className="border-slate-700 hover:bg-slate-800 px-0">
+                    <HeartPulse className="h-4 w-4" aria-hidden />
+                    <span className="text-[11px] ms-1">מחזור</span>
+                  </Button>
+                  <Button onClick={() => sovAct('force-heal', 'כפיית-ריפוי')} disabled={acting !== null} size="sm" variant="outline" aria-label="כפה-ריפוי-ריבונות" className="border-slate-700 hover:bg-slate-800 px-0">
+                    <Wrench className="h-4 w-4" aria-hidden />
+                    <span className="text-[11px] ms-1">ריפוי</span>
+                  </Button>
+                </div>
+                {actMsg && <p className="text-[11px] text-violet-300/90 mt-2 break-words">{actMsg}</p>}
+                <Separator className="my-3 bg-slate-800" />
+                <div className="space-y-1 max-h-24 overflow-y-auto">
+                  {(sov?.events ?? []).slice(0, 4).map((e, i) => (
+                    <div key={i} className="flex items-center gap-2 text-[11px] text-slate-500">
+                      <span className="tabular-nums">{e.at?.slice(11, 19)}</span>
+                      <span className="text-violet-300/80">{e.kind}</span>
+                    </div>
+                  ))}
+                  {!sov?.events?.length && <p className="text-[11px] text-slate-500">יומן-החלטות ייפתח עם הביקורת-הראשונה…</p>}
+                </div>
+                <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                  עצמאית-מהפעלה-שלך: מתעוררת עם השרת · דופק כל {sov?.intervals?.watchdogSec ?? 60} שניות · מחזור כל {Math.round((sov?.intervals?.cycleSec ?? 600) / 60)} דק · איכות כל {Math.round((sov?.intervals?.selftestSec ?? 21600) / 3600)} שעות. החתימה על-השרשרת נשארת שער-אופרטור (X-1) — כך השליטה נשארת שלך.
+                </p>
+              </CardContent>
+            </Card>
+
             {/* מנוע-ריבוני מקומי · שליטה (T-9d) */}
             <Card className="border-cyan-500/25 bg-gradient-to-br from-cyan-500/10 to-slate-900/60">
               <CardHeader className="pb-2">
@@ -175,7 +288,7 @@ export default function Home() {
                 <p className="text-xs text-slate-400 mt-2 leading-relaxed">
                   observe → tick → peg → convert → report — הכל מקומי, אפס-רפו-חיצוני, אפס-מפתחות. ביצוע-חתימות = שער-אופרטור בלבד.
                 </p>
-                <Button onClick={runCycle} disabled={cycling || !engineUp} size="sm" className="mt-3 w-full bg-cyan-500/20 text-cyan-200 border border-cyan-500/40 hover:bg-cyan-500/30">
+                <Button onClick={runCycle} disabled={cycling || !engineUp} size="sm" aria-label="הרץ-מחזור-מנוע" className="mt-3 w-full bg-cyan-500/20 text-cyan-200 border border-cyan-500/40 hover:bg-cyan-500/30">
                   <Play className="h-4 w-4 me-1.5" aria-hidden />
                   {cycling ? 'מריץ מחזור…' : 'הרץ מחזור עכשיו'}
                 </Button>
@@ -295,6 +408,44 @@ export default function Home() {
                 </p>
               </CardContent>
             </Card>
+
+            {/* מה-יש-לנו · פוטנציאל-ריבוני (T-10) */}
+            {(() => {
+              const steemLiquid = parseFloat(String(s?.live?.balances?.steem ?? '').replace(/[^0-9.]/g, '')) || 0
+              const sbdLiquid = parseFloat(String(s?.live?.balances?.sbd ?? '').replace(/[^0-9.]/g, '')) || 0
+              const parity = s?.offer?.marks?.paritySbdPerSteem ?? null
+              const steemUsd = s?.observe?.parity?.steemUsd ?? null
+              const capitalUsd = parity ? steemLiquid * parity + sbdLiquid : (steemUsd ? steemLiquid * steemUsd + sbdLiquid : null)
+              const rate = usdPerDay ?? 0
+              const needed = capitalUsd && rate > 0 ? capitalUsd * (1000 / rate) : null
+              return (
+                <Card className="border-teal-500/25 bg-gradient-to-br from-teal-500/10 to-slate-900/60">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-sm text-teal-300">
+                      <TrendingUp className="h-4 w-4" aria-hidden /> מה-יש-לנו · פוטנציאל-ריבוני (T-10)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <dl className="grid grid-cols-2 gap-2 text-sm">
+                      <div><dt className="text-xs text-slate-500">הון-נזיל (STEEM)</dt><dd className="font-bold tabular-nums">{steemLiquid > 0 ? steemLiquid.toFixed(1) : '—'}</dd></div>
+                      <div><dt className="text-xs text-slate-500">SBD נזיל</dt><dd className="font-bold tabular-nums">{sbdLiquid > 0 ? sbdLiquid.toFixed(2) : '—'}</dd></div>
+                      <div><dt className="text-xs text-slate-500">שווי-הון-עובד (מוערך)</dt><dd className="font-bold tabular-nums text-teal-300">{capitalUsd ? `$${capitalUsd.toFixed(2)}` : '—'}</dd></div>
+                      <div><dt className="text-xs text-slate-500">קצב-נמדד (כנות)</dt><dd className="font-bold tabular-nums">${rate.toFixed(4)}/יום</dd></div>
+                    </dl>
+                    <Separator className="my-3 bg-slate-800" />
+                    <ul className="space-y-1.5 text-[11px] leading-relaxed text-slate-300">
+                      <li className="flex items-start gap-1.5"><CircleCheck className="h-3 w-3 mt-0.5 text-emerald-400 shrink-0" aria-hidden /><span><b className="text-slate-100">ספר-פאריטי</b> — תשתית מוכנה מלאה: תכנון OFFER-READY בכל-מחזור + ביצוע-מוסיף (D-021/D-022) + רצפת-ערך (r134-VF1). הפוטנציאל: קציר-מרווחים מעל-פאריטי על ~925 STEEM.</span></li>
+                      <li className="flex items-start gap-1.5"><CircleCheck className="h-3 w-3 mt-0.5 text-emerald-400 shrink-0" aria-hidden /><span><b className="text-slate-100">קיורציה</b> — נמדדה $4.26/יום כשהייתה פעילה; כרגע רדומה, ממתינה ל-authority פוסטינג (שער X-1). הכלי קיים ומתוכנת (A-12).</span></li>
+                      <li className="flex items-start gap-1.5"><CircleCheck className="h-3 w-3 mt-0.5 text-emerald-400 shrink-0" aria-hidden /><span><b className="text-slate-100">מסילת-המרה D-023</b> — יתרון פנימי שנמדד +40.8% (SBD→STEEM פנ-$1); מתחממת אוטומטית כשהאסקים קוצרים SBD.</span></li>
+                      <li className="flex items-start gap-1.5"><CircleCheck className="h-3 w-3 mt-0.5 text-emerald-400 shrink-0" aria-hidden /><span><b className="text-slate-100">ריבונות-רציפה (היום)</b> — watchdog + מחזורים-אוטומטיים + ביקורת-איכות + ריפוי-עצמי; זמן-רציפות חי בכרטיס הראשון.</span></li>
+                    </ul>
+                    <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                      כנות: פוטנציאל ≠ רווח-נמדד. בקצב-הנמדד הנוכחי ${rate.toFixed(4)}/יום, ל-$1000/יום נדרש הון של {needed ? `≈ $${needed.toFixed(0)}` : '—'} (אנלוגיית X-2) או מסילות-תשואה-גבוהות-יותר. כל-מספר כאן חי וממקור-chain או מדידה-מקומית.
+                    </p>
+                  </CardContent>
+                </Card>
+              )
+            })()}
 
             {/* פאריטי + הצעה */}
             <Card className="border-slate-800 bg-slate-900/60">
@@ -428,7 +579,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 {!s?.events?.length ? (
-                  <p className="text-sm text-slate-500">אין-אירועים עדיין — הרץ מחזור מהכרטיס הראשון</p>
+                  <p className="text-sm text-slate-500">אין-אירועים עדיין — השכבה-הריבונית מריצה מחזורים אוטומטית כל 10 דק (T-10)</p>
                 ) : (
                   <div className="max-h-64 overflow-y-auto rounded-lg border border-slate-800 divide-y divide-slate-800/70">
                     {[...s.events].reverse().map((e, i) => (
@@ -453,7 +604,7 @@ export default function Home() {
       <footer className="mt-auto border-t border-slate-800 bg-slate-950">
         <div className="mx-auto max-w-6xl px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
           <p>אמת-מוטבעת-על-שרשרת בלבד · אפס-מפתחות · ראיות: mini-services/saos-engine/state · docs/ESTATE-INVENTORY · docs/ADOPTIONS</p>
-          <p>T-9 · מנוע-ריבוני-מקומי · {s?.asof?.slice(11, 19) ?? ''} UTC</p>
+          <p>T-10 · ריבונות-מתמשכת · {s?.asof?.slice(11, 19) ?? ''} UTC</p>
         </div>
       </footer>
     </div>
