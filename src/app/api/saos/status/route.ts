@@ -23,6 +23,8 @@ const PATHS = {
   curator: `${ENGINE}/state/curator.json`,
   intel: `${ENGINE}/state/intel.json`,
   execLog: `${ENGINE}/state/exec-log.jsonl`,
+  learning: `${ENGINE}/state/learning.json`,
+  discovery: `${ENGINE}/state/discovery.json`,
 };
 const ENGINE_HTTP = "http://127.0.0.1:3040";
 const CACHE_TTL_MS = 45_000;
@@ -217,7 +219,7 @@ export async function GET() {
   if (cache && Date.now() - cache.at < CACHE_TTL_MS) {
     return NextResponse.json(cache.data);
   }
-  const [state, offer, observe, dailyReport, convertPlan, eventsTail, soldiers, curator, intel, execLogTail, ordersRaw, rcRaw, accRaw, fills, eng, execHttp] = await Promise.all([
+  const [state, offer, observe, dailyReport, convertPlan, eventsTail, soldiers, curator, intel, execLogTail, ordersRaw, rcRaw, accRaw, fills, eng, execHttp, learning, discovery] = await Promise.all([
     readJsonSafe(PATHS.state),
     readJsonSafe(PATHS.offer),
     readJsonSafe(PATHS.observe),
@@ -234,6 +236,8 @@ export async function GET() {
     liveFills(),
     engineHealth(),
     engineExecStatus(),
+    readJsonSafe(PATHS.learning),
+    readJsonSafe(PATHS.discovery),
   ]);
 
   const orders = (ordersRaw ?? []).map((o) => {
@@ -360,6 +364,36 @@ export async function GET() {
     spreadBpsRec: itel?.spreadBpsRec ?? null,
   };
 
+  /* T-14: continuous-learning + growth-discovery (public fields only) */
+  const learn = learning as Record<string, any> | null;
+  const disc = discovery as Record<string, any> | null;
+  const learningPublic = learn
+    ? {
+        verdict: learn.verdict ?? null,
+        at: learn.at ?? null,
+        runsTotal: learn.runsTotal ?? 0,
+        lessons: (learn.lessons ?? []).slice(0, 4).map((l: any) => ({ id: l.id, severity: l.severity, lesson: l.lesson, evidence: l.evidence, action: l.action })),
+        tuningsApplied: learn.tuningsApplied ?? [],
+        tunings: learn.tunings ?? null,
+        lessonsTotal: learn.lessonsTotal ?? null,
+        cycleMetrics: {
+          okRate: learn.metrics?.cycles?.okRate ?? null,
+          window: learn.metrics?.cycles?.window ?? 0,
+          failReasons: learn.metrics?.cycles?.failReasons ?? null,
+          msP50: learn.metrics?.cycles?.msP50 ?? null,
+        },
+      }
+    : null;
+  const discoveryPublic = disc
+    ? {
+        verdict: disc.verdict ?? null,
+        at: disc.at ?? null,
+        opportunities: (disc.opportunities ?? []).slice(0, 4).map((o: any) => ({ id: o.id, kind: o.kind, potentialClass: o.potentialClass, evidence: o.evidence, potential: o.potential, gate: o.gate })),
+        topTags: (disc.tagBoard ?? []).slice(0, 5).map((t: any) => ({ tag: t.tag, payoutsSbd: t.payoutsSbd })),
+        curationEst: disc.curationEst ?? null,
+      }
+    : null;
+
   const data = {
     ok: true,
     asof: new Date().toISOString(),
@@ -378,11 +412,14 @@ export async function GET() {
     soldiers: soldiersPublic,
     curator: curatorPublic,
     intel: intelPublic,
+    learning: learningPublic,
+    discovery: discoveryPublic,
     sources: { kind: "sovereign-local", paths: PATHS, engineHttp: ENGINE_HTTP },
     notes: [
       "אמת-מוטבעת-על-שרשרת בלבד — real.fills נמדד מ-fill_order חי",
       "T-12: מפתח-ראשי מוחזק-מנוע, מוגבל-דוקטרינה, לעולם לא נרשם/נשלח — רק טביעות-אצבע ציבוריות",
       "T-9: האחוזה בת-16-הרפו אבדה באיפוס-סביבה — המנוע נבנה-מחדש מקומית (ראה docs/ESTATE-INVENTORY.md)",
+      "T-14: למידה-מתמשכת — שיעורים מהיסטוריה-מוקלטת, כיוונים-חסומים (LEARN_CLAMP), גילוי אופציות-גדילה על-הרשת",
     ],
   };
   cache = { at: Date.now(), data };

@@ -10,6 +10,8 @@ import { execStatus } from "./signer.mjs";
 import { soldiersPublic } from "./soldiers.mjs";
 import { intelState } from "./intel.mjs";
 import { curatorState } from "./curator.mjs";
+import { learningState } from "./learning.mjs";
+import { discoveryState } from "./discovery.mjs";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -45,11 +47,13 @@ async function handle(req) {
       daily: readJson(path.join(STATE, "daily-report.json")),
       intel: intelState(),
       curator: curatorState(),
+      learning: learningState(),
+      discovery: discoveryState(),
       soldiers: soldiersPublic(),
       execution: exec,
       execLog,
       events: readLines(path.join(STATE, "events.jsonl"), 20),
-      notes: ["sovereign engine · state lives inside my-project · master credential engine-held, doctrine-capped, never logged"],
+      notes: ["sovereign engine · state lives inside my-project · master credential engine-held, doctrine-capped, never logged", "T-14: continuous-learning layer live — lessons from recorded history, hard-clamped tunings, growth-option discovery"],
     });
   }
   if (p === "/cycle") {
@@ -78,7 +82,16 @@ async function handle(req) {
 let bound = false;
 for (let attempt = 1; attempt <= 8 && !bound; attempt++) {
   try {
-    Bun.serve({ port: PORT, fetch: (req) => handle(req) });
+    Bun.serve({
+      port: PORT,
+      fetch: (req) => handle(req),
+      // T-14 root-cause fix (proven in engine.log): Bun's default idleTimeout
+      // is 10s — a full cycle takes 10-12s, so the connection was killed
+      // mid-cycle and the sovereign got "fetch failed" (1 real cycle fall).
+      // 255s = Bun max; doctrine timeout (90s sovereign, 18s exec client)
+      // still bounds every caller from the outside.
+      idleTimeout: 255,
+    });
     bound = true;
   } catch (e) {
     const msg = String(e?.message ?? e);

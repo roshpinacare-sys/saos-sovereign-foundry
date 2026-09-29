@@ -210,5 +210,99 @@ eq("vpEff math", vpEffPct(6.094470913801e12, 7123991.568646), 85.5);
 eq("vpEff zero vests", vpEffPct(100, 0), null);
 eq("day key", dayKeyOf("2026-09-29T19:00:00.000Z"), "2026-09-29");
 
+/* ── 16 · T-14 learning + discovery: evidence-based lessons, hard-clamped tunings ── */
+import {
+  classifyCycleFailure, analyzeCycles, analyzeCurator, analyzeExec,
+  deriveLessons, deriveTunings, LEARN_CLAMP,
+} from "./learning.mjs";
+import { rankTags, curationShareEstimate, scoreOpportunities } from "./discovery.mjs";
+
+/* failure classification — the sovereign retry doctrine, mirrored pure */
+eq("fail-class conn", classifyCycleFailure("fetch failed"), "conn");
+eq("fail-class conn-reset", classifyCycleFailure("ECONNRESET while POST /cycle"), "conn");
+eq("fail-class timeout", classifyCycleFailure("The operation was aborted due to timeout"), "timeout");
+eq("fail-class http", classifyCycleFailure("HTTP 502 bad gateway"), "http");
+eq("fail-class none", classifyCycleFailure(""), "none");
+eq("fail-class unknown", classifyCycleFailure("weird thing"), "unknown");
+
+/* cycle analytics: ok-rate + fail histogram from sovereign-events lines */
+const evLines = [
+  { kind: "cycle-ok(auto)", ms: 9800 },
+  { kind: "cycle-error(auto)", ms: 12065, error: "fetch failed" },
+  { kind: "cycle-ok(auto)", ms: 10098 },
+  { kind: "cycle-fail(auto)", ms: 20000, error: "The operation was aborted due to timeout" },
+  { kind: "heal-spawn", pid: 1 },           // non-cycle lines are ignored
+  { kind: "cycle-ok(kick)", ms: 9000 },     // kick excluded — auto-window only
+];
+const cyc = analyzeCycles(evLines);
+eq("cycles window", cyc.window, 4);
+eq("cycles ok", cyc.oks, 2);
+eq("cycles fail histogram", cyc.failReasons, { conn: 1, timeout: 1 });
+eq("cycles okRate", cyc.okRate, 50);
+
+/* lessons: evidence-based; empty history ⇒ zero invented lessons */
+const lessons = deriveLessons({
+  cycles: { window: 4, oks: 2, fails: 2, okRate: 50, failReasons: { conn: 2 }, msP50: 10000, msP90: 12000 },
+  curator: { present: true, totalVotes: 10, window: 5, verdicts: { "DAY-CAP": 4 }, vpEff: 86, dayCapsInRow: 4, maxPerDay: 10 },
+  exec: { window: 5, fails: 0, lastError: null },
+});
+ok("lesson conn-fail derived", lessons.some((l) => l.id === "cycle-conn-fails"));
+ok("lesson daycap derived", lessons.some((l) => l.id === "curation-daycap-repeat"));
+ok("lessons cite evidence", lessons.every((l) => typeof l.evidence === "string" && l.evidence.length > 10));
+eq("no-invention empty", deriveLessons({ cycles: { window: 0, oks: 0, fails: 0, okRate: null, failReasons: {} }, curator: null, exec: { window: 0, fails: 0 } }).length, 0);
+
+/* tunings: hard clamps — the learner cannot re-law itself */
+const tuned = deriveTunings(lessons, { basePolicy: { baseWeightPct: 50, ageMinMinutes: 10, tags: ["steem"] }, discoveredTags: ["life", "photography"] });
+ok("tuning baseWeight clamped", tuned.tunings.baseWeightPct >= LEARN_CLAMP.baseWeightPct[0] && tuned.tunings.baseWeightPct <= LEARN_CLAMP.baseWeightPct[1]);
+ok("tuning evidence key present", tuned.applied.every((a) => a.because != null));
+// crazy base policy (operator typo 500%) still clamps
+const tunedCrazy = deriveTunings([{ id: "curation-daycap-repeat" }], { basePolicy: { baseWeightPct: 500, ageMinMinutes: 10, tags: [] }, discoveredTags: [] });
+ok("tuning clamps wild input", tunedCrazy.tunings.baseWeightPct <= LEARN_CLAMP.baseWeightPct[1]);
+// no-candidates lesson → ageMin may only DROP into [5,12], tags additive-only from discovery
+const tunedNarrow = deriveTunings([{ id: "candidate-stream-narrow" }], { basePolicy: { baseWeightPct: 50, ageMinMinutes: 10, tags: ["a", "b", "c", "d", "e", "f", "g", "h"] }, discoveredTags: ["newtag"] });
+ok("tuning ageMin bounded", tunedNarrow.tunings.ageMinMinutes === undefined || (tunedNarrow.tunings.ageMinMinutes >= 5 && tunedNarrow.tunings.ageMinMinutes <= 12));
+ok("tuning tags capped at 8", tunedNarrow.tunings.tags === undefined || tunedNarrow.tunings.tags.length <= LEARN_CLAMP.tagsMax);
+// zero lessons ⇒ zero tunings (nothing invented)
+eq("tunings none without lessons", deriveTunings([], { basePolicy: { baseWeightPct: 50, ageMinMinutes: 10, tags: [] }, discoveredTags: ["x"] }).applied.length, 0);
+
+/* curator analytics determinism + daycap streak */
+const curAn = analyzeCurator({
+  totalVotes: 12, vpEff: 85.5,
+  voted: [{ ageMinutes: 31, tag: "steem" }, { ageMinutes: 45, tag: "crypto" }],
+  history: [{ verdict: "VOTED" }, { verdict: "DAY-CAP" }, { verdict: "DAY-CAP" }],
+});
+eq("curator streak", curAn.dayCapsInRow, 2);
+eq("curator meanAge", curAn.meanAgeMinutes, 38);
+
+/* discovery: tag ranking deterministic with payout tiebreak */
+const board1 = rankTags([
+  { name: "beta", total_payouts: "120.500 SBD" },
+  { name: "alpha", total_payouts: "120.500 SBD" },   // tie → name asc
+  { name: "gamma", total_payouts: "930.250 SBD" },
+  { name: "", total_payouts: "999 SBD" },            // empty tag dropped
+]);
+eq("tag board order", board1.map((t) => t.tag), ["gamma", "alpha", "beta"]);
+eq("tag board parse", board1[0].payoutsSbd, 930.25);
+ok("tag ranking deterministic", JSON.stringify(rankTags([{ name: "b", total_payouts: "2 SBD" }, { name: "a", total_payouts: "2 SBD" }])) === JSON.stringify(rankTags([{ name: "b", total_payouts: "2 SBD" }, { name: "a", total_payouts: "2 SBD" }])));
+
+/* curation share estimator: honest ESTIMATED math + null-safety */
+const est = curationShareEstimate({ rewardBalanceSteem: 9000, windowDays: 1 }, 0.00005);
+eq("est math", est.estimatedSteemPerDay, Math.round((9000 * 0.00005) * 1e4) / 1e4);
+ok("est labeled estimated", /ESTIMATED/.test(est.note));
+eq("est null-safety", curationShareEstimate(null, 0.1), null);
+
+/* opportunity scoring: measured > estimated > potential, all gated */
+const ops = scoreOpportunities({
+  tagBoard: [{ tag: "gamma", payoutsSbd: 930 }],
+  depth: { ok: true, spreadBps: 19, bestAsk: 0.1033, bestBid: 0.1031 },
+  vpEff: 85.5,
+  curationEst: { dailyPoolSteem: 9000, voteVestsShare: 0.00005, estimatedSteemPerDay: 0.45, note: "ESTIMATED" },
+  bookFills: { fills: 37, lastFillAt: new Date(Date.parse("2026-09-29T12:00:00Z")).toISOString() },
+  soldiers: { deployed: true, accounts: [{ name: "hcsoldier1" }] },
+});
+ok("ops sorted by class", ops.findIndex((o) => o.id === "tags-realloc") < ops.findIndex((o) => o.id === "curation-share"));
+ok("ops all carry class+gate", ops.every((o) => o.potentialClass && o.gate && o.evidence));
+ok("wide-spread opportunity detected", scoreOpportunities({ tagBoard: [], depth: { ok: true, spreadBps: 400, bestAsk: 0.11, bestBid: 0.1 }, curationEst: null, bookFills: { fills: 0, lastFillAt: null }, soldiers: null }).some((o) => o.id === "spread-wide"));
+
 console.log(`\nSELFTEST ${pass}/${pass + fail} ${fail === 0 ? "PASS" : "FAIL"}`);
 process.exit(fail === 0 ? 0 : 1);

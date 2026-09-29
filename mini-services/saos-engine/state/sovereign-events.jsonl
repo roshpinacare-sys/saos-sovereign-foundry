@@ -108,3 +108,11 @@
 {"at":"2026-09-29T19:42:32.639Z","kind":"heal-spawn","reason":"cycle-preheal(auto)","pid":4796}
 {"at":"2026-09-29T19:42:36.643Z","kind":"heal-verified","up":true}
 {"at":"2026-09-29T19:42:44.676Z","kind":"cycle-error(auto)","ms":12065,"error":"fetch failed"}
+{"at":"2026-09-29T19:52:42.709Z","kind":"cycle-ok(auto)","ms":10098,"steps":9,"verdict":"OFFER-EMPTY"}
+{"at":"2026-09-29T20:02:44.617Z","kind":"cycle-error(auto)","ms":12005,"error":"fetch failed"}
+{"at":"2026-09-29T20:09:21.549Z","kind":"heal-attempt","reason":"operator-forced"}
+{"at":"2026-09-29T20:09:21.549Z","kind":"heal-kill-stale","pid":4796}
+{"at":"2026-09-29T20:09:22.370Z","kind":"heal-spawn","reason":"operator-forced","pid":6607}
+{"at":"2026-09-29T20:09:26.380Z","kind":"heal-verified","up":true}
+{"at":"2026-09-29T20:11:10.211Z","kind":"cycle-ok(kick)","ms":9180,"steps":10,"verdict":"OFFER-EMPTY"}
+{"at":"2026-09-29T20:12:41.503Z","kind":"cycle-ok(auto)","ms":8891,"steps":10,"verdict":"OFFER-EMPTY"}

@@ -177,6 +177,15 @@ async function watchdogTick(core: Core): Promise<void> {
   writeJson(SOV_FILE, core.state);
 }
 
+/** T-14: סיווג-כשל — רק כשל-חיבור זכאי לניסיון-חוזר (timeout לא: המחזור עשוי
+ * לרוץ-בצד-השרת, וניסיון-שני יכפיל פעולות; מדיניות-המכסות תוחמת גם-זאת, אך
+ * זהירות קודם-כל). */
+function isConnLevelFailure(err: unknown): boolean {
+  const s = String((err as Error)?.message ?? err ?? "");
+  return /fetch failed|ECONNRESET|ECONNREFUSED|EPIPE|socket|network|other side closed/i.test(s)
+    && !/timeout|abort/i.test(s);
+}
+
 async function runEngineCycle(core: Core, trigger: "auto" | "kick"): Promise<{ ok: boolean; steps?: Record<string, unknown>; error?: string; ms: number }> {
   if (core.cycleBusy) return { ok: false, error: "cycle-busy", ms: 0 };
   if (core.state.paused && trigger === "auto") return { ok: false, error: "paused", ms: 0 };
@@ -188,8 +197,24 @@ async function runEngineCycle(core: Core, trigger: "auto" | "kick"): Promise<{ o
     if (!pre.up && !(core.state.paused && trigger === "auto")) {
       await healEngine(core, `cycle-preheal(${trigger})`);
     }
-    const r = await fetch(`${ENGINE_HTTP}/cycle`, { method: "POST", signal: AbortSignal.timeout(90_000), cache: "no-store" });
-    const j = (await r.json()) as { ok?: boolean; steps?: Record<string, unknown>; error?: string };
+    const attemptPost = async (): Promise<{ j?: { ok?: boolean; steps?: Record<string, unknown>; error?: string }; err?: unknown }> => {
+      try {
+        const r = await fetch(`${ENGINE_HTTP}/cycle`, { method: "POST", signal: AbortSignal.timeout(90_000), cache: "no-store" });
+        const j = (await r.json()) as { ok?: boolean; steps?: Record<string, unknown>; error?: string };
+        return { j };
+      } catch (err) { return { err }; }
+    };
+    let { j, err } = await attemptPost();
+    // תיקון T-14 (הנפילה-האמיתית מ-19:42): כשל-חיבור (fetch failed) — בודקים
+    // דופק, מרפאים אם-צריך, ומנסים פעם-אחת בלבד. המחזור מגולם ביומן כ-retry.
+    if (!j && err !== undefined && isConnLevelFailure(err)) {
+      const h = await engineHealth(2500);
+      if (!h.up) await healEngine(core, `cycle-retry-preheal(${trigger})`);
+      appendEvent(core, `cycle-retry(${trigger})`, { error: String((err as Error)?.message ?? err).slice(0, 120), engineUpAfterHeal: h.up || core.state.watchdog.engineUp });
+      const second = await attemptPost();
+      if (second.j) { j = second.j; err = undefined; }
+      else { err = second.err; }
+    }
     const ms = Date.now() - t0;
     const ok = Boolean(j?.ok);
     if (trigger === "auto") {

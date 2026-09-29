@@ -1,7 +1,7 @@
 {
   "account": "headcorner",
   "parity": {
-    "steemUsd": 0.06409,
+    "steemUsd": 0.06402,
     "sbdUsd": 0,
     "parity": 0.10410183119323965,
     "source": "internal-feed-fallback",
@@ -13,12 +13,12 @@
     "reason": "band-ok",
     "bps": 0
   },
-  "steemUsd": 0.06409,
+  "steemUsd": 0.06402,
   "sbdUsd": 0,
   "inventory": {
     "steem": 0,
     "sbd": 0.642,
-    "spOwn": 4034.713387345949,
+    "spOwn": 4034.7178546347272,
     "rcPct": 100
   },
   "ordersOk": true,
@@ -152,5 +152,5 @@
     "node": "https://steemapi.boylikegirl.club",
     "windowNote": "no reward ops inside the measured window — rails dormant, not a parse failure (deep-scan documented separately)"
   },
-  "at": "2026-09-29T19:49:10.329Z"
+  "at": "2026-09-29T20:12:32.616Z"
 }

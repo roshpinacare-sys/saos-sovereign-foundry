@@ -1,14 +1,14 @@
 {
-  "startedAt": "2026-09-29T19:49:10.329Z",
+  "startedAt": "2026-09-29T20:12:32.616Z",
   "account": "headcorner",
   "steps": {
     "observe": {
       "name": "observe",
       "ok": true,
-      "ms": 1469,
+      "ms": 1559,
       "account": "headcorner",
       "parity": {
-        "steemUsd": 0.06409,
+        "steemUsd": 0.06402,
         "sbdUsd": 0,
         "parity": 0.10410183119323965,
         "source": "internal-feed-fallback",
@@ -20,12 +20,12 @@
         "reason": "band-ok",
         "bps": 0
       },
-      "steemUsd": 0.06409,
+      "steemUsd": 0.06402,
       "sbdUsd": 0,
       "inventory": {
         "steem": 0,
         "sbd": 0.642,
-        "spOwn": 4034.713387345949,
+        "spOwn": 4034.7178546347272,
         "rcPct": 100
       },
       "ordersOk": true,
@@ -164,7 +164,7 @@
     "intel": {
       "name": "intel",
       "ok": true,
-      "ms": 1403,
+      "ms": 1442,
       "verdict": "DECISIONS:4",
       "decisions": [
         "book-depth:hold-shape",
@@ -172,18 +172,18 @@
         "rc-health:healthy",
         "curation:curator-live"
       ],
-      "spreadBpsRec": 41,
+      "spreadBpsRec": 111,
       "book": {
-        "bestAsk": 0.10352650030934213,
-        "bestBid": 0.10310706510983574,
-        "spreadBps": 41
+        "bestAsk": 0.10429023898646703,
+        "bestBid": 0.10313540829217871,
+        "spreadBps": 111
       }
     },
     "tick": {
       "name": "tick",
       "ok": true,
       "ms": 0,
-      "runCount": 36,
+      "runCount": 42,
       "simFills": 0,
       "simFeesMu": 0,
       "events": 3
@@ -191,7 +191,7 @@
     "peg": {
       "name": "peg",
       "ok": true,
-      "ms": 0,
+      "ms": 1,
       "verdict": "OFFER-EMPTY",
       "asks": 0,
       "bids": 0,
@@ -212,7 +212,7 @@
       "verdict": "CONVERT-HOLD",
       "amountSbd": 0,
       "marketSbdUsd": 0,
-      "impliedSbdUsd": 0.615647,
+      "impliedSbdUsd": 0.614975,
       "marketSourceNote": "no-external-SBD-market (delisted binance/poloniex/upbit/mexc) — HOLD is honest"
     },
     "curate": {
@@ -229,14 +229,14 @@
     "execute": {
       "name": "execute",
       "ok": true,
-      "ms": 715,
+      "ms": 699,
       "verdict": "NO-OPS",
       "ops": 0
     },
     "soldiers": {
       "name": "soldiers",
       "ok": true,
-      "ms": 5111,
+      "ms": 5183,
       "verdict": "SOLDIER-GRID-DONE",
       "deploy": null,
       "topups": [],
@@ -247,9 +247,9 @@
           "txid": null,
           "ops": 0,
           "stale": 0,
-          "live": 3,
+          "live": 2,
           "steem": 0.001,
-          "sbd": 0,
+          "sbd": 0.139,
           "error": null
         },
         {
@@ -258,9 +258,9 @@
           "txid": null,
           "ops": 0,
           "stale": 0,
-          "live": 3,
+          "live": 2,
           "steem": 0.001,
-          "sbd": 0,
+          "sbd": 0.139,
           "error": null
         },
         {
@@ -269,11 +269,27 @@
           "txid": null,
           "ops": 0,
           "stale": 0,
-          "live": 3,
+          "live": 2,
           "steem": 0.001,
-          "sbd": 0,
+          "sbd": 0.139,
           "error": null
         }
+      ]
+    },
+    "learn": {
+      "name": "learn",
+      "ok": true,
+      "ms": 1,
+      "verdict": "LEARNED",
+      "lessons": [
+        "cycle-conn-fails"
+      ],
+      "tunings": [],
+      "discoveryVerdict": "FRESH-CACHED",
+      "topOpportunities": [
+        "spread-normal(measured)",
+        "tags-realloc(measured)",
+        "curation-share(estimated)"
       ]
     },
     "report": {
@@ -303,5 +319,5 @@
     "honesty": "unbased ≠ profit · signing doctrine-capped · all numbers measured this cycle"
   },
   "ok": true,
-  "finishedAt": "2026-09-29T19:49:19.027Z"
+  "finishedAt": "2026-09-29T20:12:41.501Z"
 }

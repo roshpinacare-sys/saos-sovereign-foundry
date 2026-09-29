@@ -1,0 +1,66 @@
+{
+  "at": "2026-09-29T20:12:32.616Z",
+  "enabled": true,
+  "runsTotal": 4,
+  "verdict": "LEARNED",
+  "metrics": {
+    "cycles": {
+      "window": 13,
+      "oks": 10,
+      "fails": 3,
+      "okRate": 76.9,
+      "failReasons": {
+        "conn": 3
+      },
+      "msP50": 7160,
+      "msP90": 12005
+    },
+    "curator": {
+      "present": true,
+      "totalVotes": 10,
+      "window": 4,
+      "verdicts": {
+        "BROADCAST-FAIL": 3,
+        "VOTED": 1
+      },
+      "vpEff": 85.5,
+      "meanAgeMinutes": 88.5,
+      "tagsVoted": {
+        "steem": 6,
+        "crypto": 4
+      },
+      "dayCapsInRow": 0,
+      "maxPerDay": 10
+    },
+    "exec": {
+      "window": 8,
+      "fails": 0,
+      "lastError": null
+    },
+    "watchdog": {
+      "checks": 106,
+      "downs": 0,
+      "heals": 12,
+      "healVerified": 12,
+      "healFailed": 0,
+      "lastCheckAt": "2026-09-29T20:12:32.720Z",
+      "engineUp": true,
+      "lastSpawnAt": "2026-09-29T20:09:22.370Z"
+    }
+  },
+  "lessons": [
+    {
+      "id": "cycle-conn-fails",
+      "severity": "high",
+      "evidence": "cycles 10/13 ok · conn-fails 3 (connection-level)",
+      "lesson": "connection-level cycle kills waste 10-minute sovereignty slots",
+      "action": "FIXED T-14: engine idleTimeout 255 + sovereign one-shot conn-retry with heal-gate"
+    }
+  ],
+  "tunings": {},
+  "tuningsApplied": [],
+  "lessonsTotal": {
+    "cycle-conn-fails": 4
+  },
+  "honesty": "learning reads recorded history only · tunings hard-clamped (LEARN_CLAMP) · doctrine laws untouchable"
+}

@@ -28,6 +28,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { rpcCall } from "./measure.mjs";
 import { executeAs, masterAccount, armedConf, execPaused } from "./signer.mjs";
+import { learningTunings } from "./learning.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const STATE = path.join(DIR, "state");
@@ -155,7 +156,14 @@ export function curatorState() { return readJson(CUR_FILE, null); }
 /* ── THE EXECUTOR: plan → gates → broadcast (posting key, atomic tx) ───── */
 export async function runCurator({ now = new Date().toISOString() } = {}) {
   const conf = armedConf();
-  const p = { ...curatorPolicy(), ...(conf.curate ?? {}) };
+  /* T-14: policy merge order = defaults → operator armed-conf → LEARNED tunings.
+   * Learning acts last so it can act at all, but it can NEVER introduce keys
+   * beyond its clamped set (baseWeightPct 30-60, ageMinMinutes 5-12, additive
+   * tags ≤8) — operator intent and doctrine laws (VF1, VP floor, maxPerDay)
+   * are untouchable by design. */
+  const learned = learningTunings();
+  const p = { ...curatorPolicy(), ...(conf.curate ?? {}), ...learned };
+  const tuningsApplied = Object.keys(learned);
   const master = masterAccount();
   const day = dayKeyOf(now);
   const nowMs = Date.parse(now);
@@ -167,6 +175,7 @@ export async function runCurator({ now = new Date().toISOString() } = {}) {
     enabled: p.enabled, at: now, day,
     votesTodayCount: carried.votesToday.length,
     maxPerDay: p.maxPerDay,
+    tuningsApplied,
   };
   if (!p.enabled) return { ...base, verdict: "DISABLED" };
   if (execPaused()) return { ...base, verdict: "OPERATOR-PAUSED" };
@@ -208,17 +217,31 @@ export async function runCurator({ now = new Date().toISOString() } = {}) {
    * CHAIN-TRUTH LAW (measured live 2026-09-29): STEEM_MIN_VOTE_INTERVAL_SEC=3
    * — two votes by the same voter inside one tx/land in one block ⇒ atomic
    * assert failure for the WHOLE tx. So: one vote per broadcast, spaced,
-   * fail-closed (first failure stops the run — never burn RC on a dead node). */
+   * fail-closed (first failure stops the run — never burn RC on a dead node).
+   * T-14 hardening (measured live 19:42:16): async broadcast returns BEFORE
+   * block inclusion — two adjacent-block votes can still hit the 3s assert.
+   * The rejection is ATOMIC (the vote never landed) ⇒ one clean retry after
+   * 3.5s is provably safe (cannot double-vote; worst case both fail). */
+  const isVoteIntervalAssert = (err) =>
+    /MIN_VOTE_INTERVAL|Can only vote once every 3 seconds/i.test(String(err ?? ""));
   const results = [];
   let lastAt = 0;
   for (const v of plan.selected) {
     const waitMs = lastAt ? 3200 - (Date.now() - lastAt) : 0;
     if (waitMs > 0) await new Promise((r) => setTimeout(r, waitMs));
-    const res = await executeAs(master, [[
+    let res = await executeAs(master, [[
       "vote", { voter: master, author: v.author, permlink: v.permlink, weight: v.weight },
     ]], { tag: "curate", role: "posting" });
+    let retried = false;
+    if (!res.ok && isVoteIntervalAssert(res.error)) {
+      await new Promise((r) => setTimeout(r, 3500));
+      retried = true;
+      res = await executeAs(master, [[
+        "vote", { voter: master, author: v.author, permlink: v.permlink, weight: v.weight },
+      ]], { tag: "curate", role: "posting" });
+    }
     lastAt = Date.now();
-    results.push({ ...v, ok: !!res.ok, txid: res.txid ?? null, error: res.error ?? null });
+    results.push({ ...v, ok: !!res.ok, txid: res.txid ?? null, error: res.error ?? null, retried });
     if (!res.ok) break;
   }
   const okVotes = results.filter((r) => r.ok);
@@ -246,7 +269,7 @@ export async function runCurator({ now = new Date().toISOString() } = {}) {
   });
   appendLine(path.join(STATE, "events.jsonl"), {
     type: "curate.done", at: now, verdict, votes: okVotes.length,
-    txid: out.txid, vpEff,
+    txid: out.txid, vpEff, tuningsApplied,
   });
   return out;
 }

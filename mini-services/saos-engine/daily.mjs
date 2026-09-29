@@ -1,9 +1,12 @@
 /**
  * daily.mjs — one-command autonomous cycle (A-8 lineage, T-9 local rebuild,
  * T-12 LIVE EXECUTION: the operator handed the master credential and ordered
- * full autonomous, sovereign operation without operator intervention).
+ * full autonomous, sovereign operation without operator intervention.
+ * T-14 CONTINUOUS LEARNING: the machine reads its own recorded history every
+ * cycle, derives evidence-backed lessons, and applies hard-clamped tunings —
+ * plus a cadence-gated network scan for growth options (discovery).
  *
- * observe → intel → tick → peg(intel-fed) → convert → execute(SIGN) → soldiers → report
+ * observe → intel → tick → peg(intel-fed) → convert → execute(SIGN) → soldiers → learn(T-14) → report
  *
  * Fail-isolated steps; every signing op doctrine-capped (signer.mjs);
  * pause button = operator kill-switch (state/exec-pause.json); everything
@@ -23,6 +26,8 @@ import { executeOps, executeAs, armedConf, execPaused, masterAccount } from "./s
 import { deploySoldiers, runSoldierGrids, soldiersState } from "./soldiers.mjs";
 import { postDailyReport } from "./promo.mjs";
 import { runCurator } from "./curator.mjs";
+import { runLearning } from "./learning.mjs";
+import { runDiscovery } from "./discovery.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const STATE = path.join(DIR, "state");
@@ -269,7 +274,23 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
     };
   });
 
-  /* 8 · report: profitability rollup */
+  /* 9 · learn (T-14): ingest recorded history → lessons → bounded tunings.
+   *   learning is cheap (local files only) — every cycle; discovery (network
+   *   reads) is cadence-gated internally at 30min. Fail-isolated like all
+   *   steps; never blocks execution — learning shapes the NEXT cycle. */
+  report.steps.learn = await stepWrap("learn", async () => {
+    const learning = await runLearning({ now });
+    const discovery = await runDiscovery({ now });
+    return {
+      verdict: learning.verdict,
+      lessons: learning.lessons.map((l) => l.id),
+      tunings: learning.tuningsApplied,
+      discoveryVerdict: discovery.verdict,
+      topOpportunities: discovery.opportunities?.slice(0, 3).map((o) => `${o.id}(${o.potentialClass})`) ?? [],
+    };
+  });
+
+  /* 10 · report: profitability rollup */
   report.steps.report = await stepWrap("report", async () => {
     const pnl = obs.ok ? obs.pnl : null;
     const fuelUsd = obs.ok ? obs.fuel?.fuelUsdPerDay ?? null : null;

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import {
-  Activity, Anchor, Banknote, BatteryCharging, Brain, CircleCheck, Cpu, GitBranch, HeartPulse, KeyRound, PauseCircle,
+  Activity, Anchor, Banknote, BatteryCharging, Brain, BrainCircuit, CircleCheck, Cpu, GitBranch, HeartPulse, KeyRound, Lightbulb, PauseCircle,
   Play, PlayCircle, Radio, RefreshCw, Route, Scale, ShieldCheck, Sigma, Target, TrendingUp, Users, Wallet, Wrench
 } from 'lucide-react'
 
@@ -71,6 +71,20 @@ type Status = {
     decisions?: { kind?: string; decision?: string; reason?: string }[]
     book?: { bestAsk?: number | null; bestBid?: number | null; spreadBps?: number | null } | null
     spreadBpsRec?: number | null
+  } | null
+  learning?: {
+    verdict?: string | null; at?: string | null; runsTotal?: number
+    lessons?: { id?: string; severity?: string; lesson?: string; evidence?: string; action?: string }[]
+    tuningsApplied?: { key?: string; from?: number; to?: number; added?: string; because?: string }[]
+    tunings?: Record<string, unknown> | null
+    lessonsTotal?: Record<string, number> | null
+    cycleMetrics?: { okRate?: number | null; window?: number; failReasons?: Record<string, number> | null; msP50?: number | null }
+  } | null
+  discovery?: {
+    verdict?: string | null; at?: string | null
+    opportunities?: { id?: string; kind?: string; potentialClass?: string; evidence?: string; potential?: string | number | null; gate?: string }[]
+    topTags?: { tag?: string; payoutsSbd?: number }[]
+    curationEst?: { dailyPoolSteem?: number; estimatedSteemPerDay?: number; note?: string } | null
   } | null
   events?: { type?: string; at?: string; [k: string]: unknown }[]
 }
@@ -601,6 +615,76 @@ export default function Home() {
                 <p className="text-[11px] leading-relaxed text-slate-500 mt-2">
                   ה-VP המלא (98%+) ישב בטל — עכשיו 4034 SP עובדים: הצבעות-בוקר טריות עם-ירידת-משקל-לפי-גיל, מכסה-יומית, רצפת-VP, אפס-הצבעה-עצמית, סינון-ספאם. מפתח-פרסום בלבד — פעולת-הצבעה לא-יכולה להזיז כספים. התשואה נמדדת מ-curation_reward חי (מסילת-הדלק).
                 </p>
+              </CardContent>
+            </Card>
+
+            {/* למידה-מתמשכת · גדילה (T-14) */}
+            <Card className="border-cyan-500/25 bg-gradient-to-br from-cyan-500/10 to-slate-900/60">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm text-cyan-300">
+                  <BrainCircuit className="h-4 w-4" aria-hidden /> למידה-מתמשכת · גדילה (T-14)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="outline" className={s?.learning?.verdict === 'LEARNED' ? 'border-cyan-500/40 text-cyan-300' : 'border-slate-500/40 text-slate-400'}>
+                    {s?.learning?.verdict === 'LEARNED' ? 'למד · התעדכן'
+                      : s?.learning?.verdict === 'NO-NEW-LESSONS' ? 'אין-שיעורים-חדשים (תקין)'
+                      : s?.learning?.verdict ? s.learning.verdict : 'הלולאה תרוץ במחזור-הבא'}
+                  </Badge>
+                  {s?.learning?.cycleMetrics?.okRate != null && (
+                    <span className="text-[11px] text-slate-500">מחזורים-תקינים <b className="tabular-nums text-slate-300">{s.learning.cycleMetrics.okRate}%</b> מ-{s.learning.cycleMetrics.window ?? 0} אחרונים</span>
+                  )}
+                  {!!s?.learning?.runsTotal && (
+                    <span className="text-[11px] text-slate-500">סבבי-למידה: <b className="tabular-nums text-slate-300">{s.learning.runsTotal}</b></span>
+                  )}
+                </div>
+                {!!s?.learning?.lessons?.length ? (
+                  <ul className="space-y-1.5 mt-3 max-h-44 overflow-y-auto">
+                    {s.learning.lessons.map((l, i) => (
+                      <li key={i} className="text-[11px] leading-relaxed">
+                        <div className="flex items-start gap-1.5">
+                          <Badge variant="outline" className={l.severity === 'high' ? 'border-rose-500/40 text-rose-300 shrink-0' : l.severity === 'medium' ? 'border-amber-500/40 text-amber-300 shrink-0' : 'border-slate-600/50 text-slate-400 shrink-0'}>{l.severity ?? '?'}</Badge>
+                          <span><b className="text-slate-100">{l.lesson}</b></span>
+                        </div>
+                        {l.evidence && <div className="text-slate-500 mr-6">ראיה: {l.evidence}</div>}
+                        {l.action && <div className="text-cyan-400/90 mr-6">פעולה: {l.action}</div>}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-[11px] text-slate-500 mt-2">לומד מהיסטוריה-מוקלטת בלבד — אפס המצאות: היסטוריה-ריקה = שיעורים-אפס.</p>
+                )}
+                {!!s?.learning?.tuningsApplied?.length && (
+                  <div className="mt-2 text-[11px]">
+                    <span className="text-slate-500">כיוונים-חסומים-שהוחלו: </span>
+                    {s.learning.tuningsApplied.map((t, i) => (
+                      <Badge key={i} variant="outline" className="border-cyan-500/30 text-cyan-300 mr-1 font-mono text-[10px]">
+                        {t.key}{t.to != null ? ` ${t.from}→${t.to}` : t.added ? ` +${t.added}` : ''}
+                      </Badge>
+                    ))}
+                    <div className="text-slate-600 mt-1">מוגבל-חוק (LEARN_CLAMP 30–60% משקל · גיל 5–12 דק · תגיות ≤8) — החוקים (רצפת-VF1, רצפת-VP, מכסה-יומית) בלתי-נגישים-ללמידה.</div>
+                  </div>
+                )}
+                {!!s?.discovery?.opportunities?.length && (
+                  <div className="mt-3 border-t border-slate-800 pt-2">
+                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mb-1">
+                      <Lightbulb className="h-3.5 w-3.5 text-amber-300" aria-hidden /> אופציות-גדילה-שהתגלו ({s.discovery.verdict === 'OPTIONS-FOUND' ? 'מדורגות' : s.discovery.verdict ?? '—'})
+                    </div>
+                    <ul className="space-y-1 max-h-36 overflow-y-auto">
+                      {s.discovery.opportunities.map((o, i) => (
+                        <li key={i} className="text-[11px] leading-relaxed flex items-start gap-1.5">
+                          <Badge variant="outline" className={o.potentialClass === 'measured' ? 'border-emerald-500/40 text-emerald-300 shrink-0' : o.potentialClass === 'estimated' ? 'border-amber-500/40 text-amber-300 shrink-0' : 'border-slate-600/50 text-slate-400 shrink-0'}>{o.potentialClass === 'measured' ? 'נמדד' : o.potentialClass === 'estimated' ? 'מוערך' : 'פוטנציאל'}</Badge>
+                          <span><b className="text-slate-100">{o.kind}</b> — <span className="text-slate-400">{o.evidence}</span>{o.gate && <span className="text-slate-600"> · שער: {o.gate}</span>}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    {!!s.discovery.curationEst?.estimatedSteemPerDay && (
+                      <p className="text-[10px] text-slate-500 mt-1">אומדן-מנת-קיורציה ציבורי: ~{s.discovery.curationEst.estimatedSteemPerDay} STEEM/יום (מוערך — רק curation_reward חי נחשב-נמדד)</p>
+                    )}
+                  </div>
+                )}
+                <p className="text-[11px] text-slate-500 mt-2">לולאה-סוגרת-עצמה: קורא-היסטוריה → שיעורים-מבוססי-ראיות → כיוונים-חסומים → המחזור-הבא רץ-חכם-יותר. הגילוי מדרג ביושר: נמדד &gt; מוערך &gt; פוטנציאל, ולעולם לא מבצע — השערים מחליטים.</p>
               </CardContent>
             </Card>
 
