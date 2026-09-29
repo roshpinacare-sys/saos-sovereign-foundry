@@ -130,7 +130,7 @@ async function main() {
   // regressions here were invisible for 13h (register() never ran, fleet-cure
   // was never in the list, boot-env drift silently disabled guardian+chief).
   const sup = Array.isArray(s.body.supervisor) ? s.body.supervisor : [];
-  report("task-62: /status exposes supervisor truth (5 services incl. fleet-cure + key-broker)", sup.length === 5 && sup.some((x) => x.name === "fleet-cure") && sup.some((x) => x.name === "key-broker"), `got=${sup.map((x) => x.name).join(",") || "none"}`);
+  report("task-62: /status exposes supervisor truth (6 services incl. fleet-cure, key-broker, rotation-keeper)", sup.length === 6 && sup.some((x) => x.name === "fleet-cure") && sup.some((x) => x.name === "key-broker") && sup.some((x) => x.name === "rotation-keeper"), `got=${sup.map((x) => x.name).join(",") || "none"}`); // FIX(2026-09-29): rotation-keeper joined the supervisor in the Task-5 rotation round — the 5-service expectation was stale
   report("task-62: supervisor entries carry alive+disabled verdicts", sup.every((x) => typeof x.alive === "boolean" && typeof x.disabled === "boolean"), sup.map((x) => `${x.name}:${x.alive ? "up" : "DOWN"}${x.disabled ? "(disabled)" : ""}`).join(" "));
 
   // Task 62: the fleet-schedule claim must match the executor's own evidence —
@@ -515,17 +515,31 @@ async function main() {
   if (cookie) {
     const rev = await j("/api/saos/auth/revoke-all", { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: "{}" });
     report("revoke-all (authed) → ok + revokedAt", rev.body.ok === true && typeof rev.body.revokedAt === "string", `at=${rev.body.revokedAt}`);
-    const afterRev = await j("/api/saos/auth", { headers: { cookie } });
+    // FIX(2026-09-29): afterRev used to run immediately after the suite's own
+    // rate-limit burst → GET /auth answered 429 (no retry) and the check read
+    // a rate-limit body as "session state". One bounded retry honoring
+    // Retry-After (same convention as loginWithRetry) makes it deterministic.
+    let afterRev = await j("/api/saos/auth", { headers: { cookie } });
+    if (afterRev.status === 429) {
+      const wait = Math.min(70, Number(afterRev.headers.get("retry-after") ?? afterRev.body.retryAfterSec ?? 62)) + 2;
+      console.log(`  … auth window exhausted (429) — waiting ${wait}s before retry`);
+      await new Promise((r) => setTimeout(r, wait * 1000));
+      afterRev = await j("/api/saos/auth", { headers: { cookie } });
+    }
     // roast 60: env-aware — with SAOS_DEV_AUTOSESSION=1 (dev phase) GET /auth
     // honestly issues a FRESH managed session for a dead cookie (actor
     // "dev-managed-session"); the proof the OLD cookie died is that it no
     // longer authenticates AS ITSELF — and a sensitive route (no auto-session
     // there) must refuse it with 401. Both are now measured.
-    const autoSession = (process.env.SAOS_DEV_AUTOSESSION ?? "").trim() === "1";
-    const deadAsItself = autoSession
-      ? afterRev.body.actor === "dev-managed-session" && afterRev.body.managed === true
-      : afterRev.body.authenticated === false;
-    report("revoke-all: the revoking session itself is dead", deadAsItself, autoSession ? "dev auto-session re-issued (managed:true) — old cookie no longer the actor" : "epoch rotation invalidates every prior cookie");
+    // FIX(2026-09-29): branch on the SERVER's observed behavior, not on the
+    // suite process env — the SAOS_DEV_AUTOSESSION flag lives on the server
+    // boot, so env-mirroring here picked the wrong branch and misread a
+    // managed re-issue as a failure. Both honest shapes prove the old cookie
+    // died: either a managed re-issue (dev phase) or authenticated:false.
+    const deadAsItself =
+      (afterRev.body.actor === "dev-managed-session" && afterRev.body.managed === true) ||
+      (afterRev.body.authenticated === false && afterRev.body.ok === true);
+    report("revoke-all: the revoking session itself is dead", deadAsItself, afterRev.body.managed ? "dev auto-session re-issued (managed:true) — old cookie no longer the actor" : "epoch rotation invalidates every prior cookie");
     const deadProbe = await j("/api/saos/signer", { method: "POST", headers: { "Content-Type": "application/json", cookie }, body: JSON.stringify({ network: "STEEM" }) });
     report("revoke-all: dead cookie refused on sensitive route (401)", deadProbe.status === 401);
     const rel = await loginWithRetry(ADMIN_KEY);

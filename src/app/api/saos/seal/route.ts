@@ -88,7 +88,7 @@ export async function POST(req: Request) {
     for (let i = 0; i < stampCount; i++) {
       txs.push({ op: "stamp", issuer: "foundry-console", nonce: `pulse-${batchId}-${i}` });
     }
-    txs.push({ op: "harvest", issuer: "grid-98", nonce: `harvest-${batchId}`, amount: 42 });
+    txs.push({ op: "harvest", issuer: "treasury", nonce: `harvest-${batchId}`, amount: 42 }); // FIX(canonical-merge 2026-09-29): kernel F5a gates harvest to issuer==="treasury" — "grid-98" broke every dry-run seal since the canonical kernel merge
     txs.push({ op: "relay", issuer: "foundry-console", nonce: `door-${batchId}`, to: "steem:headcorner" });
     txs.push({ op: "seal", issuer: "foundry-console", nonce: `seal-${batchId}` });
 
