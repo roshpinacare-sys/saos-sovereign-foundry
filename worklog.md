@@ -247,3 +247,26 @@ Stage Summary:
 - Honest economics at round close: measured $0.0000/day still (fills just began — 2 real bid fills banked below parity), 910 STEEM + soldier ladders working at lawful prices, position avg-cost tracked (A-10), SBD held for bids deferred for soldiers; the $1000/day gate is now ONLY capital-scale (X-2 math on the dashboard), no longer capability
 - Key facts for next rounds: seed order = name+role+pw; account_create paid path beats RC claims; create_claimed_account needs extensions; pubkey checksum = ripemd160 direct; watch asks fills → SBD returns → soldier bid sides self-bootstrap
 - Artifacts: steemtx.mjs · signer.mjs · soldiers.mjs · intel.mjs · promo.mjs · proof-live.mjs · daily.mjs (8-step cycle) · status route T-12 · page.tsx 3 cards · selftest 60/60 · evidence screenshots · worklog updated
+
+---
+Task ID: 13 (T-13 · "זה פתרון שכבר קל לנו לפתור — בוא ניישם אותו. קדימה ודחוף")
+Agent: AGENT-A (Z.ai Code · שיחת-המקור · main orchestrator)
+Task: Implement the easy solution identified at T-12 close — the dormant curation fuel rail (measured $4.24/day historical, VP sitting ~99% unused on 4034 SP since 09-09)
+
+Work Log:
+- Recovery-first: read worklog (12 rounds) + live state probe. FOUND: no pending rewards (claim rail honest-zero), VP mana 85.5% effective with ~0 votes — the fuel rail was the only measured-revenue rail left dormant, gating on nothing but implementation. DECIDED: that was "the easy solution" — implemented immediately
+- BUILT curator.mjs: pure deterministic planner (filterCandidates — tag whitelist ×6, age window 10min–20h with linear weight decay 50%→20%, min body 600 chars, bandwagon cap 30 SBD pending, per-author diversity 1/day, daily cap 10 votes, VP-eff floor 60%, self-fleet blacklist ×4, on-chain active_votes dedup — the chain is the dedup source of truth) + gated executor (armed-conf curate block, operator kill-switch, posting-key role ONLY — a vote op structurally cannot move funds)
+- **CHAIN-TRUTH LAW caught live, fixed, documented**: first broadcast batched 10 vote ops in ONE tx → STEEM_MIN_VOTE_INTERVAL_SEC=3 assert killed the whole tx atomically (fail-closed, zero partial state, journaled honestly as BROADCAST-FAIL ×3) → FIX: one vote per tx, spaced 3.2s, fail-closed stop on first error. Also caught pre-broadcast: op-format bug ([op] vs [[op]]) and a CLI block in index.ts that would have fired curator on every server boot (moved to curator.mjs main-guard)
+- **LIVE PROOF (on-chain, independently verified)**: 10 votes broadcast, one txid each (8fd4f634bf83… → 64aa0e96c6f4); get_content read-back shows headcorner vote percent=4948 with rshares 60,678,754,579 on tradelover post; account_history shows 9 vote ops in 30-op window (10th beyond window); second pass correctly returned DAY-CAP (quota full) — no double-vote
+- armedConf shallow-merge fix: operator's exec-armed.json wins on its keys, new doctrine blocks (curate) appear without touching the operator file; exec-status now exposes curate policy
+- daily.mjs cycle now 9 steps (curate inserted between convert and execute, fail-isolated via stepWrap); intel curation decision upgraded: dormant-noted → curator-live ("voted 10 today · VP 85.5% · txid 8fd4f634bf83")
+- selftest 60 → 73/73 PASS (vote op serialization incl. negative weight 21-byte exact vector, planner determinism byte-identical, day-cap, weight decay band, vpEff math, rejection reasons)
+- Cockpit: new T-13 card (verdict badge, VP-eff/floor, votes 10/10, total, candidates scanned, last 5 votes w/ weight+txid, honest policy note), status route curator block + fuelHistory line now reflects the live rail; browser-verified desktop 1440 + mobile 390 (card renders live data), golden path: clicked הרץ-מחזור → "מחזור הושלם · observe:תקין · intel:תקין · tick:תקין · peg:תקין · convert:תקין · curate:תקין · execute:תקין · soldiers:תקין · report:תקין", 0 console errors, footer natural-push (5492>844), evidence t13-{desktop,mobile}.png
+- lint 0 errors · committed my-project@82519de (zero key material — only txids/weights/public data)
+
+Stage Summary:
+- THE FUEL RAIL IS LIVE: the system now EARNS by voting — the last zero-capital, zero-risk revenue rail is self-executing inside the sovereign cycle; expected yield flows through curation_reward ops and the existing measureAll fuel measurement (honest: first rewards land on post payout windows, ~7d — measured $/day will update itself, never claimed)
+- Sovereignty unchanged: 9-step cycle every 10min unattended, watchdog/heals healthy, kill-switch covers curate too (pause = no votes)
+- Honest economics: book 910.4 STEEM asks ≥ floor (value law holds), bids starved pending SBD returns (bid-budget 0.142 < min — honest), realized −0.016 SBD, measured $0.0000/day this instant + curation rail now producing rshares daily; $1000/day still gated ONLY by X-2 capital scale
+- Key facts for next rounds: votes capped 10/day @ ≤50% weight = VP converges well above 60% floor (regen 20%/day); DAY-CAP verdict is healthy-expected most of each day; curate history in state/curator.json (last 30 runs); one vote per tx is a HARD chain law — never batch
+- Artifacts: curator.mjs · daily.mjs 9-step · intel.mjs · signer.mjs merge · selftest 73 · status route + page.tsx T-13 card · evidence screenshots · worklog updated
