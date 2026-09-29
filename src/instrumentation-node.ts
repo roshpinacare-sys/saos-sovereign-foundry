@@ -84,6 +84,9 @@ const SERVICES: Watched[] = [
   mk("fleet-cure", 3034, "fleet-cure-dev.log", "SAOS_NO_FLEET_CURE", 45_000, "/ping"),
   // roast 73: key-broker — שער-החתימה הריבוני (:3040) — /ping ללא-אימות
   mk("key-broker", 3040, "key-broker-dev.log", "SAOS_NO_KEY_BROKER", 55_000, "/ping"),
+  // Task ROT-1 (2026-09-29): rotation-keeper — מחזיק-הרוטציה הקבועה של ה-foundry
+  // (beats: health/drift/selftest/backup/git-hygiene). כל-נתיב משיב-בריאות → probe "/".
+  mk("rotation-keeper", 3035, "rotation-dev.log", "SAOS_NO_ROTATION", 65_000, "/"),
 ];
 
 const logFor = (s: Watched, msg: string) => {

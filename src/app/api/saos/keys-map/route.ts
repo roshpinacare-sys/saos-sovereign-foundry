@@ -2,7 +2,7 @@ import { existsSync, readFileSync, statSync } from "fs";
 import { NextResponse } from "next/server";
 import path from "path";
 
-import { audit, authConfigured, verifyLoginKey } from "@/lib/saos/auth";
+import { audit, authConfigured, requireAuth, verifyLoginKey } from "@/lib/saos/auth";
 import { coarseError } from "@/lib/saos/api-errors";
 import { ensureSupervisor } from "@/lib/saos/supervisor-bridge";
 import { supervisorStatus } from "@/instrumentation-node";
@@ -17,13 +17,20 @@ export const dynamic = "force-dynamic";
  * או כל מפתח כמו שצריך מסודר"): the owner is done being pointed at files.
  * Every key the system holds is surfaced HERE, organized, on the main screen:
  *
- *   - admin key      — material IS returned (explicit owner directive). It is
- *                      app-synthetic, gates only this console, and is rotateable
- *                      (POST /auth/revoke-all + re-issue). hash-verified live.
- *                      OWNER DIRECTIVE 2026-09-10 (2nd): private environment,
- *                      single operator — material is returned unconditionally,
- *                      NO same-origin gate ("תשאיר גם ככה, לא צריך להקשות עליי").
- *                      The Task-46 gate was reverted at the owner's request.
+ *   - admin key      — SECURITY DECISION 2026-09-29 (owner-approved audit fix,
+ *                      supersedes the 2026-09-10 "no gate" directive): raw
+ *                      admin material is returned ONLY to authenticated callers
+ *                      (session cookie or Bearer). Anonymous callers get the
+ *                      FULL map (public planes, wallets, gaps, files) with the
+ *                      material MASKED + materialAuthRequired:true — the main
+ *                      screen keeps rendering everything public, and after
+ *                      login the material appears as before. This closes the
+ *                      live audit finding: an unauthenticated GET returned the
+ *                      raw admin key (full treasury-ops control) to anyone who
+ *                      reached the URL. The key itself stays app-synthetic and
+ *                      rotateable (POST /auth/revoke-all + re-issue).
+ *                      (Historical: OWNER DIRECTIVE 2026-09-10 returned material
+ *                      unconditionally; the Task-46 gate had been reverted.)
  *   - chain keys     — verdicts + PUBLIC keys only (STEEM/HIVE/BLURT slots from
  *                      the external signer). WIF material NEVER passes here.
  *   - wallets        — PUBLIC addresses only (same constants as the treasury
@@ -195,11 +202,19 @@ export async function GET(req: Request) {
   }
 
   try {
-    // ── 1. admin key (owner directive: ON THE MAIN SCREEN, no gate — private env) ──
+    // ── 0. security gate (2026-09-29): raw material ONLY for authenticated callers ──
+    // Fail-closed by design: auth-unconfigured ⇒ masked for everyone (the
+    // fail-closed rule of auth.ts applies to the map too — an unconfigured
+    // system can never silently behave as an open one).
+    const ar = await requireAuth(req);
+    const authenticated = ar.authenticated;
+
+    // ── 1. admin key (ON THE MAIN SCREEN — material gated by the auth gate) ──
     const secretPath = path.join(SECRETS_DIR, "saos-admin-key");
     const uploadPath = path.join(UPLOAD_DIR, "saos-admin-key.txt");
     const material = readTrim(secretPath) ?? readTrim(uploadPath);
     const hashMatch = material ? verifyLoginKey(material) : null;
+    const adminMaterial = authenticated ? material : null;
 
     // ── 2. chain keys via signer (verdicts + public data only) ──
     const signer = await signerStatus();
@@ -327,8 +342,11 @@ export async function GET(req: Request) {
         directive: "הבעלים 2026-09-10: כל המפתחות על המסך הראשי, מסודרים — בלי לחפש קבצים",
         admin: {
           configured: authConfigured(),
-          material: material, // מפתח-אדמין בלבד (מלאכותי, ניתן לרוטציה) — הנחיית בעלים: סביבה פרטית, ללא שער
+          // 2026-09-29: raw material only for authenticated callers — anonymous
+          // gets masked + materialAuthRequired (the map itself stays public).
+          material: adminMaterial,
           masked: maskOf(material),
+          materialAuthRequired: !authenticated,
           hashMatch,
           source: readTrim(secretPath) ? "out-of-tree (~/.secrets)" : material ? "upload copy" : null
         },
@@ -397,11 +415,11 @@ export async function GET(req: Request) {
     // audit WITHOUT any secret material — verdict shapes only
     await audit({
       kind: "keys-map-read",
-      actor: "panel",
+      actor: authenticated ? ar.actor : "anonymous",
       action: "GET /keys-map",
       allowed: true,
       req,
-      detail: JSON.stringify({ hashMatch, signerReachable: signer.reachable })
+      detail: JSON.stringify({ hashMatch, signerReachable: signer.reachable, materialReleased: authenticated })
     });
     return res;
   } catch (e) {

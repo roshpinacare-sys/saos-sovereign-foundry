@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { readFileSync } from "fs";
 import path from "path";
 
-import { audit } from "@/lib/saos/auth";
+import { audit, requireAuth } from "@/lib/saos/auth";
 import { coarseError } from "@/lib/saos/api-errors";
 import { enforceRateLimit } from "@/lib/saos/rate-limit";
 
@@ -33,6 +33,15 @@ export async function POST(req: Request) {
   const rl = enforceRateLimit("verify-live", req);
   if (!rl.allowed) {
     return NextResponse.json({ ok: false, error: "rate-limited: המתן רגע", retryAfterSec: rl.retryAfterSec }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } });
+  }
+  // 2026-09-29 security gate (audit fix): this endpoint triggers a full
+  // vault re-derivation against live authorities (90s window) — it is a
+  // costly, oracle-grade operation and must not be anonymous. The panel
+  // already sends the session cookie; scripts can use Bearer.
+  const ar = await requireAuth(req);
+  if (!ar.ok) {
+    await audit({ kind: "verify-live", actor: ar.actor, action: "POST /verify-live", allowed: false, req, detail: "denied: " + (ar.error ?? "auth") });
+    return NextResponse.json({ ok: false, error: ar.error ?? "auth-required" }, { status: ar.status });
   }
   const token = signerToken();
   if (!token) return NextResponse.json({ ok: false, error: "signer-token-unavailable (fail-closed)" }, { status: 503 });

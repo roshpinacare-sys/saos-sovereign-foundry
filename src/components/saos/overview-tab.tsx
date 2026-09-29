@@ -795,7 +795,11 @@ export function MyKeysPanel() {
                   <Mono className="block text-[11px] tracking-widest text-zinc-400">{keysQ.data.admin.masked}</Mono>
                 )
               ) : (
-                <span className="text-[11px] text-zinc-500">אין חומר-מפתח — דרוש הקצאה מחדש (רוטציה)</span>
+                <span className="text-[11px] text-zinc-500">
+                  {keysQ.data.admin?.materialAuthRequired
+                    ? "חומר-המפתח מוסתר ללא-התחברות (החלטת-אבטחה 2026-09-29) — התחבר למעלה כדי לגלות"
+                    : "אין חומר-מפתח — דרוש הקצאה מחדש (רוטציה)"}
+                </span>
               )}
             </div>
             <p className="mt-1.5 text-[10px] leading-relaxed text-zinc-500">

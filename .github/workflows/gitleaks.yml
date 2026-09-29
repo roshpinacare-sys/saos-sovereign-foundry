@@ -1,0 +1,25 @@
+name: gitleaks-secret-scan
+
+# סריקת-סודות בכל push/PR — הפצה של ההגנה הקבועה (הקנון: Domain/gitleaks.yml)
+# 2026-09-29: הריפוים-הפרטיים חשופים לסודות-בהיסטוריה; זה עוצר את-הבא.
+# רץ-מיד, ללא סודות-מפעיל, ללא גישה חוץ. כישלון = push נעצר.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,54 @@
+{
+  "manifest": "SAOS-SOVEREIGN-ROTATION/1",
+  "registeredAt": "2026-09-29T00:00:00Z",
+  "by": "owner-approved audit execution (Task ROT-1)",
+  "member": {
+    "name": "saos-sovereign-foundry",
+    "role": "trust-foundry — שער-הרשת: כספת-מפתחות (signer :3033), שער-חתימה ריבוני (key-broker :3040), פיקוח-דליפות (vault-guardian :3031), ראש-מטה (chief-of-staff :3032), אורגנת-צי (fleet-cure :3034), ומחזיק-הרוטציה (rotation-keeper :3035)",
+    "repo": "roshpinacare-sys/saos-sovereign-foundry",
+    "sovereignPlane": {
+      "keys": "external-signer :3033 (AES-256-GCM envelope, verify-then-write, drift-monitor 10min)",
+      "signing": "key-broker :3040 (EVM-7nets + TRON + SOL, EIP-191/ed25519, zero key-material egress)",
+      "evidence": "src/lib/saos: kernel + merkle + receipts (hash-chained)"
+    }
+  },
+  "rotation": {
+    "keeper": {
+      "service": "mini-services/rotation-keeper (port 3035, loopback)",
+      "ledger": "broadcasts/rotation/ledger.jsonl (hash-chained, prevHash→sha256)",
+      "status": "GET :3035/rotation/status",
+      "killSwitch": "SAOS_NO_ROTATION=1"
+    },
+    "beats": [
+      { "id": "health", "everyMin": 15, "what": "probe app:3000 + guardian:3031 + chief:3032 + signer:3033 + fleet-cure:3034 + broker:3040" },
+      { "id": "drift-report", "everyMin": 30, "what": "vault drift counts from signer /keys/status (public counts only) → ledger" },
+      { "id": "selftest", "everyMin": 120, "what": "kernel selftest (ephemeral child) + node_modules/prisma/db presence" },
+      { "id": "backup-freshness", "everyMin": 360, "what": "backups/*.enc age; stale>24h → POST :3033/keys/backup (kill-switch SAOS_NO_ROT_BACKUP=1)" },
+      { "id": "git-hygiene", "everyMin": 360, "what": "uncommitted count + HEAD age → ledger (record-only; day-agent promotes)" }
+    ],
+    "inheritedBeats": [
+      { "id": "anchor-pulse", "owner": "chief-of-staff :3032 (Task 74)", "everyMin": 5, "what": "auto anchor driver via app POST /api/saos/anchor-pulse (gated)" },
+      { "id": "drift-monitor", "owner": "external-signer :3033", "everyMin": 10, "what": "live key re-derivation vs chain authorities" },
+      { "id": "brief", "owner": "chief-of-staff :3032", "everyMin": 30, "what": "LLM brief → docs/briefings/latest.md" },
+      { "id": "fleet-cure", "owner": "fleet-cure :3034", "event": "RC-window", "what": "RC-aware HIVE weave execution via signer" }
+    ]
+  },
+  "integration": {
+    "fleetKeepers": {
+      "cloudHeart": "steem repo — external Actions heartbeat reads chain attest freshness; foundry leg visible via :3035/rotation/status",
+      "keeperFleet": "Zip mini-services/keeper (:3036) — polls member status; foundry status shape: { ok, service, beats[], ledger }",
+      "ciFarm": "Domain — .github/workflows/foundry-rotation-check.yml (daily: install+typecheck+kernel selftest on the foundry repo) + gitleaks"
+    },
+    "evidenceChain": {
+      "receipts": "src/lib/saos/receipt-store.ts (hash-chained)",
+      "rotationLedger": "broadcasts/rotation/ledger.jsonl",
+      "anchorGates": "anchor-pulse (double-broadcast-safe) + anchor-ingest (verify-then-record)"
+    }
+  },
+  "discipline": {
+    "zeroSecrets": "rotation-keeper holds no keys — the vault stays sealed in the signer; tokens read in-memory only, never logged",
+    "failSafe": "every beat try/caught with timeouts; beat crash is contained and recorded",
+    "derivedOrSilence": "all numbers measured live per beat; no frozen claims",
+    "loopbackOnly": "all inter-service probes bind 127.0.0.1 per R123"
+  }
+}

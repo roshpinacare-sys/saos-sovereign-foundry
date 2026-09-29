@@ -637,6 +637,8 @@ export interface KeysMapResponse {
     configured: boolean;
     material: string | null;
     masked: string | null;
+    /** 2026-09-29 security gate: true when the caller is unauthenticated and the raw material was withheld */
+    materialAuthRequired?: boolean;
     hashMatch: boolean | null;
     source: string | null;
   };
