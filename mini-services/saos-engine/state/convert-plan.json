@@ -3,5 +3,7 @@
   "reason": "no-market-price",
   "amountSbd": 0,
   "marketSbdUsd": 0,
-  "at": "2026-09-29T15:15:06.133Z"
+  "impliedSbdUsd": 0.612189,
+  "marketSourceNote": "no-external-SBD-market (delisted binance/poloniex/upbit/mexc) — HOLD is honest",
+  "at": "2026-09-29T17:08:10.929Z"
 }

@@ -78,6 +78,10 @@ eq("psm cap amount", psmCap.amountSbd, 0);
 const psmCap2 = planConvert({ liquidSbd: 50, parity: P, marketSbdUsd: 0.6, pendingSbd: 8.5, previouslyArmed: false });
 eq("psm cap partial", psmCap2.amountSbd, 1.5);
 
+/* 8b · T-9 structural truth: no external SBD market ⇒ honest HOLD (never arm on proxy) */
+eq("psm no-market honest-hold", planConvert({ liquidSbd: 50, parity: P, marketSbdUsd: 0, previouslyArmed: false }).verdict, "CONVERT-HOLD");
+eq("psm no-market reason", planConvert({ liquidSbd: 50, parity: P, marketSbdUsd: 0, previouslyArmed: true }).reason, "no-market-price");
+
 /* 9 · stale classification: asks below floor / bids above ceiling (10bps tol) */
 const orders = [
   { side: "ask", unit: P },                       // below floor ⇒ stale

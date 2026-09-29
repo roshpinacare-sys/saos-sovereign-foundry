@@ -93,13 +93,31 @@ export async function externalParity() {
       }
     } catch { /* ladder */ }
   }
+  // T-9: coingecko rate-limits aggressively (429/403 from some sandboxes) —
+  // coinpaprika is the second independent STEEM source (no key, generous).
+  if (!(steemUsd > 0)) {
+    try {
+      const r = await fetch("https://api.coinpaprika.com/v1/tickers/steem-steem", { signal: AbortSignal.timeout(8000) });
+      if (r.ok) {
+        const j = await r.json();
+        const v = Number(j?.quotes?.USD?.price);
+        if (v > 0) { steemUsd = v; source = (source === "none" ? "" : source + "+") + "coinpaprika"; }
+      }
+    } catch { /* ladder */ }
+  }
   if (steemUsd > 0 && sbdUsd > 0) {
     return { steemUsd, sbdUsd, parity: steemUsd / sbdUsd, source };
   }
-  // last resort: internal feed is SBD-per-STEEM by definition (marked, weaker)
+  // last resort: internal feed is SBD-per-STEEM by definition (marked, weaker).
+  // T-9 honesty: in this fallback parity==feed so the band check is a tautology —
+  // flagged lowConfidence so downstream gates can refuse auto-arming on it.
+  // STRUCTURAL MARKET FACT (measured 2026-09-29): SBD is delisted from binance
+  // (SBDBTC "Invalid symbol"), poloniex, upbit, mexc, lbank; coinpaprika marks
+  // it is_active:false. The chain's own witness feed is now the only live
+  // SBD↔STEEM anchor — sovereignty in its purest form.
   const feed = await internalFeed();
-  if (feed.median > 0) return { steemUsd: steemUsd || 0, sbdUsd: sbdUsd || 0, parity: feed.median, source: "internal-feed-fallback" };
-  return { steemUsd: steemUsd || 0, sbdUsd: sbdUsd || 0, parity: 0, source: "none" };
+  if (feed.median > 0) return { steemUsd: steemUsd || 0, sbdUsd: sbdUsd || 0, parity: feed.median, source: "internal-feed-fallback", lowConfidence: true };
+  return { steemUsd: steemUsd || 0, sbdUsd: sbdUsd || 0, parity: 0, source: "none", lowConfidence: true };
 }
 
 export async function internalFeed() {

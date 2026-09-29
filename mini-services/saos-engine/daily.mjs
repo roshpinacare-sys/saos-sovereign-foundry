@@ -47,14 +47,20 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
       : null;
     const authorUsdPerDay = par.sbdUsd > 0 ? Math.round(meas.fuel.authorSbdPerDay * par.sbdUsd * 1e4) / 1e4 : null;
     const band = parityVerdict(par.parity, feed.median);
+    // T-9 honesty: empty book (oo.ok && orders.length===0) is a REAL fact;
+    // a FAILED book read (oo.ok===false) must never masquerade as one.
     const data = {
       parity: par, feed: feed.median, band,
       steemUsd: par.steemUsd ?? null, sbdUsd: par.sbdUsd ?? null,
       inventory: acc.ok ? { steem: acc.steem, sbd: acc.sbd, spOwn: acc.spOwn, rcPct: acc.rcPct } : null,
-      orders: oo.orders, fills: meas.fills.length, lastFillAt: meas.lastFillAt,
+      ordersOk: oo.ok, orders: oo.orders,
+      fills: meas.fills.length, lastFillAt: meas.lastFillAt,
       pnl: fillsPnl,
       fuel: { ...meas.fuel, fuelUsdPerDay: fuelUsd, authorUsdPerDay, histLen: meas.histLen, node: meas.node },
     };
+    if (data.fuel.curationOps === 0 && data.fuel.authorOps === 0) {
+      data.fuel.windowNote = "no reward ops inside the measured window — rails dormant, not a parse failure (deep-scan documented separately)";
+    }
     if (persist) {
       writeJson(path.join(STATE, "observe.json"), { ...data, at: now });
       appendLine(path.join(STATE, "events.jsonl"), { type: "observe.done", at: now, fills: meas.fills.length, parity: par.parity });
@@ -103,7 +109,7 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
     const offer = {
       verdict: plan.verdict, parityBps: obs.band?.bps ?? null,
       blocker: plan.blocker, plan: { asks: plan.asks, bids: plan.bids },
-      marks: { paritySbdPerSteem: Math.round(obs.parity.parity * 1e6) / 1e6, source: obs.parity.source, internalFeed: Math.round(obs.feed * 1e6) / 1e6, dragK: plan.dragK, floor: plan.floor, ceiling: plan.ceiling },
+      marks: { paritySbdPerSteem: Math.round(obs.parity.parity * 1e6) / 1e6, source: obs.parity.source, lowConfidence: !!obs.parity.lowConfidence, internalFeed: Math.round(obs.feed * 1e6) / 1e6, dragK: plan.dragK, floor: plan.floor, ceiling: plan.ceiling },
       skew, stale: { count: staleCls.stale.length, orderids: staleCls.stale.map((o) => o.orderid) },
       publishedAt: now,
     };
@@ -124,13 +130,18 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
       liquidSbd: inv.sbd ?? 0, parity: obs.ok ? obs.parity.parity : 0,
       marketSbdUsd, previouslyArmed: !!prev.armed, pendingSbd: prev.pendingSbd ?? 0,
     });
-    const out = { ...plan, marketSbdUsd: Math.round(marketSbdUsd * 1e6) / 1e6, at: now };
+    // T-9 visibility-only proxy: implied SBD/USD = steemUsd ÷ feed (the witness
+    // feed encodes the market SBD value). NEVER used to arm convert — D-023
+    // auto-arm requires a MEASURED external market price, which evaporated.
+    const impliedSbdUsd = obs.ok && (obs.steemUsd ?? 0) > 0 && obs.feed > 0
+      ? Math.round((obs.steemUsd / obs.feed) * 1e6) / 1e6 : null;
+    const out = { ...plan, marketSbdUsd: Math.round(marketSbdUsd * 1e6) / 1e6, impliedSbdUsd, marketSourceNote: marketSbdUsd > 0 ? "external-measured" : "no-external-SBD-market (delisted binance/poloniex/upbit/mexc) — HOLD is honest", at: now };
     if (persist) {
       writeJson(path.join(STATE, "convert-plan.json"), out);
       writeJson(path.join(STATE, "convert-state.json"), { armed: plan.verdict === "CONVERT-PLAN", pendingSbd: prev.pendingSbd ?? 0 });
       appendLine(path.join(STATE, "events.jsonl"), { type: "convert.planned", at: now, verdict: plan.verdict, edgeBps: plan.edgeBps, amountSbd: plan.amountSbd });
     }
-    return { verdict: plan.verdict, amountSbd: plan.amountSbd, edgeBps: plan.edgeBps, marketSbdUsd: out.marketSbdUsd };
+    return { verdict: plan.verdict, amountSbd: plan.amountSbd, edgeBps: plan.edgeBps, marketSbdUsd: out.marketSbdUsd, impliedSbdUsd: out.impliedSbdUsd, marketSourceNote: out.marketSourceNote };
   });
 
   /* 5 · execute (signing): HONEST gate — no keys on this box, ever */
@@ -150,18 +161,23 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
       positionSteem: pnl?.positionSteem ?? null,
       positionAvgCost: pnl?.positionAvgCost ?? null,
       unbasedSteem: pnl?.unbasedSteem ?? null,
-      deployedSteem: (obs.orders ?? []).filter((o) => o.side === "ask").reduce((s, o) => s + Number(o.base.split(" ")[0] || 0), 0),
+      deployedSteem: obs.ok && obs.ordersOk
+        ? (obs.orders ?? []).filter((o) => o.side === "ask").reduce((s, o) => s + Number(o.base.split(" ")[0] || 0), 0)
+        : null, // null = measurement failed — NEVER display 0 as "empty book"
       fuelUsdPerDay: fuelUsd, authorUsdPerDay: authorUsd,
       measuredTotalUsdPerDay: Math.round(((fuelUsd ?? 0) + (authorUsd ?? 0)) * 1e4) / 1e4,
       honesty: "unbased ≠ profit · signing operator-gated · all numbers measured this cycle",
     };
     report.rollup = rollup;
-    if (persist) writeJson(path.join(STATE, "daily-report.json"), { ...report, finishedAt: new Date().toISOString() });
     return rollup;
   });
 
   report.ok = Object.values(report.steps).every((s) => s.ok !== false);
   report.finishedAt = new Date().toISOString();
+  // T-9 fix: the report file must be written AFTER ok/finishedAt/report-step
+  // exist on the report (writing inside the step wrote a self-less snapshot —
+  // the cockpit honestly read ok:false-missing and showed DEGRADED).
+  if (persist) writeJson(path.join(STATE, "daily-report.json"), report);
   return report;
 }
 

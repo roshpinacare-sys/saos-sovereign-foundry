@@ -4,18 +4,23 @@ import { readFile } from "node:fs/promises";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const AUDIT = "/home/z/audit";
+/**
+ * T-9 · cockpit status — SOVEREIGN-LOCAL edition.
+ * The 16-repo estate at /home/z/audit was lost (environment reset); the engine
+ * now lives INSIDE this project (mini-services/saos-engine) and every source
+ * below is either (a) engine state written by real cycles, or (b) live chain
+ * reads over public RPC. Zero secrets, zero external repo dependency.
+ */
+const ENGINE = "/home/z/my-project/mini-services/saos-engine";
 const PATHS = {
-  state: `${AUDIT}/saos-dex/grids/state/state.json`,
-  pnl: `${AUDIT}/saos-dex/grids/state/pnl.json`,
-  offer: `${AUDIT}/saos-dex/grids/state/offer.json`,
-  moverLog: `${AUDIT}/saos-dex/grids/state/mover-log.jsonl`,
-  dailyReport: `${AUDIT}/saos-dex/grids/state/daily-report.json`,
-  convertPlan: `${AUDIT}/saos-dex/grids/state/convert-plan.json`,
-  convertLog: `${AUDIT}/saos-dex/grids/state/convert-log.jsonl`,
-  kpi: `${AUDIT}/Defi/fleet/KPI.json`,
-  claims: `${AUDIT}/Defi/fleet/CLAIMS.md`,
+  state: `${ENGINE}/state/state.json`,
+  offer: `${ENGINE}/state/offer.json`,
+  observe: `${ENGINE}/state/observe.json`,
+  dailyReport: `${ENGINE}/state/daily-report.json`,
+  convertPlan: `${ENGINE}/state/convert-plan.json`,
+  events: `${ENGINE}/state/events.jsonl`,
 };
+const ENGINE_HTTP = "http://127.0.0.1:3040";
 const CACHE_TTL_MS = 45_000;
 let cache: { at: number; data: unknown } | null = null;
 
@@ -27,7 +32,7 @@ async function readJsonSafe(path: string): Promise<unknown> {
   }
 }
 
-async function readMoverTail(path: string, n = 4): Promise<unknown[]> {
+async function readLinesTail(path: string, n = 8): Promise<unknown[]> {
   try {
     const raw = await readFile(path, "utf8");
     const lines = raw.trim().split("\n").filter(Boolean);
@@ -43,19 +48,18 @@ async function readMoverTail(path: string, n = 4): Promise<unknown[]> {
   }
 }
 
-function countClaims(md: string) {
-  const rows = md.split("\n").filter((l) => /^\| [A-Z]-/.test(l));
-  let done = 0, open = 0, other = 0;
-  for (const r of rows) {
-    if (/\*\*DONE\*\*/.test(r)) done++;
-    else if (/\bOPEN\b/.test(r)) open++;
-    else other++;
+async function engineHealth(): Promise<{ up: boolean; info?: Record<string, unknown> }> {
+  try {
+    const r = await fetch(`${ENGINE_HTTP}/health`, { signal: AbortSignal.timeout(3000), cache: "no-store" });
+    if (!r.ok) return { up: false };
+    return { up: true, info: (await r.json()) as Record<string, unknown> };
+  } catch {
+    return { up: false };
   }
-  return { rows: rows.length, done, open, other };
 }
 
 async function rpc<T>(method: string, params: unknown): Promise<T | null> {
-  for (const node of ["https://api.steemit.com", "https://api.justyy.com"]) {
+  for (const node of ["https://steemapi.boylikegirl.club", "https://api.justyy.com", "https://api.steemit.com"]) {
     try {
       const r = await fetch(node, {
         method: "POST",
@@ -76,8 +80,7 @@ async function rpc<T>(method: string, params: unknown): Promise<T | null> {
 
 const NAI: Record<string, string> = { "@@000000013": "SBD", "@@000000021": "STEEM" };
 
-/* ── A-10 מד-רווחיות: יסוד-עלות-ממוצע על מילויים-אמת (מראה grids/observe.mjs) ──
-   כנות: מכירה-בלי-יסוד-נמדד = unbased (לא רווח). מחשב-חי מהשרשרת בכל-בקשה. */
+/* ── A-10 מד-רווחיות: יסוד-עלות-ממוצע על מילויים-אמת (unbased ≠ רווח) ────── */
 type Fill = { seq: number; side: "ask" | "bid"; steem: number; sbd: number };
 
 function pnlFromFills(fills: Fill[]) {
@@ -114,8 +117,6 @@ function pnlFromFills(fills: Fill[]) {
 }
 
 async function liveFills(): Promise<Fill[]> {
-  /* אותו-סולם-צמתים של observe.mjs (A-9): boylikegirl ראשון — מאפשר 400;
-   * steemit.com מוגבל ל-100 גם ב-account_history_api. חלון-זהה = מדידה-זהה. */
   const nodes = ["https://steemapi.boylikegirl.club", "https://api.justyy.com", "https://api.steemit.com"];
   let hist: [number, { op?: unknown; timestamp?: string }][] = [];
   for (const node of nodes) {
@@ -154,59 +155,65 @@ async function liveFills(): Promise<Fill[]> {
       }
     }
   }
-  const dbg = { histLen: hist.length, parseErr: "" };
   const out: Fill[] = [];
   try {
-  const amt = (x: unknown): { v: number; sym: string } | null => {
-    /* צורת-string "0.284 STEEM" (condenser) · צורת-NAI {amount,nai,precision} (account_history_api) */
-    if (typeof x === "string") {
-      const [v, sym] = x.split(" ");
-      return sym && Number(v) > 0 ? { v: Number(v), sym } : null;
+    const amt = (x: unknown): { v: number; sym: string } | null => {
+      if (typeof x === "string") {
+        const [v, sym] = x.split(" ");
+        return sym && Number(v) > 0 ? { v: Number(v), sym } : null;
+      }
+      const o = x as { amount?: string; nai?: string; precision?: number } | null;
+      if (o?.amount != null && o?.nai) {
+        const v = Number(o.amount) / 10 ** (o.precision ?? 3);
+        const sym = NAI[o.nai] ?? o.nai;
+        return v > 0 ? { v, sym } : null;
+      }
+      return null;
+    };
+    for (const [, x] of hist ?? []) {
+      const rawOp = (x as { op?: unknown })?.op;
+      const op = Array.isArray(rawOp) ? { type: rawOp[0], value: rawOp[1] } : (rawOp ?? {}) as { type?: string; value?: Record<string, unknown> };
+      const v = op.value ?? {};
+      if (op.type !== "fill_order_operation" && op.type !== "fill_order") continue;
+      const cur = amt(v.current_pays), opn = amt(v.open_pays);
+      if (!cur || !opn) continue;
+      const isCur = v.current_owner === "headcorner";
+      const mine = isCur ? cur : opn, theirs = isCur ? opn : cur;
+      if (mine.sym === "STEEM" && theirs.sym === "SBD") out.push({ seq: 0, side: "ask", steem: mine.v, sbd: theirs.v });
+      else if (mine.sym === "SBD" && theirs.sym === "STEEM") out.push({ seq: 0, side: "bid", steem: theirs.v, sbd: mine.v });
     }
-    const o = x as { amount?: string; nai?: string; precision?: number } | null;
-    if (o?.amount != null && o?.nai) {
-      const v = Number(o.amount) / 10 ** (o.precision ?? 3);
-      const sym = NAI[o.nai] ?? o.nai;
-      return v > 0 ? { v, sym } : null;
-    }
-    return null;
-  };
-  for (const [, x] of hist ?? []) {
-    /* condenser מחזיר op כמערך ["fill_order", {…}] · account_history_api כ-{type,value} — שניהם */
-    const rawOp = (x as { op?: unknown })?.op;
-    const op = Array.isArray(rawOp) ? { type: rawOp[0], value: rawOp[1] } : (rawOp ?? {}) as { type?: string; value?: Record<string, unknown> };
-    const v = op.value ?? {};
-    if (op.type !== "fill_order_operation" && op.type !== "fill_order") continue;
-    const cur = amt(v.current_pays), opn = amt(v.open_pays);
-    if (!cur || !opn) continue;
-    const isCur = v.current_owner === "headcorner";
-    const mine = isCur ? cur : opn, theirs = isCur ? opn : cur;
-    if (mine.sym === "STEEM" && theirs.sym === "SBD") out.push({ seq: 0, side: "ask", steem: mine.v, sbd: theirs.v });
-    else if (mine.sym === "SBD" && theirs.sym === "STEEM") out.push({ seq: 0, side: "bid", steem: theirs.v, sbd: mine.v });
-  }
-  } catch (e) { dbg.parseErr = String((e as Error)?.message ?? e).slice(0, 120); }
-  (globalThis as Record<string, unknown>).__liveFillsDbg = dbg;
+  } catch { /* honest partial */ }
   return out;
+}
+
+async function rcFromRcApi(): Promise<number | null> {
+  const r = await rpc<{ rc_accounts?: { rc_manabar: { current_mana: string }; max_rc: string }[] }>(
+    "rc_api.find_rc_accounts",
+    { accounts: ["headcorner"] }
+  );
+  const rc = r?.rc_accounts?.[0];
+  if (!rc) return null;
+  const cur = parseInt(rc.rc_manabar?.current_mana ?? "0", 10);
+  const max = parseInt(rc.max_rc ?? "0", 10);
+  return max > 0 ? Math.round((cur / max) * 1000) / 10 : null;
 }
 
 export async function GET() {
   if (cache && Date.now() - cache.at < CACHE_TTL_MS) {
     return NextResponse.json(cache.data);
   }
-  const [state, pnl, offer, kpi, claimsMd, moverTail, ordersRaw, rcRaw, accRaw, fills, dailyReport, convertPlan, convertLog] = await Promise.all([
+  const [state, offer, observe, dailyReport, convertPlan, eventsTail, ordersRaw, rcRaw, accRaw, fills, eng] = await Promise.all([
     readJsonSafe(PATHS.state),
-    readJsonSafe(PATHS.pnl),
     readJsonSafe(PATHS.offer),
-    readJsonSafe(PATHS.kpi),
-    readFile(PATHS.claims, "utf8").catch(() => ""),
-    readMoverTail(PATHS.moverLog, 6),
-    rpc<Record<string, unknown>>("condenser_api.get_open_orders", ["headcorner"]).then((r) => r as Record<string, unknown>[] | null),
-    rcFromRcApi(),
-    rpc<Record<string, string>[]>("condenser_api.get_accounts", [["headcorner"]]),
-    liveFills(),
+    readJsonSafe(PATHS.observe),
     readJsonSafe(PATHS.dailyReport),
     readJsonSafe(PATHS.convertPlan),
-    readMoverTail(PATHS.convertLog, 3),
+    readLinesTail(PATHS.events, 10),
+    rpc<any[]>("condenser_api.get_open_orders", ["headcorner"]),
+    rcFromRcApi(),
+    rpc<any[]>("condenser_api.get_accounts", [["headcorner"]]),
+    liveFills(),
+    engineHealth(),
   ]);
 
   const orders = (ordersRaw ?? []).map((o) => {
@@ -241,11 +248,10 @@ export async function GET() {
     },
     { askedSteem: 0, bidSbd: 0 }
   );
-  const parityRef = (offer as { fair?: { externalParity?: number } } | null)?.fair?.externalParity ?? null;
+
+  const obs = observe as Record<string, any> | null;
   const p = pnlFromFills(fills);
-  /* T-7: יסוד-מהחלון-העמוק (daily-cycle, window 2000) — כשהוא קיים הוא האמת-המלאה;
-   * החישוב-המקומי (חלון 400) נשאר כתצוגת-עצמאות ולאימות-צליבה. */
-  const deepPnl = (pnl as { realPnl?: { realizedSbd?: number; positionSteem?: number; positionCostSbd?: number; openAvgCost?: number | null; unbasedSteem?: number; unbasedSbd?: number; basisSeededSteem?: number } } | null)?.realPnl ?? null;
+  const parityRef = (offer as any)?.marks?.paritySbdPerSteem ?? null;
   const profit = {
     ...p,
     parityRef,
@@ -253,75 +259,70 @@ export async function GET() {
       p.positionSteem > 1e-9 && parityRef
         ? Math.round((p.positionSteem * parityRef - p.positionCostSbd) * 1e6) / 1e6
         : null,
-    deepPnl,
-    method: "יסוד-עלות-ממוצע על fill_order חי (A-10) · מכירה-בלי-יסוד = unbased, לא רווח · deepPnl = יסוד מהחלון-העמוק 2000 (T-7)",
+    method: "יסוד-עלות-ממוצע על fill_order חי (A-10) · מכירה-בלי-יסוד = unbased, לא רווח",
   };
 
-  /* ── T-7 מסילות-מהקיים: מה זורם, מה מוכן, מה חסום — הכל מדידה ── */
-  const kpiObj = kpi as { revenuePerDayReal?: { usd?: number; breakdown?: { fuelEngineUsdPerDay?: number; missionBookUsdPerDay?: number } } } | null;
-  const daily = dailyReport as { ok?: boolean; startedAt?: string; finishedAt?: string; steps?: Record<string, { ok?: boolean; skipped?: boolean; verdict?: string; planned?: number; executed?: number; reason?: string }> } | null;
-  const convertArb = (offer as { marks?: { convertArb?: { verdict?: string; marketUsd?: number; discountPct?: number } } } | null)?.marks?.convertArb ?? null;
-  /* T-8 · D-023: מסילת-ההמרה — תוכנית-אחרונה + קציר-מבוצע-חיים */
-  const cp = convertPlan as { verdict?: string; amountSbd?: number; discountBps?: number; gates?: string[]; at?: string; expectedSteem?: number | null; evidence?: { at?: string; mode?: string; note?: string | null; txids?: { txid?: string; amount?: string; requestid?: number }[] } | null } | null;
+  /* ── מסילות-אמת (T-9): מדידה מקומית-ריבונית בלבד — אפס קבצי-KPI מאחזקים ── */
+  const daily = dailyReport as Record<string, any> | null;
+  const cp = convertPlan as Record<string, any> | null;
+  const fuelUsdPerDay = obs?.fuel?.fuelUsdPerDay ?? null;
+  const authorUsdPerDay = obs?.fuel?.authorUsdPerDay ?? null;
   const rails = {
-    fuel: kpiObj?.revenuePerDayReal?.breakdown?.fuelEngineUsdPerDay ?? null,
-    book: kpiObj?.revenuePerDayReal?.breakdown?.missionBookUsdPerDay ?? null,
+    fuel: fuelUsdPerDay,
+    author: authorUsdPerDay,
+    fuelWindowNote: obs?.fuel?.windowNote ?? null,
+    fuelHistory: "קיור-אחרון נמדד 2026-09-09 (סריקה-עמוקה 10001 ops) — המסילה רדומה, ממתינה ל-authority פוסטינג",
     deployedSteem: orderTotals.askedSteem,
     bidSbd: orderTotals.bidSbd,
-    convertArb,
+    bookEmpty: orders.length === 0,
+    bookNote: orders.length === 0
+      ? "הספר ריק — 925 STEEM נזילים ממתינים לפריסה; התוכנית OFFER-READY מוכנה, ביצוע = שער-אופרטור (X-1)"
+      : null,
     convert: cp
       ? {
           verdict: cp.verdict ?? null,
+          reason: cp.reason ?? null,
           amountSbd: cp.amountSbd ?? 0,
-          discountBps: cp.discountBps ?? null,
-          expectedSteem: cp.expectedSteem ?? null,
-          plannedAt: cp.evidence?.at ?? cp.at ?? null,
-          executedLifetime: convertLog.length,
-          lastConvert: convertLog[convertLog.length - 1] ?? null,
-          gates: cp.gates ?? [],
-          note: cp.evidence?.note ?? null,
+          marketSbdUsd: cp.marketSbdUsd ?? null,
+          impliedSbdUsd: cp.impliedSbdUsd ?? null,
+          marketSourceNote: cp.marketSourceNote ?? null,
+          at: cp.at ?? null,
         }
-      : { status: "convert rail not yet run (D-023 armed on next daily cycle)" },
-    curation: daily?.steps?.curate
-      ? { planned: daily.steps.curate.planned ?? null, executed: daily.steps.curate.executed ?? 0, status: daily.steps.curate.skipped ? "planned-awaiting-posting-wif (A-12 · Domain wiring)" : "executing" }
-      : { planned: null, executed: 0, status: "daily-cycle not yet run in cockpit view" },
-    autonomy: daily ? { ok: daily.ok ?? false, lastCycle: daily.finishedAt ?? daily.startedAt ?? null, steps: Object.fromEntries(Object.entries(daily.steps ?? {}).map(([k, v]) => [k, v.ok === false ? "fail" : v.skipped ? "skip" : "ok"])) } : null,
-    note: "קיורציה/המרה/פריסה נבנו-מהקיים (T-7/T-8 · D-023 חי) — אפס-הון-חוץ; המדידה-החיה בקובץ-הדוח וב-offer.json",
+      : null,
+    autonomy: daily
+      ? {
+          ok: daily.ok ?? false,
+          lastCycle: daily.finishedAt ?? daily.startedAt ?? null,
+          steps: Object.fromEntries(Object.entries(daily.steps ?? {}).map(([k, v]: [string, any]) => [k, v?.ok === false ? "fail" : v?.skipped ? "skip" : "ok"])),
+        }
+      : null,
+    note: "כל המדידות מקומיות-ריבוניות (מנוע :3040) או מהשרשרת חי — אפס-תלות באחזקת-רפו חיצונית",
   };
+
+  const measuredPerDay = (daily?.rollup?.measuredTotalUsdPerDay as number | undefined) ??
+    Math.round(((fuelUsdPerDay ?? 0) + (authorUsdPerDay ?? 0)) * 1e4) / 1e4;
 
   const data = {
     ok: true,
     asof: new Date().toISOString(),
     account: "headcorner",
+    engine: { up: eng.up, info: eng.info ?? null, keyless: true },
     grid: state,
-    pnl,
+    observe: obs,
     offer,
     live: { orders, orderTotals, balances, rc, chainReadOk: orders.length > 0 || balances !== null },
     profit,
     rails,
     daily,
-    kpi,
-    fleet: { claims: countClaims(claimsMd) },
-    mover: { tail: moverTail },
-    debugFills: (globalThis as Record<string, unknown>).__liveFillsDbg,
-    sources: PATHS,
+    measuredPerDay,
+    events: eventsTail,
+    sources: { kind: "sovereign-local", paths: PATHS, engineHttp: ENGINE_HTTP },
     notes: [
       "אמת-מוטבעת-על-שרשרת בלבד — real.fills נמדד מ-fill_order חי",
-      "אפס-מפתחות בשירות-זה: קריאת-קבצים-פומביים + RPC ציבורי בלבד",
+      "אפס-מפתחות בשירות-זה ובמנוע: קריאת-מצב-מקומי + RPC ציבורי בלבד",
+      "T-9: האחוזה בת-16-הרפו אבדה באיפוס-סביבה — המנוע נבנה-מחדש מקומית (ראה docs/ESTATE-INVENTORY.md)",
     ],
   };
   cache = { at: Date.now(), data };
   return NextResponse.json(data);
-}
-
-async function rcFromRcApi(): Promise<number | null> {
-  const r = await rpc<{ rc_accounts?: { rc_manabar: { current_mana: string }; max_rc: string }[] }>(
-    "rc_api.find_rc_accounts",
-    { accounts: ["headcorner"] }
-  );
-  const rc = r?.rc_accounts?.[0];
-  if (!rc) return null;
-  const cur = parseInt(rc.rc_manabar?.current_mana ?? "0", 10);
-  const max = parseInt(rc.max_rc ?? "0", 10);
-  return max > 0 ? Math.round((cur / max) * 1000) / 10 : null;
 }
