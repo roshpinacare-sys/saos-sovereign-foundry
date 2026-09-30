@@ -31,11 +31,23 @@ const SIGNER_URL = process.env.SAOS_SIGNER_URL ?? "http://127.0.0.1:3033";
 const NETWORKS = new Set(["STEEM", "HIVE"]);
 
 function signerToken(): string {
-  try {
-    return readFileSync(path.join(process.env.HOME ?? "/home/z", ".secrets", "external-signer-token"), "utf8").trim();
-  } catch {
-    return "";
+  // Task 13-c: ~/.secrets died with the sandbox resets — env override first,
+  // then the historical path, then the devgate broker copy; empty → the caller's
+  // fail-closed 503 stands (nothing fabricated).
+  for (const p of [
+    process.env.SAOS_SIGNER_TOKEN_FILE || "",
+    path.join(process.env.HOME ?? "/home/z", ".secrets", "external-signer-token"),
+    "/home/z/.devgate/secrets/external-signer-token",
+  ]) {
+    if (!p) continue;
+    try {
+      const t = readFileSync(p, "utf8").trim();
+      if (t) return t;
+    } catch {
+      /* next candidate */
+    }
   }
+  return "";
 }
 
 async function signerFetch(pathname: string, init?: RequestInit): Promise<Response> {

@@ -23,6 +23,7 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
+import * as fsSync from "fs";
 import { timingSafeEqual } from "crypto";
 import { secp256k1 } from "@noble/curves/secp256k1";
 import { ed25519 } from "@noble/curves/ed25519";
@@ -33,10 +34,22 @@ const PORT = 3040;
 const VERSION = "1.0.0";
 const STARTED_AT = Date.now();
 const HOME = os.homedir();
-const TOKEN_PATH = path.join(HOME, ".secrets", "key-broker.token");
-const REGISTRY_PATH =
-  process.env.SOVEREIGN_REGISTRY_PATH ||
-  path.join(HOME, ".secrets", "keys-restored", "agent", "keys", "wallets-registry.json");
+// Task 13-c: ~/.secrets died with the sandbox resets — the canonical ONE key
+// vault is steem/agent/keys (gitignored, 0600) and it HOLDS key-broker.token
+// and wallets-registry.json. Chain: env override → ~/.secrets (historical) →
+// canonical vault. No value ever leaves the timing-safe compare / registry read.
+const TOKEN_CANDIDATES = [
+  process.env.KEY_BROKER_TOKEN_PATH || "",
+  path.join(HOME, ".secrets", "key-broker.token"),
+  "/home/z/git-audit/steem/agent/keys/key-broker.token",
+].filter(Boolean);
+const REGISTRY_CANDIDATES = [
+  process.env.SOVEREIGN_REGISTRY_PATH || "",
+  path.join(HOME, ".secrets", "keys-restored", "agent", "keys", "wallets-registry.json"),
+  "/home/z/git-audit/steem/agent/keys/wallets-registry.json",
+].filter(Boolean);
+const TOKEN_PATH = TOKEN_CANDIDATES.find((p) => fsSync.existsSync(p)) ?? TOKEN_CANDIDATES[TOKEN_CANDIDATES.length - 1];
+const REGISTRY_PATH = REGISTRY_CANDIDATES.find((p) => fsSync.existsSync(p)) ?? REGISTRY_CANDIDATES[REGISTRY_CANDIDATES.length - 1];
 const LOG_PATH = path.join(import.meta.dir, "key-broker.log");
 const MAX_MESSAGE_BYTES = 10_000;
 const PLANE_CACHE_MS = 60_000;
