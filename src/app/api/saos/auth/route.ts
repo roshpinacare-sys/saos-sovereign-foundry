@@ -75,7 +75,10 @@ async function authPost(req: Request) {
     res.cookies.set(SESSION_COOKIE, session.value, {
       httpOnly: true,
       sameSite: "strict",
-      secure: false, // sandbox serves plain HTTP; set true behind HTTPS in real deployment (docs/deployment.md)
+      // 11-f (2026-09-30): env-conditional secure — `next dev` (NODE_ENV=development)
+      // keeps working over plain HTTP; a production build requires HTTPS for the
+      // session cookie. Same policy as the dev-session path below (line ~138).
+      secure: process.env.NODE_ENV === "production",
       path: "/",
       maxAge: session.maxAgeSec
     });
@@ -96,7 +99,7 @@ async function authPost(req: Request) {
     res.cookies.set(SESSION_COOKIE, session.value, {
       httpOnly: true,
       sameSite: "strict",
-      secure: false,
+      secure: process.env.NODE_ENV === "production", // 11-f: was false — same env-conditional policy as admin-key login
       path: "/",
       maxAge: session.maxAgeSec
     });
