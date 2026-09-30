@@ -4,12 +4,12 @@
   "armed": true,
   "paused": false,
   "watchdog": {
-    "checks": 440,
+    "checks": 442,
     "downs": 6,
     "heals": 18,
     "healVerified": 17,
     "healFailed": 0,
-    "lastCheckAt": "2026-09-30T18:04:17.223Z",
+    "lastCheckAt": "2026-09-30T18:06:17.222Z",
     "engineUp": true,
     "lastSpawnAt": "2026-09-30T18:00:17.247Z"
   },
