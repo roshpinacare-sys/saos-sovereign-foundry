@@ -29,6 +29,7 @@ const LOG_FILE = path.join(STATE, "exec-log.jsonl");
 
 const readJson = (p, d = null) => { try { return JSON.parse(fs.readFileSync(p, "utf8")); } catch { return d; } };
 const appendLine = (p, v) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.appendFileSync(p, JSON.stringify(v) + "\n"); };
+const writeJson = (p, v) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, JSON.stringify(v, null, 2)); };
 const SOLDIERS_SECRET = path.join(SECRETS, "soldiers.json");
 const UPLOAD_KEY = path.join(DIR, "..", "..", "upload", "headcorner.txt");
 
@@ -65,6 +66,41 @@ export function syncCredential() {
 
 /* in-memory only — never serialized anywhere. One identity per account. */
 const mem = { identities: {}, master: null, keyFileFp: null }; // account → { password, wifs:{role:wif}, matchedOrder, verified }
+
+/* ── T-15 credential-truth (loud, honest, journaled once/hour — no spam) ────
+ * The cold-reset lesson: a dead signing layer must SCREAM, not rot. This
+ * state is public-safe (booleans + paths + guidance — never key material). */
+const CRED_ALARM_FILE = path.join(STATE, "cred-alarm.json");
+function noteCredMissing() {
+  try {
+    const now = new Date().toISOString();
+    const prev = readJson(CRED_ALARM_FILE, { missingSince: null, lastAlertAt: null, alerts: 0 });
+    const hourAgo = Date.now() - 3600_000;
+    if (!prev.missingSince) prev.missingSince = now;
+    if (!prev.lastAlertAt || Date.parse(prev.lastAlertAt) < hourAgo) {
+      prev.lastAlertAt = now;
+      prev.alerts = (prev.alerts ?? 0) + 1;
+      appendLine(LOG_FILE, { at: now, tag: "cred-missing", verdict: "SIGNING-DEAD", keyFile: KEY_FILE, revival: "drop upload/headcorner.txt → engine self-adopts (0600) on next cycle" });
+      appendLine(path.join(STATE, "events.jsonl"), { type: "cred.missing", at: now, verdict: "SIGNING-DEAD", agentsAffected: ["curate", "execute", "soldiers"], revival: "upload/headcorner.txt" });
+    }
+    writeJson(CRED_ALARM_FILE, prev);
+  } catch { /* best effort — never crash the caller on alarm bookkeeping */ }
+}
+export function credentialState() {
+  let present = false;
+  try { fs.accessSync(KEY_FILE, fs.constants.R_OK); present = true; } catch { present = false; }
+  const alarm = readJson(CRED_ALARM_FILE, { missingSince: null, lastAlertAt: null, alerts: 0 });
+  const conf = armedConf();
+  return {
+    present,
+    keyFile: ".secrets/headcorner.key",
+    armedButNoCredential: !!conf.armed && !present,
+    missingSince: present ? null : (alarm.missingSince ?? null),
+    alerts: alarm.alerts ?? 0,
+    agentsAffected: present ? [] : ["curate", "execute", "soldiers", "promo"],
+    revival: present ? null : "drop the CURRENT master-password file as upload/headcorner.txt → engine secures+adopts automatically (0600, upload copy removed, zero restart)",
+  };
+}
 
 export function defaultArmedConf() {
   return {
@@ -110,7 +146,24 @@ export function loadCredential(account = null) {
     if (!rec) throw new Error(`no-credential: ${account}`);
     acct = rec.name; password = rec.password;
   } else {
-    const raw = fs.readFileSync(KEY_FILE, "utf8");
+    let raw;
+    try {
+      raw = fs.readFileSync(KEY_FILE, "utf8");
+    } catch (e) {
+      // T-15 LOUD ALARM (measured live 2026-09-30: cold-reset wiped .secrets/;
+      // 3 agents died SILENTLY every cycle for a whole day — curate/execute/
+      // soldiers all rotting with raw ENOENT). A missing credential is a
+      // TYPED, actionable state — never a generic ENOENT again:
+      if (/ENOENT|no such file/i.test(String(e?.message ?? e))) {
+        noteCredMissing();
+        throw new Error(
+          "CREDENTIAL-MISSING: .secrets/headcorner.key not found (sandbox cold-reset wipes gitignored secrets). " +
+          "Revival (self-service, zero restart): drop the account's CURRENT master-password file as upload/headcorner.txt — " +
+          "the engine secures it (0600 into .secrets/), adopts it on the next cycle, and the whole signing fleet revives."
+        );
+      }
+      throw e;
+    }
     const fields = raw.trim().split(/[\s:=]+/).filter(Boolean);
     if (fields.length < 2) throw new Error("credential-format");
     acct = fields[0]; password = fields.slice(1).join(" ");
@@ -122,9 +175,16 @@ export function loadCredential(account = null) {
 
 export function masterAccount() {
   if (mem.master) return mem.master;
-  const raw = fs.readFileSync(KEY_FILE, "utf8");
-  const fields = raw.trim().split(/[\s:=]+/).filter(Boolean);
-  mem.master = fields[0];
+  // T-15: the account NAME is public (it's on-chain) — a missing credential
+  // file must never crash callers with a raw ENOENT here; the typed
+  // CREDENTIAL-MISSING alarm belongs to loadCredential (the secret read).
+  let acct = null;
+  try {
+    const raw = fs.readFileSync(KEY_FILE, "utf8");
+    const fields = raw.trim().split(/[\s:=]+/).filter(Boolean);
+    acct = fields[0] ?? null;
+  } catch { /* fall through to the known public account name */ }
+  mem.master = acct || process.env.SAOS_ACCOUNT || "headcorner";
   return mem.master;
 }
 
@@ -194,11 +254,14 @@ export async function verifyRoles(account = null) {
 /** public status (safe for APIs/UI) */
 export async function execStatus() {
   const conf = armedConf();
-  const master = masterAccount();
+  const cred = credentialState();
+  let master = null;
+  try { master = masterAccount(); } catch { master = "headcorner"; }
   let ver = null;
-  try { ver = await verifyRoles(master); } catch (e) { ver = { ok: false, reason: String(e?.message ?? e).slice(0, 80) }; }
+  try { ver = await verifyRoles(master); } catch (e) { ver = { ok: false, reason: String(e?.message ?? e).slice(0, 120) }; }
   return {
-    credentialPresent: (() => { try { loadCredential(master); return true; } catch { return false; } })(),
+    credentialPresent: cred.present,
+    credential: cred,
     fingerprint: ver?.fingerprint ?? null,
     account: master,
     armed: conf.armed && !execPaused(),

@@ -1,123 +1,51 @@
 {
   "account": "headcorner",
   "parity": {
-    "steemUsd": 0.06454,
+    "steemUsd": 0.06526,
     "sbdUsd": 0,
-    "parity": 0.10410183588876558,
+    "parity": 0.10410183838219932,
     "source": "internal-feed-fallback",
     "lowConfidence": true
   },
-  "feed": 0.10410183588876558,
+  "feed": 0.10410183838219932,
   "band": {
     "ok": true,
     "reason": "band-ok",
     "bps": 0
   },
-  "steemUsd": 0.06454,
+  "steemUsd": 0.06526,
   "sbdUsd": 0,
   "inventory": {
-    "steem": 0,
-    "sbd": 0.642,
-    "spOwn": 4034.744517473774,
+    "steem": 910.428,
+    "sbd": 0.066,
+    "spOwn": 4034.9401304455973,
     "rcPct": 100
   },
   "ordersOk": true,
   "orders": [
     {
-      "orderid": 1790709581,
-      "side": "ask",
-      "base": "200.000 STEEM",
-      "quote": "20.862 SBD",
-      "unit": 0.10431,
-      "created": "2026-09-29T19:19:42"
+      "orderid": 2026093001,
+      "side": "bid",
+      "base": "0.192 SBD",
+      "quote": "1.993 STEEM",
+      "unit": 10.380208,
+      "created": "2026-09-30T03:58:09"
     },
     {
-      "orderid": 1790709599,
-      "side": "ask",
-      "base": "194.117 STEEM",
-      "quote": "20.249 SBD",
-      "unit": 0.104313,
-      "created": "2026-09-29T19:20:00"
+      "orderid": 2026093002,
+      "side": "bid",
+      "base": "0.192 SBD",
+      "quote": "2.035 STEEM",
+      "unit": 10.598958,
+      "created": "2026-09-30T03:58:12"
     },
     {
-      "orderid": 1790709600,
-      "side": "ask",
-      "base": "5.883 STEEM",
-      "quote": "0.614 SBD",
-      "unit": 0.104369,
-      "created": "2026-09-29T19:20:00"
-    },
-    {
-      "orderid": 1790709694,
-      "side": "ask",
-      "base": "142.119 STEEM",
-      "quote": "14.825 SBD",
-      "unit": 0.104314,
-      "created": "2026-09-29T19:21:36"
-    },
-    {
-      "orderid": 1790709695,
-      "side": "ask",
-      "base": "57.881 STEEM",
-      "quote": "6.046 SBD",
-      "unit": 0.104456,
-      "created": "2026-09-29T19:21:36"
-    },
-    {
-      "orderid": 1790709715,
-      "side": "ask",
-      "base": "79.986 STEEM",
-      "quote": "8.343 SBD",
-      "unit": 0.104306,
-      "created": "2026-09-29T19:21:57"
-    },
-    {
-      "orderid": 1790709716,
-      "side": "ask",
-      "base": "79.986 STEEM",
-      "quote": "8.354 SBD",
-      "unit": 0.104443,
-      "created": "2026-09-29T19:21:57"
-    },
-    {
-      "orderid": 1790709717,
-      "side": "ask",
-      "base": "40.029 STEEM",
-      "quote": "4.186 SBD",
-      "unit": 0.104574,
-      "created": "2026-09-29T19:21:57"
-    },
-    {
-      "orderid": 1790709756,
-      "side": "ask",
-      "base": "28.010 STEEM",
-      "quote": "2.922 SBD",
-      "unit": 0.10432,
-      "created": "2026-09-29T19:22:39"
-    },
-    {
-      "orderid": 1790709757,
-      "side": "ask",
-      "base": "28.010 STEEM",
-      "quote": "2.926 SBD",
-      "unit": 0.104463,
-      "created": "2026-09-29T19:22:39"
-    },
-    {
-      "orderid": 1790709758,
-      "side": "ask",
-      "base": "28.010 STEEM",
-      "quote": "2.929 SBD",
-      "unit": 0.10457,
-      "created": "2026-09-29T19:22:39"
-    },
-    {
-      "orderid": 1790709759,
-      "side": "ask",
-      "base": "26.397 STEEM",
-      "quote": "2.764 SBD",
-      "unit": 0.104709,
-      "created": "2026-09-29T19:22:39"
+      "orderid": 2026093003,
+      "side": "bid",
+      "base": "0.192 SBD",
+      "quote": "2.078 STEEM",
+      "unit": 10.822917,
+      "created": "2026-09-30T03:58:15"
     }
   ],
   "fills": 42,
@@ -143,7 +71,7 @@
     "authorVestsPerDay": 0,
     "curationOps": 0,
     "authorOps": 0,
-    "windowSpanDays": 6.73,
+    "windowSpanDays": 7.33,
     "windowOps": 1001,
     "measured": true,
     "fuelUsdPerDay": 0,
@@ -152,5 +80,5 @@
     "node": "https://steemapi.boylikegirl.club",
     "windowNote": "no reward ops inside the measured window — rails dormant, not a parse failure (deep-scan documented separately)"
   },
-  "at": "2026-09-29T22:32:32.760Z"
+  "at": "2026-09-30T15:40:39.818Z"
 }

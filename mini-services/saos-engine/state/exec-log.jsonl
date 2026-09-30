@@ -32,3 +32,8 @@
 {"at":"2026-09-29T19:45:56.332Z","tag":"curate","account":"headcorner","ok":true,"txid":"d93911355f00d897768b6497620e0fa9392726bb","ops":["vote"],"node":"https://steemapi.boylikegirl.club","error":null,"fingerprint":"c056922c"}
 {"at":"2026-09-29T19:46:01.687Z","tag":"curate","account":"headcorner","ok":true,"txid":"5f0d770a57c17c0e45275fa80ab07d2145ac04e3","ops":["vote"],"node":"https://steemapi.boylikegirl.club","error":null,"fingerprint":"c056922c"}
 {"at":"2026-09-29T19:46:07.246Z","tag":"curate","account":"headcorner","ok":true,"txid":"64aa0e96c6f4e5a1ce106bc9d4bca72f51d9ede5","ops":["vote"],"node":"https://steemapi.boylikegirl.club","error":null,"fingerprint":"c056922c"}
+{"at":"2026-09-30T15:30:56.525Z","tag":"cred-missing","verdict":"SIGNING-DEAD","keyFile":"/home/z/my-project/.secrets/headcorner.key","revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}
+{"at":"2026-09-30T15:30:57.382Z","tag":"cred-missing","verdict":"SIGNING-DEAD","keyFile":"/home/z/my-project/.secrets/headcorner.key","revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}
+{"at":"2026-09-30T15:31:00.155Z","tag":"cred-missing","verdict":"SIGNING-DEAD","keyFile":"/home/z/my-project/.secrets/headcorner.key","revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}
+{"at":"2026-09-30T15:31:17.290Z","tag":"cred-missing","verdict":"SIGNING-DEAD","keyFile":"/home/z/my-project/.secrets/headcorner.key","revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}
+{"at":"2026-09-30T15:31:58.291Z","tag":"cred-missing","verdict":"SIGNING-DEAD","keyFile":"/home/z/my-project/.secrets/headcorner.key","revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}

@@ -6,12 +6,13 @@
  */
 import { runCycle } from "./daily.mjs";
 import { externalParity, internalFeed, accountState, openOrders, measureAll } from "./measure.mjs";
-import { execStatus } from "./signer.mjs";
+import { execStatus, credentialState, armedConf } from "./signer.mjs";
 import { soldiersPublic } from "./soldiers.mjs";
 import { intelState } from "./intel.mjs";
 import { curatorState } from "./curator.mjs";
 import { learningState } from "./learning.mjs";
 import { discoveryState } from "./discovery.mjs";
+import { fleetState } from "./fleet.mjs";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -51,6 +52,8 @@ async function handle(req) {
       discovery: discoveryState(),
       soldiers: soldiersPublic(),
       execution: exec,
+      credential: credentialState(),
+      fleet: fleetState(),
       execLog,
       events: readLines(path.join(STATE, "events.jsonl"), 20),
       notes: ["sovereign engine · state lives inside my-project · master credential engine-held, doctrine-capped, never logged", "T-14: continuous-learning layer live — lessons from recorded history, hard-clamped tunings, growth-option discovery"],
@@ -75,12 +78,23 @@ async function handle(req) {
     try { return json({ ok: true, at: new Date().toISOString(), ...(await execStatus()) }); }
     catch (e) { return json({ ok: false, error: String(e?.message ?? e).slice(0, 160) }, 500); }
   }
-  return json({ ok: false, error: "not-found", routes: ["/health", "/status", "/cycle", "/live", "/fills", "/exec-status"] }, 404);
+  // T-15: the unified agent registry — light route (state files + pids only,
+  // zero chain reads) so the cockpit can afford it on every refresh
+  if (p === "/fleet") {
+    return json({ ok: true, at: new Date().toISOString(), fleet: fleetState({ credential: credentialState(), armedConf: armedConf() }), credential: credentialState() });
+  }
+  return json({ ok: false, error: "not-found", routes: ["/health", "/status", "/cycle", "/live", "/fills", "/exec-status", "/fleet"] }, 404);
 }
 
-// T-11: הרמה-עמידה — אם הפורט עדיין תפוס (תהליך-קודם גוסס / TIME_WAIT) מנסים שוב לפני כניעה
+// T-15 SINGLE-INSTANCE LAW (measured live: 3 duplicate engine processes were
+// found alive — 1 port owner + 2 zombies from a boot race). A second instance
+// must NEVER linger: if the port is held by a HEALTHY engine → clean exit
+// (adopt, don't duplicate). Only a short dying-process grace retry is allowed
+// (the holder may be mid-death: unhealthy → retry 3×1s, then exit — never
+// linger forever like the old 8×1.5s loop that leaked zombies).
 let bound = false;
-for (let attempt = 1; attempt <= 8 && !bound; attempt++) {
+let duplicateExit = false;
+for (let attempt = 1; attempt <= 3 && !bound && !duplicateExit; attempt++) {
   try {
     Bun.serve({
       port: PORT,
@@ -95,10 +109,30 @@ for (let attempt = 1; attempt <= 8 && !bound; attempt++) {
     bound = true;
   } catch (e) {
     const msg = String(e?.message ?? e);
-    if (attempt === 8 || !/EADDRINUSE|address already in use/i.test(msg)) throw e;
-    console.log(`bind attempt ${attempt} failed (${msg}) — retrying in 1.5s`);
-    await new Promise((r) => setTimeout(r, 1500));
+    if (!/EADDRINUSE|address already in use/i.test(msg)) throw e;
+    // who owns the port? healthy engine → I am the duplicate → exit cleanly
+    try {
+      const r = await fetch(`http://127.0.0.1:${PORT}/health`, { signal: AbortSignal.timeout(2500) });
+      if (r.ok) {
+        console.log(`port ${PORT} held by a healthy engine — duplicate-exit (single-instance law)`);
+        duplicateExit = true;
+        break;
+      }
+    } catch { /* holder unhealthy → give it a short dying-grace retry */ }
+    if (attempt < 3) {
+      console.log(`bind attempt ${attempt} failed (${msg}) — dying-holder grace, retry in 1s`);
+      await new Promise((r) => setTimeout(r, 1000));
+    } else {
+      console.log(`port ${PORT} still held after grace — duplicate-exit (single-instance law)`);
+      duplicateExit = true;
+    }
   }
 }
+if (duplicateExit) process.exit(0);
+if (!bound) throw new Error(`failed to bind :${PORT}`);
 
-console.log(`saos-engine listening on :${PORT} (keyless, account=${ACCOUNT})`);
+// T-15: the pid file must name the LIVE engine (measured live: a killed
+// zombie's pid lingered here and poisoned the fleet registry's evidence)
+try { fs.mkdirSync(STATE, { recursive: true }); fs.writeFileSync(path.join(STATE, "engine.pid"), String(process.pid)); } catch { /* best effort */ }
+
+console.log(`saos-engine listening on :${PORT} (capped-autonomy, account=${ACCOUNT})`);

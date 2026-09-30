@@ -26,6 +26,7 @@ const WD_MS = 60_000;      // watchdog tick
 const CYCLE_MS = 600_000;  // autonomous cycle every 10 min
 const SELFTEST_MS = 21_600_000; // quality suite every 6h
 const SPAWN_COOLDOWN_MS = 20_000;
+const KEY_FILE = path.join(process.cwd(), ".secrets", "headcorner.key");
 
 type SovereignState = {
   bootedAt: string;
@@ -41,6 +42,10 @@ type SovereignState = {
     lastAt: string | null; lastOk: boolean | null; lastMs: number | null; nextAt: string | null;
   };
   selftest: { runs: number; lastAt: string | null; lastOk: boolean | null; passed: number | null; total: number | null };
+  cred: {
+    present: boolean | null; firstDownAt: string | null; lastDownAt: string | null;
+    alerts: number; lastAlertAt: string | null;
+  };
   control: { at: string; action: string; by: string; note?: string }[];
 };
 
@@ -174,6 +179,33 @@ async function watchdogTick(core: Core): Promise<void> {
   } else if (!wasUp) {
     appendEvent(core, "watchdog-up", {});
   }
+  // T-15 SIGNING-PULSE (the silent-rot lesson, measured live): the engine can
+  // be HEALTHY while the whole signing fleet is DEAD (credential lost in a
+  // cold-reset — 3 agents rotted with raw ENOENT for a full day, unnoticed).
+  // The watchdog now treats armed-but-credential-missing as its own DOWN state:
+  // journaled hourly (no spam), surfaced in state, revival path carried.
+  try {
+    const present = fs.existsSync(KEY_FILE);
+    const prevPresent = core.state.cred.present;
+    core.state.cred.present = present;
+    if (!present) {
+      core.state.cred.lastDownAt = nowIso();
+      if (core.state.cred.firstDownAt == null) core.state.cred.firstDownAt = nowIso();
+      const hourAgo = Date.now() - 3600_000;
+      if (!core.state.cred.lastAlertAt || Date.parse(core.state.cred.lastAlertAt) < hourAgo) {
+        core.state.cred.alerts++;
+        core.state.cred.lastAlertAt = nowIso();
+        appendEvent(core, "cred-missing", {
+          verdict: "SIGNING-DEAD",
+          agentsAffected: ["curate", "execute", "soldiers", "promo"],
+          revival: "drop upload/headcorner.txt → engine self-adopts (0600) on next cycle",
+        });
+      }
+    } else if (prevPresent === false) {
+      appendEvent(core, "cred-restored", { at: nowIso() });
+      core.state.cred.firstDownAt = null;
+    }
+  } catch { /* credential-pulse is best-effort; never break the watchdog */ }
   writeJson(SOV_FILE, core.state);
 }
 
@@ -302,6 +334,11 @@ export function ensureSovereign(by = "auto"): Core {
       selftest: {
         runs: prev?.selftest?.runs ?? 0, lastAt: prev?.selftest?.lastAt ?? null, lastOk: prev?.selftest?.lastOk ?? null,
         passed: prev?.selftest?.passed ?? null, total: prev?.selftest?.total ?? null,
+      },
+      cred: {
+        present: prev?.cred?.present ?? null, firstDownAt: prev?.cred?.firstDownAt ?? null,
+        lastDownAt: prev?.cred?.lastDownAt ?? null, alerts: prev?.cred?.alerts ?? 0,
+        lastAlertAt: prev?.cred?.lastAlertAt ?? null,
       },
       control: prev?.control?.slice(0, 20) ?? [],
     },

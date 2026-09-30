@@ -109,7 +109,9 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
     });
     const st = fold(prev, res);
     if (persist) {
-      writeJson(path.join(STATE, "state.json"), { ...st, grids: activeGrids() });
+      // T-15: the tick's recorded output must carry its own timestamp —
+      // the fleet registry reads state.json.at as the liveness evidence
+      writeJson(path.join(STATE, "state.json"), { ...st, at: now, grids: activeGrids() });
       for (const e of res.events) appendLine(path.join(STATE, "events.jsonl"), e);
     }
     return { runCount: st.runCount, simFills: st.simFills, simFeesMu: st.simFeesMu, events: res.events.length };

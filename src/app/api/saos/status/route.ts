@@ -75,6 +75,17 @@ async function engineExecStatus(): Promise<Record<string, unknown> | null> {
   }
 }
 
+/* T-15: the unified agent registry + credential truth (light engine route) */
+async function engineFleet(): Promise<Record<string, unknown> | null> {
+  try {
+    const r = await fetch(`${ENGINE_HTTP}/fleet`, { signal: AbortSignal.timeout(6000), cache: "no-store" });
+    if (!r.ok) return null;
+    return (await r.json()) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
 async function rpc<T>(method: string, params: unknown): Promise<T | null> {
   for (const node of ["https://steemapi.boylikegirl.club", "https://api.justyy.com", "https://api.steemit.com"]) {
     try {
@@ -219,7 +230,7 @@ export async function GET() {
   if (cache && Date.now() - cache.at < CACHE_TTL_MS) {
     return NextResponse.json(cache.data);
   }
-  const [state, offer, observe, dailyReport, convertPlan, eventsTail, soldiers, curator, intel, execLogTail, ordersRaw, rcRaw, accRaw, fills, eng, execHttp, learning, discovery] = await Promise.all([
+  const [state, offer, observe, dailyReport, convertPlan, eventsTail, soldiers, curator, intel, execLogTail, ordersRaw, rcRaw, accRaw, fills, eng, execHttp, learning, discovery, fleetHttp] = await Promise.all([
     readJsonSafe(PATHS.state),
     readJsonSafe(PATHS.offer),
     readJsonSafe(PATHS.observe),
@@ -238,6 +249,7 @@ export async function GET() {
     engineExecStatus(),
     readJsonSafe(PATHS.learning),
     readJsonSafe(PATHS.discovery),
+    engineFleet(),
   ]);
 
   const orders = (ordersRaw ?? []).map((o) => {
@@ -297,7 +309,9 @@ export async function GET() {
     fuelWindowNote: obs?.fuel?.windowNote ?? null,
     fuelHistory: obs?.fuel?.curationOps > 0
       ? `מסילת-הדלק חיה — ${obs.fuel.curationOps} פעולות-קיורציה בחלון-המדידה (${obs.fuel.windowSpanDays}d)`
-      : "קיורציה אחרונה נמדדה 2026-09-09 — המסילה הוצתה-מחדש ב-T-13 (curator חי), התשואה תימדד מהפאייאוטים-הבאים",
+      : (execHttp as any)?.credential?.present === false
+        ? "המסילה חמושה אך חתימה-מתה (אישורי אבד באיפוס-הסביבה) — ההקמה: הפלת upload/headcorner.txt"
+        : "קיורציה אחרונה נמדדה 2026-09-09 — המסילה הוצתה-מחדש ב-T-13 (curator חי), התשואה תימדד מהפאייאוטים-הבאים",
     deployedSteem: orderTotals.askedSteem,
     bidSbd: orderTotals.bidSbd,
     bookEmpty: orders.length === 0,
@@ -394,6 +408,11 @@ export async function GET() {
       }
     : null;
 
+  /* T-15: the unified agent registry + credential truth (single source of
+   * truth for every agent claim — replaces scattered/legacy counts) */
+  const fleetData = (fleetHttp as any)?.fleet ?? null;
+  const credData = (fleetHttp as any)?.credential ?? (execHttp as any)?.credential ?? null;
+
   const data = {
     ok: true,
     asof: new Date().toISOString(),
@@ -414,12 +433,15 @@ export async function GET() {
     intel: intelPublic,
     learning: learningPublic,
     discovery: discoveryPublic,
+    fleet: fleetData,
+    credential: credData,
     sources: { kind: "sovereign-local", paths: PATHS, engineHttp: ENGINE_HTTP },
     notes: [
       "אמת-מוטבעת-על-שרשרת בלבד — real.fills נמדד מ-fill_order חי",
       "T-12: מפתח-ראשי מוחזק-מנוע, מוגבל-דוקטרינה, לעולם לא נרשם/נשלח — רק טביעות-אצבע ציבוריות",
       "T-9: האחוזה בת-16-הרפו אבדה באיפוס-סביבה — המנוע נבנה-מחדש מקומית (ראה docs/ESTATE-INVENTORY.md)",
       "T-14: למידה-מתמשכת — שיעורים מהיסטוריה-מוקלטת, כיוונים-חסומים (LEARN_CLAMP), גילוי אופציות-גדילה על-הרשת",
+      "T-15: רישום-סוכנים מאוחד (fleet) — חיות-נמדדת לכל סוכן, אפס ספירות-יומרה; אזעקת-אישורי-חסר צורמת (עוד לא רוטב-בשקט)",
     ],
   };
   cache = { at: Date.now(), data };

@@ -1,130 +1,58 @@
 {
-  "startedAt": "2026-09-29T22:32:32.760Z",
+  "startedAt": "2026-09-30T15:40:39.818Z",
   "account": "headcorner",
   "steps": {
     "observe": {
       "name": "observe",
       "ok": true,
-      "ms": 2091,
+      "ms": 2531,
       "account": "headcorner",
       "parity": {
-        "steemUsd": 0.06454,
+        "steemUsd": 0.06526,
         "sbdUsd": 0,
-        "parity": 0.10410183588876558,
+        "parity": 0.10410183838219932,
         "source": "internal-feed-fallback",
         "lowConfidence": true
       },
-      "feed": 0.10410183588876558,
+      "feed": 0.10410183838219932,
       "band": {
         "ok": true,
         "reason": "band-ok",
         "bps": 0
       },
-      "steemUsd": 0.06454,
+      "steemUsd": 0.06526,
       "sbdUsd": 0,
       "inventory": {
-        "steem": 0,
-        "sbd": 0.642,
-        "spOwn": 4034.744517473774,
+        "steem": 910.428,
+        "sbd": 0.066,
+        "spOwn": 4034.9401304455973,
         "rcPct": 100
       },
       "ordersOk": true,
       "orders": [
         {
-          "orderid": 1790709581,
-          "side": "ask",
-          "base": "200.000 STEEM",
-          "quote": "20.862 SBD",
-          "unit": 0.10431,
-          "created": "2026-09-29T19:19:42"
+          "orderid": 2026093001,
+          "side": "bid",
+          "base": "0.192 SBD",
+          "quote": "1.993 STEEM",
+          "unit": 10.380208,
+          "created": "2026-09-30T03:58:09"
         },
         {
-          "orderid": 1790709599,
-          "side": "ask",
-          "base": "194.117 STEEM",
-          "quote": "20.249 SBD",
-          "unit": 0.104313,
-          "created": "2026-09-29T19:20:00"
+          "orderid": 2026093002,
+          "side": "bid",
+          "base": "0.192 SBD",
+          "quote": "2.035 STEEM",
+          "unit": 10.598958,
+          "created": "2026-09-30T03:58:12"
         },
         {
-          "orderid": 1790709600,
-          "side": "ask",
-          "base": "5.883 STEEM",
-          "quote": "0.614 SBD",
-          "unit": 0.104369,
-          "created": "2026-09-29T19:20:00"
-        },
-        {
-          "orderid": 1790709694,
-          "side": "ask",
-          "base": "142.119 STEEM",
-          "quote": "14.825 SBD",
-          "unit": 0.104314,
-          "created": "2026-09-29T19:21:36"
-        },
-        {
-          "orderid": 1790709695,
-          "side": "ask",
-          "base": "57.881 STEEM",
-          "quote": "6.046 SBD",
-          "unit": 0.104456,
-          "created": "2026-09-29T19:21:36"
-        },
-        {
-          "orderid": 1790709715,
-          "side": "ask",
-          "base": "79.986 STEEM",
-          "quote": "8.343 SBD",
-          "unit": 0.104306,
-          "created": "2026-09-29T19:21:57"
-        },
-        {
-          "orderid": 1790709716,
-          "side": "ask",
-          "base": "79.986 STEEM",
-          "quote": "8.354 SBD",
-          "unit": 0.104443,
-          "created": "2026-09-29T19:21:57"
-        },
-        {
-          "orderid": 1790709717,
-          "side": "ask",
-          "base": "40.029 STEEM",
-          "quote": "4.186 SBD",
-          "unit": 0.104574,
-          "created": "2026-09-29T19:21:57"
-        },
-        {
-          "orderid": 1790709756,
-          "side": "ask",
-          "base": "28.010 STEEM",
-          "quote": "2.922 SBD",
-          "unit": 0.10432,
-          "created": "2026-09-29T19:22:39"
-        },
-        {
-          "orderid": 1790709757,
-          "side": "ask",
-          "base": "28.010 STEEM",
-          "quote": "2.926 SBD",
-          "unit": 0.104463,
-          "created": "2026-09-29T19:22:39"
-        },
-        {
-          "orderid": 1790709758,
-          "side": "ask",
-          "base": "28.010 STEEM",
-          "quote": "2.929 SBD",
-          "unit": 0.10457,
-          "created": "2026-09-29T19:22:39"
-        },
-        {
-          "orderid": 1790709759,
-          "side": "ask",
-          "base": "26.397 STEEM",
-          "quote": "2.764 SBD",
-          "unit": 0.104709,
-          "created": "2026-09-29T19:22:39"
+          "orderid": 2026093003,
+          "side": "bid",
+          "base": "0.192 SBD",
+          "quote": "2.078 STEEM",
+          "unit": 10.822917,
+          "created": "2026-09-30T03:58:15"
         }
       ],
       "fills": 42,
@@ -150,7 +78,7 @@
         "authorVestsPerDay": 0,
         "curationOps": 0,
         "authorOps": 0,
-        "windowSpanDays": 6.73,
+        "windowSpanDays": 7.33,
         "windowOps": 1001,
         "measured": true,
         "fuelUsdPerDay": 0,
@@ -159,12 +87,12 @@
         "node": "https://steemapi.boylikegirl.club",
         "windowNote": "no reward ops inside the measured window — rails dormant, not a parse failure (deep-scan documented separately)"
       },
-      "summary": "parity 0.10410183588876558 (internal-feed-fallback) · fills 42 · fuel 0$"
+      "summary": "parity 0.10410183838219932 (internal-feed-fallback) · fills 42 · fuel 0$"
     },
     "intel": {
       "name": "intel",
       "ok": true,
-      "ms": 1392,
+      "ms": 1494,
       "verdict": "DECISIONS:4",
       "decisions": [
         "book-depth:hold-shape",
@@ -172,18 +100,18 @@
         "rc-health:healthy",
         "curation:curator-live"
       ],
-      "spreadBpsRec": 536,
+      "spreadBpsRec": 4,
       "book": {
-        "bestAsk": 0.10335099032703823,
-        "bestBid": 0.09796007417912075,
-        "spreadBps": 536
+        "bestAsk": 0.10424354243542436,
+        "bestBid": 0.10420011496303344,
+        "spreadBps": 4
       }
     },
     "tick": {
       "name": "tick",
       "ok": true,
-      "ms": 0,
-      "runCount": 56,
+      "ms": 1,
+      "runCount": 71,
       "simFills": 0,
       "simFeesMu": 0,
       "events": 3
@@ -192,16 +120,16 @@
       "name": "peg",
       "ok": true,
       "ms": 0,
-      "verdict": "OFFER-EMPTY",
-      "asks": 0,
+      "verdict": "OFFER-READY",
+      "asks": 4,
       "bids": 0,
-      "staleCount": 0,
-      "skew": -0.3,
+      "staleCount": 3,
+      "skew": 0.299582,
       "liquidity": {
-        "deployedAsks": 910.428,
-        "deployedBids": 0,
-        "askBudget": 0,
-        "bidBudget": 0.142,
+        "deployedAsks": 0,
+        "deployedBids": 0.576,
+        "askBudget": 546.257,
+        "bidBudget": 0,
         "deployCap": 0.6
       }
     },
@@ -212,69 +140,26 @@
       "verdict": "CONVERT-HOLD",
       "amountSbd": 0,
       "marketSbdUsd": 0,
-      "impliedSbdUsd": 0.61997,
+      "impliedSbdUsd": 0.626886,
       "marketSourceNote": "no-external-SBD-market (delisted binance/poloniex/upbit/mexc) — HOLD is honest"
     },
     "curate": {
       "name": "curate",
-      "ok": true,
-      "ms": 0,
-      "verdict": "DAY-CAP",
-      "votes": 0,
-      "txid": null,
-      "vpEff": null,
-      "votesToday": 10,
-      "error": null
+      "ok": false,
+      "ms": 11040,
+      "error": "CREDENTIAL-MISSING: .secrets/headcorner.key not found (sandbox cold-reset wipes gitignored secrets). Revival (self-service, zero restart): drop the account's CURRENT master-password file as upload/hea"
     },
     "execute": {
       "name": "execute",
-      "ok": true,
-      "ms": 714,
-      "verdict": "NO-OPS",
-      "ops": 0
+      "ok": false,
+      "ms": 1876,
+      "error": "CREDENTIAL-MISSING: .secrets/headcorner.key not found (sandbox cold-reset wipes gitignored secrets). Revival (self-service, zero restart): drop the account's CURRENT master-password file as upload/hea"
     },
     "soldiers": {
       "name": "soldiers",
-      "ok": true,
-      "ms": 5370,
-      "verdict": "SOLDIER-GRID-DONE",
-      "deploy": null,
-      "topups": [],
-      "grids": [
-        {
-          "name": "hcsoldier1",
-          "verdict": "NO-OPS",
-          "txid": null,
-          "ops": 0,
-          "stale": 0,
-          "live": 2,
-          "steem": 0.001,
-          "sbd": 0.139,
-          "error": null
-        },
-        {
-          "name": "hcsoldier2",
-          "verdict": "NO-OPS",
-          "txid": null,
-          "ops": 0,
-          "stale": 0,
-          "live": 2,
-          "steem": 0.001,
-          "sbd": 0.139,
-          "error": null
-        },
-        {
-          "name": "hcsoldier3",
-          "verdict": "NO-OPS",
-          "txid": null,
-          "ops": 0,
-          "stale": 0,
-          "live": 2,
-          "steem": 0.001,
-          "sbd": 0.139,
-          "error": null
-        }
-      ]
+      "ok": false,
+      "ms": 2540,
+      "error": "CREDENTIAL-MISSING: .secrets/headcorner.key not found (sandbox cold-reset wipes gitignored secrets). Revival (self-service, zero restart): drop the account's CURRENT master-password file as upload/hea"
     },
     "learn": {
       "name": "learn",
@@ -287,7 +172,7 @@
       "tunings": [],
       "discoveryVerdict": "FRESH-CACHED",
       "topOpportunities": [
-        "spread-wide(measured)",
+        "spread-normal(measured)",
         "tags-realloc(measured)",
         "curation-share(estimated)"
       ]
@@ -300,7 +185,7 @@
       "positionSteem": 163.881,
       "positionAvgCost": 0.106812,
       "unbasedSteem": 162.221,
-      "deployedSteem": 910.4279999999999,
+      "deployedSteem": 0,
       "fuelUsdPerDay": 0,
       "authorUsdPerDay": null,
       "measuredTotalUsdPerDay": 0,
@@ -312,12 +197,12 @@
     "positionSteem": 163.881,
     "positionAvgCost": 0.106812,
     "unbasedSteem": 162.221,
-    "deployedSteem": 910.4279999999999,
+    "deployedSteem": 0,
     "fuelUsdPerDay": 0,
     "authorUsdPerDay": null,
     "measuredTotalUsdPerDay": 0,
     "honesty": "unbased ≠ profit · signing doctrine-capped · all numbers measured this cycle"
   },
-  "ok": true,
-  "finishedAt": "2026-09-29T22:32:42.328Z"
+  "ok": false,
+  "finishedAt": "2026-09-30T15:40:59.302Z"
 }

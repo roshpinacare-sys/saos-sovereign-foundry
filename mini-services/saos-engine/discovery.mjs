@@ -10,7 +10,7 @@
  *  - discovery NEVER executes anything: it ranks options, the doctrine gates
  *    decide. Learning may consume discovery's measured tag ranking (additive,
  *    clamped) — that is the only consumer.
- *  - cadence-gated by the caller (30 min default) — network reads are not free.
+ *  - cadence-gated by the caller (15 min default — T-15 throughput order) — network reads are not free.
  */
 
 import * as fs from "node:fs";
@@ -121,10 +121,15 @@ export function scoreOpportunities({ tagBoard, depth, vpEff, curationEst, bookFi
 export function discoveryState() { return readJson(DISC_FILE, null); }
 
 /* ── the IO pass (cadence-gated) ───────────────────────────────────────── */
-export async function runDiscovery({ now = new Date().toISOString(), persist = true, minIntervalMs = 30 * 60_000 } = {}) {
+export async function runDiscovery({ now = new Date().toISOString(), persist = true, minIntervalMs = 15 * 60_000 } = {}) {
   const prev = readJson(DISC_FILE, null);
-  if (prev?.at && Date.now() - Date.parse(prev.at) < minIntervalMs) {
-    return { ...prev, verdict: "FRESH-CACHED", at: prev.at };
+  if (prev?.lastFullScanAt && Date.now() - Date.parse(prev.lastFullScanAt) < minIntervalMs) {
+    // T-15: a cadence-skip is ITSELF recorded output — touch the file (fresh
+    // `at`, keep lastFullScanAt) so the fleet registry can tell "lawfully
+    // waiting" apart from "dead". A silent skip looks exactly like rot.
+    const touched = { ...prev, verdict: prev.verdict ?? "FRESH-CACHED", at: now, freshCached: true };
+    if (persist) writeJson(DISC_FILE, touched);
+    return { ...touched, verdict: "FRESH-CACHED" };
   }
 
   const [tagsR, depth, fundR, accR, soldiers] = await Promise.all([
@@ -166,6 +171,7 @@ export async function runDiscovery({ now = new Date().toISOString(), persist = t
 
   const out = {
     at: now,
+    lastFullScanAt: now,
     verdict: opportunities.length ? "OPTIONS-FOUND" : "NO-NETWORK-READ",
     tagBoard,
     curationEst,

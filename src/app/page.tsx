@@ -86,6 +86,18 @@ type Status = {
     topTags?: { tag?: string; payoutsSbd?: number }[]
     curationEst?: { dailyPoolSteem?: number; estimatedSteemPerDay?: number; note?: string } | null
   } | null
+  fleet?: {
+    at?: string; verdict?: string
+    counts?: { total?: number; alive?: number; idle?: number; blocked?: number; dead?: number }
+    agents?: { id: string; role: string; status: 'ALIVE' | 'IDLE' | 'BLOCKED' | 'DEAD'; ageMin?: number | null; blockedBy?: string | null; evidence: string; revival?: string }[]
+    honesty?: string
+    lostEraNote?: string
+  } | null
+  credential?: {
+    present?: boolean; keyFile?: string; armedButNoCredential?: boolean
+    missingSince?: string | null; alerts?: number
+    agentsAffected?: string[]; revival?: string | null
+  } | null
   events?: { type?: string; at?: string; [k: string]: unknown }[]
 }
 type EngineResp = { ok?: boolean; steps?: Record<string, { ok?: boolean; skipped?: boolean; verdict?: string; error?: string }>; rollup?: { measuredTotalUsdPerDay?: number | null; realizedSbd?: number | null }; finishedAt?: string; error?: string; engine?: string }
@@ -146,9 +158,16 @@ export default function Home() {
     try {
       const r = await fetch('/api/saos/engine', { method: 'POST' })
       const j: EngineResp = await r.json()
+      const hasSteps = j.steps && Object.keys(j.steps).length > 0
       if (j.ok) {
         const steps = Object.entries(j.steps ?? {}).map(([k, v]) => `${k}:${v.ok === false ? 'כשל' : v.skipped ? 'דילוג' : 'תקין'}`).join(' · ')
         setCycleMsg(`מחזור הושלם · ${steps} · מדידה $${(j.rollup?.measuredTotalUsdPerDay ?? 0).toFixed(4)}/יום`)
+      } else if (hasSteps) {
+        // T-15 truth law: a completed cycle with doctrine-isolated step
+        // failures is NOT "engine unavailable" — name the failing steps
+        const steps = Object.entries(j.steps ?? {}).map(([k, v]) => `${k}:${v.ok === false ? 'כשל' : v.skipped ? 'דילוג' : 'תקין'}`).join(' · ')
+        const fails = Object.entries(j.steps ?? {}).filter(([, v]) => v.ok === false).map(([k]) => k)
+        setCycleMsg(`מחזור הושלם (חלקי — נכשלו: ${fails.join(', ')}) · ${steps} · מדידה $${(j.rollup?.measuredTotalUsdPerDay ?? 0).toFixed(4)}/יום`)
       } else {
         setCycleMsg(`המנוע לא זמין: ${j.error ?? j.engine ?? 'שגיאה'}`)
       }
@@ -232,6 +251,31 @@ export default function Home() {
           </Card>
         )}
 
+        {/* T-15 · אזעקת-חתימה-מתה — לעולם לא שוב ריקבון-שקט: 3 סוכנים מתים בשקט יום-שלם עד שזה נחשף.
+            המערכת חייבת לצרוח בראש-העמוד, עם נתיב-ההקמה המדויק. */}
+        {s?.credential?.armedButNoCredential && (
+          <Card className="mb-4 border-rose-500/40 bg-rose-500/10" role="alert">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="h-9 w-9 shrink-0 rounded-lg bg-rose-500/20 border border-rose-500/40 grid place-items-center">
+                  <KeyRound className="h-5 w-5 text-rose-400" aria-hidden />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-rose-300">חתימה-מתה · האישורי לא נמצא ({s.credential.agentsAffected?.join(', ') ?? 'סוכנים-חותמים'} לא עובדים)</p>
+                  <p className="text-xs text-rose-200/80 mt-1 leading-relaxed">
+                    איפוס-הסביבה מחק את <code className="text-rose-300" dir="ltr">{s.credential.keyFile ?? '.secrets/headcorner.key'}</code>
+                    {s.credential.missingSince && <> · מת כנראה מאז <span dir="ltr">{s.credential.missingSince.slice(0, 16).replace('T', ' ')}</span> UTC</>}
+                    · הספר על-השרשרת נשאר חי, המחזורים ממשיכים — רק פעולות-חתימה מושבתות.
+                  </p>
+                  <p className="text-xs text-emerald-300/90 mt-1.5 font-semibold leading-relaxed">
+                    ההקמה (שירות-עצמי, אפס-ריסטרט): הפל את קובץ-הסיסמה-הראשית הנוכחית של החשבון כ-<code dir="ltr">upload/headcorner.txt</code> — המנוע מאבטח אותו (0600), מאמץ אוטומטית במחזור-הבא, וכל הצי קם-לתחייה.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {!s && !err && (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
@@ -244,6 +288,55 @@ export default function Home() {
 
         {s && (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {/* הצי · אמת-אחת לכל-הסוכנים (T-15) — התשובה המבנית ל"60+ סוכנים, רובם מתים" */}
+            <Card className="border-orange-500/25 bg-gradient-to-br from-orange-500/10 to-slate-900/60 md:col-span-2 lg:col-span-3">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm text-orange-300 flex-wrap">
+                  <Users className="h-4 w-4" aria-hidden /> הצי · רישום-סוכנים מאוחד (T-15)
+                  <Badge variant="default" className={
+                    s.fleet?.verdict === 'FLEET-OK' ? 'bg-emerald-500/20 text-emerald-300'
+                      : s.fleet?.verdict?.startsWith('DEAD') ? 'bg-rose-500/20 text-rose-300'
+                      : 'bg-amber-500/20 text-amber-300'
+                  }>{s.fleet?.verdict ?? '—'}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2 flex-wrap text-xs">
+                  <Badge variant="outline" className="border-emerald-500/40 text-emerald-300">חיים {s.fleet?.counts?.alive ?? '—'}</Badge>
+                  <Badge variant="outline" className="border-slate-600/50 text-slate-300">בהמתנה-חוקית {s.fleet?.counts?.idle ?? '—'}</Badge>
+                  <Badge variant="outline" className="border-amber-500/40 text-amber-300">חסומים {s.fleet?.counts?.blocked ?? '—'}</Badge>
+                  <Badge variant="outline" className={((s.fleet?.counts?.dead ?? 0) > 0) ? 'border-rose-500/40 text-rose-300' : 'border-slate-600/50 text-slate-400'}>מתים {s.fleet?.counts?.dead ?? '—'}</Badge>
+                  <span className="text-slate-500">· סה\"כ {s.fleet?.counts?.total ?? '—'} סוכנים · חיות-נמדדת מהפלט-המוקלט של כל סוכן (לא ספירות-יומרה)</span>
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 max-h-80 overflow-y-auto pe-1">
+                  {(s.fleet?.agents ?? []).map((a) => (
+                    <div key={a.id} className="rounded-lg border border-slate-800 bg-slate-900/50 p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-slate-100" dir="ltr">{a.id}</span>
+                        <Badge variant="outline" className={
+                          a.status === 'ALIVE' ? 'border-emerald-500/40 text-emerald-300'
+                            : a.status === 'IDLE' ? 'border-slate-600/50 text-slate-400'
+                            : a.status === 'BLOCKED' ? 'border-amber-500/40 text-amber-300'
+                            : 'border-rose-500/40 text-rose-300'
+                        }>{a.status === 'ALIVE' ? 'חי' : a.status === 'IDLE' ? 'המתנה' : a.status === 'BLOCKED' ? 'חסום' : 'מת'}</Badge>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1 leading-snug">{a.role}</p>
+                      <p className="text-[11px] text-slate-600 mt-1 leading-snug" dir="ltr">{a.evidence}</p>
+                      {a.status === 'BLOCKED' && a.blockedBy && (
+                        <p className="text-[11px] text-amber-300/90 mt-1">חסום-על-ידי: {a.blockedBy === 'credential-missing' ? 'אישורי-חסר' : a.blockedBy}{a.revival ? ` · ${a.revival}` : ''}</p>
+                      )}
+                    </div>
+                  ))}
+                  {!s.fleet?.agents?.length && (
+                    <p className="text-xs text-slate-500">הרישום-המאוחד ייפתח כשהמנוע יגיב…</p>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                  {s.fleet?.lostEraNote ?? 'הרישום הזה הוא האמת היחידה על-הסוכנים.'} · {s.fleet?.honesty ?? ''}
+                </p>
+              </CardContent>
+            </Card>
+
             {/* ריבונות-מתמשכת · המערכת דואגת לעצמה (T-10) */}
             <Card className="border-violet-500/25 bg-gradient-to-br from-violet-500/10 to-slate-900/60">
               <CardHeader className="pb-2">
@@ -307,7 +400,7 @@ export default function Home() {
                   {!sov?.events?.length && <p className="text-[11px] text-slate-500">יומן-החלטות ייפתח עם הביקורת-הראשונה…</p>}
                 </div>
                 <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
-                  עצמאית-מהפעלה-שלך: מתעוררת עם השרת · דופק כל {sov?.intervals?.watchdogSec ?? 60} שניות · מחזור כל {Math.round((sov?.intervals?.cycleSec ?? 600) / 60)} דק · איכות כל {Math.round((sov?.intervals?.selftestSec ?? 21600) / 3600)} שעות. החתימה על-השרשרת נשארת שער-אופרטור (X-1) — כך השליטה נשארת שלך.
+                  עצמאית-מהפעלה-שלך: מתעוררת עם השרת · דופק כל {sov?.intervals?.watchdogSec ?? 60} שניות · מחזור כל {Math.round((sov?.intervals?.cycleSec ?? 600) / 60)} דק · איכות כל {Math.round((sov?.intervals?.selftestSec ?? 21600) / 3600)} שעות. החתימה על-השרשרת מוחזקת-מנוע מאז T-12 (הוראת-עומד, מוגבלת-דוקטרינה) · השהיה = מתג-ההרג שלך.
                 </p>
               </CardContent>
             </Card>
@@ -327,7 +420,7 @@ export default function Home() {
                   <Badge variant="outline" className="border-slate-700 text-slate-300">account: {s?.engine?.info?.account ?? 'headcorner'}</Badge>
                 </div>
                 <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                  observe → tick → peg → convert → report — הכל מקומי, אפס-רפו-חיצוני, אפס-מפתחות. ביצוע-חתימות = שער-אופרטור בלבד.
+                  observe → intel → tick → peg → convert → curate → execute → soldiers → learn → report — הכל מקומי, אפס-רפו-חיצוני. חתימה-מנוע-מוחזקת מאז T-12 (מוגבלת-דוקטרינה) · מתג-הרג = השהיה.
                 </p>
                 <Button onClick={runCycle} disabled={cycling || !engineUp} size="sm" aria-label="הרץ-מחזור-מנוע" className="mt-3 w-full bg-cyan-500/20 text-cyan-200 border border-cyan-500/40 hover:bg-cyan-500/30">
                   <Play className="h-4 w-4 me-1.5" aria-hidden />

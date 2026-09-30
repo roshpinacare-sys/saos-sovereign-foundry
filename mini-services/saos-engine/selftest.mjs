@@ -7,6 +7,7 @@ import {
   MIN_LEVEL, ASK_FLOOR_BPS,
 } from "./lib.mjs";
 import { tick, fold } from "./grid.mjs";
+import { classifyAgent } from "./fleet.mjs";
 
 let pass = 0, fail = 0;
 const eq = (name, a, b) => {
@@ -303,6 +304,18 @@ const ops = scoreOpportunities({
 ok("ops sorted by class", ops.findIndex((o) => o.id === "tags-realloc") < ops.findIndex((o) => o.id === "curation-share"));
 ok("ops all carry class+gate", ops.every((o) => o.potentialClass && o.gate && o.evidence));
 ok("wide-spread opportunity detected", scoreOpportunities({ tagBoard: [], depth: { ok: true, spreadBps: 400, bestAsk: 0.11, bestBid: 0.1 }, curationEst: null, bookFills: { fills: 0, lastFillAt: null }, soldiers: null }).some((o) => o.id === "spread-wide"));
+
+/* T-15 · fleet classifier: deterministic liveness classes (measured, never claimed) */
+const FLEET_NOW = Date.parse("2026-09-30T15:00:00Z");
+eq("fleet alive-fresh", classifyAgent({ lastRunAt: "2026-09-30T14:55:00Z", nowMs: FLEET_NOW, freshnessMin: 15 }).status, "ALIVE");
+eq("fleet alive-idle-verdict", classifyAgent({ lastRunAt: "2026-09-30T14:55:00Z", nowMs: FLEET_NOW, freshnessMin: 15, lastVerdict: "DAY-CAP", idleReasons: ["DAY-CAP"] }).status, "IDLE");
+eq("fleet alive-but-blocked-wins", classifyAgent({ lastRunAt: "2026-09-30T14:55:00Z", nowMs: FLEET_NOW, freshnessMin: 15, blockedBy: "credential-missing" }).status, "BLOCKED");
+eq("fleet stale-no-reason-is-dead", classifyAgent({ lastRunAt: "2026-09-30T13:00:00Z", nowMs: FLEET_NOW, freshnessMin: 15 }).status, "DEAD");
+eq("fleet stale-with-idle-verdict-still-dead", classifyAgent({ lastRunAt: "2026-09-30T13:00:00Z", nowMs: FLEET_NOW, freshnessMin: 15, lastVerdict: "CONVERT-HOLD", idleReasons: ["CONVERT-HOLD"] }).status, "DEAD");
+eq("fleet no-evidence-is-dead", classifyAgent({ lastRunAt: null, nowMs: FLEET_NOW, freshnessMin: 15 }).status, "DEAD");
+eq("fleet boundary-at-window", classifyAgent({ lastRunAt: "2026-09-30T14:45:00Z", nowMs: FLEET_NOW, freshnessMin: 15 }).status, "ALIVE");
+eq("fleet boundary-beyond-window", classifyAgent({ lastRunAt: "2026-09-30T14:44:00Z", nowMs: FLEET_NOW, freshnessMin: 15 }).status, "DEAD");
+ok("fleet classifier carries age+blocked", (() => { const r = classifyAgent({ lastRunAt: "2026-09-30T14:50:00Z", nowMs: FLEET_NOW, freshnessMin: 15, blockedBy: "x" }); return r.ageMin === 10 && r.blockedBy === "x"; })());
 
 console.log(`\nSELFTEST ${pass}/${pass + fail} ${fail === 0 ? "PASS" : "FAIL"}`);
 process.exit(fail === 0 ? 0 : 1);

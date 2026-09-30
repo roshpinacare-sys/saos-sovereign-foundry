@@ -130,3 +130,20 @@
 {"at":"2026-09-29T22:12:43.744Z","kind":"cycle-ok(auto)","ms":10991,"steps":10,"verdict":"OFFER-EMPTY"}
 {"at":"2026-09-29T22:22:43.349Z","kind":"cycle-ok(auto)","ms":10593,"steps":10,"verdict":"OFFER-EMPTY"}
 {"at":"2026-09-29T22:32:42.329Z","kind":"cycle-ok(auto)","ms":9573,"steps":10,"verdict":"OFFER-EMPTY"}
+{"at":"2026-09-30T14:51:45.898Z","kind":"boot","pid":1116,"resumed":false,"carriedOver":{"checks":249,"cyclesOk":24,"heals":12}}
+{"at":"2026-09-30T14:51:45.954Z","kind":"watchdog-down-again"}
+{"at":"2026-09-30T14:51:45.955Z","kind":"heal-attempt","reason":"watchdog"}
+{"at":"2026-09-30T14:51:45.968Z","kind":"heal-spawn","reason":"watchdog","pid":1197}
+{"at":"2026-09-30T14:51:53.988Z","kind":"heal-verified","up":true}
+{"at":"2026-09-30T14:52:43.582Z","kind":"cycle-fail(auto)","ms":12674,"steps":10,"verdict":"OFFER-READY"}
+{"at":"2026-09-30T15:01:54.306Z","kind":"cycle-fail(auto)","ms":8402,"steps":10,"verdict":"OFFER-READY"}
+{"at":"2026-09-30T15:11:55.318Z","kind":"cycle-fail(auto)","ms":9413,"steps":10,"verdict":"OFFER-READY"}
+{"at":"2026-09-30T15:21:56.724Z","kind":"cycle-fail(auto)","ms":10817,"steps":10,"verdict":"OFFER-READY"}
+{"at":"2026-09-30T15:26:15.021Z","kind":"boot","pid":2742,"resumed":false,"carriedOver":{"checks":284,"cyclesOk":24,"heals":13}}
+{"at":"2026-09-30T15:26:15.031Z","kind":"watchdog-down-again"}
+{"at":"2026-09-30T15:26:15.032Z","kind":"heal-attempt","reason":"watchdog"}
+{"at":"2026-09-30T15:26:15.038Z","kind":"heal-spawn","reason":"watchdog","pid":2762}
+{"at":"2026-09-30T15:26:19.051Z","kind":"heal-verified","up":true}
+{"at":"2026-09-30T15:26:19.051Z","kind":"cred-missing","verdict":"SIGNING-DEAD","agentsAffected":["curate","execute","soldiers","promo"],"revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}
+{"at":"2026-09-30T15:27:12.701Z","kind":"cycle-fail(auto)","ms":12674,"steps":10,"verdict":"OFFER-READY"}
+{"at":"2026-09-30T15:36:36.317Z","kind":"cycle-fail(auto)","ms":21288,"steps":10,"verdict":"OFFER-READY"}
