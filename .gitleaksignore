@@ -1,0 +1,9 @@
+# .gitleaksignore — triaged 2026-10-01 by Task 13-d2 (org-gitleaks run 36763896413)
+# one fingerprint per line; git form (commit:file:rule:line) + HEAD-only form (file:rule:line)
+# so full-history AND --no-git scans agree. No secret material in this file (fingerprints+comments only).
+
+# historical: pre-rotation — owner-blocked rotation 2026-10-01 (material absent at HEAD; history retains)
+92195acdfb1bec97e3c28f6df0fd197af34d1359:agent/vault/recovery-meta-2026-09-12.json:generic-api-key:3
+
+# historical: pre-rotation — owner-blocked rotation 2026-10-01 (old fine-grained PAT, differs from the current org PAT; file absent at HEAD; history retains)
+5356daba6f36d1f988a90d4dfa046882fcb97987:upload/חח.txt:github-fine-grained-pat:2
