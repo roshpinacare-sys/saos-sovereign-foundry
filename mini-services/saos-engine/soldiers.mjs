@@ -123,8 +123,13 @@ export async function deploySoldiers() {
 }
 
 /** per-soldier ladder: same laws as the master (VF1 floor, skew, drag),
- * soldier-sized budgets; each soldier signs its OWN tx with its OWN key */
-export async function runSoldierGrids({ parity, spreadBps = 0, now }) {
+ * soldier-sized budgets; each soldier signs its OWN tx with its OWN key.
+ * T-19: accepts the live book edges + chain anchor — each soldier's ladder
+ * gets the flow tranche AT the market front (the multiplier: 3 soldiers ×
+ * small front levels = 3 extra presences competing for the same measured
+ * ~49 trades/day, without ever crossing the master's ladder — planLadder's
+ * construction + the chain anchor keep every level lawful). */
+export async function runSoldierGrids({ parity, spreadBps = 0, now, bestBid = null, bestAsk = null, feedAnchor = null }) {
   const conf = soldierConf();
   const st = readJson(SOLDIERS_STATE, { deployed: false, accounts: [] });
   if (!st.deployed) return { ok: true, verdict: "NOT-DEPLOYED", soldiers: [] };
@@ -145,12 +150,22 @@ export async function runSoldierGrids({ parity, spreadBps = 0, now }) {
         askBudgetSteem: Math.max(0, (acc.steem ?? 0)),
         bidBudgetSbd: Math.max(0, (acc.sbd ?? 0) - 0.2),
         spreadBps, skew, levels: 3, minLevel: conf.minLevel ?? 0.2, now,
+        bestBid, bestAsk, feedAnchor,
+        flowTranchePct: conf.flowTranchePct ?? 0.5,
+        flowSpacingBps: conf.flowSpacingBps ?? 15,
+        flowLevels: conf.flowLevels ?? 2,
       });
       const ops = [];
       for (const o of staleCls.stale.slice(0, 3)) ops.push(["limit_order_cancel", { owner: name, orderid: o.orderid }]);
       let askSum = 0, bidSum = 0;
-      for (const a of plan.asks) { askSum += a.amountSteem; ops.push(["limit_order_create", { owner: name, orderid: (Math.floor(Date.now() / 1000) + ops.length) >>> 0, amount_to_sell: `${a.amountSteem.toFixed(3)} STEEM`, min_to_receive: `${(a.amountSteem * a.unit).toFixed(3)} SBD`, fill_or_kill: false, expiration: Math.floor(Date.now() / 1000) + 86400 }]); }
-      for (const b of plan.bids) { bidSum += b.amountSbd; ops.push(["limit_order_create", { owner: name, orderid: (Math.floor(Date.now() / 1000) + ops.length + 500) >>> 0, amount_to_sell: `${b.amountSbd.toFixed(3)} SBD`, min_to_receive: `${(b.amountSbd / b.unit).toFixed(3)} STEEM`, fill_or_kill: false, expiration: Math.floor(Date.now() / 1000) + 86400 }]); }
+      const pushOrder = (lvl, kind) => {
+        if (kind === "ask") { askSum += lvl.amountSteem; ops.push(["limit_order_create", { owner: name, orderid: (Math.floor(Date.now() / 1000) + ops.length) >>> 0, amount_to_sell: `${lvl.amountSteem.toFixed(3)} STEEM`, min_to_receive: `${(lvl.amountSteem * lvl.unit).toFixed(3)} SBD`, fill_or_kill: false, expiration: Math.floor(Date.now() / 1000) + 86400 }]); }
+        else { bidSum += lvl.amountSbd; ops.push(["limit_order_create", { owner: name, orderid: (Math.floor(Date.now() / 1000) + ops.length + 500) >>> 0, amount_to_sell: `${lvl.amountSbd.toFixed(3)} SBD`, min_to_receive: `${(lvl.amountSbd / lvl.unit).toFixed(3)} STEEM`, fill_or_kill: false, expiration: Math.floor(Date.now() / 1000) + 86400 }]); }
+      };
+      for (const a of plan.asks) pushOrder(a, "ask");
+      for (const b of plan.bids) pushOrder(b, "bid");
+      for (const a of plan.flowAsks ?? []) pushOrder(a, "ask");   // T-19: front presence
+      for (const b of plan.flowBids ?? []) pushOrder(b, "bid");
       void askSum; void bidSum;
       let res;
       if (!ops.length) res = { ok: true, verdict: "NO-OPS", ops: 0 };

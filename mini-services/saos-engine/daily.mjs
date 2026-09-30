@@ -19,7 +19,7 @@ import {
   cycleHealth, cycleFailureBreakdown,
 } from "./lib.mjs";
 import {
-  externalParity, internalFeed, accountState, openOrders, measureAll, fuelToUsdPerDay,
+  externalParity, internalFeed, accountState, openOrders, measureAll, fuelToUsdPerDay, marketPulse, rpcCall,
 } from "./measure.mjs";
 import { tick as gridTick, fold, activeGrids } from "./grid.mjs";
 import { runIntel } from "./intel.mjs";
@@ -174,15 +174,53 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
     const maxDeploySbd = 0.6 * (inv.sbd + deployedBids);
     const askBudget = Math.max(0, Math.min(inv.steem, maxDeploySteem - deployedAsks));
     const bidBudget = Math.max(0, Math.min(inv.sbd - 0.5, maxDeploySbd - deployedBids));
+    /* T-19: LIVE BOOK + CHAIN ANCHOR — the ladder must see the market it
+     * quotes into. One bounded book read (50 levels); the witness feed is
+     * the flow tranche's honest floor (the only live SBD↔STEEM anchor). */
+    let book = null;
+    try {
+      const ob = await rpcCall("condenser_api.get_order_book", [50]);
+      if (ob.ok && ob.result) {
+        const bestAsk = ob.result.asks?.[0]?.real_price ? Number(ob.result.asks[0].real_price) : null;
+        const bestBid = ob.result.bids?.[0]?.real_price ? Number(ob.result.bids[0].real_price) : null;
+        book = { bestAsk, bestBid, askDepthSteem: Math.round(ob.result.asks?.reduce((s, a) => s + (a.steem || 0), 0) / 1000 * 1e3) / 1e3 || null, bidDepthSbd: Math.round(ob.result.bids?.reduce((s, b) => s + (b.sbd || 0), 0) / 1000 * 1e3) / 1e3 || null, at: now };
+      }
+    } catch { /* book read failed → flow tranche simply inactive this run */ }
+    const confPeg = armedConf();
+    const flowCfg = confPeg.flow ?? {};
     const plan = planLadder({
       parity: obs.parity.parity,
       askBudgetSteem: askBudget,
       bidBudgetSbd: bidBudget,
       spreadBps, skew, now,
+      bestBid: book?.bestBid ?? null, bestAsk: book?.bestAsk ?? null,
+      feedAnchor: obs.feed > 0 ? obs.feed : null,
+      flowTranchePct: flowCfg.tranchePct ?? 0.2,
+      flowSpacingBps: flowCfg.spacingBps ?? 15,
+      flowLevels: flowCfg.levels ?? 4,
+      /* T-19 REQUOTE LAW: the flow layer re-places its OWN reserved tranche
+       * every cycle (its previous levels get cancelled in the same execute) —
+       * fixed 12% of inventory, independent of the 60% residual law. */
+      flowAskBudgetSteem: (flowCfg.fixedSteemPct ?? 0.12) * Math.max(0, inv.steem ?? 0),
+      flowBidBudgetSbd: (flowCfg.fixedSbdPct ?? 0.12) * Math.max(0, (inv.sbd ?? 0) - 0.5),
     });
+    /* T-19 MARKET PULSE — the network measured, 30-min cadence, fail-isolated.
+     * The whole market does ~49 fills/24h (measured): this number is the
+     * honest ceiling of any capture strategy on this venue, and the cockpit
+     * must show it instead of a promise. */
+    let pulse = null;
+    const pulsePrev = readJson(path.join(STATE, "market.json"), null);
+    const pulseAge = pulsePrev?.at ? Date.now() - Date.parse(pulsePrev.at) : Infinity;
+    if (pulseAge > 30 * 60_000) {
+      try { pulse = await marketPulse({}); writeJson(path.join(STATE, "market.json"), pulse); }
+      catch { pulse = pulsePrev; }
+    } else pulse = pulsePrev;
     const offer = {
       verdict: plan.verdict, parityBps: obs.band?.bps ?? null,
-      blocker: plan.blocker, plan: { asks: plan.asks, bids: plan.bids },
+      blocker: plan.blocker, plan: { asks: plan.asks, bids: plan.bids, flowAsks: plan.flowAsks ?? [], flowBids: plan.flowBids ?? [] },
+      flow: plan.flow ?? null,
+      book,
+      market: pulse,
       marks: { paritySbdPerSteem: Math.round(obs.parity.parity * 1e6) / 1e6, source: obs.parity.source, lowConfidence: !!obs.parity.lowConfidence, internalFeed: Math.round(obs.feed * 1e6) / 1e6, dragK: plan.dragK, floor: plan.floor, ceiling: plan.ceiling, spreadBpsFed: spreadBps },
       skew, stale: { count: staleCls.stale.length, orderids: staleCls.stale.map((o) => o.orderid) },
       liquidity: { deployedAsks: Math.round(deployedAsks * 1e3) / 1e3, deployedBids: Math.round(deployedBids * 1e3) / 1e3, askBudget: Math.round(askBudget * 1e3) / 1e3, bidBudget: Math.round(bidBudget * 1e3) / 1e3, deployCap: 0.6 },
@@ -190,9 +228,9 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
     };
     if (persist) {
       writeJson(path.join(STATE, "offer.json"), offer);
-      appendLine(path.join(STATE, "events.jsonl"), { type: "offer.published", at: now, verdict: plan.verdict, asks: plan.asks.length, bids: plan.bids.length });
+      appendLine(path.join(STATE, "events.jsonl"), { type: "offer.published", at: now, verdict: plan.verdict, asks: plan.asks.length, bids: plan.bids.length, flowAsks: plan.flowAsks?.length ?? 0, flowBids: plan.flowBids?.length ?? 0, bestAsk: book?.bestAsk ?? null, bestBid: book?.bestBid ?? null });
     }
-    return { verdict: plan.verdict, asks: plan.asks.length, bids: plan.bids.length, staleCount: staleCls.stale.length, skew: skew.skew, liquidity: offer.liquidity };
+    return { verdict: plan.verdict, asks: plan.asks.length, bids: plan.bids.length, flowAsks: plan.flowAsks?.length ?? 0, flowBids: plan.flowBids?.length ?? 0, staleCount: staleCls.stale.length, skew: skew.skew, book, market: pulse ? { tradesPerDay: pulse.tradesPerDay, spreadBps: pulse.book?.spreadBps ?? null } : null, liquidity: offer.liquidity };
   });
 
   /* 5 · convert-plan: D-023 PSM hysteresis (SBD face-$1 edge) */
@@ -229,14 +267,45 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
     if (execPaused()) return { verdict: "OPERATOR-PAUSED", reason: "kill-switch" };
     loadCredential(); // typed CREDENTIAL-MISSING here — before ANY network read
 
-    const ops = [];
-    // (a) stale repricing — cancel law-violating orders (D-021, cap 5)
+    /* T-19 OPS BUDGET (the honest cost of activity): every order op costs RC
+     * and presence — the doctrine now JOURNALS its own throughput. A day cap
+     * keeps the churn bounded while the cockpit shows the meter. */
+    const OPS_FILE = path.join(STATE, "order-ops.json");
+    const opsDay = readJson(OPS_FILE, { day: null, opsToday: 0, lastRcPct: null });
+    const today = now.slice(0, 10);
+    if (opsDay.day !== today) { opsDay.day = today; opsDay.opsToday = 0; }
+    const opsDayCap = conf.opsDayCap ?? 1500;
+    const maxOpsPerCycle = conf.maxOpsPerCycle ?? 44;
+
+    /* T-19 OURS-TRACKING (the self-competition guard, measured live): the
+     * account's open orders include the SECOND SIGNER's orders — cancelling
+     * "stale" ones blindly would cancel a co-signer's book and start a
+     * churn-war on our own account. Only orders THIS engine created are
+     * ever cancel candidates. */
+    const OURS_FILE = path.join(STATE, "our-orders.json");
+    const ours = readJson(OURS_FILE, { orderids: [] });
+    const oursSet = new Set((ours.orderids ?? []).map((o) => (typeof o === "object" ? o.id : o)));
     const offer = readJson(path.join(STATE, "offer.json"), null);
-    for (const id of (offer?.stale?.orderids ?? []).slice(0, 5)) {
+    const staleIds = (offer?.stale?.orderids ?? []).filter((id) => oursSet.has(id));
+    /* T-19 REQUOTE: our previous flow-tranche levels are CANCELLED this cycle
+     * and re-created at the new front (the mobile layer replaces itself —
+     * never additive, never touching the value tranche or the second
+     * signer's orders). */
+    const prevFlowIds = (ours.orderids ?? []).filter((o) => typeof o === "object" && o.tranche === "flow").map((o) => o.id);
+    const flowRequoteIds = prevFlowIds.filter((id) => !staleIds.includes(id));
+
+    const ops = [];
+    // (a) stale repricing — cancel ONLY our own law-violating orders (D-021, cap 5→12: measured stale pile of 13)
+    for (const id of staleIds.slice(0, 12)) {
+      ops.push(["limit_order_cancel", { owner: ACCOUNT, orderid: id }]);
+    }
+    // (a2) T-19 flow requote — cancel our previous flow levels (mobile layer), cap 12
+    for (const id of flowRequoteIds.slice(0, 12)) {
       ops.push(["limit_order_cancel", { owner: ACCOUNT, orderid: id }]);
     }
     // (b) fresh ladder from LIVE liquid, intel-capped (per-op CLAMPED to caps —
     // a cap must shrink an order, never silently skip the whole ladder side)
+    let createdIds = [];
     if (offer?.plan) {
       const acc = await accountState(ACCOUNT);
       const liquidSteem = Math.max(0, acc.ok ? acc.steem ?? 0 : 0);
@@ -244,18 +313,34 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
       const bidCap = Math.max(0, (acc.ok ? acc.sbd ?? 0 : 0) - convAmt - (conf.bidReserveSbd ?? 0.5));
       let askSum = 0, bidSum = 0;
       const tSec = Math.floor(Date.now() / 1000);
-      for (const a of offer.plan.asks ?? []) {
-        const amt = Math.min(a.amountSteem, Math.max(0, (conf.maxAskSteemPerCycle ?? 200) - askSum), Math.max(0, liquidSteem - askSum));
-        if (amt < 0.001) break;
-        ops.push(["limit_order_create", { owner: ACCOUNT, orderid: (tSec + ops.length) >>> 0, amount_to_sell: `${amt.toFixed(3)} STEEM`, min_to_receive: `${(amt * a.unit).toFixed(3)} SBD`, fill_or_kill: false, expiration: tSec + 86400 }]);
-        askSum = Math.round((askSum + amt) * 1e6) / 1e6;
-      }
-      for (const b of offer.plan.bids ?? []) {
-        const amt = Math.min(b.amountSbd, Math.max(0, bidCap - bidSum), Math.max(0, (conf.maxBidSbdPerCycle ?? 20) - bidSum));
-        if (amt < 0.001) break;
-        ops.push(["limit_order_create", { owner: ACCOUNT, orderid: (tSec + ops.length + 500) >>> 0, amount_to_sell: `${amt.toFixed(3)} SBD`, min_to_receive: `${(amt / b.unit).toFixed(3)} STEEM`, fill_or_kill: false, expiration: tSec + 86400 }]);
-        bidSum = Math.round((bidSum + amt) * 1e6) / 1e6;
-      }
+      const pushLadder = (levels, kind) => {
+        for (const lvl of levels ?? []) {
+          if (ops.length >= maxOpsPerCycle) break;
+          if (kind === "ask") {
+            const amt = Math.min(lvl.amountSteem, Math.max(0, (conf.maxAskSteemPerCycle ?? 200) - askSum), Math.max(0, liquidSteem - askSum));
+            if (amt < 0.001) break;
+            const id = (tSec + ops.length) >>> 0;
+            /* T-19: flow levels carry sbdOut3 — the EXACT 3dp SBD out computed
+             * at plan time; value levels fall back to multiply-and-round. */
+            const sOut = lvl.sbdOut3 != null ? lvl.sbdOut3 : amt * lvl.unit;
+            ops.push(["limit_order_create", { owner: ACCOUNT, orderid: id, amount_to_sell: `${amt.toFixed(3)} STEEM`, min_to_receive: `${sOut.toFixed(3)} SBD`, fill_or_kill: false, expiration: tSec + 86400 }]);
+            createdIds.push({ id, side: "ask", unit: lvl.unit, tranche: lvl.tranche ?? "value", at: now });
+            askSum = Math.round((askSum + amt) * 1e6) / 1e6;
+          } else {
+            const amt = Math.min(lvl.amountSbd, Math.max(0, bidCap - bidSum), Math.max(0, (conf.maxBidSbdPerCycle ?? 20) - bidSum));
+            if (amt < 0.001) break;
+            const id = (tSec + ops.length) >>> 0;
+            const stOut = lvl.steemOut3 != null ? lvl.steemOut3 : amt / lvl.unit;
+            ops.push(["limit_order_create", { owner: ACCOUNT, orderid: id, amount_to_sell: `${amt.toFixed(3)} SBD`, min_to_receive: `${stOut.toFixed(3)} STEEM`, fill_or_kill: false, expiration: tSec + 86400 }]);
+            createdIds.push({ id, side: "bid", unit: lvl.unit, tranche: lvl.tranche ?? "value", at: now });
+            bidSum = Math.round((bidSum + amt) * 1e6) / 1e6;
+          }
+        }
+      };
+      pushLadder(offer.plan.asks, "ask");
+      pushLadder(offer.plan.bids, "bid");
+      pushLadder(offer.plan.flowAsks, "ask");   // T-19 flow tranche — AT-the-front presence
+      pushLadder(offer.plan.flowBids, "bid");
     }
     // (c) claim pending rewards — free fuel, never left on the table
     const rewDec = intelOut?.decisions?.find((d) => d.kind === "rewards" && d.decision === "claim");
@@ -272,8 +357,25 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
       const c = report.steps.convert;
       ops.push(["convert", { owner: ACCOUNT, amount: `${c.amountSbd.toFixed(3)} SBD`, requestid: (Math.floor(Date.now() / 1000) & 0x7fffffff) }]);
     }
-    if (!ops.length) return { verdict: "NO-OPS", ops: 0 };
+    /* T-19: the ops DAY-CAP is a LAW — past it the machine journals honestly
+     * instead of churning (RC is a shared budget: votes, orders, soldiers). */
+    if (ops.length && opsDay.opsToday + ops.length > opsDayCap) {
+      writeJson(OPS_FILE, { ...opsDay, lastRcPct: null });
+      return { verdict: "OPS-DAY-CAP", opsToday: opsDay.opsToday, opsDayCap, staged: ops.length };
+    }
+    if (!ops.length) return { verdict: "NO-OPS", ops: 0, opsToday: opsDay.opsToday, opsDayCap };
     const res = await executeOps(ops, { tag: "cycle-execute" });
+    /* T-19 bookkeeping: track OUR created orderids (the second signer's
+     * orders on this account must never be our cancel candidates) + meter
+     * the ops throughput + RC trend — measured, not assumed. */
+    if (res.ok ?? res.verdict === "BROADCAST") {
+      const cancelled = new Set([...staleIds, ...flowRequoteIds]);
+      const cut = (ours.orderids ?? []).filter((o) => !cancelled.has(typeof o === "object" ? o.id : o));
+      writeJson(OURS_FILE, { orderids: [...cut, ...createdIds].slice(-200) });
+      let rcPct = null;
+      try { const acc2 = await accountState(ACCOUNT); rcPct = acc2.ok ? acc2.rcPct ?? null : null; } catch { /* honest null */ }
+      writeJson(OPS_FILE, { day: today, opsToday: opsDay.opsToday + ops.length, lastRcPct: rcPct, opsDayCap });
+    }
 
     // (e) promotion rail — one honest public report per day (posting key)
     let promo = null;
@@ -281,7 +383,7 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
       try { promo = await postDailyReport({ obs, rollup: report.steps.report?.rollup ?? null, intel: intelOut, now }); }
       catch (e) { promo = { verdict: "PROMO-ERROR", error: String(e?.message ?? e).slice(0, 120) }; }
     }
-    return { verdict: res.verdict, txid: res.txid ?? null, ops: ops.length, opNames: res.opNames ?? ops.map(([n]) => n), node: res.node ?? null, error: res.error ?? null, promo };
+    return { verdict: res.verdict, txid: res.txid ?? null, ops: ops.length, opNames: res.opNames ?? ops.map(([n]) => n), node: res.node ?? null, error: res.error ?? null, promo, opsToday: opsDay.opsToday + ops.length, opsDayCap, cancels: staleIds.length, created: createdIds.length };
   });
 
   /* 7 · soldiers: deploy once, top-up as liquidity returns, grid every cycle.
@@ -308,7 +410,15 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
       }
     }
     const parity = obs.ok ? obs.parity.parity : 0;
-    const grids = await runSoldierGrids({ parity, spreadBps: intelOut?.spreadBpsRec ?? 0, now });
+    /* T-19: soldiers join the FLOW TRANCHE — the live book edges + chain
+     * anchor passed through so their small ladders sit AT the market front
+     * (never below the witness feed, never crossing the master's ladder). */
+    const pegOffer = readJson(path.join(STATE, "offer.json"), null);
+    const grids = await runSoldierGrids({
+      parity, spreadBps: intelOut?.spreadBpsRec ?? 0, now,
+      bestBid: pegOffer?.book?.bestBid ?? null, bestAsk: pegOffer?.book?.bestAsk ?? null,
+      feedAnchor: obs.ok && obs.feed > 0 ? obs.feed : null,
+    });
     const verdict = deploy && !deploy.ok ? `DEPLOY-${deploy.verdict}` : grids.verdict;
     return {
       verdict, deploy: deploy ? { verdict: deploy.verdict, txid: deploy.txid ?? null, error: deploy.error ?? null } : null,

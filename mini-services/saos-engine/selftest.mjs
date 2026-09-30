@@ -459,5 +459,49 @@ ok(
     .some((l) => l.id === "unclassified-fail-legacy")
 );
 
+/* ── 21 · T-19 dual-tranche ladder (flow tranche at the live book front) ── */
+/* backward compat: no book edges ⇒ no flow tranche, laws intact */
+const p19 = planLadder({ parity: P, askBudgetSteem: 100, bidBudgetSbd: 50, now: "2026-01-01T00:00:00Z" });
+eq("19 no-flow-without-book", p19.flow, null);
+eq("19 no-flow-arrays", [p19.flowAsks.length, p19.flowBids.length], [0, 0]);
+ok("19 value-law-intact", p19.asks.every((a) => a.unit >= (P * (1 + ASK_FLOOR_BPS / 10000)) - 1e-12));
+/* with a live book: 20% flow tranche quotes AT the front, 80% keeps the floor */
+const p19f = planLadder({
+  parity: P, askBudgetSteem: 100, bidBudgetSbd: 50, now: "2026-01-01T00:00:00Z",
+  bestBid: 0.1042, bestAsk: 0.104244, feedAnchor: 0.1041,
+  flowTranchePct: 0.2, flowSpacingBps: 15, flowLevels: 4,
+});
+eq("19 flow-asks-4", p19f.flowAsks.length, 4);
+eq("19 flow first-level ceil3-joins-front (one milli above bestAsk)", p19f.flowAsks[0]?.unit, 0.1044);
+ok("19 flow-ask-real-is-sbdOut3-over-sell", p19f.flowAsks[0].unit === Math.ceil(5 * 0.104244 * 1000) / 1000 / 5);
+ok("19 flow-asks-step-up", p19f.flowAsks[1].unit > p19f.flowAsks[0].unit);
+ok("19 flow-asks-never-cross-best-bid", p19f.flowAsks.every((a) => a.unit > 0.1042));
+ok("19 flow-asks-below-value-floor", p19f.flowAsks.every((a) => a.unit < p19f.floor));
+ok("19 value-tranche-still-lawful", p19f.asks.every((a) => a.unit >= p19f.floor - 1e-12));
+ok("19 flow-bids-join-within-one-steem-milli", Math.abs(p19f.flowBids[0]?.unit - 0.1042) < 0.0002);
+ok("19 flow-bids-step-down", p19f.flowBids.every((b, i, arr) => i === 0 || b.unit < arr[i - 1].unit));
+ok("19 flow-bids-under-ceiling", p19f.flowBids.every((b) => b.unit <= p19f.ceiling + 1e-12));
+ok("19 no-self-cross", p19f.flowAsks[0].unit > p19f.flowBids[0].unit);
+const faSum = p19f.flowAsks.reduce((s, a) => s + a.amountSteem, 0);
+const vaSum = p19f.asks.reduce((s, a) => s + a.amountSteem, 0);
+ok("19 flow-budget≤20%", faSum <= 100 * 0.2 + 1e-9);
+/* dedup may collapse levels when 3bps spacing < milli-granularity (honest:
+ * fewer REAL levels) — but at least two distinct levels must survive */
+ok("19 flow-budget≥10% (dedup-tolerant)", faSum >= 100 * 0.1 - 1e-9);
+ok("19 flow-levels-distinct", new Set(p19f.flowAsks.map((a) => a.unit)).size === p19f.flowAsks.length);
+/* DEDUP LAW vector: sub-granularity spacing collapses honestly — 5-STEEM
+ * levels carry 20bps-per-milli, 3bps targets merge to 2 distinct millis */
+eq("19 dedup collapses-sub-granularity", planLadder({ parity: P, askBudgetSteem: 100, bidBudgetSbd: 0, now: "x", bestBid: 0.1042, bestAsk: 0.104244, feedAnchor: 0.1041, flowTranchePct: 0.2, flowSpacingBps: 3, flowLevels: 4 }).flowAsks.length, 2);
+/* the chain anchor above the book ⇒ flow asks refuse to sell below the feed */
+const p19a = planLadder({
+  parity: P, askBudgetSteem: 100, bidBudgetSbd: 0, now: "2026-01-01T00:00:00Z",
+  bestBid: 0.1042, bestAsk: 0.104244, feedAnchor: 0.1055, flowTranchePct: 0.2, flowLevels: 2,
+});
+eq("19 flow-ask-anchored-to-feed", p19a.flowAsks[0]?.unit, 0.1055);
+/* degenerate inputs: no book, junk numbers — flow stays off, verdict honest */
+eq("19 flow-off-zero-ask", planLadder({ parity: P, askBudgetSteem: 10, bidBudgetSbd: 10, bestAsk: 0, bestBid: 0.1042, now: "x" }).flow, null);
+eq("19 flow-off-junk", planLadder({ parity: P, askBudgetSteem: 10, bidBudgetSbd: 10, bestAsk: "junk", bestBid: null, now: "x" }).flow, null);
+ok("19 junk-verdict-still-offer", ["OFFER-READY", "OFFER-EMPTY", "OFFER-BLOCKED"].includes(planLadder({ parity: P, askBudgetSteem: 10, bidBudgetSbd: 10, bestAsk: "junk", bestBid: null, now: "x" }).verdict));
+
 console.log(`\nSELFTEST ${pass}/${pass + fail} ${fail === 0 ? "PASS" : "FAIL"}`);
 process.exit(fail === 0 ? 0 : 1);

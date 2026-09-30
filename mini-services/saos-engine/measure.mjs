@@ -145,6 +145,57 @@ export async function internalFeed() {
   return { median: b.v / q.v, source: "condenser:get_feed_history" };
 }
 
+/* ── T-19 market pulse — THE NETWORK MEASURED, not assumed ─────────────────
+ * The operator ordered real productivity; productivity begins with knowing
+ * the market's actual throughput. Measured live 2026-09-30: the whole
+ * STEEM/SBD internal market trades ~49 fills/24h — the honest ceiling any
+ * market-maker can capture on this venue. Everything class-honest:
+ * trades/volatility/depth are MEASURED, share-of-flow is DERIVED. */
+export async function marketPulse({ windowHours = 24 } = {}) {
+  const end = new Date();
+  const start = new Date(end.getTime() - windowHours * 3600_000);
+  const iso = (d) => d.toISOString().replace(/\.\d{3}Z$/, "");
+  const [tr, ob] = await Promise.all([
+    rpcCall("market_history_api.get_trade_history", { start: iso(start), end: iso(end), limit: 1000 }),
+    rpcCall("condenser_api.get_order_book", [50]),
+  ]);
+  const trades = tr.ok ? (tr.result?.trades ?? []) : [];
+  const nai = (x) => (x && x.amount != null ? Number(x.amount) / 10 ** (x.precision ?? 3) : 0);
+  const rows = [];
+  for (const t of trades) {
+    const cur = t.current_pays ?? {}, opn = t.open_pays ?? {};
+    const cv = nai(cur), ov = nai(opn);
+    if (!(cv > 0) || !(ov > 0)) continue;
+    const curSym = NAI[cur.nai] ?? cur.nai, opnSym = NAI[opn.nai] ?? opn.nai;
+    let px = null, steem = 0;
+    if (curSym === "SBD" && opnSym === "STEEM") { px = cv / ov; steem = ov; }
+    else if (curSym === "STEEM" && opnSym === "SBD") { px = ov / cv; steem = cv; }
+    if (px != null && px > 0) rows.push({ at: t.date, px, steem });
+  }
+  rows.sort((a, b) => String(a.at).localeCompare(String(b.at)));
+  const pxs = rows.map((r) => r.px).sort((a, b) => a - b);
+  const book = ob.ok ? ob.result : null;
+  const bestAsk = book?.asks?.[0]?.real_price ? Number(book.asks[0].real_price) : null;
+  const bestBid = book?.bids?.[0]?.real_price ? Number(book.bids[0].real_price) : null;
+  const askDepth = book?.asks?.length ? Math.round(book.asks.reduce((s, a) => s + (a.steem || 0), 0)) / 1000 : null;
+  const bidDepthSbd = book?.bids?.length ? Math.round(book.bids.reduce((s, b) => s + (b.sbd || 0), 0)) / 1000 : null;
+  const hours = Math.max(0.1, windowHours);
+  const sizeSorted = rows.map((r) => r.steem).sort((a, b) => a - b);
+  return {
+    at: end.toISOString(), windowHours,
+    class: "measured",
+    trades: rows.length,
+    tradesPerDay: Math.round((rows.length / hours) * 24 * 100) / 100,
+    volSteem: Math.round(rows.reduce((s, r) => s + r.steem, 0) * 1000) / 1000,
+    priceMin: pxs.length ? Math.round(pxs[0] * 1e6) / 1e6 : null,
+    priceMax: pxs.length ? Math.round(pxs[pxs.length - 1] * 1e6) / 1e6 : null,
+    rangeBps: pxs.length && pxs[0] > 0 ? Math.round(((pxs[pxs.length - 1] - pxs[0]) / pxs[0]) * 10000) : null,
+    sizeP50: sizeSorted.length ? Math.round(sizeSorted[Math.floor(sizeSorted.length / 2)] * 1000) / 1000 : null,
+    sizeP90: sizeSorted.length ? Math.round(sizeSorted[Math.floor(sizeSorted.length * 0.9)] * 1000) / 1000 : null,
+    book: { bestAsk, bestBid, spreadBps: bestAsk > 0 && bestBid > 0 ? Math.round(((bestAsk - bestBid) / bestBid) * 10000 * 100) / 100 : null, askDepthSteem: askDepth, bidDepthSbd },
+  };
+}
+
 export async function accountState(account) {
   const [a, rc, dyn] = await Promise.all([
     rpcCall("condenser_api.get_accounts", [[account]]),

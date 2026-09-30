@@ -28,7 +28,19 @@ type Status = {
     lastFillAt?: string | null
     fuel?: { fuelUsdPerDay?: number | null; authorUsdPerDay?: number | null; curationOps?: number; authorOps?: number; windowNote?: string | null; windowSpanDays?: number; histLen?: number }
   } | null
-  offer?: { verdict?: string; parityBps?: number | null; blocker?: string[] | null; marks?: { paritySbdPerSteem?: number; source?: string; lowConfidence?: boolean; internalFeed?: number; dragK?: number; floor?: number; ceiling?: number }; plan?: { asks?: unknown[]; bids?: unknown[] }; publishedAt?: string }
+  offer?: {
+    verdict?: string; parityBps?: number | null; blocker?: string[] | null
+    marks?: { paritySbdPerSteem?: number; source?: string; lowConfidence?: boolean; internalFeed?: number; dragK?: number; floor?: number; ceiling?: number }
+    plan?: { asks?: unknown[]; bids?: unknown[]; flowAsks?: unknown[]; flowBids?: unknown[] }
+    flow?: { bestAsk?: number; bestBid?: number; spacingBps?: number; levels?: number; askBudgetSteem?: number; bidBudgetSbd?: number; feedAnchor?: number | null; flowAsks?: number; flowBids?: number } | null
+    book?: { bestAsk?: number | null; bestBid?: number | null; askDepthSteem?: number | null; bidDepthSbd?: number | null; at?: string } | null
+    market?: {
+      at?: string; windowHours?: number; class?: string; trades?: number; tradesPerDay?: number; volSteem?: number
+      priceMin?: number | null; priceMax?: number | null; rangeBps?: number | null; sizeP50?: number | null; sizeP90?: number | null
+      book?: { bestAsk?: number | null; bestBid?: number | null; spreadBps?: number | null; askDepthSteem?: number | null; bidDepthSbd?: number | null }
+    } | null
+    publishedAt?: string
+  }
   live?: { orders?: Order[]; orderTotals?: { askedSteem?: number; bidSbd?: number }; balances?: { steem: string; sbd: string; vests: string } | null; chainReadOk?: boolean }
   profit?: {
     fills?: number; buys?: number; sells?: number
@@ -871,6 +883,54 @@ export default function Home() {
                   </div>
                 )}
                 <p className="text-[11px] text-slate-500 mt-2">לולאה-סוגרת-עצמה: קורא-היסטוריה → שיעורים-מבוססי-ראיות → כיוונים-חסומים → המחזור-הבא רץ-חכם-יותר. הגילוי מדרג ביושר: נמדד &gt; מוערך &gt; פוטנציאל, ולעולם לא מבצע — השערים מחליטים.</p>
+              </CardContent>
+            </Card>
+
+            {/* מיקרו-מסחר · דופק-רשת (T-19) — השוק נמדד, לא מובטח */}
+            <Card className="border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 to-slate-900/60">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm text-emerald-300">
+                  <Activity className="h-4 w-4" aria-hidden /> מיקרו-מסחר · דופק-רשת (T-19)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="outline" className="border-emerald-500/40 text-emerald-300">נמדד</Badge>
+                  {s?.offer?.market?.tradesPerDay != null ? (
+                    <span className="text-[11px] text-slate-500">
+                      כל-השוק: <b className="tabular-nums text-slate-200">{s.offer.market.tradesPerDay}</b> עסקאות/יום ({s.offer.market.trades ?? 0} ב-{s.offer.market.windowHours ?? 24}ש) · נפח <b className="tabular-nums text-slate-200">{s.offer.market.volSteem ?? 0}</b> STEEM
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-slate-500">מדידת-דופק-השוק תרוץ במחזור-הבא (מקצב 30 דק)</span>
+                  )}
+                  {!!s?.offer?.market?.book?.spreadBps && (
+                    <span className="text-[11px] text-slate-500">מרווח-ספר <b className="tabular-nums text-slate-200">{s.offer.market.book.spreadBps}bps</b></span>
+                  )}
+                  {!!s?.offer?.market?.rangeBps && (
+                    <span className="text-[11px] text-slate-500">תנודה-24ש <b className="tabular-nums text-slate-200">{s.offer.market.rangeBps}bps</b></span>
+                  )}
+                </div>
+                {s?.offer?.flow ? (
+                  <div className="mt-3 border-t border-slate-800 pt-2 text-[11px] space-y-1">
+                    <div className="flex items-center gap-1.5 text-slate-400">
+                      <Target className="h-3.5 w-3.5 text-emerald-300" aria-hidden /> שכבת-זרימה <b className="text-emerald-300">פעילה</b> — נוכחות בחזית-הספר
+                    </div>
+                    <div className="text-slate-500 mr-5">
+                      {s.offer.flow.flowAsks ?? 0} asks חזיתיים מ-{s.offer.flow.bestAsk ?? '—'} · {s.offer.flow.flowBids ?? 0} bids מ-{s.offer.flow.bestBid ?? '—'} · מרווח {s.offer.flow.spacingBps}bps · תקציב {s.offer.flow.askBudgetSteem ?? 0} STEEM / {s.offer.flow.bidBudgetSbd ?? 0} SBD
+                    </div>
+                    <div className="text-slate-600 mr-5">
+                      עוגן-אמת: לעולם לא מוכרים מתחת לפיד-העדים ({s.offer.flow.feedAnchor ?? '—'} SBD/STEEM) — השוק-החי-היחיד-שקיים. רצפת-VF1 ({s.offer.marks?.floor ?? '—'}) שומרת על 80% מההון.
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-slate-500 mt-2">שכבת-הזרימה מושהית — אין קריאת-ספר-חי במחזור-האחרון (המנוע ממשיך בשכבת-הערך בלבד).</p>
+                )}
+                {!!s?.offer?.book && (
+                  <div className="mt-2 text-[11px] text-slate-500">
+                    ספר-חי: asks {s.offer.book.bestAsk ?? '—'} / bids {s.offer.book.bestBid ?? '—'} · עומק {s.offer.book.askDepthSteem ?? '—'} STEEM / {s.offer.book.bidDepthSbd ?? '—'} SBD
+                  </div>
+                )}
+                <p className="text-[11px] text-slate-500 mt-2">אמת-מדידה: השוק-הפנימי סוחר ~49 עסקאות/יום (נמדד 2026-09-30) — זו התקרה-הכנה של כל אסטרטגיית-לכידה במקום-הזה. המכונה מייצרת נוכחות-מקסימלית בחזית ולוכדת נתח-זרימה, בלי להבטיח זרימה שהשוק לא נותן.</p>
               </CardContent>
             </Card>
 

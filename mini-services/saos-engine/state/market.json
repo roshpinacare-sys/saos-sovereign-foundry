@@ -1,0 +1,20 @@
+{
+  "at": "2026-09-30T18:30:26.453Z",
+  "windowHours": 24,
+  "class": "measured",
+  "trades": 49,
+  "tradesPerDay": 49,
+  "volSteem": 518.758,
+  "priceMin": 0.097394,
+  "priceMax": 0.104306,
+  "rangeBps": 710,
+  "sizeP50": 2.729,
+  "sizeP90": 12.969,
+  "book": {
+    "bestAsk": 0.10424354243542436,
+    "bestBid": 0.10420011496303344,
+    "spreadBps": 4.17,
+    "askDepthSteem": 1966.881,
+    "bidDepthSbd": 2971.25
+  }
+}

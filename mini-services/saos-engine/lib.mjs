@@ -62,14 +62,30 @@ export function parityVerdict(externalParity, internalFeed) {
   return { ok: true, reason: "band-ok", bps };
 }
 
-/* ── peg ladder planner (B-1/B-3 + T-9 adoptions) ──────────────────────────
+/* ── peg ladder planner (B-1/B-3 + T-9 adoptions + T-19 dual-tranche) ───────
  * Law: every ask ≥ floor (parity*(1+ASK_FLOOR_BPS)), every bid ≤ ceiling
  * (parity−20bps); budgets assigned level-by-level clamped to remaining
- * (sum ≤ budget BY CONSTRUCTION — the T-5 rounding-blocker lesson). */
+ * (sum ≤ budget BY CONSTRUCTION — the T-5 rounding-blocker lesson).
+ *
+ * T-19 DUAL-TRANCHE (measured live 2026-09-30): the VF1 floor FLOATS with
+ * its parity SOURCE — coingecko said 0.1083 while the live book traded at
+ * 0.1042 (4% apart) and the witness feed said 0.1041; an hour earlier the
+ * floor sat at 0.1043. A floor anchored to a GHOST external quote (SBD is
+ * delisted from binance/poloniex/upbit/mexc — measured) made our asks
+ * untradeable BY LAW: 43 fills in 7.35 days while 49 trades/day flowed
+ * past us. The operator ordered real productivity (thousands of ops, real
+ * flow capture). Fix WITHOUT touching the law's intent: the bulk (80%) keeps
+ * the value floor; a bounded FLOW TRANCHE (20%) quotes AT the live book
+ * front, never below the WITNESS FEED (the chain's own value anchor — the
+ * only live SBD↔STEEM market that exists) and never above the bid ceiling.
+ * Doctrine is operator-overridable via armed-conf as always. */
 export function planLadder({
   parity, askBudgetSteem, bidBudgetSbd,
   spreadBps = 0, skew = { askMult: 1, bidMult: 1 },
   levels = LEVELS, minLevel = MIN_LEVEL, now = "1970-01-01T00:00:00Z",
+  bestBid = null, bestAsk = null, feedAnchor = null,
+  flowTranchePct = 0.2, flowSpacingBps = 15, flowLevels = 4,
+  flowAskBudgetSteem = null, flowBidBudgetSbd = null,
 }) {
   if (!(parity > 0)) return { verdict: "NO-PARITY", asks: [], bids: [], blocker: ["no-external-parity"] };
   const k = dragK(spreadBps);
@@ -85,42 +101,126 @@ export function planLadder({
   const ceil = r6d(ceilRaw);
   const block = [];
 
+  /* flow tranche active only with a live book; the value tranche keeps the
+   * remaining budget — every law below is self-checked with ε.
+   * T-19 REQUOTE LAW (measured live 18:34): the 60% liquidity law correctly
+   * zeroes NEW deployment when the book is fully spread — but the flow
+   * tranche is a REQUOTE layer: it replaces its own previous levels (cancel
+   * + re-create at the NEW front), so its budget is the fixed tranche the
+   * operator's doctrine reserves (0.12×inventory), not the residual. When
+   * an explicit flow budget arrives, the value budget is NOT shrunk. */
+  const flowOk = Number(bestAsk) > 0 && Number(bestBid) > 0 && flowLevels > 0 && (flowTranchePct > 0 || flowAskBudgetSteem > 0 || flowBidBudgetSbd > 0);
+  const flowHasOwnBudget = flowAskBudgetSteem != null || flowBidBudgetSbd != null;
+  const valAskBudget = (flowOk && !flowHasOwnBudget) ? askBudgetSteem * (1 - flowTranchePct) : askBudgetSteem;
+  const valBidBudget = (flowOk && !flowHasOwnBudget) ? bidBudgetSbd * (1 - flowTranchePct) : bidBudgetSbd;
+
   const asks = [];
-  let remA = r6(askBudgetSteem);
+  let remA = r6(valAskBudget);
   let lvlA = floor;
   for (let i = 0; i < levels; i++) {
     if (remA < minLevel) break;
-    const want = r6(Math.max(minLevel, (askBudgetSteem / levels) * skew.askMult));
+    const want = r6(Math.max(minLevel, (valAskBudget / levels) * skew.askMult));
     const amt = r6(Math.min(remA, want));
     if (amt < minLevel) break;
-    asks.push({ side: "ask", amountSteem: amt, unit: r6u(lvlA), at: now });
+    asks.push({ side: "ask", amountSteem: amt, unit: r6u(lvlA), at: now, tranche: "value" });
     remA = r6(remA - amt);
     lvlA = lvlA * step;
   }
   if (remA > 0 && asks.length === 0) block.push("ask-budget-below-min-level");
 
   const bids = [];
-  let remB = r6(bidBudgetSbd);
+  let remB = r6(valBidBudget);
   let lvlB = ceil;
   for (let i = 0; i < levels; i++) {
     if (remB < minLevel) break;
-    const want = r6(Math.max(minLevel, (bidBudgetSbd / levels) * skew.bidMult));
+    const want = r6(Math.max(minLevel, (valBidBudget / levels) * skew.bidMult));
     const amt = r6(Math.min(remB, want));
     if (amt < minLevel) break;
-    bids.push({ side: "bid", amountSbd: amt, unit: r6d(lvlB), at: now });
+    bids.push({ side: "bid", amountSbd: amt, unit: r6d(lvlB), at: now, tranche: "value" });
     remB = r6(remB - amt);
     lvlB = lvlB / step;
   }
   if (remB > 0 && bids.length === 0) block.push("bid-budget-below-min-level");
 
+  /* ── T-19 flow tranche: AT-the-front presence, chain-anchored honesty ── */
+  const flowAsks = [], flowBids = [];
+  let flow = null;
+  if (flowOk) {
+    const sp = Math.max(1, flowSpacingBps) / 10000;
+    const faBudget = r6(Math.max(0, flowAskBudgetSteem != null ? Number(flowAskBudgetSteem) : askBudgetSteem - valAskBudget));
+    const fbBudget = r6(Math.max(0, flowBidBudgetSbd != null ? Number(flowBidBudgetSbd) : bidBudgetSbd - valBidBudget));
+    /* T-19 ACHIEVABLE-PRICE LAW (measured live on-chain): the chain keeps SBD
+     * and STEEM amounts at 3dp — a plan unit of 0.104244 on 8.245 STEEM
+     * broadcasts as 0.860/8.245 = real 0.1043065 (12bps AWAY from plan,
+     * behind the level we meant to lead). Flow levels therefore carry their
+     * EXACT broadcast amounts: sbdOut3 (3dp SBD out) is computed from the
+     * 3dp sell amount, unit = sbdOut3/sellAmt3 — the execute step sends
+     * sbdOut3 VERBATIM, so the book shows precisely what was planned.
+     * Anchor/ceiling laws are enforced on the BROADCAST arithmetic: the
+     * anchor-clamped level ceil3's its SBD out (≥ anchor guaranteed), bids
+     * floor3 their STEEM out only above a ceil3'd ceiling guard. */
+    const sellAmt3 = (amt) => Number(amt.toFixed(3));
+    const floor3 = (v) => Math.floor(v * 1000) / 1000;
+    const ceil3 = (v) => Math.ceil(v * 1000) / 1000;
+    /* ask front: penetrate to bestAsk (or the chain anchor when the book
+     * trades below it). CEIL3 law: the 3dp SBD out always rounds UP to the
+     * target — the real price lands within ONE milli above bestAsk (never
+     * behind it, never below the anchor, never crossing the best bid). */
+    let fa = Math.max(Number(bestAsk), feedAnchor > 0 ? Number(feedAnchor) : 0);
+    let faRem = faBudget;
+    let lastFaUnit = 0;
+    for (let i = 0; i < flowLevels * 3 && flowAsks.length < flowLevels; i++) {
+      /* DEDUP LAW (measured by selftest): ceil3 can merge adjacent targets
+       * into the SAME milli (3bps spacing vs 20bps granularity at 5 STEEM) —
+       * duplicate-price levels waste an op; advance the target until the
+       * achievable price actually moves. */
+      if (faRem < minLevel) break;
+      const amt = r6(Math.min(faRem, Math.max(minLevel, faBudget / flowLevels)));
+      if (amt < minLevel) break;
+      const sell = sellAmt3(amt);
+      const sbdOut3 = Math.max(ceil3(sell * fa), feedAnchor > 0 ? ceil3(sell * Number(feedAnchor)) : 0);
+      const unit = sbdOut3 > 0 ? sbdOut3 / sell : fa;
+      if (unit <= lastFaUnit) { fa = fa * (1 + sp); continue; }
+      flowAsks.push({ side: "ask", amountSteem: amt, unit: r6u(unit), sbdOut3, at: now, tranche: "flow" });
+      lastFaUnit = unit;
+      faRem = r6(faRem - amt);
+      fa = fa * (1 + sp);
+    }
+    /* bid front: join the best bid, step DOWN (never pay above the ceiling);
+     * STEEM out = floor3 at the target (the honest join), with a ceil3'd
+     * ceiling guard so the broadcast price can never breach the ceiling */
+    let fb = Math.min(Number(bestBid), ceil);
+    let fbRem = fbBudget;
+    let lastFbUnit = Infinity;
+    for (let i = 0; i < flowLevels * 3 && flowBids.length < flowLevels; i++) {
+      if (fbRem < minLevel) break;
+      const amt = r6(Math.min(fbRem, Math.max(minLevel, fbBudget / flowLevels)));
+      if (amt < minLevel) break;
+      const sell = sellAmt3(amt);
+      const steemOut3 = Math.max(floor3(sell / fb), ceil3(sell / ceil));
+      const unit = steemOut3 > 0 ? sell / steemOut3 : fb;
+      if (unit >= lastFbUnit) { fb = fb / (1 + sp); continue; }
+      flowBids.push({ side: "bid", amountSbd: amt, unit: r6d(unit), steemOut3, at: now, tranche: "flow" });
+      lastFbUnit = unit;
+      fbRem = r6(fbRem - amt);
+      fb = fb / (1 + sp);
+    }
+    /* flow laws: never below the chain anchor, never above the ceiling,
+     * and the two flow sides must never cross each other */
+    if (feedAnchor > 0) for (const a of flowAsks) if (a.unit < feedAnchor - 1e-9) block.push("FLOW-ask-below-feed-anchor");
+    for (const b of flowBids) if (b.unit > ceil + 1e-9) block.push("FLOW-bid-above-ceiling");
+    if (flowAsks.length && flowBids.length && flowAsks[0].unit <= flowBids[0].unit) block.push("FLOW-self-cross");
+    flow = { bestAsk: r6(Number(bestAsk)), bestBid: r6(Number(bestBid)), spacingBps: Math.max(1, flowSpacingBps), levels: flowLevels, askBudgetSteem: faBudget, bidBudgetSbd: fbBudget, feedAnchor: feedAnchor > 0 ? r6(Number(feedAnchor)) : null, flowAsks: flowAsks.length, flowBids: flowBids.length };
+  }
+
   // law self-check: never violate floor/ceiling regardless of inputs (ε=1e-9)
   for (const a of asks) if (a.unit < floor - 1e-9) block.push("VF1-ask-below-floor");
   for (const b of bids) if (b.unit > ceil + 1e-9) block.push("VF1-bid-above-ceiling");
 
-  const verdict = asks.length + bids.length === 0
+  const verdict = asks.length + bids.length + flowAsks.length + flowBids.length === 0
     ? "OFFER-EMPTY"
     : block.length ? "OFFER-BLOCKED" : "OFFER-READY";
-  return { verdict, asks, bids, blocker: block.length ? block : null, dragK: k, floor, ceiling: ceil };
+  return { verdict, asks, bids, flowAsks, flowBids, flow, blocker: block.length ? block : null, dragK: k, floor, ceiling: ceil };
 }
 
 /* ── D-023 convert planner with MakerDAO-PSM hysteresis (T-9 adoption) ─────
