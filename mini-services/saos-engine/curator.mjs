@@ -29,7 +29,7 @@ import * as path from "node:path";
 import { rpcCall, accountState } from "./measure.mjs";
 import { executeAs, masterAccount, armedConf, execPaused, loadCredential } from "./signer.mjs";
 import { learningTunings } from "./learning.mjs";
-import { mergeVoteState } from "./lib.mjs";
+import { mergeVoteState, countDayVotesFromHistory } from "./lib.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const STATE = path.join(DIR, "state");
@@ -180,7 +180,6 @@ export async function runCurator({ now = new Date().toISOString() } = {}) {
   };
   if (!p.enabled) return { ...base, verdict: "DISABLED" };
   if (execPaused()) return { ...base, verdict: "OPERATOR-PAUSED" };
-  if (carried.votesToday.length >= p.maxPerDay) return { ...base, verdict: "DAY-CAP", dayCapReached: true };
   /* T-16 CRED GATE FIRST (measured rot 2026-09-30: 12.5s of candidate scanning
    * per cycle — ~144×/day of doomed network reads — BEFORE discovering the
    * typed credential absence deep inside the vote path). loadCredential()
@@ -197,8 +196,36 @@ export async function runCurator({ now = new Date().toISOString() } = {}) {
   const mana = Number(acc.voting_manabar?.current_mana ?? "0");
   const vpEff = vpEffPct(mana, vests);
   if (vpEff == null || vpEff < p.minVpEffPct) {
-    const out = { ...base, verdict: "VP-FLOOR", vpEff, minVpEffPct: p.minVpEffPct };
+    const out = { ...base, verdict: "VP-FLOOR", vpEff, minVpEffPct: p.minVpEffPct, votesTodayCount: carried.votesToday.length };
     writeJson(CUR_FILE, { ...out, votesToday: carried.votesToday, authorsToday: carried.authorsToday, totalVotes: carried.totalVotes, history: carried.history });
+    return out;
+  }
+
+  /* ── T-18 CHAIN-TRUTH DAY BUDGET (the split-brain killer, measured live):
+   * the state file said 18/18 while the CHAIN held 22 day votes — the second
+   * signer's 3×20% votes at 14:51 were invisible to every seed window, so a
+   * state-only cap gate UNDERCOUNTS the account's ONE shared VP budget.
+   * The cap gate now enforces max(state, chain) — chain truth can only RAISE
+   * the count, never lower it (state overcounts stay conservative).
+   * One bounded history read (400 ops) per curate run — cheap gate, honest
+   * law. NOTE: the gate moved AFTER the cred gate so a missing credential
+   * still fast-fails with zero network (T-16 law intact). */
+  let chainDayCount = null;
+  try {
+    const histR = await rpcCall("condenser_api.get_account_history", [master, -1, 400]);
+    if (histR.ok) chainDayCount = countDayVotesFromHistory(histR.result, master, day);
+  } catch { /* chain read failed → fall back to state count, verdict records it */ }
+  const budgetCounted = Math.max(carried.votesToday.length, chainDayCount ?? 0);
+  if (chainDayCount !== null && budgetCounted >= p.maxPerDay) {
+    const out = {
+      ...base, verdict: "DAY-CAP", dayCapReached: true,
+      votesTodayCount: carried.votesToday.length,
+      chainDayCount, budgetCounted, budgetBasis: "max(state, chain-truth)",
+    };
+    /* the file's stale count gets corrected by this write — the live lie
+     * (votesTodayCount 9 beside an 18-entry array) dies here too */
+    writeJson(CUR_FILE, { ...out, votesToday: carried.votesToday, authorsToday: carried.authorsToday, totalVotes: carried.totalVotes, history: carried.history });
+    appendLine(path.join(STATE, "events.jsonl"), { type: "curate.day-cap", at: now, day, chainDayCount, stateCount: carried.votesToday.length, budgetCounted, maxPerDay: p.maxPerDay });
     return out;
   }
 
@@ -214,6 +241,7 @@ export async function runCurator({ now = new Date().toISOString() } = {}) {
   if (!plan.selected.length) {
     const out = {
       ...base, verdict: "NO-CANDIDATES", vpEff,
+      votesTodayCount: carried.votesToday.length, chainDayCount,
       rejectedTop: plan.rejected.slice(0, 8).map((r) => `${r.key}:${r.reason}`),
       candidatesScanned: posts.length,
     };
@@ -258,7 +286,11 @@ export async function runCurator({ now = new Date().toISOString() } = {}) {
     /already voted in a similar way|You have already voted/i.test(String(err ?? ""));
   const results = [];
   let lastAt = 0;
-  const noteState = () => writeJson(CUR_FILE, { ...base, vpEff, votesToday: carried.votesToday, authorsToday: carried.authorsToday, totalVotes: carried.totalVotes, history: carried.history });
+  /* T-18: votesTodayCount recomputed AT WRITE TIME — the field was computed
+   * once at run start (base) and written unchanged after every append, so the
+   * file showed 9 beside an 18-entry array (measured live). The array is the
+   * truth; the field must mirror it at every write. */
+  const noteState = () => writeJson(CUR_FILE, { ...base, votesTodayCount: carried.votesToday.length, chainDayCount, vpEff, votesToday: carried.votesToday, authorsToday: carried.authorsToday, totalVotes: carried.totalVotes, history: carried.history });
   for (const v of plan.selected) {
     const waitMs = lastAt ? 3200 - (Date.now() - lastAt) : 0;
     if (waitMs > 0) await new Promise((r) => setTimeout(r, waitMs));
@@ -305,6 +337,7 @@ export async function runCurator({ now = new Date().toISOString() } = {}) {
 
   const out = {
     ...base, verdict,
+    votesTodayCount: carried.votesToday.length, chainDayCount,
     txid: okVotes[0]?.txid ?? results[0]?.txid ?? null,
     error: failed[0]?.error ?? null, vpEff,
     voted: okVotes, failedVotes: failed,

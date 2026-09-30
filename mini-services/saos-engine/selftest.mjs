@@ -387,7 +387,7 @@ ok("cred never-echoes-secret-in-result", !JSON.stringify(validateCredentialText(
 
 /* ── 19 · T-17 signing-era throughput & concurrency truth (pure halves) ──── */
 import {
-  stickyNodeOrder, mergeVoteState, classifyMarker,
+  stickyNodeOrder, mergeVoteState, classifyMarker, countDayVotesFromHistory,
 } from "./lib.mjs";
 
 /* stickyNodeOrder: last-good first, deterministic, fault-tolerant */
@@ -424,6 +424,40 @@ eq("marker done-fail", classifyMarker({ running: false, health: "fail" }), { sta
 eq("marker garbage-health-is-fail", classifyMarker({ running: false, health: "weird" }), { state: "done", health: "fail" });
 eq("marker absent-is-fail", classifyMarker(null), { state: "absent", health: "fail" });
 eq("marker non-object-is-fail", classifyMarker("junk"), { state: "absent", health: "fail" });
+
+/* ── 20 · T-18 chain-truth day budget (the split-brain killer, pure half) ── */
+/* condenser shape: [[idx, {op:[type,value], timestamp}], …] — plus the
+ * account_history_api nested shape {type,value} both accepted. */
+const histRows = [
+  [57200, { trx_id: "aa", timestamp: "2026-09-30T14:51:06", op: ["vote", { voter: "headcorner", author: "x1", weight: 2000 }] }],
+  [57201, { trx_id: "ab", timestamp: "2026-09-30T15:52:39", op: ["vote", { voter: "headcorner", author: "x2", weight: 200 }] }],
+  [57202, { trx_id: "ac", timestamp: "2026-09-30T16:00:00", op: ["fill_order", { current_owner: "headcorner" }] }],
+  [57203, { trx_id: "ad", timestamp: "2026-09-30T16:30:00", op: ["vote", { voter: "someoneelse", author: "x3", weight: 5000 }] }],
+  [57204, { trx_id: "ae", timestamp: "2026-09-29T19:45:00", op: ["vote", { voter: "headcorner", author: "yesterday", weight: 5000 }] }],
+  [57205, { trx_id: "af", timestamp: "2026-10-01T00:00:30", op: ["vote", { voter: "headcorner", author: "tomorrow", weight: 5000 }] }],
+  [57206, { trx_id: "ag", timestamp: "2026-09-30T17:00:00", op: ["custom_json", { id: "saos.weave.core.v1" }] }],
+  [57207, { type: "vote", timestamp: "2026-09-30T17:05:00", value: { voter: "headcorner", author: "x4", weight: 4982 } }],
+];
+eq("chainDayVotes counts-ours-today-only", countDayVotesFromHistory(histRows, "headcorner", "2026-09-30"), 3);
+eq("chainDayVotes other-voter-ignored", countDayVotesFromHistory(histRows, "someoneelse", "2026-09-30"), 1);
+eq("chainDayVotes day-rollover-exact", countDayVotesFromHistory(histRows, "headcorner", "2026-10-01"), 1);
+eq("chainDayVotes yesterday-untouched", countDayVotesFromHistory(histRows, "headcorner", "2026-09-29"), 1);
+eq("chainDayVotes non-vote-ops-ignored", countDayVotesFromHistory([ [1, { timestamp: "2026-09-30T10:00:00", op: ["limit_order_create", {}] }], [2, { timestamp: "2026-09-30T10:00:01", op: ["transfer", {}] }] ], "headcorner", "2026-09-30"), 0);
+eq("chainDayVotes empty-rows", countDayVotesFromHistory([], "headcorner", "2026-09-30"), 0);
+eq("chainDayVotes null-rows", countDayVotesFromHistory(null, "headcorner", "2026-09-30"), null);
+eq("chainDayVotes junk-rows-tolerated", countDayVotesFromHistory([null, "junk", [3, null], [4, {}]], "headcorner", "2026-09-30"), 0);
+eq("chainDayVotes no-voter-null", countDayVotesFromHistory(histRows, "", "2026-09-30"), null);
+eq("chainDayVotes bad-day-null", countDayVotesFromHistory(histRows, "headcorner", "x"), null);
+ok(
+  "lesson unclassified-fail-legacy derived",
+  deriveLessons({ cycles: { window: 45, oks: 27, fails: 18, okRate: 60, blocked: 0, failReasons: { conn: 3, none: 15 }, msP50: 9691, msP90: 23051 }, curator: null, exec: { window: 0, fails: 0 } })
+    .some((l) => l.id === "unclassified-fail-legacy" && l.severity === "medium")
+);
+ok(
+  "lesson no-legacy-lesson-when-classified",
+  !deriveLessons({ cycles: { window: 10, oks: 9, fails: 1, okRate: 90, blocked: 0, failReasons: { conn: 1 }, msP50: 4000, msP90: 4300 }, curator: null, exec: { window: 0, fails: 0 } })
+    .some((l) => l.id === "unclassified-fail-legacy")
+);
 
 console.log(`\nSELFTEST ${pass}/${pass + fail} ${fail === 0 ? "PASS" : "FAIL"}`);
 process.exit(fail === 0 ? 0 : 1);

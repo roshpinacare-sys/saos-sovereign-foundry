@@ -322,6 +322,33 @@ export function mergeVoteState(prev, day, vote, verdict = "VOTED") {
   };
 }
 
+/* ── T-18 CHAIN-TRUTH DAY BUDGET (the split-brain killer, measured live
+ * 2026-09-30): the state file counted 18/18 while the CHAIN held 22 day votes
+ * (13 engine + 9 second-signer: 6×2% + 3×20% at 14:51 that no seed window
+ * ever saw) — a state-file-only cap gate UNDERCOUNTS the account's real VP
+ * budget by every signer it never saw. The cap is a LAW; laws get enforced
+ * on chain truth, not on a file that only knows what this process wrote.
+ * Counts vote ops cast BY `voter` ON `day` from condenser account-history
+ * rows ([[idx, {op:[type,value], timestamp}], …]). Pure. */
+export function countDayVotesFromHistory(rows, voter, day) {
+  if (!Array.isArray(rows)) return null;
+  const d = String(day ?? "").slice(0, 10);
+  if (!voter || d.length !== 10) return null;
+  let n = 0;
+  for (const row of rows) {
+    const e = Array.isArray(row) ? row[1] : row;
+    if (!e || typeof e !== "object") continue;
+    const ts = typeof e.timestamp === "string" ? e.timestamp : null;
+    if (!ts || !ts.startsWith(d)) continue;
+    const op = Array.isArray(e.op) ? e.op : null;
+    const type = op ? op[0] : e.type;
+    const val = op ? op[1] : e.value;
+    if (type !== "vote" || !val || typeof val !== "object") continue;
+    if (val.voter === voter) n++;
+  }
+  return n;
+}
+
 /* cycle-run marker classification — the sovereign polls the ENGINE's own
  * marker instead of holding an HTTP wait that any slow-but-healthy cycle
  * outlives. Pure. */

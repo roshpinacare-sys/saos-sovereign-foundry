@@ -1,5 +1,23 @@
 {
-  "running": true,
-  "startedAt": "2026-09-30T17:44:17.203Z",
-  "pid": 8768
+  "running": false,
+  "startedAt": "2026-09-30T18:04:17.207Z",
+  "finishedAt": "2026-09-30T18:04:31.715Z",
+  "ms": 14508,
+  "health": "ok",
+  "ok": true,
+  "steps": {
+    "observe": true,
+    "intel": true,
+    "tick": true,
+    "peg": true,
+    "convert": true,
+    "curate": true,
+    "execute": true,
+    "soldiers": true,
+    "learn": true,
+    "report": true
+  },
+  "blockedSteps": [],
+  "failedSteps": [],
+  "error": null
 }

@@ -115,8 +115,24 @@ export async function externalParity() {
   // (SBDBTC "Invalid symbol"), poloniex, upbit, mexc, lbank; coinpaprika marks
   // it is_active:false. The chain's own witness feed is now the only live
   // SBD↔STEEM anchor — sovereignty in its purest form.
+  // T-18 (measured live 2026-09-30 17:47): the fallback used to emit sbdUsd=0 —
+  // a BLIND dollar leg while the book still traded. The witness feed plus a
+  // live steemUsd leg DERIVE an honest dollar estimate: sbdUsd ≈ steemUsd /
+  // feed (identity holds by definition: feed = SBD per STEEM = steemUsd/sbdUsd).
+  // Class-honest: lowConfidence stays TRUE, source names the derivation —
+  // downstream gates keep refusing auto-arm on it; convert/parity cards stop
+  // dividing by zero. When steemUsd itself is dead too, 0 stays 0 — no invention.
   const feed = await internalFeed();
-  if (feed.median > 0) return { steemUsd: steemUsd || 0, sbdUsd: sbdUsd || 0, parity: feed.median, source: "internal-feed-fallback", lowConfidence: true };
+  if (feed.median > 0) {
+    const sbdDerived = steemUsd > 0 ? steemUsd / feed.median : 0;
+    return {
+      steemUsd: steemUsd || 0,
+      sbdUsd: sbdDerived,
+      parity: feed.median,
+      source: sbdDerived > 0 ? "internal-feed-fallback+derived-sbd" : "internal-feed-fallback",
+      lowConfidence: true,
+    };
+  }
   return { steemUsd: steemUsd || 0, sbdUsd: sbdUsd || 0, parity: 0, source: "none", lowConfidence: true };
 }
 

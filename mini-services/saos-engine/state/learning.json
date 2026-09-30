@@ -1,21 +1,21 @@
 {
-  "at": "2026-09-30T17:40:58.050Z",
+  "at": "2026-09-30T18:04:17.207Z",
   "enabled": true,
-  "runsTotal": 47,
+  "runsTotal": 52,
   "verdict": "LEARNED",
   "metrics": {
     "cycles": {
-      "window": 45,
-      "oks": 27,
+      "window": 47,
+      "oks": 29,
       "fails": 18,
       "blocked": 0,
-      "okRate": 60,
+      "okRate": 61.7,
       "blockedRate": 0,
       "failReasons": {
         "conn": 3,
         "none": 15
       },
-      "msP50": 9691,
+      "msP50": 9756,
       "msP90": 23051
     },
     "curator": {
@@ -26,45 +26,49 @@
         "BROADCAST-FAIL": 3,
         "VOTED": 12
       },
-      "vpEff": 83.1,
-      "meanAgeMinutes": 172.3,
-      "tagsVoted": {
-        "crypto": 3,
-        "steem": 4,
-        "technology": 2
-      },
+      "vpEff": null,
+      "meanAgeMinutes": null,
+      "tagsVoted": {},
       "dayCapsInRow": 0,
       "maxPerDay": 18
     },
     "exec": {
-      "window": 11,
+      "window": 13,
       "fails": 0,
       "lastError": null
     },
     "watchdog": {
-      "checks": 416,
-      "downs": 5,
-      "heals": 17,
-      "healVerified": 16,
+      "checks": 440,
+      "downs": 6,
+      "heals": 18,
+      "healVerified": 17,
       "healFailed": 0,
-      "lastCheckAt": "2026-09-30T17:40:17.204Z",
+      "lastCheckAt": "2026-09-30T18:04:17.223Z",
       "engineUp": true,
-      "lastSpawnAt": null
+      "lastSpawnAt": "2026-09-30T18:00:17.247Z"
     }
   },
   "lessons": [
     {
       "id": "cycle-conn-fails",
       "severity": "high",
-      "evidence": "cycles 27/45 ok · conn-fails 3 (connection-level)",
+      "evidence": "cycles 29/47 ok · conn-fails 3 (connection-level)",
       "lesson": "connection-level cycle kills waste 10-minute sovereignty slots",
       "action": "FIXED T-14: engine idleTimeout 255 + sovereign one-shot conn-retry with heal-gate"
+    },
+    {
+      "id": "unclassified-fail-legacy",
+      "severity": "medium",
+      "evidence": "15 fails journaled without a reason class (pre-T-17 era — the sovereign recorded \"fail\" without engine-measured health)",
+      "lesson": "unclassified fails poison the failure histogram — a lesson machine that cannot classify cannot fully learn",
+      "action": "STRUCTURAL T-17: the marker flow journals engine-measured health+reason for every new fail; legacy history stays as evidence, never back-filled with invented causes"
     }
   ],
   "tunings": {},
   "tuningsApplied": [],
   "lessonsTotal": {
-    "cycle-conn-fails": 47
+    "cycle-conn-fails": 52,
+    "unclassified-fail-legacy": 3
   },
   "honesty": "learning reads recorded history only · tunings hard-clamped (LEARN_CLAMP) · doctrine laws untouchable"
 }

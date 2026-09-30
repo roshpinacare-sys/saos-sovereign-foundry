@@ -129,6 +129,19 @@ export function deriveLessons({ cycles, curator, exec }) {
         action: "OPERATOR REVIVAL (T-16 self-service): paste the credential in the cockpit banner → engine adopts (0600) + chain-verifies instantly; or drop upload/headcorner.txt",
       });
     }
+    /* T-18: name the histogram's blind spot instead of letting "none" pass as
+     * a category — measured live: failReasons {conn:3, none:15}, where the 15
+     * are pre-T-17-era kills journaled without a reason class. Evidence-honest:
+     * the learner says what it CANNOT know, never invents a reason. */
+    if ((cycles.failReasons?.none ?? 0) > 0) {
+      lessons.push({
+        id: "unclassified-fail-legacy",
+        severity: "medium",
+        evidence: `${cycles.failReasons.none} fails journaled without a reason class (pre-T-17 era — the sovereign recorded "fail" without engine-measured health)`,
+        lesson: "unclassified fails poison the failure histogram — a lesson machine that cannot classify cannot fully learn",
+        action: "STRUCTURAL T-17: the marker flow journals engine-measured health+reason for every new fail; legacy history stays as evidence, never back-filled with invented causes",
+      });
+    }
     if (cycles.msP90 != null && cycles.msP50 != null && cycles.msP90 > 3 * cycles.msP50 && cycles.msP90 > 15000) {
       lessons.push({
         id: "cycle-latency-tail",

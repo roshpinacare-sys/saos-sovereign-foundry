@@ -1,37 +1,65 @@
 {
-  "verdict": "OFFER-EMPTY",
-  "parityBps": 0,
+  "verdict": "OFFER-READY",
+  "parityBps": 409,
   "blocker": null,
   "plan": {
-    "asks": [],
+    "asks": [
+      {
+        "side": "ask",
+        "amountSteem": 12.756607,
+        "unit": 0.108574,
+        "at": "2026-09-30T18:04:17.207Z"
+      },
+      {
+        "side": "ask",
+        "amountSteem": 12.756607,
+        "unit": 0.108683,
+        "at": "2026-09-30T18:04:17.207Z"
+      },
+      {
+        "side": "ask",
+        "amountSteem": 12.756607,
+        "unit": 0.108792,
+        "at": "2026-09-30T18:04:17.207Z"
+      },
+      {
+        "side": "ask",
+        "amountSteem": 11.026579,
+        "unit": 0.108901,
+        "at": "2026-09-30T18:04:17.207Z"
+      }
+    ],
     "bids": []
   },
   "marks": {
-    "paritySbdPerSteem": 0.104102,
-    "source": "internal-feed-fallback",
-    "lowConfidence": true,
+    "paritySbdPerSteem": 0.108357,
+    "source": "coingecko",
+    "lowConfidence": false,
     "internalFeed": 0.104102,
     "dragK": 1.002,
-    "floor": 0.104311,
-    "ceiling": 0.103893,
+    "floor": 0.108574,
+    "ceiling": 0.10814,
     "spreadBpsFed": 4
   },
   "skew": {
-    "skew": 0.292616,
-    "askMult": 1.292616,
-    "bidMult": 0.707384,
+    "skew": 0.293868,
+    "askMult": 1.293868,
+    "bidMult": 0.706132,
     "reason": "hummingbot-inventory-skew"
   },
   "stale": {
-    "count": 0,
-    "orderids": []
+    "count": 2,
+    "orderids": [
+      1790791287,
+      1790791288
+    ]
   },
   "liquidity": {
-    "deployedAsks": 535.361,
+    "deployedAsks": 480.065,
     "deployedBids": 0,
-    "askBudget": 0,
+    "askBudget": 49.296,
     "bidBudget": 0,
     "deployCap": 0.6
   },
-  "publishedAt": "2026-09-30T17:40:58.050Z"
+  "publishedAt": "2026-09-30T18:04:17.207Z"
 }
