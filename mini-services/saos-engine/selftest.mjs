@@ -503,5 +503,90 @@ eq("19 flow-off-zero-ask", planLadder({ parity: P, askBudgetSteem: 10, bidBudget
 eq("19 flow-off-junk", planLadder({ parity: P, askBudgetSteem: 10, bidBudgetSbd: 10, bestAsk: "junk", bestBid: null, now: "x" }).flow, null);
 ok("19 junk-verdict-still-offer", ["OFFER-READY", "OFFER-EMPTY", "OFFER-BLOCKED"].includes(planLadder({ parity: P, askBudgetSteem: 10, bidBudgetSbd: 10, bestAsk: "junk", bestBid: null, now: "x" }).verdict));
 
+/* ── 20 · T-19b HYPER-GRID: measured RC economics + equilibrium governor ── */
+import {
+  RC_COSTS, rcEconomics, rcGovernor, countDayOrderOpsFromHistory,
+  countDayFillsFromHistory, diffHyperTick,
+} from "./lib.mjs";
+
+/* rcEconomics: the measured probe numbers must reproduce the equilibrium */
+const MAXRC = 6_138_717_856_759;
+const econ = rcEconomics({ maxRc: MAXRC });
+eq("econ regen 20pct", econ.regenPerDay, 1_227_743_571_351);
+eq("econ pairCost", econ.pairCost, RC_COSTS.create + RC_COSTS.cancel);
+ok("econ equilibrium 25k-40k ops/day (measured lung capacity)", econ.opsPerDay >= 25_000 && econ.opsPerDay <= 40_000);
+eq("econ no-maxrc", rcEconomics({ maxRc: 0 }).reason, "no-max-rc");
+eq("econ no-costs", rcEconomics({ maxRc: MAXRC, createCost: 0 }).reason, "no-costs");
+
+/* rcGovernor: the equilibrium controller laws */
+eq("gov no-evidence-burns-nothing", rcGovernor({ rcPct: null, maxRc: MAXRC }).pairs, 0);
+eq("gov rc-floor-zero", rcGovernor({ rcPct: 20, floorPct: 25, maxRc: MAXRC }).reason, "rc-floor");
+const gBurst = rcGovernor({ rcPct: 100, floorPct: 25, setpointPct: 50, burst: 3, tickMs: 3000, maxRc: MAXRC, opsDayCap: 32000, opsToday: 0 });
+eq("gov headroom-clamped-to-burst", gBurst.headroom, 3);
+const gMid = rcGovernor({ rcPct: 50, floorPct: 25, setpointPct: 50, burst: 3, tickMs: 3000, maxRc: MAXRC, opsDayCap: 32000, opsToday: 0 });
+ok("gov setpoint≈equilibrium (≤3 pairs/3s ≈ regen)", gMid.pairs >= 0 && gMid.pairs <= 3);
+const gCap = rcGovernor({ rcPct: 100, maxRc: MAXRC, opsDayCap: 100, opsToday: 99, tickMs: 3000 });
+eq("gov cap-remaining-binds", gCap.reason, "ops-day-cap");
+const gOpCap = rcGovernor({ rcPct: 99.9, maxRc: MAXRC, maxOpsPerTick: 4, tickMs: 3000, opsDayCap: 32000 });
+ok("gov op-cap-binds (≤2 pairs)", gOpCap.pairs <= 2);
+
+/* countDayOrderOpsFromHistory: T-18 chain-truth law applied to order ops */
+const orderRows = [
+  [1, { timestamp: "2026-09-30T09:00:00", op: ["limit_order_create", { owner: "headcorner", orderid: 1 }] }],
+  [2, { timestamp: "2026-09-30T09:00:01", op: ["limit_order_create", { owner: "headcorner", orderid: 2 }] }],
+  [3, { timestamp: "2026-09-30T09:00:02", op: ["limit_order_cancel", { owner: "headcorner", orderid: 1 }] }],
+  [4, { timestamp: "2026-09-30T09:00:03", op: ["vote", { voter: "headcorner" }] }],
+  [5, { timestamp: "2026-09-30T09:00:04", op: ["limit_order_create", { owner: "secondsigner", orderid: 9 }] }],
+  [6, { timestamp: "2026-09-29T23:59:59", op: ["limit_order_cancel", { owner: "headcorner", orderid: 0 }] }],
+  [7, { timestamp: "2026-10-01T00:00:01", op: ["limit_order_create", { owner: "headcorner", orderid: 3 }] }],
+  [8, { timestamp: "2026-09-30T09:01:00", type: "limit_order_cancel", value: { owner: "headcorner", orderid: 2 } }],
+];
+eq("orderOps counts ours-today", countDayOrderOpsFromHistory(orderRows, "headcorner", "2026-09-30"), { creates: 2, cancels: 2, total: 4 });
+eq("orderOps other-owner-ignored", countDayOrderOpsFromHistory(orderRows, "secondsigner", "2026-09-30"), { creates: 1, cancels: 0, total: 1 });
+eq("orderOps rollover-exact", countDayOrderOpsFromHistory(orderRows, "headcorner", "2026-10-01"), { creates: 1, cancels: 0, total: 1 });
+eq("orderOps yesterday-untouched", countDayOrderOpsFromHistory(orderRows, "headcorner", "2026-09-29"), { creates: 0, cancels: 1, total: 1 });
+eq("orderOps nested-shape", countDayOrderOpsFromHistory([{ timestamp: "2026-09-30T10:00:00", type: "limit_order_create", value: { owner: "headcorner" } }], "headcorner", "2026-09-30"), { creates: 1, cancels: 0, total: 1 });
+eq("orderOps vote-not-order", countDayOrderOpsFromHistory([[4, { timestamp: "2026-09-30T09:00:03", op: ["vote", { voter: "headcorner" }] }]], "headcorner", "2026-09-30"), { creates: 0, cancels: 0, total: 0 });
+eq("orderOps empty-rows", countDayOrderOpsFromHistory([], "headcorner", "2026-09-30"), { creates: 0, cancels: 0, total: 0 });
+eq("orderOps null-rows", countDayOrderOpsFromHistory(null, "headcorner", "2026-09-30"), null);
+eq("orderOps junk-tolerated", countDayOrderOpsFromHistory([null, "junk", [3, null], [4, {}], [5, { timestamp: "2026-09-30T09:00:03", op: ["limit_order_cancel", { owner: "headcorner" }] }]], "headcorner", "2026-09-30"), { creates: 0, cancels: 1, total: 1 });
+eq("orderOps bad-owner-null", countDayOrderOpsFromHistory(orderRows, "", "2026-09-30"), null);
+eq("orderOps bad-day-null", countDayOrderOpsFromHistory(orderRows, "headcorner", "x"), null);
+
+/* countDayFillsFromHistory: the honest trade journal (both sides, 3dp) */
+const fillRows = [
+  [1, { timestamp: "2026-09-30T10:00:00", op: ["fill_order", { current_owner: "headcorner", open_owner: "buyer1", current_pays: "10.000 STEEM", open_pays: "1.042 SBD" }] }],
+  [2, { timestamp: "2026-09-30T10:05:00", op: ["fill_order", { current_owner: "headcorner", open_owner: "seller2", current_pays: "0.500 SBD", open_pays: "4.800 STEEM" }] }],
+  [3, { timestamp: "2026-09-30T10:06:00", op: ["fill_order", { current_owner: "x", open_owner: "y", current_pays: "5.000 STEEM", open_pays: "0.520 SBD" }] }],
+  [4, { timestamp: "2026-09-29T23:00:00", op: ["fill_order", { current_owner: "headcorner", open_owner: "buyer1", current_pays: "1.000 STEEM", open_pays: "0.104 SBD" }] }],
+  [5, { timestamp: "2026-09-30T10:07:00", op: ["transfer", { from: "headcorner", amount: "1.000 STEEM" }] }],
+];
+eq("fills ours-both-sides", countDayFillsFromHistory(fillRows, "headcorner", "2026-09-30"), { fills: 2, steemIn: 4.8, steemOut: 10, sbdIn: 1.042, sbdOut: 0.5 });
+eq("fills rollover-exact", countDayFillsFromHistory(fillRows, "headcorner", "2026-09-29"), { fills: 1, steemIn: 0, steemOut: 1, sbdIn: 0.104, sbdOut: 0 });
+eq("fills other-day-untouched", countDayFillsFromHistory(fillRows, "headcorner", "2026-10-02"), { fills: 0, steemIn: 0, steemOut: 0, sbdIn: 0, sbdOut: 0 });
+eq("fills null-rows", countDayFillsFromHistory(null, "headcorner", "2026-09-30"), null);
+eq("fills junk-tolerated", countDayFillsFromHistory([null, "junk", [9, {}]], "headcorner", "2026-09-30"), { fills: 0, steemIn: 0, steemOut: 0, sbdIn: 0, sbdOut: 0 });
+eq("fills bad-account-null", countDayFillsFromHistory(fillRows, "", "2026-09-30"), null);
+
+/* diffHyperTick: dedup/TTL/replacement laws of the minimal honest diff */
+const PLANNED = [
+  { side: "ask", unit: 0.104244, amountSteem: 3.9 },
+  { side: "ask", unit: 0.104442, amountSteem: 3.9 },
+];
+const LIVE = (o = {}) => ({ orderid: 2_100_000_001, side: "ask", unit: 0.104244, createdAtMs: 0, ...o });
+const dHold = diffHyperTick({ planned: PLANNED, live: [LIVE(), LIVE({ orderid: 2_100_000_002, unit: 0.104442 })], epsBps: 2, ttlMs: 60_000, nowMs: 10_000 });
+eq("diff unchanged-young-matching", dHold.unchanged, true);
+const dMove = diffHyperTick({ planned: PLANNED, live: [LIVE({ unit: 0.1047 })], epsBps: 2, ttlMs: 60_000, nowMs: 10_000 });
+eq("diff drift-cancel", dMove.cancelIds, [2_100_000_001]);
+eq("diff drift-creates-both", dMove.creates.length, 2);
+const dTtl = diffHyperTick({ planned: PLANNED, live: [LIVE(), LIVE({ orderid: 2_100_000_002, unit: 0.104442 })], epsBps: 2, ttlMs: 60_000, nowMs: 61_000 });
+eq("diff ttl-cancels-all-aged", dTtl.cancelIds, [2_100_000_001, 2_100_000_002]);
+eq("diff ttl-replaces-both", dTtl.creates.length, 2);
+const dEps = diffHyperTick({ planned: [{ side: "ask", unit: 0.104244 }], live: [LIVE({ unit: 0.10425 })], epsBps: 2, ttlMs: 60_000, nowMs: 10_000 });
+eq("diff within-eps-holds (2bps≈0.104244×2e-4)", dEps.unchanged, true);
+const dEmpty = diffHyperTick({ planned: [], live: [LIVE()], epsBps: 2, ttlMs: 60_000, nowMs: 10_000 });
+eq("diff empty-plan-cancels-live", dEmpty.cancelIds, [2_100_000_001]);
+ok("diff ids-immutable-input", (() => { const live = [LIVE()]; diffHyperTick({ planned: [], live, epsBps: 2, ttlMs: 0, nowMs: 0 }); return live[0].orderid === 2_100_000_001; })());
+
 console.log(`\nSELFTEST ${pass}/${pass + fail} ${fail === 0 ? "PASS" : "FAIL"}`);
 process.exit(fail === 0 ? 0 : 1);

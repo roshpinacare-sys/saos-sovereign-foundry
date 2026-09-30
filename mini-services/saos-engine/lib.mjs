@@ -459,3 +459,151 @@ export function classifyMarker(marker) {
   if (h === "ok" || h === "blocked" || h === "fail") return { state: "done", health: h };
   return { state: "done", health: "fail" };
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+ * T-19b · HYPER-GRID — the volume layer (operator order: thousands of
+ * transactions per day, think 100,000×, prove production).
+ * ════════════════════════════════════════════════════════════════════════
+ * THE MEASURED ECONOMICS (rc-probe.mjs, live chain 2026-09-30 ~19:06 UTC):
+ *   limit_order_create ≈ 42,235,658 RC/op · limit_order_cancel ≈ 34,292,271
+ *   RC/op (4-op txs, manabar delta with exact regen correction — the probe
+ *   txs were assert-rejected for dust-balance and STILL metered: the chain
+ *   charges RC for processing, the measurement is real either way).
+ *   max_rc(headcorner) = 6,138,717,856,759 → regen = 20%/day = 1,227,743,571,351
+ *   ⇒ EQUILIBRIUM ≈ 29k creates/day ≈ 32k mixed ops/day at the CURRENT 4034 SP.
+ * The old 1500/day cap held the machine at ~5% of its measured lung capacity.
+ */
+
+/** measured chain prices (rc-probe.mjs — re-measurable any time, live rail) */
+export const RC_COSTS = { create: 42_235_658, cancel: 34_292_271 };
+
+/** RC economics of the account: what the tank regenerates per day, and the
+ * sustainable op rate at equilibrium (burn/day = regen/day). Pure. */
+export function rcEconomics({ maxRc, createCost = RC_COSTS.create, cancelCost = RC_COSTS.cancel }) {
+  if (!(maxRc > 0)) return { regenPerDay: 0, pairCost: null, pairsPerDay: 0, opsPerDay: 0, reason: "no-max-rc" };
+  if (!(createCost > 0) || !(cancelCost > 0)) return { regenPerDay: Math.floor(maxRc * 0.2), pairCost: null, pairsPerDay: 0, opsPerDay: 0, reason: "no-costs" };
+  const regenPerDay = Math.floor(maxRc * 0.2);
+  const pairCost = createCost + cancelCost;       // one requote pair (cancel+create)
+  const pairsPerDay = Math.floor(regenPerDay / pairCost);
+  return { regenPerDay, pairCost, pairsPerDay, opsPerDay: pairsPerDay * 2, reason: "measured-equilibrium" };
+}
+
+/** the equilibrium governor: how many requote PAIRS this tick may burn.
+ * Law: burn/day ≤ regen/day × headroom, headroom = (rc% − floor)/(setpoint − floor)
+ * clamped [0, burst]; at rc≤floor → 0 (the votes' RC is never starved); no RC
+ * evidence → 0 (no evidence, no burn — T-18 lineage). Doctrine cap binds the
+ * remainder too. FRACTION-CARRY LAW (the starvation bug, found by math before
+ * it killed the layer): at equilibrium the per-tick budget is 0.55 pairs —
+ * integer floor would burn ZERO forever exactly at the setpoint. The caller
+ * passes back the returned carry; pairs = floor(raw + carry). Pure. */
+export function rcGovernor({ rcPct, floorPct = 25, setpointPct = 50, burst = 3, tickMs = 3000, maxRc, createCost, cancelCost, maxOpsPerTick = 24, opsDayCap = 32000, opsToday = 0, carry = 0 }) {
+  const DAY_MS = 86_400_000;
+  if (rcPct == null || !(rcPct >= 0)) return { pairs: 0, ops: 0, carry, reason: "no-rc-evidence" };
+  if (rcPct <= floorPct) return { pairs: 0, ops: 0, carry, reason: "rc-floor", rcPct };
+  const econ = rcEconomics({ maxRc, createCost, cancelCost });
+  if (!(econ.pairCost > 0)) return { pairs: 0, ops: 0, carry, reason: "no-economics" };
+  const headroom = Math.max(0, Math.min(burst, (rcPct - floorPct) / Math.max(1e-9, setpointPct - floorPct)));
+  const burnPerDay = Math.floor(econ.regenPerDay * headroom);
+  const byRegen = (burnPerDay * tickMs) / DAY_MS / econ.pairCost;
+  const capRemaining = Math.max(0, opsDayCap - opsToday);
+  const byCap = capRemaining / 2;
+  const byOpCap = Math.floor(maxOpsPerTick / 2);
+  const raw = Math.min(byRegen, byCap, byOpCap);
+  const pairs = Math.max(0, Math.floor(raw + carry));
+  const nextCarry = Math.max(0, Math.min(4, raw + carry - pairs)); // bounded: a governor credit is never hoarded beyond 4 pairs
+  return {
+    pairs, ops: pairs * 2, carry: nextCarry,
+    reason: pairs === 0 ? (capRemaining < 2 ? "ops-day-cap" : "accumulating") : "governor-ok",
+    headroom: Math.round(headroom * 1000) / 1000, burnPerDay, rcPct,
+  };
+}
+
+/** chain-truth day counter for ORDER ops (T-18 law applied to the volume
+ * layer): counts limit_order_create + limit_order_cancel cast BY `owner` ON
+ * `day` from condenser account-history rows. Same shape tolerance as
+ * countDayVotesFromHistory (op-array + nested, junk-tolerant, day-exact). */
+export function countDayOrderOpsFromHistory(rows, owner, day) {
+  if (!Array.isArray(rows)) return null;
+  const d = String(day ?? "").slice(0, 10);
+  if (!owner || d.length !== 10) return null;
+  let creates = 0, cancels = 0;
+  for (const row of rows) {
+    const e = Array.isArray(row) ? row[1] : row;
+    if (!e || typeof e !== "object") continue;
+    const ts = typeof e.timestamp === "string" ? e.timestamp : null;
+    if (!ts || !ts.startsWith(d)) continue;
+    const op = Array.isArray(e.op) ? e.op : null;
+    const type = op ? op[0] : e.type;
+    const val = op ? op[1] : e.value;
+    if (!val || typeof val !== "object") continue;
+    if (val.owner !== owner) continue;
+    if (type === "limit_order_create") creates++;
+    else if (type === "limit_order_cancel") cancels++;
+  }
+  return { creates, cancels, total: creates + cancels };
+}
+
+const parseAsset3 = (s) => {
+  if (typeof s !== "string") return null;
+  const m = s.trim().match(/^([\d.]+)\s+(SBD|STEEM|VESTS)$/);
+  if (!m) return null;
+  const v = Number(m[1]);
+  return Number.isFinite(v) ? { v, sym: m[2] } : null;
+};
+
+/** chain-truth day counter for REAL fills: fill_order ops where the account
+ * is either side, ON `day`. Amounts parsed from "X SYM" assets — the honest
+ * trade journal (ops measure presence; fills measure trades). Pure. */
+export function countDayFillsFromHistory(rows, account, day) {
+  if (!Array.isArray(rows)) return null;
+  const d = String(day ?? "").slice(0, 10);
+  if (!account || d.length !== 10) return null;
+  let fills = 0, steemIn = 0, steemOut = 0, sbdIn = 0, sbdOut = 0;
+  for (const row of rows) {
+    const e = Array.isArray(row) ? row[1] : row;
+    if (!e || typeof e !== "object") continue;
+    const ts = typeof e.timestamp === "string" ? e.timestamp : null;
+    if (!ts || !ts.startsWith(d)) continue;
+    const op = Array.isArray(e.op) ? e.op : null;
+    const type = op ? op[0] : e.type;
+    const val = op ? op[1] : e.value;
+    if ((type !== "fill_order" && type !== "fill_order_operation") || !val || typeof val !== "object") continue;
+    const isCur = val.current_owner === account, isOpn = val.open_owner === account;
+    if (!isCur && !isOpn) continue;
+    const cur = parseAsset3(val.current_pays), opn = parseAsset3(val.open_pays);
+    if (!cur || !opn) continue;
+    fills++;
+    const mine = isCur ? cur : opn, theirs = isCur ? opn : cur;
+    if (mine.sym === "STEEM") { steemOut += mine.v; sbdIn += theirs.v; }
+    else { sbdOut += mine.v; steemIn += theirs.v; }
+  }
+  const r3 = (v) => Math.round(v * 1000) / 1000;
+  return { fills, steemIn: r3(steemIn), steemOut: r3(steemOut), sbdIn: r3(sbdIn), sbdOut: r3(sbdOut) };
+}
+
+/** the hyper tick diff (dedup law generalized): given the PLANNED levels and
+ * the LIVE hyper orders (with ages), decide the minimal honest action set —
+ * cancel only what drifted beyond ε or aged past TTL; create only what has
+ * no live match. Zero-drift young book ⇒ zero ops (no churn for churn). Pure. */
+export function diffHyperTick({ planned, live, epsBps = 2, ttlMs = 60_000, nowMs = 0 }) {
+  if (!Array.isArray(planned)) planned = [];
+  if (!Array.isArray(live)) live = [];
+  const eps = Math.max(0, epsBps) / 10000;
+  const agedOf = (o) => ttlMs > 0 && nowMs - (o.createdAtMs ?? 0) > ttlMs;
+  const matchedLive = new Set();
+  const creates = [];
+  for (const p of planned) {
+    if (!p || !(p.unit > 0)) continue;
+    /* an aged order is never a match: it is cancelled this tick and must be
+     * REPLACED, not orphaned (the level would vanish from the book) */
+    const hit = live.find((o) => o && !matchedLive.has(o.orderid) && o.side === p.side && !agedOf(o) && Math.abs(o.unit - p.unit) <= Math.max(1e-9, p.unit * eps));
+    if (hit) { matchedLive.add(hit.orderid); continue; }
+    creates.push(p);
+  }
+  const cancelIds = [];
+  for (const o of live) {
+    if (!o || o.orderid == null) continue;
+    if (!matchedLive.has(o.orderid) || agedOf(o)) cancelIds.push(o.orderid);
+  }
+  return { cancelIds, creates, unchanged: cancelIds.length === 0 && creates.length === 0 };
+}

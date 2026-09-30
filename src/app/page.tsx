@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import {
   Activity, Anchor, Banknote, BatteryCharging, Brain, BrainCircuit, CircleCheck, Cpu, GitBranch, HeartPulse, KeyRound, Lightbulb, PauseCircle,
-  Play, PlayCircle, Radio, RefreshCw, Route, Scale, ShieldCheck, Sigma, Target, TrendingUp, Users, Wallet, Wrench
+  Play, PlayCircle, Radio, RefreshCw, Route, Scale, ShieldCheck, Sigma, Target, TrendingUp, Users, Wallet, Wrench, Zap
 } from 'lucide-react'
 
 type Order = { orderid: number; side: string; base: string; quote: string; unit: number; created: string }
@@ -58,6 +58,16 @@ type Status = {
   daily?: { ok?: boolean; health?: 'ok' | 'blocked' | 'fail'; failures?: { failedSteps?: string[]; blockedSteps?: string[] }; finishedAt?: string; rollup?: { realizedSbd?: number | null; deployedSteem?: number | null; measuredTotalUsdPerDay?: number | null; honesty?: string } }
   measuredPerDay?: number | null
   spoilage?: { daysBlocked?: number; votesForegone?: number; estSteemForegone?: number; class?: string; note?: string } | null
+  hyper?: {
+    running?: boolean | null; lastVerdict?: string | null; lastVerdictAt?: string | null; lastTickAt?: string | null
+    ticks?: number | null; rcPct?: number | null; liveHyper?: number | null; label?: string | null; lastTxid?: string | null
+    governor?: { pairs?: number; ops?: number; carry?: number; reason?: string; headroom?: number; burnPerDay?: number } | null
+    economics?: { regenPerDay?: number; pairCost?: number; pairsPerDay?: number; opsPerDay?: number; reason?: string } | null
+    ops?: {
+      day?: string; opsToday?: number; opsDayCap?: number; lastTxid?: string | null
+      chainTail?: { creates?: number; cancels?: number; total?: number } | null; chainTailAt?: string | null
+    } | null
+  } | null
   execution?: {
     credentialPresent?: boolean; fingerprint?: string | null; account?: string
     armed?: boolean; standingOrder?: boolean; operatorPaused?: boolean
@@ -931,6 +941,62 @@ export default function Home() {
                   </div>
                 )}
                 <p className="text-[11px] text-slate-500 mt-2">אמת-מדידה: השוק-הפנימי סוחר ~49 עסקאות/יום (נמדד 2026-09-30) — זו התקרה-הכנה של כל אסטרטגיית-לכידה במקום-הזה. המכונה מייצרת נוכחות-מקסימלית בחזית ולוכדת נתח-זרימה, בלי להבטיח זרימה שהשוק לא נותן.</p>
+              </CardContent>
+            </Card>
+
+            {/* HYPER-GRID · שכבת-הנפח (T-19b) — המנוע שמייצר אלפי פעולות-שרשרת ביום */}
+            <Card className="border-amber-500/25 bg-gradient-to-br from-amber-500/10 to-slate-900/60">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm text-amber-300">
+                  <Zap className="h-4 w-4" aria-hidden /> HYPER-GRID · שכבת-הנפח (T-19b)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="outline" className="border-amber-500/40 text-amber-300">
+                    {s?.hyper?.running ? 'חי' : 'כבוי'} · {s?.hyper?.lastVerdict ?? '—'}
+                  </Badge>
+                  {s?.hyper?.ops?.opsToday != null && (
+                    <span className="text-[11px] text-slate-500">
+                      <b className="tabular-nums text-amber-200">{s.hyper.ops.opsToday.toLocaleString()}</b> ops היום מתוך תקציב <b className="tabular-nums text-slate-200">{(s.hyper.ops.opsDayCap ?? 0).toLocaleString()}</b>
+                    </span>
+                  )}
+                  {s?.hyper?.liveHyper != null && (
+                    <span className="text-[11px] text-slate-500">הזמנות-חיות: <b className="tabular-nums text-slate-200">{s.hyper.liveHyper}</b></span>
+                  )}
+                  {s?.hyper?.rcPct != null && (
+                    <span className="text-[11px] text-slate-500">RC: <b className="tabular-nums text-slate-200">{s.hyper.rcPct}%</b></span>
+                  )}
+                </div>
+                {s?.hyper?.ops?.opsToday != null && (s.hyper.ops.opsDayCap ?? 0) > 0 && (
+                  <div className="mt-2">
+                    <Progress value={Math.min(100, (s.hyper.ops.opsToday / (s.hyper.ops.opsDayCap ?? 1)) * 100)} aria-label="ops day budget" />
+                  </div>
+                )}
+                {s?.hyper?.economics?.opsPerDay != null && (
+                  <div className="mt-3 border-t border-slate-800 pt-2 text-[11px] space-y-1">
+                    <div className="text-slate-400">
+                      שיווי-משקל-נמדד: <b className="tabular-nums text-amber-200">{s.hyper.economics.opsPerDay.toLocaleString()}</b> ops/יום — מיכל-RC {s.hyper.economics.regenPerDay != null ? `${(s.hyper.economics.regenPerDay / 1e12).toFixed(2)} טריליון` : '—'} שמתחדש 20%/יום, זוג-ריקוט (ביטול+יצירה) עולה {(s.hyper.economics.pairCost ?? 0) > 0 ? ((s.hyper.economics.pairCost ?? 0) / 1e6).toFixed(1) + 'M RC' : '—'} (מדידה-חיה rc-probe 2026-09-30).
+                    </div>
+                    <div className="text-slate-500">
+                      לעומת התקציב-הישן (1,500/יום): זהו שיפור של <b className="text-amber-300">×{(s.hyper.economics.opsPerDay / 1500).toFixed(0)}</b> בנפח-הייצור. המושל שומר: רצפת-RC 25% (הצבעות לעולם לא נחנקות), שורף-רק-את-מה-שמתחדש.
+                    </div>
+                    {!!s?.hyper?.ops?.chainTail && (
+                      <div className="text-slate-600">
+                        אמת-שרשרת (זנב-400-אופס, {s.hyper.ops.chainTailAt ? new Date(s.hyper.ops.chainTailAt).toLocaleTimeString('he-IL') : '—'}): {s.hyper.ops.chainTail.creates ?? 0} יצירות + {s.hyper.ops.chainTail.cancels ?? 0} ביטולים = <b className="tabular-nums">{s.hyper.ops.chainTail.total ?? 0}</b> פעולות-ספר של-החשבון-כולו (היפר + מחזור + חותם-שני).
+                      </div>
+                    )}
+                    <div className="text-slate-600">
+                      סולם-ה-100,000× (חוק-גידול נמדד): ops/יום ∝ מיכל-RC ∝ SP. היום 4,034 SP → ~32k/יום; 40k SP → ~320k/יום; תקרת-קצב-השרשרת (טקס/3ש × אצווה) ≈ 2.9M/יום. המנוף: האצלת-RC נכנסת אוטומטית ל-max_rc — השכבה מרוויחה ריאות בלי-שינוי-קוד.
+                    </div>
+                  </div>
+                )}
+                {s?.hyper?.lastTxid && (
+                  <div className="mt-2 text-[10px] text-slate-600 font-mono break-all">
+                    שידור-אחרון: {s.hyper.lastTxid} · טיק-אחרון {s?.hyper?.lastTickAt ? new Date(s.hyper.lastTickAt).toLocaleTimeString('he-IL') : '—'} · טיקים: {s?.hyper?.ticks ?? 0}
+                  </div>
+                )}
+                <p className="text-[11px] text-slate-500 mt-2">כנות: ops = נוכחות-ואופציה, לא רווח. כל פעולה ממקמת-מחדש רמה-חוקית בחזית-הספר (עוגן-פיד + תקרה); מילויים נמדדים בנפרד (fill_order) וה-P&amp;L נשאר כן (A-10). TTL-ריקוט מתויג כשימור-נוכחות — אפס-ציפייה-למילוי.</p>
               </CardContent>
             </Card>
 

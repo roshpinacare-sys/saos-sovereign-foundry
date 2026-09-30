@@ -178,6 +178,10 @@ export function defaultArmedConf() {
     // T-13: the measured fuel rail — VP put to work (posting key only, vote op
     // can never move funds). The operator ordered it implemented and running.
     curate: { enabled: true, maxPerDay: 10, baseWeightPct: 50, minWeightPct: 20, minVpEffPct: 60 },
+    // T-19b HYPER-GRID: the measured volume layer (rc-probe economics:
+    // equilibrium ≈32k ops/day at current SP; cap = the measured equilibrium,
+    // not an arbitrary number). Governor + RC-floor + id-partition inside.
+    hyperGrid: { enabled: true, tickMs: 3000, levels: 10, spacingBps: 15, ttlSec: 60, orderTtlSec: 3600, askBudgetPct: 0.12, minRcPct: 25, setpointPct: 50, burst: 3, maxOpsPerTick: 24, opsDayCap: 32000, chainTailSec: 60 },
   };
 }
 

@@ -1,14 +1,14 @@
 {
   "enabled": true,
-  "at": "2026-09-30T18:44:17.206Z",
+  "at": "2026-09-30T19:34:17.206Z",
   "day": "2026-09-30",
   "votesTodayCount": 18,
   "maxPerDay": 18,
   "tuningsApplied": [],
   "verdict": "DAY-CAP",
   "dayCapReached": true,
-  "chainDayCount": 22,
-  "budgetCounted": 22,
+  "chainDayCount": 38,
+  "budgetCounted": 38,
   "budgetBasis": "max(state, chain-truth)",
   "votesToday": [
     {

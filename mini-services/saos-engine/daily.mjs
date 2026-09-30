@@ -285,14 +285,20 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
     const OURS_FILE = path.join(STATE, "our-orders.json");
     const ours = readJson(OURS_FILE, { orderids: [] });
     const oursSet = new Set((ours.orderids ?? []).map((o) => (typeof o === "object" ? o.id : o)));
+    /* T-19b HYPER-GRID: the hyper tranche belongs to the high-frequency layer
+     * (order-id partition [2.1e9, 4.29e9]) — the cycle NEVER cancels it, and
+     * when the hyper layer is enabled the cycle stops touching the flow
+     * tranche entirely (single owner of the mobile layer — no self-war). */
+    const hyperSet = new Set((ours.orderids ?? []).filter((o) => typeof o === "object" && o.tranche === "hyper").map((o) => o.id));
+    const hyperEnabled = conf.hyperGrid?.enabled === true;
     const offer = readJson(path.join(STATE, "offer.json"), null);
-    const staleIds = (offer?.stale?.orderids ?? []).filter((id) => oursSet.has(id));
+    const staleIds = (offer?.stale?.orderids ?? []).filter((id) => oursSet.has(id) && !hyperSet.has(id));
     /* T-19 REQUOTE: our previous flow-tranche levels are CANCELLED this cycle
      * and re-created at the new front (the mobile layer replaces itself —
      * never additive, never touching the value tranche or the second
      * signer's orders). */
     const prevFlowIds = (ours.orderids ?? []).filter((o) => typeof o === "object" && o.tranche === "flow").map((o) => o.id);
-    const flowRequoteIds = prevFlowIds.filter((id) => !staleIds.includes(id));
+    const flowRequoteIds = hyperEnabled ? [] : prevFlowIds.filter((id) => !staleIds.includes(id));
 
     const ops = [];
     // (a) stale repricing — cancel ONLY our own law-violating orders (D-021, cap 5→12: measured stale pile of 13)
@@ -339,8 +345,10 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
       };
       pushLadder(offer.plan.asks, "ask");
       pushLadder(offer.plan.bids, "bid");
-      pushLadder(offer.plan.flowAsks, "ask");   // T-19 flow tranche — AT-the-front presence
-      pushLadder(offer.plan.flowBids, "bid");
+      if (!hyperEnabled) {
+        pushLadder(offer.plan.flowAsks, "ask");   // T-19 flow tranche — AT-the-front presence
+        pushLadder(offer.plan.flowBids, "bid");
+      } // T-19b: hyper layer owns the mobile tranche when enabled
     }
     // (c) claim pending rewards — free fuel, never left on the table
     const rewDec = intelOut?.decisions?.find((d) => d.kind === "rewards" && d.decision === "claim");
@@ -383,7 +391,7 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
       try { promo = await postDailyReport({ obs, rollup: report.steps.report?.rollup ?? null, intel: intelOut, now }); }
       catch (e) { promo = { verdict: "PROMO-ERROR", error: String(e?.message ?? e).slice(0, 120) }; }
     }
-    return { verdict: res.verdict, txid: res.txid ?? null, ops: ops.length, opNames: res.opNames ?? ops.map(([n]) => n), node: res.node ?? null, error: res.error ?? null, promo, opsToday: opsDay.opsToday + ops.length, opsDayCap, cancels: staleIds.length, created: createdIds.length };
+    return { verdict: res.verdict, txid: res.txid ?? null, ops: ops.length, opNames: res.opNames ?? ops.map(([n]) => n), node: res.node ?? null, error: res.error ?? null, promo, opsToday: opsDay.opsToday + ops.length, opsDayCap, cancels: staleIds.length, created: createdIds.length, hyperLayer: hyperEnabled ? "hypergrid-owns-flow" : "cycle-flow-tranche" };
   });
 
   /* 7 · soldiers: deploy once, top-up as liquidity returns, grid every cycle.

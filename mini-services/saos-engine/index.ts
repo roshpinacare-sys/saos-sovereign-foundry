@@ -13,6 +13,7 @@ import { curatorState } from "./curator.mjs";
 import { learningState } from "./learning.mjs";
 import { discoveryState } from "./discovery.mjs";
 import { fleetState } from "./fleet.mjs";
+import { startHyperGrid, hyperState } from "./hypergrid.mjs";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -62,10 +63,15 @@ async function handle(req) {
        * claimed as measured money) */
       spoilage: spoilagePublic(),
       fleet: fleetState(),
+      /* T-19b HYPER-GRID: the volume layer — live meter + day counter */
+      hyper: hyperState(),
       execLog,
       events: readLines(path.join(STATE, "events.jsonl"), 20),
       notes: ["sovereign engine · state lives inside my-project · master credential engine-held, doctrine-capped, never logged", "T-14: continuous-learning layer live — lessons from recorded history, hard-clamped tunings, growth-option discovery"],
     });
+  }
+  if (p === "/hyper") {
+    return json({ ok: true, at: new Date().toISOString(), account: ACCOUNT, ...hyperState() });
   }
   if (p === "/cycle") {
     if (req.method !== "POST") return json({ ok: false, error: "POST required" }, 405);
@@ -132,7 +138,7 @@ async function handle(req) {
                      : "credential secured but not matching this account's authorities — install the proposedPubkeys on steemit.com, or paste the CURRENT password instead",
     });
   }
-  return json({ ok: false, error: "not-found", routes: ["/health", "/status", "/cycle", "/cycle-status", "/live", "/fills", "/exec-status", "/fleet", "/adopt-credential"] }, 404);
+  return json({ ok: false, error: "not-found", routes: ["/health", "/status", "/hyper", "/cycle", "/cycle-status", "/live", "/fills", "/exec-status", "/fleet", "/adopt-credential"] }, 404);
 }
 
 // T-15 SINGLE-INSTANCE LAW (measured live: 3 duplicate engine processes were
@@ -185,3 +191,10 @@ if (!bound) throw new Error(`failed to bind :${PORT}`);
 try { fs.mkdirSync(STATE, { recursive: true }); fs.writeFileSync(path.join(STATE, "engine.pid"), String(process.pid)); } catch { /* best effort */ }
 
 console.log(`saos-engine listening on :${PORT} (capped-autonomy, account=${ACCOUNT})`);
+
+// T-19b HYPER-GRID: the volume layer — one writer, own tick loop, the same
+// signing rail, the same doctrine guards. Booted with the engine, healed by
+// the same watchdog (process-lifetime = engine lifetime).
+try { startHyperGrid(); } catch (e) {
+  console.error(`hypergrid boot failed: ${String(e?.message ?? e)}`);
+}

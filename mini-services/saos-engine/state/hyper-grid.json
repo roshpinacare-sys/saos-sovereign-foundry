@@ -1,0 +1,50 @@
+{
+  "lastTickAt": "2026-09-30T19:34:29.885Z",
+  "ticks": 6,
+  "nextId": 2100000054,
+  "conf": {
+    "enabled": true,
+    "tickMs": 3000,
+    "levels": 10,
+    "spacingBps": 15,
+    "ttlSec": 60,
+    "orderTtlSec": 3600,
+    "askBudgetPct": 0.12,
+    "minRcPct": 25,
+    "setpointPct": 50,
+    "burst": 3,
+    "maxOpsPerTick": 24,
+    "opsDayCap": 32000,
+    "chainTailSec": 60,
+    "maxOpsPerTx": 24,
+    "note": "T-19b operator volume order: thousands of ops/day — cap = measured RC equilibrium (~32k/day at current SP), governor + RC-floor 25% protect the vote rail; order-id partition [2.1e9, 4.294e9] never collides with the cycle"
+  },
+  "lastVerdict": "BROADCAST",
+  "lastVerdictAt": "2026-09-30T19:34:29.885Z",
+  "rcPct": 99.7,
+  "opsToday": 148,
+  "lastTxid": "a8a4875a3976aaf60ee2d7fdbfa79bfda6bc5948",
+  "governor": {
+    "pairs": 1,
+    "ops": 2,
+    "carry": 0.9889517682101898,
+    "reason": "governor-ok",
+    "headroom": 2.988,
+    "burnPerDay": 3668497791196,
+    "rcPct": 99.7
+  },
+  "liveHyper": 2,
+  "planned": 10,
+  "label": "requote-front",
+  "economics": {
+    "regenPerDay": 1227743571351,
+    "pairCost": 76527929,
+    "pairsPerDay": 16043,
+    "opsPerDay": 32086,
+    "reason": "measured-equilibrium"
+  },
+  "day": "2026-09-30",
+  "lastError": null,
+  "carryGovernor": 0.9889517682101898,
+  "running": true
+}

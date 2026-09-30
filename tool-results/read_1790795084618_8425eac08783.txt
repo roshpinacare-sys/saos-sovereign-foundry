@@ -1,0 +1,506 @@
+     1→/**
+     2→ * daily.mjs — one-command autonomous cycle (A-8 lineage, T-9 local rebuild,
+     3→ * T-12 LIVE EXECUTION: the operator handed the master credential and ordered
+     4→ * full autonomous, sovereign operation without operator intervention.
+     5→ * T-14 CONTINUOUS LEARNING: the machine reads its own recorded history every
+     6→ * cycle, derives evidence-backed lessons, and applies hard-clamped tunings —
+     7→ * plus a cadence-gated network scan for growth options (discovery).
+     8→ *
+     9→ * observe → intel → tick → peg(intel-fed) → convert → execute(SIGN) → soldiers → learn(T-14) → report
+    10→ *
+    11→ * Fail-isolated steps; every signing op doctrine-capped (signer.mjs);
+    12→ * pause button = operator kill-switch (state/exec-pause.json); everything
+    13→ * journaled: events.jsonl + exec-log.jsonl (txids, never keys).
+    14→ */
+    15→import * as fs from "node:fs";
+    16→import * as path from "node:path";
+    17→import {
+    18→  planLadder, planConvert, inventorySkew, parityVerdict, pnlFromFills, classifyStale,
+    19→  cycleHealth, cycleFailureBreakdown,
+    20→} from "./lib.mjs";
+    21→import {
+    22→  externalParity, internalFeed, accountState, openOrders, measureAll, fuelToUsdPerDay, marketPulse, rpcCall,
+    23→} from "./measure.mjs";
+    24→import { tick as gridTick, fold, activeGrids } from "./grid.mjs";
+    25→import { runIntel } from "./intel.mjs";
+    26→import { executeOps, executeAs, armedConf, execPaused, masterAccount, loadCredential } from "./signer.mjs";
+    27→import { deploySoldiers, runSoldierGrids, soldiersState } from "./soldiers.mjs";
+    28→import { postDailyReport } from "./promo.mjs";
+    29→import { runCurator } from "./curator.mjs";
+    30→import { runLearning } from "./learning.mjs";
+    31→import { runDiscovery } from "./discovery.mjs";
+    32→
+    33→const DIR = path.dirname(new URL(import.meta.url).pathname);
+    34→const STATE = path.join(DIR, "state");
+    35→const ACCOUNT = process.env.SAOS_ACCOUNT || "headcorner";
+    36→
+    37→const readJson = (p, d = null) => { try { return JSON.parse(fs.readFileSync(p, "utf8")); } catch { return d; } };
+    38→const writeJson = (p, v) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, JSON.stringify(v, null, 2)); };
+    39→const appendLine = (p, v) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.appendFileSync(p, JSON.stringify(v) + "\n"); };
+    40→
+    41→const stepWrap = async (name, fn) => {
+    42→  const t0 = Date.now();
+    43→  try {
+    44→    const out = await fn();
+    45→    return { name, ok: true, ms: Date.now() - t0, ...out };
+    46→  } catch (e) {
+    47→    return { name, ok: false, ms: Date.now() - t0, error: String(e?.message ?? e).slice(0, 200) };
+    48→  }
+    49→};
+    50→
+    51→/* ── T-17 · ENGINE-SIDE SINGLE-FLIGHT + CYCLE-RUN MARKER ────────────────
+    52→ * Measured 2026-09-30: the sovereign's 90s HTTP wait died while the engine
+    53→ * was still mid-cycle (real multi-vote curate ≈ minutes) — and its busy-flag
+    54→ * release let the NEXT cycle overlap the first ON THE SAME ENGINE (a real
+    55→ * double-vote window). The engine now owns the truth: a module-level mutex
+    56→ * makes concurrent runCycle calls impossible, and a cycle-run.json marker
+    57→ * (start + end, try/finally — a killed cycle still closes it) lets the
+    58→ * sovereign POLL for completion instead of holding an HTTP wait that any
+    59→ * healthy signing cycle outlives. */
+    60→let cycleInFlight = false;
+    61→let cycleInFlightSince = null;
+    62→export function cycleRunning() { return cycleInFlight; }
+    63→export function cycleMarker() { return readJson(path.join(STATE, "cycle-run.json"), null); }
+    64→
+    65→export async function runCycle({ now = new Date().toISOString(), persist = true } = {}) {
+    66→  if (cycleInFlight) {
+    67→    /* typed, pollable, and honest — the sovereign journals this as a skip,
+    68→     * never as a fail: nothing malfunctioned, a cycle is already running. */
+    69→    return { ok: false, health: "fail", error: "cycle-in-flight", inFlightSince: cycleInFlightSince, startedAt: now, account: ACCOUNT, steps: {} };
+    70→  }
+    71→  cycleInFlight = true;
+    72→  cycleInFlightSince = now;
+    73→  const cycleT0 = Date.now();
+    74→  const markerFile = path.join(STATE, "cycle-run.json");
+    75→  writeJson(markerFile, { running: true, startedAt: now, pid: process.pid });
+    76→  const report = { startedAt: now, account: ACCOUNT, steps: {} };
+    77→  try {
+    78→  let intelOut = null;
+    79→
+    80→  /* 5b · curate (T-13, T-16 PARALLEL): the measured fuel rail is INDEPENDENT
+    81→   * of the front chain (own policy + chain reads + own state) — it starts
+    82→   * NOW and is joined after convert. Measured 2026-09-30: active voting days
+    83→   * burned ~12s of serial candidate-scan per cycle (≈29min/day of
+    84→   * sovereignty time) that this parallelism gives back. Fail-isolated. */
+    85→  const curateP = stepWrap("curate", async () => {
+    86→    const out = await runCurator({ now });
+    87→    return { verdict: out.verdict, votes: out.voted?.length ?? 0, txid: out.txid ?? null, vpEff: out.vpEff ?? null, votesToday: out.votesTodayCount ?? 0, error: out.error ?? null };
+    88→  });
+    89→
+    90→  /* 1 · observe: parity + inventory + fills + rails fuel */
+    91→  report.steps.observe = await stepWrap("observe", async () => {
+    92→    const [par, feed, acc, oo, meas] = await Promise.all([
+    93→      externalParity(), internalFeed(), accountState(ACCOUNT), openOrders(ACCOUNT), measureAll(ACCOUNT),
+    94→    ]);
+    95→    const fillsPnl = pnlFromFills(meas.fills);
+    96→    const fuelUsd = acc.ok && acc.totalVestingShares && par.steemUsd > 0
+    97→      ? fuelToUsdPerDay(meas.fuel.curationVestsPerDay, acc.totalVestingShares, acc.totalVestingFund, par.steemUsd)
+    98→      : null;
+    99→    const authorUsdPerDay = par.sbdUsd > 0 ? Math.round(meas.fuel.authorSbdPerDay * par.sbdUsd * 1e4) / 1e4 : null;
+   100→    const band = parityVerdict(par.parity, feed.median);
+   101→    const data = {
+   102→      account: ACCOUNT,
+   103→      parity: par, feed: feed.median, band,
+   104→      steemUsd: par.steemUsd ?? null, sbdUsd: par.sbdUsd ?? null,
+   105→      inventory: acc.ok ? { steem: acc.steem, sbd: acc.sbd, spOwn: acc.spOwn, rcPct: acc.rcPct } : null,
+   106→      ordersOk: oo.ok, orders: oo.orders,
+   107→      fills: meas.fills.length, lastFillAt: meas.lastFillAt,
+   108→      pnl: fillsPnl,
+   109→      fuel: { ...meas.fuel, fuelUsdPerDay: fuelUsd, authorUsdPerDay, histLen: meas.histLen, node: meas.node },
+   110→    };
+   111→    if (data.fuel.curationOps === 0 && data.fuel.authorOps === 0) {
+   112→      data.fuel.windowNote = "no reward ops inside the measured window — rails dormant, not a parse failure (deep-scan documented separately)";
+   113→    }
+   114→    if (persist) {
+   115→      writeJson(path.join(STATE, "observe.json"), { ...data, at: now });
+   116→      appendLine(path.join(STATE, "events.jsonl"), { type: "observe.done", at: now, fills: meas.fills.length, parity: par.parity });
+   117→    }
+   118→    return { ...data, summary: `parity ${par.parity || "?"} (${par.source}) · fills ${meas.fills.length} · fuel ${fuelUsd ?? "?"}$` };
+   119→  });
+   120→
+   121→  const obs = report.steps.observe;
+   122→
+   123→  /* 2 · intel: self-activating decisions (feeds peg + execute + soldiers) */
+   124→  report.steps.intel = await stepWrap("intel", async () => {
+   125→    intelOut = await runIntel({
+   126→      obs: { account: ACCOUNT, band: obs.ok ? obs.band : null, fuel: obs.ok ? obs.fuel : null, inventory: obs.ok ? obs.inventory : null },
+   127→      offer: null, convert: null, now,
+   128→    });
+   129→    return {
+   130→      verdict: `DECISIONS:${intelOut.decisions.length}`,
+   131→      decisions: intelOut.decisions.map((d) => `${d.kind}:${d.decision}`),
+   132→      spreadBpsRec: intelOut.spreadBpsRec,
+   133→      book: intelOut.book,
+   134→    };
+   135→  });
+   136→
+   137→  /* 3 · tick: deterministic trigger-grid sim */
+   138→  report.steps.tick = await stepWrap("tick", async () => {
+   139→    const prev = readJson(path.join(STATE, "state.json"), { runCount: 0, simFills: 0, simFeesMu: 0 });
+   140→    const inv = obs.ok && !obs.error ? { steem: obs.inventory?.steem ?? 0, sbd: obs.inventory?.sbd ?? 0 } : { steem: 0, sbd: 0 };
+   141→    const res = gridTick({
+   142→      refPrice: obs.ok ? obs.parity.parity : 0,
+   143→      internalFeed: obs.ok ? obs.feed : 0,
+   144→      inventory: inv, runCount: prev.runCount, now,
+   145→    });
+   146→    const st = fold(prev, res);
+   147→    if (persist) {
+   148→      // T-15: the tick's recorded output must carry its own timestamp —
+   149→      // the fleet registry reads state.json.at as the liveness evidence
+   150→      writeJson(path.join(STATE, "state.json"), { ...st, at: now, grids: activeGrids() });
+   151→      for (const e of res.events) appendLine(path.join(STATE, "events.jsonl"), e);
+   152→    }
+   153→    return { runCount: st.runCount, simFills: st.simFills, simFeesMu: st.simFeesMu, events: res.events.length };
+   154→  });
+   155→
+   156→  /* 4 · peg: parity-anchored offer plan (skew + floor law), intel-fed spread */
+   157→  report.steps.peg = await stepWrap("peg", async () => {
+   158→    if (!obs.ok || !(obs.parity.parity > 0)) {
+   159→      const blocked = { verdict: "NO-PARITY", blocker: ["observe-failed"], at: now };
+   160→      if (persist) writeJson(path.join(STATE, "offer.json"), { ...blocked, publishedAt: now });
+   161→      return { verdict: "NO-PARITY", blocker: ["observe-failed"] };
+   162→    }
+   163→    const inv = obs.inventory ?? { steem: 0, sbd: 0 };
+   164→    const skew = inventorySkew(inv.steem, inv.sbd, obs.parity.parity);
+   165→    const live = obs.orders ?? [];
+   166→    const staleCls = classifyStale(live, obs.parity.parity);
+   167→    const spreadBps = intelOut?.spreadBpsRec ?? Math.abs(obs.band?.bps ?? 0);
+   168→    // T-12 liquidity law: deploy ≤ 60% of tradable capital — never starve the
+   169→    // fleet (soldier top-ups, fees, reserves). Deployed counts only OUR live
+   170→    // orders; fills free budget automatically (thing-drags-thing).
+   171→    const deployedAsks = live.filter((o) => o.side === "ask").reduce((s, o) => s + Number(String(o.base).split(" ")[0] || 0), 0);
+   172→    const deployedBids = live.filter((o) => o.side === "bid").reduce((s, o) => s + Number(String(o.base).split(" ")[0] || 0), 0);
+   173→    const maxDeploySteem = 0.6 * (inv.steem + deployedAsks);
+   174→    const maxDeploySbd = 0.6 * (inv.sbd + deployedBids);
+   175→    const askBudget = Math.max(0, Math.min(inv.steem, maxDeploySteem - deployedAsks));
+   176→    const bidBudget = Math.max(0, Math.min(inv.sbd - 0.5, maxDeploySbd - deployedBids));
+   177→    /* T-19: LIVE BOOK + CHAIN ANCHOR — the ladder must see the market it
+   178→     * quotes into. One bounded book read (50 levels); the witness feed is
+   179→     * the flow tranche's honest floor (the only live SBD↔STEEM anchor). */
+   180→    let book = null;
+   181→    try {
+   182→      const ob = await rpcCall("condenser_api.get_order_book", [50]);
+   183→      if (ob.ok && ob.result) {
+   184→        const bestAsk = ob.result.asks?.[0]?.real_price ? Number(ob.result.asks[0].real_price) : null;
+   185→        const bestBid = ob.result.bids?.[0]?.real_price ? Number(ob.result.bids[0].real_price) : null;
+   186→        book = { bestAsk, bestBid, askDepthSteem: Math.round(ob.result.asks?.reduce((s, a) => s + (a.steem || 0), 0) / 1000 * 1e3) / 1e3 || null, bidDepthSbd: Math.round(ob.result.bids?.reduce((s, b) => s + (b.sbd || 0), 0) / 1000 * 1e3) / 1e3 || null, at: now };
+   187→      }
+   188→    } catch { /* book read failed → flow tranche simply inactive this run */ }
+   189→    const confPeg = armedConf();
+   190→    const flowCfg = confPeg.flow ?? {};
+   191→    const plan = planLadder({
+   192→      parity: obs.parity.parity,
+   193→      askBudgetSteem: askBudget,
+   194→      bidBudgetSbd: bidBudget,
+   195→      spreadBps, skew, now,
+   196→      bestBid: book?.bestBid ?? null, bestAsk: book?.bestAsk ?? null,
+   197→      feedAnchor: obs.feed > 0 ? obs.feed : null,
+   198→      flowTranchePct: flowCfg.tranchePct ?? 0.2,
+   199→      flowSpacingBps: flowCfg.spacingBps ?? 15,
+   200→      flowLevels: flowCfg.levels ?? 4,
+   201→      /* T-19 REQUOTE LAW: the flow layer re-places its OWN reserved tranche
+   202→       * every cycle (its previous levels get cancelled in the same execute) —
+   203→       * fixed 12% of inventory, independent of the 60% residual law. */
+   204→      flowAskBudgetSteem: (flowCfg.fixedSteemPct ?? 0.12) * Math.max(0, inv.steem ?? 0),
+   205→      flowBidBudgetSbd: (flowCfg.fixedSbdPct ?? 0.12) * Math.max(0, (inv.sbd ?? 0) - 0.5),
+   206→    });
+   207→    /* T-19 MARKET PULSE — the network measured, 30-min cadence, fail-isolated.
+   208→     * The whole market does ~49 fills/24h (measured): this number is the
+   209→     * honest ceiling of any capture strategy on this venue, and the cockpit
+   210→     * must show it instead of a promise. */
+   211→    let pulse = null;
+   212→    const pulsePrev = readJson(path.join(STATE, "market.json"), null);
+   213→    const pulseAge = pulsePrev?.at ? Date.now() - Date.parse(pulsePrev.at) : Infinity;
+   214→    if (pulseAge > 30 * 60_000) {
+   215→      try { pulse = await marketPulse({}); writeJson(path.join(STATE, "market.json"), pulse); }
+   216→      catch { pulse = pulsePrev; }
+   217→    } else pulse = pulsePrev;
+   218→    const offer = {
+   219→      verdict: plan.verdict, parityBps: obs.band?.bps ?? null,
+   220→      blocker: plan.blocker, plan: { asks: plan.asks, bids: plan.bids, flowAsks: plan.flowAsks ?? [], flowBids: plan.flowBids ?? [] },
+   221→      flow: plan.flow ?? null,
+   222→      book,
+   223→      market: pulse,
+   224→      marks: { paritySbdPerSteem: Math.round(obs.parity.parity * 1e6) / 1e6, source: obs.parity.source, lowConfidence: !!obs.parity.lowConfidence, internalFeed: Math.round(obs.feed * 1e6) / 1e6, dragK: plan.dragK, floor: plan.floor, ceiling: plan.ceiling, spreadBpsFed: spreadBps },
+   225→      skew, stale: { count: staleCls.stale.length, orderids: staleCls.stale.map((o) => o.orderid) },
+   226→      liquidity: { deployedAsks: Math.round(deployedAsks * 1e3) / 1e3, deployedBids: Math.round(deployedBids * 1e3) / 1e3, askBudget: Math.round(askBudget * 1e3) / 1e3, bidBudget: Math.round(bidBudget * 1e3) / 1e3, deployCap: 0.6 },
+   227→      publishedAt: now,
+   228→    };
+   229→    if (persist) {
+   230→      writeJson(path.join(STATE, "offer.json"), offer);
+   231→      appendLine(path.join(STATE, "events.jsonl"), { type: "offer.published", at: now, verdict: plan.verdict, asks: plan.asks.length, bids: plan.bids.length, flowAsks: plan.flowAsks?.length ?? 0, flowBids: plan.flowBids?.length ?? 0, bestAsk: book?.bestAsk ?? null, bestBid: book?.bestBid ?? null });
+   232→    }
+   233→    return { verdict: plan.verdict, asks: plan.asks.length, bids: plan.bids.length, flowAsks: plan.flowAsks?.length ?? 0, flowBids: plan.flowBids?.length ?? 0, staleCount: staleCls.stale.length, skew: skew.skew, book, market: pulse ? { tradesPerDay: pulse.tradesPerDay, spreadBps: pulse.book?.spreadBps ?? null } : null, liquidity: offer.liquidity };
+   234→  });
+   235→
+   236→  /* 5 · convert-plan: D-023 PSM hysteresis (SBD face-$1 edge) */
+   237→  report.steps.convert = await stepWrap("convert", async () => {
+   238→    const prev = readJson(path.join(STATE, "convert-state.json"), { armed: false, pendingSbd: 0 });
+   239→    const inv = obs.ok ? (obs.inventory ?? { sbd: 0 }) : { sbd: 0 };
+   240→    const marketSbdUsd = obs.ok ? (obs.sbdUsd ?? 0) : 0;
+   241→    const plan = planConvert({
+   242→      liquidSbd: inv.sbd ?? 0, parity: obs.ok ? obs.parity.parity : 0,
+   243→      marketSbdUsd, previouslyArmed: !!prev.armed, pendingSbd: prev.pendingSbd ?? 0,
+   244→    });
+   245→    const impliedSbdUsd = obs.ok && (obs.steemUsd ?? 0) > 0 && obs.feed > 0
+   246→      ? Math.round((obs.steemUsd / obs.feed) * 1e6) / 1e6 : null;
+   247→    const out = { ...plan, marketSbdUsd: Math.round(marketSbdUsd * 1e6) / 1e6, impliedSbdUsd, marketSourceNote: marketSbdUsd > 0 ? "external-measured" : "no-external-SBD-market (delisted binance/poloniex/upbit/mexc) — HOLD is honest", at: now };
+   248→    if (persist) {
+   249→      writeJson(path.join(STATE, "convert-plan.json"), out);
+   250→      writeJson(path.join(STATE, "convert-state.json"), { armed: plan.verdict === "CONVERT-PLAN", pendingSbd: prev.pendingSbd ?? 0 });
+   251→      appendLine(path.join(STATE, "events.jsonl"), { type: "convert.planned", at: now, verdict: plan.verdict, edgeBps: plan.edgeBps, amountSbd: plan.amountSbd });
+   252→    }
+   253→    return { verdict: plan.verdict, amountSbd: plan.amountSbd, edgeBps: plan.edgeBps, marketSbdUsd: out.marketSbdUsd, impliedSbdUsd: out.impliedSbdUsd, marketSourceNote: out.marketSourceNote };
+   254→  });
+   255→
+   256→  /* join the parallel curate branch here (it never gates the front chain) */
+   257→  report.steps.curate = await curateP;
+   258→
+   259→  /* 6 · execute (SIGNING — the X-1 rail, engine-held, doctrine-capped).
+   260→   * T-16 CRED GATE FIRST: when the credential is missing this step used to
+   261→   * burn ~1.7s of accountState reads before executeOps discovered the typed
+   262→   * absence — 144 cycles/day of doomed network work. Fail fast (same typed
+   263→   * error the classifier expects), zero network. */
+   264→  report.steps.execute = await stepWrap("execute", async () => {
+   265→    const conf = armedConf();
+   266→    if (!conf.armed) return { verdict: "DISARMED", reason: "standing-order-off" };
+   267→    if (execPaused()) return { verdict: "OPERATOR-PAUSED", reason: "kill-switch" };
+   268→    loadCredential(); // typed CREDENTIAL-MISSING here — before ANY network read
+   269→
+   270→    /* T-19 OPS BUDGET (the honest cost of activity): every order op costs RC
+   271→     * and presence — the doctrine now JOURNALS its own throughput. A day cap
+   272→     * keeps the churn bounded while the cockpit shows the meter. */
+   273→    const OPS_FILE = path.join(STATE, "order-ops.json");
+   274→    const opsDay = readJson(OPS_FILE, { day: null, opsToday: 0, lastRcPct: null });
+   275→    const today = now.slice(0, 10);
+   276→    if (opsDay.day !== today) { opsDay.day = today; opsDay.opsToday = 0; }
+   277→    const opsDayCap = conf.opsDayCap ?? 1500;
+   278→    const maxOpsPerCycle = conf.maxOpsPerCycle ?? 44;
+   279→
+   280→    /* T-19 OURS-TRACKING (the self-competition guard, measured live): the
+   281→     * account's open orders include the SECOND SIGNER's orders — cancelling
+   282→     * "stale" ones blindly would cancel a co-signer's book and start a
+   283→     * churn-war on our own account. Only orders THIS engine created are
+   284→     * ever cancel candidates. */
+   285→    const OURS_FILE = path.join(STATE, "our-orders.json");
+   286→    const ours = readJson(OURS_FILE, { orderids: [] });
+   287→    const oursSet = new Set((ours.orderids ?? []).map((o) => (typeof o === "object" ? o.id : o)));
+   288→    const offer = readJson(path.join(STATE, "offer.json"), null);
+   289→    const staleIds = (offer?.stale?.orderids ?? []).filter((id) => oursSet.has(id));
+   290→    /* T-19 REQUOTE: our previous flow-tranche levels are CANCELLED this cycle
+   291→     * and re-created at the new front (the mobile layer replaces itself —
+   292→     * never additive, never touching the value tranche or the second
+   293→     * signer's orders). */
+   294→    const prevFlowIds = (ours.orderids ?? []).filter((o) => typeof o === "object" && o.tranche === "flow").map((o) => o.id);
+   295→    const flowRequoteIds = prevFlowIds.filter((id) => !staleIds.includes(id));
+   296→
+   297→    const ops = [];
+   298→    // (a) stale repricing — cancel ONLY our own law-violating orders (D-021, cap 5→12: measured stale pile of 13)
+   299→    for (const id of staleIds.slice(0, 12)) {
+   300→      ops.push(["limit_order_cancel", { owner: ACCOUNT, orderid: id }]);
+   301→    }
+   302→    // (a2) T-19 flow requote — cancel our previous flow levels (mobile layer), cap 12
+   303→    for (const id of flowRequoteIds.slice(0, 12)) {
+   304→      ops.push(["limit_order_cancel", { owner: ACCOUNT, orderid: id }]);
+   305→    }
+   306→    // (b) fresh ladder from LIVE liquid, intel-capped (per-op CLAMPED to caps —
+   307→    // a cap must shrink an order, never silently skip the whole ladder side)
+   308→    let createdIds = [];
+   309→    if (offer?.plan) {
+   310→      const acc = await accountState(ACCOUNT);
+   311→      const liquidSteem = Math.max(0, acc.ok ? acc.steem ?? 0 : 0);
+   312→      const convAmt = report.steps.convert?.verdict === "CONVERT-PLAN" ? (report.steps.convert.amountSbd ?? 0) : 0;
+   313→      const bidCap = Math.max(0, (acc.ok ? acc.sbd ?? 0 : 0) - convAmt - (conf.bidReserveSbd ?? 0.5));
+   314→      let askSum = 0, bidSum = 0;
+   315→      const tSec = Math.floor(Date.now() / 1000);
+   316→      const pushLadder = (levels, kind) => {
+   317→        for (const lvl of levels ?? []) {
+   318→          if (ops.length >= maxOpsPerCycle) break;
+   319→          if (kind === "ask") {
+   320→            const amt = Math.min(lvl.amountSteem, Math.max(0, (conf.maxAskSteemPerCycle ?? 200) - askSum), Math.max(0, liquidSteem - askSum));
+   321→            if (amt < 0.001) break;
+   322→            const id = (tSec + ops.length) >>> 0;
+   323→            /* T-19: flow levels carry sbdOut3 — the EXACT 3dp SBD out computed
+   324→             * at plan time; value levels fall back to multiply-and-round. */
+   325→            const sOut = lvl.sbdOut3 != null ? lvl.sbdOut3 : amt * lvl.unit;
+   326→            ops.push(["limit_order_create", { owner: ACCOUNT, orderid: id, amount_to_sell: `${amt.toFixed(3)} STEEM`, min_to_receive: `${sOut.toFixed(3)} SBD`, fill_or_kill: false, expiration: tSec + 86400 }]);
+   327→            createdIds.push({ id, side: "ask", unit: lvl.unit, tranche: lvl.tranche ?? "value", at: now });
+   328→            askSum = Math.round((askSum + amt) * 1e6) / 1e6;
+   329→          } else {
+   330→            const amt = Math.min(lvl.amountSbd, Math.max(0, bidCap - bidSum), Math.max(0, (conf.maxBidSbdPerCycle ?? 20) - bidSum));
+   331→            if (amt < 0.001) break;
+   332→            const id = (tSec + ops.length) >>> 0;
+   333→            const stOut = lvl.steemOut3 != null ? lvl.steemOut3 : amt / lvl.unit;
+   334→            ops.push(["limit_order_create", { owner: ACCOUNT, orderid: id, amount_to_sell: `${amt.toFixed(3)} SBD`, min_to_receive: `${stOut.toFixed(3)} STEEM`, fill_or_kill: false, expiration: tSec + 86400 }]);
+   335→            createdIds.push({ id, side: "bid", unit: lvl.unit, tranche: lvl.tranche ?? "value", at: now });
+   336→            bidSum = Math.round((bidSum + amt) * 1e6) / 1e6;
+   337→          }
+   338→        }
+   339→      };
+   340→      pushLadder(offer.plan.asks, "ask");
+   341→      pushLadder(offer.plan.bids, "bid");
+   342→      pushLadder(offer.plan.flowAsks, "ask");   // T-19 flow tranche — AT-the-front presence
+   343→      pushLadder(offer.plan.flowBids, "bid");
+   344→    }
+   345→    // (c) claim pending rewards — free fuel, never left on the table
+   346→    const rewDec = intelOut?.decisions?.find((d) => d.kind === "rewards" && d.decision === "claim");
+   347→    if (rewDec?.action?.any) {
+   348→      ops.push(["claim_reward_balance", {
+   349→        account: ACCOUNT,
+   350→        reward_steem: `${(rewDec.action.steem ?? 0).toFixed(3)} STEEM`,
+   351→        reward_sbd: `${(rewDec.action.sbd ?? 0).toFixed(3)} SBD`,
+   352→        reward_vests: `${(rewDec.action.vests ?? 0).toFixed(6)} VESTS`,
+   353→      }]);
+   354→    }
+   355→    // (d) convert execution (3.5d face-$1 rail) when MEASURED edge arms it
+   356→    if (convAmtExec(report.steps.convert)) {
+   357→      const c = report.steps.convert;
+   358→      ops.push(["convert", { owner: ACCOUNT, amount: `${c.amountSbd.toFixed(3)} SBD`, requestid: (Math.floor(Date.now() / 1000) & 0x7fffffff) }]);
+   359→    }
+   360→    /* T-19: the ops DAY-CAP is a LAW — past it the machine journals honestly
+   361→     * instead of churning (RC is a shared budget: votes, orders, soldiers). */
+   362→    if (ops.length && opsDay.opsToday + ops.length > opsDayCap) {
+   363→      writeJson(OPS_FILE, { ...opsDay, lastRcPct: null });
+   364→      return { verdict: "OPS-DAY-CAP", opsToday: opsDay.opsToday, opsDayCap, staged: ops.length };
+   365→    }
+   366→    if (!ops.length) return { verdict: "NO-OPS", ops: 0, opsToday: opsDay.opsToday, opsDayCap };
+   367→    const res = await executeOps(ops, { tag: "cycle-execute" });
+   368→    /* T-19 bookkeeping: track OUR created orderids (the second signer's
+   369→     * orders on this account must never be our cancel candidates) + meter
+   370→     * the ops throughput + RC trend — measured, not assumed. */
+   371→    if (res.ok ?? res.verdict === "BROADCAST") {
+   372→      const cancelled = new Set([...staleIds, ...flowRequoteIds]);
+   373→      const cut = (ours.orderids ?? []).filter((o) => !cancelled.has(typeof o === "object" ? o.id : o));
+   374→      writeJson(OURS_FILE, { orderids: [...cut, ...createdIds].slice(-200) });
+   375→      let rcPct = null;
+   376→      try { const acc2 = await accountState(ACCOUNT); rcPct = acc2.ok ? acc2.rcPct ?? null : null; } catch { /* honest null */ }
+   377→      writeJson(OPS_FILE, { day: today, opsToday: opsDay.opsToday + ops.length, lastRcPct: rcPct, opsDayCap });
+   378→    }
+   379→
+   380→    // (e) promotion rail — one honest public report per day (posting key)
+   381→    let promo = null;
+   382→    if (conf.promo?.armed && obs.ok) {
+   383→      try { promo = await postDailyReport({ obs, rollup: report.steps.report?.rollup ?? null, intel: intelOut, now }); }
+   384→      catch (e) { promo = { verdict: "PROMO-ERROR", error: String(e?.message ?? e).slice(0, 120) }; }
+   385→    }
+   386→    return { verdict: res.verdict, txid: res.txid ?? null, ops: ops.length, opNames: res.opNames ?? ops.map(([n]) => n), node: res.node ?? null, error: res.error ?? null, promo, opsToday: opsDay.opsToday + ops.length, opsDayCap, cancels: staleIds.length, created: createdIds.length };
+   387→  });
+   388→
+   389→  /* 7 · soldiers: deploy once, top-up as liquidity returns, grid every cycle.
+   390→   * T-16 CRED GATE FIRST (same measured rot as execute — 4.7s of doomed
+   391→   * accountState reads per cycle while blocked). */
+   392→  report.steps.soldiers = await stepWrap("soldiers", async () => {
+   393→    const conf = armedConf();
+   394→    if (!conf.armed || execPaused()) return { verdict: "DISARMED-OR-PAUSED" };
+   395→    if (!conf.soldiers?.enabled) return { verdict: "DISABLED" };
+   396→    loadCredential(); // typed CREDENTIAL-MISSING here — before ANY network read
+   397→    const st = soldiersState();
+   398→    let deploy = null, topups = [];
+   399→    if (!st.deployed) deploy = await deploySoldiers();
+   400→    // top-up rail: soldiers funded with dust (master float was committed to
+   401→    // asks at deploy time) get topped up when the master's liquid rebuilds
+   402→    const acc = await accountState(ACCOUNT);
+   403→    const masterLiquid = Math.max(0, acc.ok ? acc.steem ?? 0 : 0);
+   404→    for (const rec of (st.deployed ? st.accounts : [])) {
+   405→      if (topups.length >= 1) break; // max 1 top-up/cycle (doctrine cap)
+   406→      const sAcc = await accountState(rec.name);
+   407→      if ((sAcc.steem ?? 0) < 1 && masterLiquid - topups.length * 12 > 40) {
+   408→        const res = await executeAs(ACCOUNT, [["transfer", { from: ACCOUNT, to: rec.name, amount: "10.000 STEEM", memo: "grid soldier top-up" }]], { tag: "soldier-topup" });
+   409→        topups.push({ name: rec.name, verdict: res.verdict, txid: res.txid ?? null, error: res.error ?? null });
+   410→      }
+   411→    }
+   412→    const parity = obs.ok ? obs.parity.parity : 0;
+   413→    /* T-19: soldiers join the FLOW TRANCHE — the live book edges + chain
+   414→     * anchor passed through so their small ladders sit AT the market front
+   415→     * (never below the witness feed, never crossing the master's ladder). */
+   416→    const pegOffer = readJson(path.join(STATE, "offer.json"), null);
+   417→    const grids = await runSoldierGrids({
+   418→      parity, spreadBps: intelOut?.spreadBpsRec ?? 0, now,
+   419→      bestBid: pegOffer?.book?.bestBid ?? null, bestAsk: pegOffer?.book?.bestAsk ?? null,
+   420→      feedAnchor: obs.ok && obs.feed > 0 ? obs.feed : null,
+   421→    });
+   422→    const verdict = deploy && !deploy.ok ? `DEPLOY-${deploy.verdict}` : grids.verdict;
+   423→    return {
+   424→      verdict, deploy: deploy ? { verdict: deploy.verdict, txid: deploy.txid ?? null, error: deploy.error ?? null } : null,
+   425→      topups, grids: grids.soldiers ?? [],
+   426→    };
+   427→  });
+   428→
+   429→  /* 9 · learn (T-14): ingest recorded history → lessons → bounded tunings.
+   430→   *   learning is cheap (local files only) — every cycle; discovery (network
+   431→   *   reads) is cadence-gated internally at 30min. Fail-isolated like all
+   432→   *   steps; never blocks execution — learning shapes the NEXT cycle. */
+   433→  report.steps.learn = await stepWrap("learn", async () => {
+   434→    const learning = await runLearning({ now });
+   435→    const discovery = await runDiscovery({ now });
+   436→    return {
+   437→      verdict: learning.verdict,
+   438→      lessons: learning.lessons.map((l) => l.id),
+   439→      tunings: learning.tuningsApplied,
+   440→      discoveryVerdict: discovery.verdict,
+   441→      topOpportunities: discovery.opportunities?.slice(0, 3).map((o) => `${o.id}(${o.potentialClass})`) ?? [],
+   442→    };
+   443→  });
+   444→
+   445→  /* 10 · report: profitability rollup */
+   446→  report.steps.report = await stepWrap("report", async () => {
+   447→    const pnl = obs.ok ? obs.pnl : null;
+   448→    const fuelUsd = obs.ok ? obs.fuel?.fuelUsdPerDay ?? null : null;
+   449→    const authorUsd = obs.ok ? obs.fuel?.authorUsdPerDay ?? null : null;
+   450→    const rollup = {
+   451→      realizedSbd: pnl?.realizedSbd ?? null,
+   452→      positionSteem: pnl?.positionSteem ?? null,
+   453→      positionAvgCost: pnl?.positionAvgCost ?? null,
+   454→      unbasedSteem: pnl?.unbasedSteem ?? null,
+   455→      deployedSteem: obs.ok && obs.ordersOk
+   456→        ? (obs.orders ?? []).filter((o) => o.side === "ask").reduce((s, o) => s + Number(o.base.split(" ")[0] || 0), 0)
+   457→        : null,
+   458→      fuelUsdPerDay: fuelUsd, authorUsdPerDay: authorUsd,
+   459→      measuredTotalUsdPerDay: Math.round(((fuelUsd ?? 0) + (authorUsd ?? 0)) * 1e4) / 1e4,
+   460→      honesty: "unbased ≠ profit · signing doctrine-capped · all numbers measured this cycle",
+   461→    };
+   462→    report.rollup = rollup;
+   463→    return rollup;
+   464→  });
+   465→
+   466→  /* T-16 truth taxonomy: ok | blocked (ONLY cred-gated failures — lawful) |
+   467→   * fail (any real malfunction). `ok` stays strict all-steps-green; the new
+   468→   * health field stops the 11/35 "fail" lie-by-composition from polluting
+   469→   * the sovereign counters, the learning metrics, and the cockpit. */
+   470→  report.ok = Object.values(report.steps).every((s) => s.ok !== false);
+   471→  report.health = cycleHealth(report.steps);
+   472→  report.failures = cycleFailureBreakdown(report.steps);
+   473→  report.finishedAt = new Date().toISOString();
+   474→  if (persist) writeJson(path.join(STATE, "daily-report.json"), report);
+   475→  return report;
+   476→  } finally {
+   477→    /* the marker ALWAYS closes — even on a thrown error mid-body (the
+   478→     * thrown error still propagates to the caller; the marker says fail) */
+   479→    cycleInFlight = false;
+   480→    cycleInFlightSince = null;
+   481→    writeJson(markerFile, {
+   482→      running: false,
+   483→      startedAt: now,
+   484→      finishedAt: new Date().toISOString(),
+   485→      ms: Date.now() - cycleT0,
+   486→      health: report.health ?? "fail",
+   487→      ok: report.ok ?? false,
+   488→      steps: Object.fromEntries(Object.entries(report.steps ?? {}).map(([k, v]) => [k, v?.ok === true])),
+   489→      blockedSteps: report.failures?.blockedSteps ?? null,
+   490→      failedSteps: report.failures?.failedSteps ?? null,
+   491→      error: report.error ?? null,
+   492→    });
+   493→  }
+   494→}
+   495→
+   496→function convAmtExec(convertStep) {
+   497→  return convertStep?.verdict === "CONVERT-PLAN" && (convertStep.amountSbd ?? 0) >= 1;
+   498→}
+   499→
+   500→/* CLI: bun daily.mjs */
+   501→if (import.meta.url === `file://${process.argv[1]}`) {
+   502→  runCycle().then((r) => {
+   503→    console.log(JSON.stringify({ ok: r.ok, steps: Object.fromEntries(Object.entries(r.steps).map(([k, v]) => [k, v.verdict ?? (v.ok ? "ok" : "fail")])), rollup: r.rollup }, null, 2));
+   504→  }).catch((e) => { console.error("CYCLE-FAIL", e); process.exit(1); });
+   505→}
+   506→

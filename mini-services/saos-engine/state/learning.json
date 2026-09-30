@@ -1,23 +1,23 @@
 {
-  "at": "2026-09-30T18:44:17.206Z",
+  "at": "2026-09-30T19:34:17.206Z",
   "enabled": true,
-  "runsTotal": 59,
+  "runsTotal": 64,
   "verdict": "LEARNED",
   "metrics": {
     "cycles": {
-      "window": 50,
-      "oks": 31,
-      "fails": 19,
+      "window": 55,
+      "oks": 35,
+      "fails": 20,
       "blocked": 0,
-      "okRate": 62,
+      "okRate": 63.6,
       "blockedRate": 0,
       "failReasons": {
         "conn": 3,
         "none": 15,
-        "unknown": 1
+        "unknown": 2
       },
-      "msP50": 10098,
-      "msP90": 23051
+      "msP50": 10593,
+      "msP90": 21288
     },
     "curator": {
       "present": true,
@@ -34,17 +34,17 @@
       "maxPerDay": 18
     },
     "exec": {
-      "window": 17,
+      "window": 1,
       "fails": 0,
       "lastError": null
     },
     "watchdog": {
-      "checks": 480,
+      "checks": 530,
       "downs": 10,
       "heals": 22,
       "healVerified": 21,
       "healFailed": 0,
-      "lastCheckAt": "2026-09-30T18:44:17.246Z",
+      "lastCheckAt": "2026-09-30T19:34:17.279Z",
       "engineUp": true,
       "lastSpawnAt": "2026-09-30T18:43:17.269Z"
     }
@@ -53,7 +53,7 @@
     {
       "id": "cycle-conn-fails",
       "severity": "high",
-      "evidence": "cycles 31/50 ok · conn-fails 3 (connection-level)",
+      "evidence": "cycles 35/55 ok · conn-fails 3 (connection-level)",
       "lesson": "connection-level cycle kills waste 10-minute sovereignty slots",
       "action": "FIXED T-14: engine idleTimeout 255 + sovereign one-shot conn-retry with heal-gate"
     },
@@ -68,8 +68,8 @@
   "tunings": {},
   "tuningsApplied": [],
   "lessonsTotal": {
-    "cycle-conn-fails": 59,
-    "unclassified-fail-legacy": 10
+    "cycle-conn-fails": 64,
+    "unclassified-fail-legacy": 15
   },
   "honesty": "learning reads recorded history only · tunings hard-clamped (LEARN_CLAMP) · doctrine laws untouchable"
 }

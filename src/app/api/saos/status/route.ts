@@ -25,6 +25,8 @@ const PATHS = {
   execLog: `${ENGINE}/state/exec-log.jsonl`,
   learning: `${ENGINE}/state/learning.json`,
   discovery: `${ENGINE}/state/discovery.json`,
+  hyperGrid: `${ENGINE}/state/hyper-grid.json`,
+  hyperOps: `${ENGINE}/state/hyper-ops.json`,
 };
 const ENGINE_HTTP = "http://127.0.0.1:3040";
 const CACHE_TTL_MS = 45_000;
@@ -230,7 +232,7 @@ export async function GET() {
   if (cache && Date.now() - cache.at < CACHE_TTL_MS) {
     return NextResponse.json(cache.data);
   }
-  const [state, offer, observe, dailyReport, convertPlan, eventsTail, soldiers, curator, intel, execLogTail, ordersRaw, rcRaw, accRaw, fills, eng, execHttp, learning, discovery, fleetHttp] = await Promise.all([
+  const [state, offer, observe, dailyReport, convertPlan, eventsTail, soldiers, curator, intel, execLogTail, ordersRaw, rcRaw, accRaw, fills, eng, execHttp, learning, discovery, fleetHttp, hyperGrid, hyperOps] = await Promise.all([
     readJsonSafe(PATHS.state),
     readJsonSafe(PATHS.offer),
     readJsonSafe(PATHS.observe),
@@ -250,6 +252,8 @@ export async function GET() {
     readJsonSafe(PATHS.learning),
     readJsonSafe(PATHS.discovery),
     engineFleet(),
+    readJsonSafe(PATHS.hyperGrid),
+    readJsonSafe(PATHS.hyperOps),
   ]);
 
   const orders = (ordersRaw ?? []).map((o) => {
@@ -416,6 +420,23 @@ export async function GET() {
    * + ESTIMATED steem — engine-side spoilagePublic, honest classes) */
   const spoilage = (fleetHttp as any)?.spoilage ?? null;
 
+  /* T-19b HYPER-GRID: the volume layer — live meter, day counter, measured
+   * economics, chain-tail verification. State files = engine's own writes. */
+  const hyper = (hyperGrid as any) ? {
+    running: (hyperGrid as any)?.running ?? null,
+    lastVerdict: (hyperGrid as any)?.lastVerdict ?? null,
+    lastVerdictAt: (hyperGrid as any)?.lastVerdictAt ?? null,
+    lastTickAt: (hyperGrid as any)?.lastTickAt ?? null,
+    ticks: (hyperGrid as any)?.ticks ?? null,
+    rcPct: (hyperGrid as any)?.rcPct ?? null,
+    liveHyper: (hyperGrid as any)?.liveHyper ?? null,
+    label: (hyperGrid as any)?.label ?? null,
+    lastTxid: (hyperGrid as any)?.lastTxid ?? null,
+    governor: (hyperGrid as any)?.governor ?? null,
+    economics: (hyperGrid as any)?.economics ?? null,
+    ops: (hyperOps as any) ?? null,
+  } : null;
+
   const data = {
     ok: true,
     asof: new Date().toISOString(),
@@ -439,6 +460,7 @@ export async function GET() {
     fleet: fleetData,
     credential: credData,
     spoilage,
+    hyper,
     sources: { kind: "sovereign-local", paths: PATHS, engineHttp: ENGINE_HTTP },
     notes: [
       "אמת-מוטבעת-על-שרשרת בלבד — real.fills נמדד מ-fill_order חי",
