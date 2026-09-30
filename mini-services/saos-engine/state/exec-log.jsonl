@@ -37,3 +37,5 @@
 {"at":"2026-09-30T15:31:00.155Z","tag":"cred-missing","verdict":"SIGNING-DEAD","keyFile":"/home/z/my-project/.secrets/headcorner.key","revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}
 {"at":"2026-09-30T15:31:17.290Z","tag":"cred-missing","verdict":"SIGNING-DEAD","keyFile":"/home/z/my-project/.secrets/headcorner.key","revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}
 {"at":"2026-09-30T15:31:58.291Z","tag":"cred-missing","verdict":"SIGNING-DEAD","keyFile":"/home/z/my-project/.secrets/headcorner.key","revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}
+{"at":"2026-09-30T16:32:02.847Z","tag":"cred-missing","verdict":"SIGNING-DEAD","keyFile":"/home/z/my-project/.secrets/headcorner.key","revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}
+{"at":"2026-09-30T16:35:28.859Z","tag":"credential-adopted","source":"cockpit-paste","account":"headcorner","fingerprint":"163be485"}

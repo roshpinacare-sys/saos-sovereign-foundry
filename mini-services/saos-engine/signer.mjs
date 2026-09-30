@@ -18,6 +18,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { rpcCall, accountState } from "./measure.mjs";
 import { SEED_ORDERS, wifFor, derivePub, buildTx, fingerprint } from "./steemtx.mjs";
+import { validateCredentialText, vpSpoilage } from "./lib.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const SECRETS = path.join(DIR, "..", "..", ".secrets");
@@ -53,6 +54,18 @@ export function syncCredential() {
       mem.master = null;
       return true;
     }
+    if (!fs.existsSync(KEY_FILE)) {
+      // T-16: the credential was REMOVED while identities may be cached — a
+      // stale verified:false (or worse, verified wifs) must never outlive the
+      // credential it was derived from. Wipe so the next verifyRoles hits
+      // loadCredential → typed CREDENTIAL-MISSING → the honest alarm state.
+      if (Object.keys(mem.identities).length || mem.master) {
+        for (const k of Object.keys(mem.identities)) delete mem.identities[k];
+        mem.master = null;
+        mem.keyFileFp = null;
+      }
+      return false;
+    }
     // also: same-file content change detection (sha256 fingerprint)
     const fp = fingerprint(fs.readFileSync(KEY_FILE, "utf8"));
     if (mem.keyFileFp && mem.keyFileFp !== fp) {
@@ -66,6 +79,37 @@ export function syncCredential() {
 
 /* in-memory only — never serialized anywhere. One identity per account. */
 const mem = { identities: {}, master: null, keyFileFp: null }; // account → { password, wifs:{role:wif}, matchedOrder, verified }
+
+/**
+ * T-16 · paste-revival (the fastest operator path — measured 2026-09-30: the
+ * file-drop revival waited ~1 day with zero action; friction kills revival).
+ * Validates the text (pure half in lib.mjs), secures it (0600, .secrets/),
+ * invalidates every cached identity, journals ONLY the fingerprint (the
+ * secret itself is never logged/returned). The caller (engine route) then
+ * runs verifyRoles for instant on-chain truth before answering.
+ */
+export function adoptCredentialText(text, { source = "paste" } = {}) {
+  const v = validateCredentialText(text);
+  if (!v.ok) return { ok: false, reason: v.reason };
+  // same normalized split as the validator — the secret stays inside this scope
+  const fields = String(text ?? "").trim().split(/[\s:=]+/).filter(Boolean);
+  const secret = fields.slice(1).join(" ");
+  try {
+    fs.mkdirSync(SECRETS, { recursive: true });
+    fs.writeFileSync(KEY_FILE, `${v.account} ${secret}\n`, { mode: 0o600 });
+    fs.chmodSync(KEY_FILE, 0o600);
+    const fp = fingerprint(secret);
+    appendLine(LOG_FILE, { at: new Date().toISOString(), tag: "credential-adopted", source, account: v.account, fingerprint: fp });
+    // credential changed → invalidate every cached identity (memory only)
+    for (const k of Object.keys(mem.identities)) delete mem.identities[k];
+    mem.master = null;
+    mem.keyFileFp = null;
+    appendLine(path.join(STATE, "events.jsonl"), { type: "cred.adopted", at: new Date().toISOString(), source, account: v.account, fingerprint: fp, verdict: "ADOPTED" });
+    return { ok: true, account: v.account, fingerprint: fp };
+  } catch (e) {
+    return { ok: false, reason: String(e?.message ?? e).slice(0, 120) };
+  }
+}
 
 /* ── T-15 credential-truth (loud, honest, journaled once/hour — no spam) ────
  * The cold-reset lesson: a dead signing layer must SCREAM, not rot. This
@@ -100,6 +144,24 @@ export function credentialState() {
     agentsAffected: present ? [] : ["curate", "execute", "soldiers", "promo"],
     revival: present ? null : "drop the CURRENT master-password file as upload/headcorner.txt → engine secures+adopts automatically (0600, upload copy removed, zero restart)",
   };
+}
+
+/**
+ * T-16 · VP-spoilage — the visible price of the blocked signing rail.
+ * Measured: days blocked × doctrine vote quota foregone. Estimated: STEEM
+ * from discovery's PUBLIC reward-fund math (never claimed as measured).
+ * Earliest of the two clocks wins — sovereign's boot-time firstDownAt can be
+ * YOUNGER than the real absence; the cred-alarm file knows the true start.
+ */
+export function spoilagePublic(now = new Date().toISOString()) {
+  const sov = readJson(path.join(STATE, "sovereign.json"), null);
+  const alarm = readJson(CRED_ALARM_FILE, { missingSince: null });
+  const disc = readJson(path.join(STATE, "discovery.json"), null);
+  const conf = armedConf();
+  const firstDown = [sov?.cred?.firstDownAt, alarm?.missingSince].filter(Boolean).sort()[0] ?? null;
+  const est = (disc?.opportunities ?? []).find((o) => o.id === "curation-share")?.potential ?? null;
+  const s = vpSpoilage({ firstDownAt: firstDown, now, maxPerDay: conf.curate?.maxPerDay ?? 0, estSteemPerDay: est });
+  return { ...s, note: est != null ? "STEEM part is ESTIMATED (public reward-fund math) · days/votes are measured" : "days/votes measured; no discovery estimate available yet" };
 }
 
 export function defaultArmedConf() {

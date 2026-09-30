@@ -1,66 +1,65 @@
 {
   "verdict": "OFFER-READY",
-  "parityBps": 0,
+  "parityBps": 419,
   "blocker": null,
   "plan": {
     "asks": [
       {
         "side": "ask",
-        "amountSteem": 141.981101,
-        "unit": 0.104311,
-        "at": "2026-09-30T15:40:39.818Z"
+        "amountSteem": 118.123935,
+        "unit": 0.108684,
+        "at": "2026-09-30T16:39:38.272Z"
       },
       {
         "side": "ask",
-        "amountSteem": 141.981101,
-        "unit": 0.104416,
-        "at": "2026-09-30T15:40:39.818Z"
+        "amountSteem": 118.123935,
+        "unit": 0.108793,
+        "at": "2026-09-30T16:39:38.272Z"
       },
       {
         "side": "ask",
-        "amountSteem": 141.981101,
-        "unit": 0.104521,
-        "at": "2026-09-30T15:40:39.818Z"
+        "amountSteem": 118.123935,
+        "unit": 0.108902,
+        "at": "2026-09-30T16:39:38.272Z"
       },
       {
         "side": "ask",
-        "amountSteem": 120.313497,
-        "unit": 0.104625,
-        "at": "2026-09-30T15:40:39.818Z"
+        "amountSteem": 100.106595,
+        "unit": 0.109012,
+        "at": "2026-09-30T16:39:38.272Z"
       }
     ],
     "bids": []
   },
   "marks": {
-    "paritySbdPerSteem": 0.104102,
-    "source": "internal-feed-fallback",
-    "lowConfidence": true,
+    "paritySbdPerSteem": 0.108466,
+    "source": "coingecko",
+    "lowConfidence": false,
     "internalFeed": 0.104102,
     "dragK": 1.002,
-    "floor": 0.104311,
-    "ceiling": 0.103893,
+    "floor": 0.108684,
+    "ceiling": 0.108249,
     "spreadBpsFed": 4
   },
   "skew": {
-    "skew": 0.299582,
-    "askMult": 1.299582,
-    "bidMult": 0.700418,
+    "skew": 0.299555,
+    "askMult": 1.299555,
+    "bidMult": 0.700445,
     "reason": "hummingbot-inventory-skew"
   },
   "stale": {
-    "count": 3,
+    "count": 2,
     "orderids": [
-      2026093001,
-      2026093002,
-      2026093003
+      2026093092,
+      2026093093
     ]
   },
   "liquidity": {
-    "deployedAsks": 0,
-    "deployedBids": 0.576,
-    "askBudget": 546.257,
+    "deployedAsks": 92.883,
+    "deployedBids": 0.384,
+    "askBudget": 454.478,
     "bidBudget": 0,
     "deployCap": 0.6
   },
-  "publishedAt": "2026-09-30T15:40:39.818Z"
+  "publishedAt": "2026-09-30T16:39:38.272Z"
 }

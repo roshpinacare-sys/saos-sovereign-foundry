@@ -38,8 +38,9 @@ type SovereignState = {
     lastCheckAt: string | null; engineUp: boolean; lastSpawnAt: string | null;
   };
   cycles: {
-    autoRuns: number; ok: number; fail: number;
-    lastAt: string | null; lastOk: boolean | null; lastMs: number | null; nextAt: string | null;
+    autoRuns: number; ok: number; fail: number; blocked: number;
+    lastAt: string | null; lastOk: boolean | null; lastHealth: "ok" | "blocked" | "fail" | null;
+    lastMs: number | null; nextAt: string | null;
   };
   selftest: { runs: number; lastAt: string | null; lastOk: boolean | null; passed: number | null; total: number | null };
   cred: {
@@ -249,17 +250,30 @@ async function runEngineCycle(core: Core, trigger: "auto" | "kick"): Promise<{ o
     }
     const ms = Date.now() - t0;
     const ok = Boolean(j?.ok);
+    /* T-16 truth taxonomy: the daily cycle now self-classifies its health.
+     * "blocked" = the ONLY failures are typed CREDENTIAL-MISSING — the machine
+     * is lawfully waiting for its operator's revival, NOT malfunctioning.
+     * Counting that as "fail" produced the 11/35 lie-by-composition
+     * (2026-09-30 measured) that poisoned ok-rate metrics and learning. */
+    const health: "ok" | "blocked" | "fail" =
+      j && typeof (j as { health?: unknown }).health === "string"
+        ? ((j as { health: string }).health === "blocked" ? "blocked" : (j as { health: string }).health === "fail" ? "fail" : "ok")
+        : ok ? "ok" : "fail";
     if (trigger === "auto") {
       core.state.cycles.autoRuns++;
-      if (ok) core.state.cycles.ok++; else core.state.cycles.fail++;
+      if (health === "ok") core.state.cycles.ok++;
+      else if (health === "blocked") core.state.cycles.blocked++;
+      else core.state.cycles.fail++;
       core.state.cycles.lastAt = nowIso();
-      core.state.cycles.lastOk = ok;
+      core.state.cycles.lastOk = health === "ok";
+      core.state.cycles.lastHealth = health;
       core.state.cycles.lastMs = ms;
       core.state.cycles.nextAt = new Date(Date.now() + CYCLE_MS).toISOString();
     }
-    appendEvent(core, ok ? `cycle-ok(${trigger})` : `cycle-fail(${trigger})`, {
+    appendEvent(core, health === "ok" ? `cycle-ok(${trigger})` : health === "blocked" ? `cycle-blocked(${trigger})` : `cycle-fail(${trigger})`, {
       ms, steps: j?.steps ? Object.keys(j.steps).length : 0,
       verdict: j?.steps && typeof j.steps === "object" ? (j.steps as Record<string, { verdict?: string }>).peg?.verdict ?? null : null,
+      blockedSteps: (j as { failures?: { blockedSteps?: string[] } } | null)?.failures?.blockedSteps ?? null,
     });
     writeJson(SOV_FILE, core.state);
     return { ok, steps: j?.steps, error: j?.error, ms };
@@ -329,7 +343,9 @@ export function ensureSovereign(by = "auto"): Core {
       },
       cycles: {
         autoRuns: prev?.cycles?.autoRuns ?? 0, ok: prev?.cycles?.ok ?? 0, fail: prev?.cycles?.fail ?? 0,
-        lastAt: prev?.cycles?.lastAt ?? null, lastOk: prev?.cycles?.lastOk ?? null, lastMs: prev?.cycles?.lastMs ?? null, nextAt: null,
+        blocked: prev?.cycles?.blocked ?? 0,
+        lastAt: prev?.cycles?.lastAt ?? null, lastOk: prev?.cycles?.lastOk ?? null,
+        lastHealth: prev?.cycles?.lastHealth ?? null, lastMs: prev?.cycles?.lastMs ?? null, nextAt: null,
       },
       selftest: {
         runs: prev?.selftest?.runs ?? 0, lastAt: prev?.selftest?.lastAt ?? null, lastOk: prev?.selftest?.lastOk ?? null,

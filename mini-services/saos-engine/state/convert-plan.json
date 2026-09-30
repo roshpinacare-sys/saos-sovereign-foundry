@@ -1,9 +1,10 @@
 {
   "verdict": "CONVERT-HOLD",
-  "reason": "no-market-price",
+  "reason": "dust-or-capped",
+  "edgeBps": 6605,
   "amountSbd": 0,
-  "marketSbdUsd": 0,
-  "impliedSbdUsd": 0.626886,
-  "marketSourceNote": "no-external-SBD-market (delisted binance/poloniex/upbit/mexc) — HOLD is honest",
-  "at": "2026-09-30T15:40:39.818Z"
+  "marketSbdUsd": 0.602214,
+  "impliedSbdUsd": 0.627463,
+  "marketSourceNote": "external-measured",
+  "at": "2026-09-30T16:39:38.272Z"
 }

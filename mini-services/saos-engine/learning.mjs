@@ -44,11 +44,16 @@ export function classifyCycleFailure(errorText) {
   return "unknown";
 }
 
-/** cycle events (sovereign-events.jsonl lines) → health metrics + fail histogram */
+/** cycle events (sovereign-events.jsonl lines) → health metrics + fail histogram.
+ * T-16 truth taxonomy: cycle-blocked (ONLY CREDENTIAL-MISSING steps — lawful
+ * wait for operator revival) is counted SEPARATELY from cycle-fail. Counting
+ * blocked as fail produced the 68.6% "ok-rate" lie-by-composition measured
+ * 2026-09-30 while every real step was green. */
 export function analyzeCycles(cycleEvents) {
-  const evs = (cycleEvents ?? []).filter((e) => /cycle-(ok|fail|error)\(auto\)/.test(String(e?.kind ?? "")));
+  const evs = (cycleEvents ?? []).filter((e) => /cycle-(ok|fail|error|blocked)\(auto\)/.test(String(e?.kind ?? "")));
   const oks = evs.filter((e) => e.kind.startsWith("cycle-ok"));
-  const fails = evs.filter((e) => !e.kind.startsWith("cycle-ok"));
+  const blocked = evs.filter((e) => e.kind.startsWith("cycle-blocked"));
+  const fails = evs.filter((e) => e.kind.startsWith("cycle-fail") || e.kind.startsWith("cycle-error"));
   const failReasons = {};
   for (const f of fails) {
     const kind = classifyCycleFailure(f.error);
@@ -58,8 +63,9 @@ export function analyzeCycles(cycleEvents) {
   const msP50 = durations.length ? durations[Math.floor(durations.length * 0.5)] : null;
   const msP90 = durations.length ? durations[Math.floor(durations.length * 0.9)] : null;
   return {
-    window: evs.length, oks: oks.length, fails: fails.length,
+    window: evs.length, oks: oks.length, fails: fails.length, blocked: blocked.length,
     okRate: evs.length ? Math.round((oks.length / evs.length) * 1000) / 10 : null,
+    blockedRate: evs.length ? Math.round((blocked.length / evs.length) * 1000) / 10 : null,
     failReasons, msP50, msP90,
   };
 }
@@ -112,6 +118,15 @@ export function deriveLessons({ cycles, curator, exec }) {
         evidence: `cycles ${cycles.oks}/${cycles.window} ok · conn-fails ${cycles.failReasons.conn} (${cycles.failReasons.conn === 1 ? "e.g. 19:42:42 fetch-failed fall, root-caused to Bun idleTimeout=10s" : "connection-level"})`,
         lesson: "connection-level cycle kills waste 10-minute sovereignty slots",
         action: "FIXED T-14: engine idleTimeout 255 + sovereign one-shot conn-retry with heal-gate",
+      });
+    }
+    if (cycles.blocked > 0) {
+      lessons.push({
+        id: "signing-cred-blocked",
+        severity: "high",
+        evidence: `cycle-blocked ×${cycles.blocked}/${cycles.window} — ONLY credential-gated steps failing (blockedSteps journaled per event); every non-signing step green`,
+        lesson: "signing rails lawfully parked — the machine is NOT sick, but VP regen above the 100% cap burns unused and every vote/order/op the doctrine would place is foregone",
+        action: "OPERATOR REVIVAL (T-16 self-service): paste the credential in the cockpit banner → engine adopts (0600) + chain-verifies instantly; or drop upload/headcorner.txt",
       });
     }
     if (cycles.msP90 != null && cycles.msP50 != null && cycles.msP90 > 3 * cycles.msP50 && cycles.msP90 > 15000) {

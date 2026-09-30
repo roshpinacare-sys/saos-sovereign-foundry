@@ -203,3 +203,79 @@ export function guardDepth(depth, fires) {
   if (fires > MAX_FIRES) return { ok: false, reason: "fires-cap" };
   return { ok: true, reason: "within-guards" };
 }
+
+/* ── T-16 · cycle truth taxonomy ────────────────────────────────────────────
+ * The measured rot (2026-09-30): 11/35 cycles counted as "fail" while EVERY
+ * real step was green — the only failures were steps lawfully blocked on the
+ * missing credential. One number that conflates "machine sick" with "machine
+ * lawfully waiting for its operator" is a LIE by composition. Three classes:
+ *   ok      — every step succeeded
+ *   blocked — the ONLY failures are typed CREDENTIAL-MISSING (lawful gate)
+ *   fail    — any other failure (real malfunction)
+ */
+export const CRED_BLOCKED_RE = /CREDENTIAL-MISSING/i;
+
+/** steps map (stepWrap outputs) → "ok" | "blocked" | "fail" */
+export function cycleHealth(steps) {
+  const list = Object.values(steps ?? {}).filter((s) => s && typeof s === "object");
+  const failed = list.filter((s) => s.ok === false);
+  if (failed.length === 0) return "ok";
+  const nonCred = failed.filter((s) => !CRED_BLOCKED_RE.test(String(s.error ?? "")));
+  return nonCred.length === 0 ? "blocked" : "fail";
+}
+
+/** the failed-step names + the cred-blocked subset (for the report + events) */
+export function cycleFailureBreakdown(steps) {
+  const failedSteps = [];
+  const blockedSteps = [];
+  for (const [name, s] of Object.entries(steps ?? {})) {
+    if (s && typeof s === "object" && s.ok === false) {
+      failedSteps.push(name);
+      if (CRED_BLOCKED_RE.test(String(s.error ?? ""))) blockedSteps.push(name);
+    }
+  }
+  return { failedSteps, blockedSteps };
+}
+
+/* ── T-16 · VP-spoilage meter (the visible price of a blocked signing rail) ─
+ * While the credential is missing, VP regenerates to the 100% cap and every
+ * drop above it is burned: the fleet's vote quota (maxPerDay) goes unspent.
+ * This makes the blocked cost MEASURED-visible (days/votes) + ESTIMATED ($
+ * from discovery's public reward-fund math — never claimed as measured). */
+export function vpSpoilage({ firstDownAt, now, maxPerDay, estSteemPerDay }) {
+  const nowMs = Date.parse(now ?? new Date().toISOString());
+  const downMs = firstDownAt ? Date.parse(firstDownAt) : NaN;
+  if (!Number.isFinite(nowMs) || !Number.isFinite(downMs) || nowMs <= downMs) {
+    return { daysBlocked: 0, votesForegone: 0, estSteemForegone: 0, class: "measured" };
+  }
+  const daysBlocked = Math.max(0, (nowMs - downMs) / 86_400_000);
+  const votesForegone = Math.max(0, Math.floor(daysBlocked * Math.max(0, maxPerDay ?? 0)));
+  const estSteemForegone = estSteemPerDay != null && estSteemPerDay > 0
+    ? Math.round(daysBlocked * estSteemPerDay * 100) / 100
+    : 0;
+  return {
+    daysBlocked: Math.round(daysBlocked * 100) / 100,
+    votesForegone,
+    estSteemForegone,
+    class: estSteemForegone > 0 ? "estimated" : "measured",
+  };
+}
+
+/* ── T-16 · credential paste-revival (pure validation half) ─────────────────
+ * The file-drop revival waited on an operator action that never came. The
+ * cockpit gains a paste field → engine adopts (0600) + verifies against the
+ * chain's own authorities. Pure half below; the IO half lives in signer.mjs.
+ * Format: "<account> <master-password|P-key...>" — ≥2 fields, sane size.
+ * NEVER logs/returns the secret — only its fingerprint. */
+export function validateCredentialText(text) {
+  const raw = String(text ?? "").trim();
+  if (!raw) return { ok: false, reason: "empty" };
+  if (raw.length > 4096) return { ok: false, reason: "oversize" };
+  const fields = raw.split(/[\s:=]+/).filter(Boolean);
+  if (fields.length < 2) return { ok: false, reason: "credential-format" };
+  const account = fields[0];
+  if (!/^[a-z0-9\-.]{3,16}$/i.test(account)) return { ok: false, reason: "bad-account" };
+  // the secret NEVER leaves this function's caller in the return value —
+  // adoptCredentialText re-derives it from the same normalized split
+  return { ok: true, account };
+}

@@ -412,6 +412,9 @@ export async function GET() {
    * truth for every agent claim — replaces scattered/legacy counts) */
   const fleetData = (fleetHttp as any)?.fleet ?? null;
   const credData = (fleetHttp as any)?.credential ?? (execHttp as any)?.credential ?? null;
+  /* T-16: the visible price of the blocked signing rail (measured days/votes
+   * + ESTIMATED steem — engine-side spoilagePublic, honest classes) */
+  const spoilage = (fleetHttp as any)?.spoilage ?? null;
 
   const data = {
     ok: true,
@@ -435,6 +438,7 @@ export async function GET() {
     discovery: discoveryPublic,
     fleet: fleetData,
     credential: credData,
+    spoilage,
     sources: { kind: "sovereign-local", paths: PATHS, engineHttp: ENGINE_HTTP },
     notes: [
       "אמת-מוטבעת-על-שרשרת בלבד — real.fills נמדד מ-fill_order חי",

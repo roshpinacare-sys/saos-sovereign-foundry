@@ -27,7 +27,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { rpcCall } from "./measure.mjs";
-import { executeAs, masterAccount, armedConf, execPaused } from "./signer.mjs";
+import { executeAs, masterAccount, armedConf, execPaused, loadCredential } from "./signer.mjs";
 import { learningTunings } from "./learning.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
@@ -180,6 +180,13 @@ export async function runCurator({ now = new Date().toISOString() } = {}) {
   if (!p.enabled) return { ...base, verdict: "DISABLED" };
   if (execPaused()) return { ...base, verdict: "OPERATOR-PAUSED" };
   if (carried.votesToday.length >= p.maxPerDay) return { ...base, verdict: "DAY-CAP", dayCapReached: true };
+  /* T-16 CRED GATE FIRST (measured rot 2026-09-30: 12.5s of candidate scanning
+   * per cycle — ~144×/day of doomed network reads — BEFORE discovering the
+   * typed credential absence deep inside the vote path). loadCredential()
+   * throws the typed CREDENTIAL-MISSING with zero network. Same typed error
+   * the daily cycle's health classifier expects — the verdict stays honest,
+   * only the 12.5s of waste dies. */
+  loadCredential();
 
   /* VP gate — effective mana (read-only, chain truth) */
   const accR = await rpcCall("condenser_api.get_accounts", [[master]]);

@@ -147,3 +147,11 @@
 {"at":"2026-09-30T15:26:19.051Z","kind":"cred-missing","verdict":"SIGNING-DEAD","agentsAffected":["curate","execute","soldiers","promo"],"revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}
 {"at":"2026-09-30T15:27:12.701Z","kind":"cycle-fail(auto)","ms":12674,"steps":10,"verdict":"OFFER-READY"}
 {"at":"2026-09-30T15:36:36.317Z","kind":"cycle-fail(auto)","ms":21288,"steps":10,"verdict":"OFFER-READY"}
+{"at":"2026-09-30T15:46:42.014Z","kind":"cycle-fail(auto)","ms":26984,"steps":10,"verdict":"OFFER-EMPTY"}
+{"at":"2026-09-30T15:56:38.856Z","kind":"cycle-fail(auto)","ms":23827,"steps":10,"verdict":"OFFER-EMPTY"}
+{"at":"2026-09-30T16:06:33.440Z","kind":"cycle-fail(auto)","ms":18411,"steps":10,"verdict":"OFFER-EMPTY"}
+{"at":"2026-09-30T16:16:38.081Z","kind":"cycle-fail(auto)","ms":23051,"steps":10,"verdict":"OFFER-EMPTY"}
+{"at":"2026-09-30T16:26:22.527Z","kind":"cycle-fail(auto)","ms":7497,"steps":10,"verdict":"OFFER-EMPTY"}
+{"at":"2026-09-30T16:27:15.068Z","kind":"cred-missing","verdict":"SIGNING-DEAD","agentsAffected":["curate","execute","soldiers","promo"],"revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}
+{"at":"2026-09-30T16:33:45.717Z","kind":"cycle-blocked(kick)","ms":3223,"steps":10,"verdict":"OFFER-READY","blockedSteps":["curate","execute","soldiers"]}
+{"at":"2026-09-30T16:36:20.188Z","kind":"cycle-fail(auto)","ms":5156,"steps":10,"verdict":"OFFER-READY"}

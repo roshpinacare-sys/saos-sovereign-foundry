@@ -6,7 +6,7 @@
  */
 import { runCycle } from "./daily.mjs";
 import { externalParity, internalFeed, accountState, openOrders, measureAll } from "./measure.mjs";
-import { execStatus, credentialState, armedConf } from "./signer.mjs";
+import { execStatus, credentialState, armedConf, adoptCredentialText, verifyRoles, spoilagePublic } from "./signer.mjs";
 import { soldiersPublic } from "./soldiers.mjs";
 import { intelState } from "./intel.mjs";
 import { curatorState } from "./curator.mjs";
@@ -31,6 +31,9 @@ const readLines = (p, n = 20) => {
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
 
+// T-16 brute-force bound for /adopt-credential (in-memory timestamps)
+const adoptAttempts: number[] = [];
+
 async function handle(req) {
   const url = new URL(req.url);
   const p = url.pathname;
@@ -53,6 +56,10 @@ async function handle(req) {
       soldiers: soldiersPublic(),
       execution: exec,
       credential: credentialState(),
+      /* T-16: the visible price of the blocked signing rail (see signer.mjs
+       * spoilagePublic — measured days/votes + ESTIMATED steem, never
+       * claimed as measured money) */
+      spoilage: spoilagePublic(),
       fleet: fleetState(),
       execLog,
       events: readLines(path.join(STATE, "events.jsonl"), 20),
@@ -81,9 +88,38 @@ async function handle(req) {
   // T-15: the unified agent registry — light route (state files + pids only,
   // zero chain reads) so the cockpit can afford it on every refresh
   if (p === "/fleet") {
-    return json({ ok: true, at: new Date().toISOString(), fleet: fleetState({ credential: credentialState(), armedConf: armedConf() }), credential: credentialState() });
+    return json({ ok: true, at: new Date().toISOString(), fleet: fleetState({ credential: credentialState(), armedConf: armedConf() }), credential: credentialState(), spoilage: spoilagePublic() });
   }
-  return json({ ok: false, error: "not-found", routes: ["/health", "/status", "/cycle", "/live", "/fills", "/exec-status", "/fleet"] }, 404);
+  // T-16 · paste-revival — the fastest self-service path back to a living
+  // signing fleet. Contract: the secret arrives as JSON body {text}, is
+  // validated (pure), secured (0600 .secrets/), NEVER logged or echoed, and
+  // verified against the chain's own authorities BEFORE the answer. Brute
+  // force is bounded: 5 attempts/hour in-memory. On success the very next
+  // cycle revives the whole signing fleet (zero restart).
+  if (p === "/adopt-credential") {
+    if (req.method !== "POST") return json({ ok: false, error: "POST required" }, 405);
+    const hourAgo = Date.now() - 3600_000;
+    while (adoptAttempts.length && adoptAttempts[0] < hourAgo) adoptAttempts.shift();
+    if (adoptAttempts.length >= 5) return json({ ok: false, error: "rate-limited (5/hour) — wait before retrying" }, 429);
+    adoptAttempts.push(Date.now());
+    let body: { text?: unknown } = {};
+    try { body = await req.json() as { text?: unknown }; } catch { return json({ ok: false, error: "json-body required" }, 400); }
+    const adopted = adoptCredentialText(String(body.text ?? ""), { source: "cockpit-paste" });
+    if (!adopted.ok) return json({ ok: false, stage: "adopt", reason: adopted.reason });
+    let ver: Record<string, unknown> | null = null;
+    try { ver = await verifyRoles(adopted.account) as unknown as Record<string, unknown>; } catch (e) { ver = { ok: false, reason: String((e as Error)?.message ?? e).slice(0, 120) }; }
+    const verified = Boolean((ver as { ok?: boolean } | null)?.ok);
+    return json({
+      ok: true, stage: "verified", account: adopted.account, fingerprint: adopted.fingerprint,
+      verified, verdict: (ver as { verdict?: string } | null)?.verdict ?? (verified ? "VERIFIED" : null),
+      reason: (ver as { reason?: string } | null)?.reason ?? null,
+      guidance: (ver as { guidance?: string } | null)?.guidance ?? null,
+      proposedPubkeys: (ver as { proposedPubkeys?: unknown } | null)?.proposedPubkeys ?? null,
+      next: verified ? "the next cycle (≤10min) revives curate/execute/soldiers/promo — or kick a cycle now"
+                     : "credential secured but not matching this account's authorities — install the proposedPubkeys on steemit.com, or paste the CURRENT password instead",
+    });
+  }
+  return json({ ok: false, error: "not-found", routes: ["/health", "/status", "/cycle", "/live", "/fills", "/exec-status", "/fleet", "/adopt-credential"] }, 404);
 }
 
 // T-15 SINGLE-INSTANCE LAW (measured live: 3 duplicate engine processes were

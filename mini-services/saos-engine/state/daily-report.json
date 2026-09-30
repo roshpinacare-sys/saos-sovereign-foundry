@@ -1,76 +1,91 @@
 {
-  "startedAt": "2026-09-30T15:40:39.818Z",
+  "startedAt": "2026-09-30T16:39:38.272Z",
   "account": "headcorner",
   "steps": {
     "observe": {
       "name": "observe",
       "ok": true,
-      "ms": 2531,
+      "ms": 3175,
       "account": "headcorner",
       "parity": {
-        "steemUsd": 0.06526,
-        "sbdUsd": 0,
-        "parity": 0.10410183838219932,
-        "source": "internal-feed-fallback",
-        "lowConfidence": true
+        "steemUsd": 0.06532,
+        "sbdUsd": 0.602214,
+        "parity": 0.10846642555636368,
+        "source": "coingecko"
       },
-      "feed": 0.10410183838219932,
+      "feed": 0.1041018377379175,
       "band": {
         "ok": true,
         "reason": "band-ok",
-        "bps": 0
+        "bps": 419
       },
-      "steemUsd": 0.06526,
-      "sbdUsd": 0,
+      "steemUsd": 0.06532,
+      "sbdUsd": 0.602214,
       "inventory": {
-        "steem": 910.428,
+        "steem": 819.386,
         "sbd": 0.066,
-        "spOwn": 4034.9401304455973,
+        "spOwn": 4034.9513659225636,
         "rcPct": 100
       },
       "ordersOk": true,
       "orders": [
         {
           "orderid": 2026093001,
-          "side": "bid",
-          "base": "0.192 SBD",
-          "quote": "1.993 STEEM",
-          "unit": 10.380208,
-          "created": "2026-09-30T03:58:09"
+          "side": "ask",
+          "base": "30.961 STEEM",
+          "quote": "3.375 SBD",
+          "unit": 0.109008,
+          "created": "2026-09-30T16:27:12"
         },
         {
           "orderid": 2026093002,
-          "side": "bid",
-          "base": "0.192 SBD",
-          "quote": "2.035 STEEM",
-          "unit": 10.598958,
-          "created": "2026-09-30T03:58:12"
+          "side": "ask",
+          "base": "30.961 STEEM",
+          "quote": "3.409 SBD",
+          "unit": 0.110106,
+          "created": "2026-09-30T16:27:18"
         },
         {
           "orderid": 2026093003,
+          "side": "ask",
+          "base": "30.961 STEEM",
+          "quote": "3.442 SBD",
+          "unit": 0.111172,
+          "created": "2026-09-30T16:27:24"
+        },
+        {
+          "orderid": 2026093092,
           "side": "bid",
           "base": "0.192 SBD",
-          "quote": "2.078 STEEM",
-          "unit": 10.822917,
-          "created": "2026-09-30T03:58:15"
+          "quote": "1.859 STEEM",
+          "unit": 9.682292,
+          "created": "2026-09-30T15:56:42"
+        },
+        {
+          "orderid": 2026093093,
+          "side": "bid",
+          "base": "0.192 SBD",
+          "quote": "1.878 STEEM",
+          "unit": 9.78125,
+          "created": "2026-09-30T15:56:48"
         }
       ],
-      "fills": 42,
-      "lastFillAt": "2026-09-29T19:12:39.000Z",
+      "fills": 43,
+      "lastFillAt": "2026-09-30T15:56:39.000Z",
       "pnl": {
-        "fills": 42,
-        "buys": 35,
+        "fills": 43,
+        "buys": 36,
         "sells": 7,
-        "boughtSteem": 192.274,
-        "spentSbd": 20.554,
+        "boughtSteem": 194.115,
+        "spentSbd": 20.746,
         "soldSteem": 190.614,
         "proceedsSbd": 21.152,
         "realizedSbd": -0.016486,
         "unbasedSteem": 162.221,
         "unbasedSbd": 18.119,
-        "positionSteem": 163.881,
-        "positionCostSbd": 17.504514,
-        "positionAvgCost": 0.106812
+        "positionSteem": 165.722,
+        "positionCostSbd": 17.696514,
+        "positionAvgCost": 0.106784
       },
       "fuel": {
         "curationVestsPerDay": 0,
@@ -78,24 +93,25 @@
         "authorVestsPerDay": 0,
         "curationOps": 0,
         "authorOps": 0,
-        "windowSpanDays": 7.33,
+        "windowSpanDays": 7.34,
         "windowOps": 1001,
         "measured": true,
         "fuelUsdPerDay": 0,
-        "authorUsdPerDay": null,
+        "authorUsdPerDay": 0,
         "histLen": 1001,
         "node": "https://steemapi.boylikegirl.club",
         "windowNote": "no reward ops inside the measured window — rails dormant, not a parse failure (deep-scan documented separately)"
       },
-      "summary": "parity 0.10410183838219932 (internal-feed-fallback) · fills 42 · fuel 0$"
+      "summary": "parity 0.10846642555636368 (coingecko) · fills 43 · fuel 0$"
     },
     "intel": {
       "name": "intel",
       "ok": true,
-      "ms": 1494,
-      "verdict": "DECISIONS:4",
+      "ms": 1467,
+      "verdict": "DECISIONS:5",
       "decisions": [
         "book-depth:hold-shape",
+        "parity-drift:monitor",
         "soldiers:grids-live",
         "rc-health:healthy",
         "curation:curator-live"
@@ -110,25 +126,25 @@
     "tick": {
       "name": "tick",
       "ok": true,
-      "ms": 1,
-      "runCount": 71,
-      "simFills": 0,
-      "simFeesMu": 0,
-      "events": 3
+      "ms": 0,
+      "runCount": 80,
+      "simFills": 1,
+      "simFeesMu": 500,
+      "events": 4
     },
     "peg": {
       "name": "peg",
       "ok": true,
-      "ms": 0,
+      "ms": 1,
       "verdict": "OFFER-READY",
       "asks": 4,
       "bids": 0,
-      "staleCount": 3,
-      "skew": 0.299582,
+      "staleCount": 2,
+      "skew": 0.299555,
       "liquidity": {
-        "deployedAsks": 0,
-        "deployedBids": 0.576,
-        "askBudget": 546.257,
+        "deployedAsks": 92.883,
+        "deployedBids": 0.384,
+        "askBudget": 454.478,
         "bidBudget": 0,
         "deployCap": 0.6
       }
@@ -139,32 +155,33 @@
       "ms": 0,
       "verdict": "CONVERT-HOLD",
       "amountSbd": 0,
-      "marketSbdUsd": 0,
-      "impliedSbdUsd": 0.626886,
-      "marketSourceNote": "no-external-SBD-market (delisted binance/poloniex/upbit/mexc) — HOLD is honest"
+      "edgeBps": 6605,
+      "marketSbdUsd": 0.602214,
+      "impliedSbdUsd": 0.627463,
+      "marketSourceNote": "external-measured"
     },
     "curate": {
       "name": "curate",
       "ok": false,
-      "ms": 11040,
+      "ms": 3,
       "error": "CREDENTIAL-MISSING: .secrets/headcorner.key not found (sandbox cold-reset wipes gitignored secrets). Revival (self-service, zero restart): drop the account's CURRENT master-password file as upload/hea"
     },
     "execute": {
       "name": "execute",
       "ok": false,
-      "ms": 1876,
+      "ms": 1,
       "error": "CREDENTIAL-MISSING: .secrets/headcorner.key not found (sandbox cold-reset wipes gitignored secrets). Revival (self-service, zero restart): drop the account's CURRENT master-password file as upload/hea"
     },
     "soldiers": {
       "name": "soldiers",
       "ok": false,
-      "ms": 2540,
+      "ms": 0,
       "error": "CREDENTIAL-MISSING: .secrets/headcorner.key not found (sandbox cold-reset wipes gitignored secrets). Revival (self-service, zero restart): drop the account's CURRENT master-password file as upload/hea"
     },
     "learn": {
       "name": "learn",
       "ok": true,
-      "ms": 1,
+      "ms": 3,
       "verdict": "LEARNED",
       "lessons": [
         "cycle-conn-fails"
@@ -182,27 +199,40 @@
       "ok": true,
       "ms": 0,
       "realizedSbd": -0.016486,
-      "positionSteem": 163.881,
-      "positionAvgCost": 0.106812,
+      "positionSteem": 165.722,
+      "positionAvgCost": 0.106784,
       "unbasedSteem": 162.221,
-      "deployedSteem": 0,
+      "deployedSteem": 92.883,
       "fuelUsdPerDay": 0,
-      "authorUsdPerDay": null,
+      "authorUsdPerDay": 0,
       "measuredTotalUsdPerDay": 0,
       "honesty": "unbased ≠ profit · signing doctrine-capped · all numbers measured this cycle"
     }
   },
   "rollup": {
     "realizedSbd": -0.016486,
-    "positionSteem": 163.881,
-    "positionAvgCost": 0.106812,
+    "positionSteem": 165.722,
+    "positionAvgCost": 0.106784,
     "unbasedSteem": 162.221,
-    "deployedSteem": 0,
+    "deployedSteem": 92.883,
     "fuelUsdPerDay": 0,
-    "authorUsdPerDay": null,
+    "authorUsdPerDay": 0,
     "measuredTotalUsdPerDay": 0,
     "honesty": "unbased ≠ profit · signing doctrine-capped · all numbers measured this cycle"
   },
   "ok": false,
-  "finishedAt": "2026-09-30T15:40:59.302Z"
+  "health": "blocked",
+  "failures": {
+    "failedSteps": [
+      "curate",
+      "execute",
+      "soldiers"
+    ],
+    "blockedSteps": [
+      "curate",
+      "execute",
+      "soldiers"
+    ]
+  },
+  "finishedAt": "2026-09-30T16:39:42.920Z"
 }

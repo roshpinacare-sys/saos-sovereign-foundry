@@ -317,5 +317,73 @@ eq("fleet boundary-at-window", classifyAgent({ lastRunAt: "2026-09-30T14:45:00Z"
 eq("fleet boundary-beyond-window", classifyAgent({ lastRunAt: "2026-09-30T14:44:00Z", nowMs: FLEET_NOW, freshnessMin: 15 }).status, "DEAD");
 ok("fleet classifier carries age+blocked", (() => { const r = classifyAgent({ lastRunAt: "2026-09-30T14:50:00Z", nowMs: FLEET_NOW, freshnessMin: 15, blockedBy: "x" }); return r.ageMin === 10 && r.blockedBy === "x"; })());
 
+/* ── 18 · T-16 cycle truth taxonomy: ok | blocked | fail (the 68.6% lie fix) ── */
+import {
+  cycleHealth, cycleFailureBreakdown, vpSpoilage, validateCredentialText,
+} from "./lib.mjs";
+
+eq("cycleHealth all-green", cycleHealth({ observe: { ok: true }, peg: { ok: true }, curate: { ok: true } }), "ok");
+eq("cycleHealth empty", cycleHealth({}), "ok");
+eq("cycleHealth only-cred-blocked", cycleHealth({
+  observe: { ok: true }, curate: { ok: false, error: "CREDENTIAL-MISSING: .secrets/headcorner.key not found" },
+  execute: { ok: false, error: "CREDENTIAL-MISSING: .secrets/headcorner.key not found" },
+}), "blocked");
+eq("cycleHealth real-fail", cycleHealth({
+  observe: { ok: false, error: "fetch failed" }, curate: { ok: false, error: "CREDENTIAL-MISSING: x" },
+}), "fail");
+eq("cycleHealth mixed-fail", cycleHealth({
+  observe: { ok: true }, peg: { ok: false, error: "HTTP 502" },
+}), "fail");
+const brk = cycleFailureBreakdown({
+  observe: { ok: true },
+  curate: { ok: false, error: "CREDENTIAL-MISSING: x" },
+  execute: { ok: false, error: "CREDENTIAL-MISSING: x" },
+  peg: { ok: false, error: "NO-PARITY" },
+});
+eq("failure breakdown blocked", brk.blockedSteps, ["curate", "execute"]);
+eq("failure breakdown failed", brk.failedSteps, ["curate", "execute", "peg"]);
+
+/* analyzeCycles: cycle-blocked counted separately — never again a fake "fail" */
+const evLines16 = [
+  { kind: "cycle-ok(auto)", ms: 5000 },
+  { kind: "cycle-blocked(auto)", ms: 4200, blockedSteps: ["curate", "execute", "soldiers"] },
+  { kind: "cycle-blocked(auto)", ms: 4300 },
+  { kind: "cycle-fail(auto)", ms: 20000, error: "fetch failed" },
+];
+const cyc16 = analyzeCycles(evLines16);
+eq("cycles16 window", cyc16.window, 4);
+eq("cycles16 blocked", cyc16.blocked, 2);
+eq("cycles16 fails-exclude-blocked", cyc16.fails, 1);
+eq("cycles16 okRate", cyc16.okRate, 25);
+eq("cycles16 blockedRate", cyc16.blockedRate, 50);
+eq("cycles16 failReasons-only-real", cyc16.failReasons, { conn: 1 });
+ok("lesson signing-cred-blocked derived", deriveLessons({
+  cycles: { window: 3, oks: 1, fails: 0, blocked: 2, okRate: 33.3, blockedRate: 66.7, failReasons: {}, msP50: 4000, msP90: 4300 },
+  curator: null, exec: { window: 0, fails: 0 },
+}).some((l) => l.id === "signing-cred-blocked"));
+
+/* vpSpoilage: measured days/votes + ESTIMATED steem (honest classes) */
+const T0 = "2026-09-30T12:00:00.000Z";
+const T2D = "2026-10-02T12:00:00.000Z";
+const sp1 = vpSpoilage({ firstDownAt: T0, now: T2D, maxPerDay: 18, estSteemPerDay: 9.5 });
+eq("spoilage 2d votes", sp1.votesForegone, 36);
+eq("spoilage 2d days", sp1.daysBlocked, 2);
+eq("spoilage est steem", sp1.estSteemForegone, 19);
+eq("spoilage class", sp1.class, "estimated");
+eq("spoilage no-estimate-class", vpSpoilage({ firstDownAt: T0, now: T2D, maxPerDay: 18 }).class, "measured");
+eq("spoilage null-down", vpSpoilage({ firstDownAt: null, now: T2D, maxPerDay: 18 }), { daysBlocked: 0, votesForegone: 0, estSteemForegone: 0, class: "measured" });
+eq("spoilage future-down-clamped", vpSpoilage({ firstDownAt: T2D, now: T0, maxPerDay: 18 }).votesForegone, 0);
+eq("spoilage negative-cap-clamped", vpSpoilage({ firstDownAt: T0, now: T2D, maxPerDay: -5 }).votesForegone, 0);
+
+/* validateCredentialText: pure adoption gate — shape only, never the secret */
+eq("cred valid", validateCredentialText("headcorner my-master-password").ok, true);
+eq("cred valid colon-form", validateCredentialText("headcorner:my-master-password").ok, true);
+eq("cred valid wif-form", validateCredentialText("headcorner P5K...longkey").ok, true);
+eq("cred empty", validateCredentialText(""), { ok: false, reason: "empty" });
+eq("cred single-field", validateCredentialText("justapassword"), { ok: false, reason: "credential-format" });
+eq("cred bad-account", validateCredentialText("!bad account pw"), { ok: false, reason: "bad-account" });
+eq("cred oversize", validateCredentialText("acct " + "x".repeat(5000)), { ok: false, reason: "oversize" });
+ok("cred never-echoes-secret-in-result", !JSON.stringify(validateCredentialText("headcorner sekrit-pw")).includes("sekrit-pw"));
+
 console.log(`\nSELFTEST ${pass}/${pass + fail} ${fail === 0 ? "PASS" : "FAIL"}`);
 process.exit(fail === 0 ? 0 : 1);

@@ -43,8 +43,9 @@ type Status = {
     autonomy?: { ok?: boolean; lastCycle?: string | null; steps?: Record<string, string> } | null
     note?: string
   }
-  daily?: { ok?: boolean; finishedAt?: string; rollup?: { realizedSbd?: number | null; deployedSteem?: number | null; measuredTotalUsdPerDay?: number | null; honesty?: string } }
+  daily?: { ok?: boolean; health?: 'ok' | 'blocked' | 'fail'; failures?: { failedSteps?: string[]; blockedSteps?: string[] }; finishedAt?: string; rollup?: { realizedSbd?: number | null; deployedSteem?: number | null; measuredTotalUsdPerDay?: number | null; honesty?: string } }
   measuredPerDay?: number | null
+  spoilage?: { daysBlocked?: number; votesForegone?: number; estSteemForegone?: number; class?: string; note?: string } | null
   execution?: {
     credentialPresent?: boolean; fingerprint?: string | null; account?: string
     armed?: boolean; standingOrder?: boolean; operatorPaused?: boolean
@@ -100,14 +101,14 @@ type Status = {
   } | null
   events?: { type?: string; at?: string; [k: string]: unknown }[]
 }
-type EngineResp = { ok?: boolean; steps?: Record<string, { ok?: boolean; skipped?: boolean; verdict?: string; error?: string }>; rollup?: { measuredTotalUsdPerDay?: number | null; realizedSbd?: number | null }; finishedAt?: string; error?: string; engine?: string }
+type EngineResp = { ok?: boolean; health?: 'ok' | 'blocked' | 'fail'; failures?: { failedSteps?: string[]; blockedSteps?: string[] }; steps?: Record<string, { ok?: boolean; skipped?: boolean; verdict?: string; error?: string }>; rollup?: { measuredTotalUsdPerDay?: number | null; realizedSbd?: number | null }; finishedAt?: string; error?: string; engine?: string }
 type Sovereign = {
   ok?: boolean
   at?: string
   state?: {
     bootedAt?: string; pid?: number; paused?: boolean
     watchdog?: { checks?: number; downs?: number; heals?: number; healVerified?: number; healFailed?: number; engineUp?: boolean; lastSpawnAt?: string | null }
-    cycles?: { autoRuns?: number; ok?: number; fail?: number; lastAt?: string | null; lastOk?: boolean | null; lastMs?: number | null; nextAt?: string | null }
+    cycles?: { autoRuns?: number; ok?: number; fail?: number; blocked?: number; lastAt?: string | null; lastOk?: boolean | null; lastHealth?: string | null; lastMs?: number | null; nextAt?: string | null }
     selftest?: { runs?: number; lastAt?: string | null; lastOk?: boolean | null; passed?: number | null; total?: number | null }
   }
   intervals?: { watchdogSec?: number; cycleSec?: number; selftestSec?: number }
@@ -131,6 +132,10 @@ export default function Home() {
   const [cycleMsg, setCycleMsg] = useState<string | null>(null)
   const [actMsg, setActMsg] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
+  // T-16 paste-revival state (the secret is never stored beyond this component)
+  const [adoptText, setAdoptText] = useState('')
+  const [adoptBusy, setAdoptBusy] = useState(false)
+  const [adoptMsg, setAdoptMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -159,15 +164,17 @@ export default function Home() {
       const r = await fetch('/api/saos/engine', { method: 'POST' })
       const j: EngineResp = await r.json()
       const hasSteps = j.steps && Object.keys(j.steps).length > 0
+      const stepsStr = () => Object.entries(j.steps ?? {}).map(([k, v]) => `${k}:${v.ok === false ? 'כשל' : v.skipped ? 'דילוג' : 'תקין'}`).join(' · ')
       if (j.ok) {
-        const steps = Object.entries(j.steps ?? {}).map(([k, v]) => `${k}:${v.ok === false ? 'כשל' : v.skipped ? 'דילוג' : 'תקין'}`).join(' · ')
-        setCycleMsg(`מחזור הושלם · ${steps} · מדידה $${(j.rollup?.measuredTotalUsdPerDay ?? 0).toFixed(4)}/יום`)
+        setCycleMsg(`מחזור הושלם · ${stepsStr()} · מדידה $${(j.rollup?.measuredTotalUsdPerDay ?? 0).toFixed(4)}/יום`)
+      } else if (hasSteps && j.health === 'blocked') {
+        // T-16 truth law: credential-blocked is a LAWFUL wait, not a failure —
+        // the message says exactly which rails are parked and why
+        setCycleMsg(`מחזור הושלם (חסום-חוקי — החתימה ממתינה לאישורי: ${(j.failures?.blockedSteps ?? []).join(', ')}) · ${stepsStr()} · מדידה $${(j.rollup?.measuredTotalUsdPerDay ?? 0).toFixed(4)}/יום`)
       } else if (hasSteps) {
         // T-15 truth law: a completed cycle with doctrine-isolated step
         // failures is NOT "engine unavailable" — name the failing steps
-        const steps = Object.entries(j.steps ?? {}).map(([k, v]) => `${k}:${v.ok === false ? 'כשל' : v.skipped ? 'דילוג' : 'תקין'}`).join(' · ')
-        const fails = Object.entries(j.steps ?? {}).filter(([, v]) => v.ok === false).map(([k]) => k)
-        setCycleMsg(`מחזור הושלם (חלקי — נכשלו: ${fails.join(', ')}) · ${steps} · מדידה $${(j.rollup?.measuredTotalUsdPerDay ?? 0).toFixed(4)}/יום`)
+        setCycleMsg(`מחזור הושלם (חלקי — נכשלו: ${(j.failures?.failedSteps ?? []).join(', ')}) · ${stepsStr()} · מדידה $${(j.rollup?.measuredTotalUsdPerDay ?? 0).toFixed(4)}/יום`)
       } else {
         setCycleMsg(`המנוע לא זמין: ${j.error ?? j.engine ?? 'שגיאה'}`)
       }
@@ -193,6 +200,36 @@ export default function Home() {
       setActing(null)
     }
   }, [load, loadSov])
+
+  // T-16 · paste-revival: adopt the credential, chain-verify it instantly,
+  // then refresh the cockpit so the banner flips to alive. The pasted text
+  // lives only in this component's state and the POST body — never logged.
+  const adoptCred = useCallback(async () => {
+    if (!adoptText.trim() || adoptBusy) return
+    setAdoptBusy(true)
+    setAdoptMsg(null)
+    try {
+      const r = await fetch('/api/saos/adopt-credential', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: adoptText }),
+      })
+      const j = await r.json()
+      if (j?.ok && j?.verified) {
+        setAdoptMsg({ ok: true, text: `אומץ ואומת מול-השרשרת (${j.account} · טביעת-אצבע ${j.fingerprint}) — המחזור-הבא מקים את הצי החותם` })
+        setAdoptText('')
+        await load()
+      } else if (j?.ok) {
+        setAdoptMsg({ ok: false, text: `אומץ אך לא נמצא תואם לחשבון (${j.reason ?? 'CREDENTIAL-MISMATCH'}) — התקן את המפתחות-המוצעים ב-steemit.com או הדבק את הסיסמה-הנוכחית` })
+      } else {
+        setAdoptMsg({ ok: false, text: `אימוץ נכשל: ${j?.reason ?? j?.error ?? 'שגיאה'}` })
+      }
+    } catch {
+      setAdoptMsg({ ok: false, text: 'המנוע לא זמין — נסה שוב' })
+    } finally {
+      setAdoptBusy(false)
+    }
+  }, [adoptText, adoptBusy, load])
 
   useEffect(() => {
     load()
@@ -268,8 +305,43 @@ export default function Home() {
                     · הספר על-השרשרת נשאר חי, המחזורים ממשיכים — רק פעולות-חתימה מושבתות.
                   </p>
                   <p className="text-xs text-emerald-300/90 mt-1.5 font-semibold leading-relaxed">
-                    ההקמה (שירות-עצמי, אפס-ריסטרט): הפל את קובץ-הסיסמה-הראשית הנוכחית של החשבון כ-<code dir="ltr">upload/headcorner.txt</code> — המנוע מאבטח אותו (0600), מאמץ אוטומטית במחזור-הבא, וכל הצי קם-לתחייה.
+                    ההקמה (שירות-עצמי, אפס-ריסטרט): הדבק את האישורי למטה — המנוע מאבטח (0600), מאמץ, ומאמת מול-השרשרת באותו-רגע. ערוץ-חלופי: הפל את קובץ-הסיסמה-הראשית כ-<code dir="ltr">upload/headcorner.txt</code>.
                   </p>
+                  {/* T-16 · בזבוז-VP — המחיר-הנראה של החתימה-החסומה (מדוד + מוערך) */}
+                  {!!s.spoilage && ((s.spoilage.votesForegone ?? 0) > 0 || (s.spoilage.estSteemForegone ?? 0) > 0) && (
+                    <p className="text-xs text-amber-300 mt-1.5 font-semibold">
+                      בזבוז-VP מתמשך: <span dir="ltr">{s.spoilage.votesForegone}</span> קולות-שנמנעו ב־<span dir="ltr">{s.spoilage.daysBlocked}</span> ימי-חסימה
+                      {(s.spoilage.estSteemForegone ?? 0) > 0 && <> · ~<span dir="ltr">{s.spoilage.estSteemForegone}</span> STEEM שנמנעו <Badge variant="outline" className="mx-1 border-amber-500/40 text-amber-300 text-[10px] px-1 py-0">מוערך</Badge></>}
+                      <span className="text-amber-200/60 font-normal"> · {s.spoilage.note}</span>
+                    </p>
+                  )}
+                  {/* T-16 · paste-revival — הדרך-המהירה ביותר בחזרה לצי-חותם */}
+                  <div className="mt-2 flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="password"
+                      value={adoptText}
+                      onChange={(e) => setAdoptText(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') void adoptCred() }}
+                      placeholder="הדבק כאן: <שם-חשבון> <סיסמה-ראשית> — נשלח ישירות למנוע (0600), לעולם לא נרשם"
+                      aria-label="הדבקת אישורי-חשבון להקמה"
+                      className="flex-1 rounded-md border border-rose-500/30 bg-slate-950/60 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-rose-500/40"
+                      dir="ltr"
+                      autoComplete="off"
+                    />
+                    <Button
+                      size="sm"
+                      disabled={adoptBusy || !adoptText.trim()}
+                      onClick={() => void adoptCred()}
+                      className="bg-rose-600 hover:bg-rose-500 text-white font-bold min-h-[36px]"
+                    >
+                      {adoptBusy ? 'מאמת מול-השרשרת…' : 'אמץ ואמת'}
+                    </Button>
+                  </div>
+                  {adoptMsg && (
+                    <p className={`text-xs mt-1.5 font-semibold ${adoptMsg.ok ? 'text-emerald-300' : 'text-amber-300'}`} role="status">
+                      {adoptMsg.text}
+                    </p>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -358,7 +430,7 @@ export default function Home() {
                 <dl className="grid grid-cols-2 gap-2 text-sm mt-3">
                   <div><dt className="text-xs text-slate-500">בדיקות-דופק</dt><dd className="font-bold tabular-nums">{sov?.state?.watchdog?.checks ?? '—'} <span className="text-xs text-slate-500">· נפילות {sov?.state?.watchdog?.downs ?? 0}</span></dd></div>
                   <div><dt className="text-xs text-slate-500">ריפויים-עצמיים</dt><dd className="font-bold tabular-nums">{sov?.state?.watchdog?.heals ?? 0} <span className="text-xs text-emerald-400">(אומתו {sov?.state?.watchdog?.healVerified ?? 0})</span></dd></div>
-                  <div><dt className="text-xs text-slate-500">מחזורים-אוטומטיים</dt><dd className={`font-bold tabular-nums ${((sov?.state?.cycles?.ok ?? 0) > 0 && sov?.state?.cycles?.lastOk !== false) ? 'text-emerald-400' : 'text-slate-300'}`}>{sov?.state?.cycles?.ok ?? 0} תקינים · {sov?.state?.cycles?.fail ?? 0} כשלים</dd></div>
+                  <div><dt className="text-xs text-slate-500">מחזורים-אוטומטיים</dt><dd className={`font-bold tabular-nums ${((sov?.state?.cycles?.ok ?? 0) > 0 && sov?.state?.cycles?.lastOk !== false) ? 'text-emerald-400' : 'text-slate-300'}`}>{sov?.state?.cycles?.ok ?? 0} תקינים · {sov?.state?.cycles?.blocked ?? 0} חסומים-חוקי · {sov?.state?.cycles?.fail ?? 0} כשלים</dd></div>
                   <div><dt className="text-xs text-slate-500">מחזור-בא-בעקבות</dt><dd className="font-bold tabular-nums text-xs">{sov?.state?.cycles?.nextAt ? `${Math.max(0, Math.round((new Date(sov.state.cycles.nextAt).getTime() - Date.now()) / 60000))} דק` : '—'}</dd></div>
                   <div className="col-span-2"><dt className="text-xs text-slate-500">ביקורת-איכות (selftest)</dt>
                     <dd className="font-bold flex items-center gap-2">

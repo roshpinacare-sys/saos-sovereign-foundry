@@ -16,13 +16,14 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import {
   planLadder, planConvert, inventorySkew, parityVerdict, pnlFromFills, classifyStale,
+  cycleHealth, cycleFailureBreakdown,
 } from "./lib.mjs";
 import {
   externalParity, internalFeed, accountState, openOrders, measureAll, fuelToUsdPerDay,
 } from "./measure.mjs";
 import { tick as gridTick, fold, activeGrids } from "./grid.mjs";
 import { runIntel } from "./intel.mjs";
-import { executeOps, executeAs, armedConf, execPaused, masterAccount } from "./signer.mjs";
+import { executeOps, executeAs, armedConf, execPaused, masterAccount, loadCredential } from "./signer.mjs";
 import { deploySoldiers, runSoldierGrids, soldiersState } from "./soldiers.mjs";
 import { postDailyReport } from "./promo.mjs";
 import { runCurator } from "./curator.mjs";
@@ -50,6 +51,16 @@ const stepWrap = async (name, fn) => {
 export async function runCycle({ now = new Date().toISOString(), persist = true } = {}) {
   const report = { startedAt: now, account: ACCOUNT, steps: {} };
   let intelOut = null;
+
+  /* 5b · curate (T-13, T-16 PARALLEL): the measured fuel rail is INDEPENDENT
+   * of the front chain (own policy + chain reads + own state) — it starts
+   * NOW and is joined after convert. Measured 2026-09-30: active voting days
+   * burned ~12s of serial candidate-scan per cycle (≈29min/day of
+   * sovereignty time) that this parallelism gives back. Fail-isolated. */
+  const curateP = stepWrap("curate", async () => {
+    const out = await runCurator({ now });
+    return { verdict: out.verdict, votes: out.voted?.length ?? 0, txid: out.txid ?? null, vpEff: out.vpEff ?? null, votesToday: out.votesTodayCount ?? 0, error: out.error ?? null };
+  });
 
   /* 1 · observe: parity + inventory + fills + rails fuel */
   report.steps.observe = await stepWrap("observe", async () => {
@@ -179,18 +190,19 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
     return { verdict: plan.verdict, amountSbd: plan.amountSbd, edgeBps: plan.edgeBps, marketSbdUsd: out.marketSbdUsd, impliedSbdUsd: out.impliedSbdUsd, marketSourceNote: out.marketSourceNote };
   });
 
-  /* 5b · curate (T-13): the measured fuel rail — VP put to work. Posting-key
-   * only; a vote op can never move funds. Daily-capped, VP-floored, journaled. */
-  report.steps.curate = await stepWrap("curate", async () => {
-    const out = await runCurator({ now });
-    return { verdict: out.verdict, votes: out.voted?.length ?? 0, txid: out.txid ?? null, vpEff: out.vpEff ?? null, votesToday: out.votesTodayCount ?? 0, error: out.error ?? null };
-  });
+  /* join the parallel curate branch here (it never gates the front chain) */
+  report.steps.curate = await curateP;
 
-  /* 6 · execute (SIGNING — the X-1 rail, engine-held, doctrine-capped) */
+  /* 6 · execute (SIGNING — the X-1 rail, engine-held, doctrine-capped).
+   * T-16 CRED GATE FIRST: when the credential is missing this step used to
+   * burn ~1.7s of accountState reads before executeOps discovered the typed
+   * absence — 144 cycles/day of doomed network work. Fail fast (same typed
+   * error the classifier expects), zero network. */
   report.steps.execute = await stepWrap("execute", async () => {
     const conf = armedConf();
     if (!conf.armed) return { verdict: "DISARMED", reason: "standing-order-off" };
     if (execPaused()) return { verdict: "OPERATOR-PAUSED", reason: "kill-switch" };
+    loadCredential(); // typed CREDENTIAL-MISSING here — before ANY network read
 
     const ops = [];
     // (a) stale repricing — cancel law-violating orders (D-021, cap 5)
@@ -247,11 +259,14 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
     return { verdict: res.verdict, txid: res.txid ?? null, ops: ops.length, opNames: res.opNames ?? ops.map(([n]) => n), node: res.node ?? null, error: res.error ?? null, promo };
   });
 
-  /* 7 · soldiers: deploy once, top-up as liquidity returns, grid every cycle */
+  /* 7 · soldiers: deploy once, top-up as liquidity returns, grid every cycle.
+   * T-16 CRED GATE FIRST (same measured rot as execute — 4.7s of doomed
+   * accountState reads per cycle while blocked). */
   report.steps.soldiers = await stepWrap("soldiers", async () => {
     const conf = armedConf();
     if (!conf.armed || execPaused()) return { verdict: "DISARMED-OR-PAUSED" };
     if (!conf.soldiers?.enabled) return { verdict: "DISABLED" };
+    loadCredential(); // typed CREDENTIAL-MISSING here — before ANY network read
     const st = soldiersState();
     let deploy = null, topups = [];
     if (!st.deployed) deploy = await deploySoldiers();
@@ -313,7 +328,13 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
     return rollup;
   });
 
+  /* T-16 truth taxonomy: ok | blocked (ONLY cred-gated failures — lawful) |
+   * fail (any real malfunction). `ok` stays strict all-steps-green; the new
+   * health field stops the 11/35 "fail" lie-by-composition from polluting
+   * the sovereign counters, the learning metrics, and the cockpit. */
   report.ok = Object.values(report.steps).every((s) => s.ok !== false);
+  report.health = cycleHealth(report.steps);
+  report.failures = cycleFailureBreakdown(report.steps);
   report.finishedAt = new Date().toISOString();
   if (persist) writeJson(path.join(STATE, "daily-report.json"), report);
   return report;
