@@ -18,7 +18,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { rpcCall, accountState } from "./measure.mjs";
 import { SEED_ORDERS, wifFor, derivePub, buildTx, fingerprint } from "./steemtx.mjs";
-import { validateCredentialText, vpSpoilage } from "./lib.mjs";
+import { validateCredentialText, vpSpoilage, stickyNodeOrder } from "./lib.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const SECRETS = path.join(DIR, "..", "..", ".secrets");
@@ -342,20 +342,27 @@ export async function execStatus() {
   };
 }
 
-/* ── broadcast: own node loop so error details survive (fail-closed) ─────── */
+/* ── broadcast: own node loop so error details survive (fail-closed) ───────
+ * T-17: STICKY node order + 8s per-node timeout. Measured 2026-09-30: the
+ * fixed node order burned up to 15s on a dead/slow first node for EVERY tx
+ * (~60s/vote, ~18min/curate run — the tx layer was the "slow and stupid"
+ * hotspot). The last node that ACTUALLY accepted a broadcast is tried
+ * first from then on; failover stays deterministic (stickyNodeOrder). */
+const BROADCAST_NODES = ["https://steemapi.boylikegirl.club", "https://api.justyy.com", "https://api.steemit.com"];
+let lastGoodBroadcastNode = null;
+export function broadcastNodeOrder() { return stickyNodeOrder(lastGoodBroadcastNode, BROADCAST_NODES); }
 async function broadcastTx(json) {
-  const NODES = ["https://steemapi.boylikegirl.club", "https://api.justyy.com", "https://api.steemit.com"];
   let lastErr = "";
-  for (const node of NODES) {
+  for (const node of broadcastNodeOrder()) {
     try {
       const r = await fetch(node, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jsonrpc: "2.0", method: "condenser_api.broadcast_transaction", params: [json], id: 1 }),
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(8000),
       });
       const d = await r.json().catch(() => null);
       if (d?.error) { lastErr = String(d.error.message ?? JSON.stringify(d.error)).slice(0, 200); continue; }
-      if (d?.result !== undefined) return { ok: true, node };
+      if (d?.result !== undefined) { lastGoodBroadcastNode = node; return { ok: true, node }; }
       lastErr = "no-result";
     } catch (e) { lastErr = String(e?.message ?? e).slice(0, 160); }
   }
@@ -363,7 +370,12 @@ async function broadcastTx(json) {
 }
 
 /* ── the one execution entry-point: sign & broadcast a capped, atomic tx ── */
-export async function executeAs(account, ops, { tag = "cycle", role = "active" } = {}) {
+/* T-17 fast path: callers that ALREADY measured RC (curator's VP read) and
+ * hold a fresh DGPO (≤60s) pass them in — the per-vote accountState + DGPO
+ * network re-reads die (measured ~6s/vote of pure waste × up-to-18 votes).
+ * Guards are NOT skipped — they are HOISTED: the caller presents the same
+ * evidence executeAs would have fetched, freshness-capped below. */
+export async function executeAs(account, ops, { tag = "cycle", role = "active", rcPct = null, dgpo = null, dgpoAt = 0 } = {}) {
   const conf = armedConf();
   if (!conf.armed) return { ok: false, verdict: "DISARMED", reason: "standing-order-off" };
   if (execPaused()) return { ok: false, verdict: "OPERATOR-PAUSED", reason: "kill-switch" };
@@ -375,17 +387,29 @@ export async function executeAs(account, ops, { tag = "cycle", role = "active" }
   const id = identity(account);
   if (!id.wifs[role]) return { ok: false, verdict: "ROLE-KEY-ABSENT", role, matched: ver.roles?.[role]?.matched ?? null };
 
-  // RC floor — chain resource health before any op (master only; soldiers ride small)
+  // RC floor — chain resource health before any op (master only; soldiers ride
+  // small). Caller-supplied rcPct (measured THIS run) counts as the same
+  // evidence a fresh accountState would return — the floor itself is untouched.
   if (account === masterAccount()) {
-    const acc = await accountState(account);
-    if (acc.ok && acc.rcPct != null && acc.rcPct < conf.minRcPct) {
-      return { ok: false, verdict: "RC-FLOOR", rcPct: acc.rcPct, reason: `rc below ${conf.minRcPct}%` };
+    if (rcPct != null) {
+      if (rcPct < conf.minRcPct) return { ok: false, verdict: "RC-FLOOR", rcPct, reason: `rc below ${conf.minRcPct}%` };
+    } else {
+      const acc = await accountState(account);
+      if (acc.ok && acc.rcPct != null && acc.rcPct < conf.minRcPct) {
+        return { ok: false, verdict: "RC-FLOOR", rcPct: acc.rcPct, reason: `rc below ${conf.minRcPct}%` };
+      }
     }
   }
 
-  const dgpoR = await rpcCall("condenser_api.get_dynamic_global_properties", []);
-  if (!dgpoR.ok) return { ok: false, verdict: "NO-DGPO" };
-  const t = buildTx({ ops, dgpo: dgpoR.result, wifs: [id.wifs[role]] });
+  // DGPO: reuse a ≤60s-old caller-supplied head block (TaPoS needs ANY past
+  // block within 65536 — a minute-old head is far inside that); else fetch.
+  let dgpoRes = dgpo && Number.isFinite(dgpoAt) && Date.now() - dgpoAt < 60_000 ? dgpo : null;
+  if (!dgpoRes) {
+    const dgpoR = await rpcCall("condenser_api.get_dynamic_global_properties", []);
+    if (!dgpoR.ok) return { ok: false, verdict: "NO-DGPO" };
+    dgpoRes = dgpoR.result;
+  }
+  const t = buildTx({ ops, dgpo: dgpoRes, wifs: [id.wifs[role]] });
   const crypto = await import("node:crypto");
   const txid = crypto.createHash("sha256").update(Buffer.from(t.serializedHex, "hex")).digest("hex").slice(0, 40);
   const res = await broadcastTx(t.json);

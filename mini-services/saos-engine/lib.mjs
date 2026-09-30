@@ -279,3 +279,56 @@ export function validateCredentialText(text) {
   // adoptCredentialText re-derives it from the same normalized split
   return { ok: true, account };
 }
+
+/* ── T-17 · signing-era throughput & concurrency truth ──────────────────────
+ * Measured 2026-09-30 (first credential-revived cycle): a real multi-vote
+ * curate ran minutes per vote (dead-first-node broadcasts ×15s + per-vote
+ * RC/DGPO re-reads) while the sovereign's HTTP wait died at exactly 90s —
+ * two real cycles counted "fail" while their votes were landing on-chain,
+ * and the busy-flag release let a second cycle overlap the first (a real
+ * double-vote window). Fixes: sticky node order, per-vote guard hoisting,
+ * per-vote incremental state writes, cycle-run marker + start-ack polling.
+ * All pure halves live here; IO halves live in signer/curator/daily/sovereign. */
+
+/* sticky RPC node order: last-good node first. Measured: a dead first node
+ * burned up to 15s of EVERY broadcast (~60s/vote, ~18min/curate run). Pure. */
+export function stickyNodeOrder(lastGood, nodes) {
+  const list = Array.isArray(nodes) ? nodes.filter(Boolean) : [];
+  if (!lastGood || !list.includes(lastGood)) return [...list];
+  return [lastGood, ...list.filter((n) => n !== lastGood)];
+}
+
+/* incremental curator state merge — called after EACH landed vote.
+ * Crash-safe: votesToday can never be lost mid-run again (the pre-T-17 write
+ * only happened after the WHOLE loop — a killed mid-loop run lost every vote
+ * it had cast, reopening dedup windows and day-cap drift). Pure.
+ * verdict labels the HOW for history honesty: "VOTED" (our broadcast) vs
+ * "ALREADY-VOTED" (the second signer covered it — counted for the account's
+ * VP budget, journaled as what it truly was). */
+export function mergeVoteState(prev, day, vote, verdict = "VOTED") {
+  const sameDay = prev && prev.day === day;
+  const base = sameDay
+    ? prev
+    : { votesToday: [], authorsToday: {}, totalVotes: prev?.totalVotes ?? 0, history: prev?.history ?? [] };
+  return {
+    day,
+    votesToday: [
+      ...base.votesToday,
+      { author: vote.author, permlink: vote.permlink, weight: vote.weight, at: vote.at, txid: vote.txid ?? null },
+    ],
+    authorsToday: { ...base.authorsToday, [vote.author]: (base.authorsToday?.[vote.author] ?? 0) + 1 },
+    totalVotes: (base.totalVotes ?? 0) + 1,
+    history: [...(base.history ?? []), { at: vote.at, day, verdict, n: 1, txid: vote.txid ?? null }].slice(-30),
+  };
+}
+
+/* cycle-run marker classification — the sovereign polls the ENGINE's own
+ * marker instead of holding an HTTP wait that any slow-but-healthy cycle
+ * outlives. Pure. */
+export function classifyMarker(marker) {
+  if (!marker || typeof marker !== "object") return { state: "absent", health: "fail" };
+  if (marker.running === true) return { state: "running", health: null };
+  const h = marker.health;
+  if (h === "ok" || h === "blocked" || h === "fail") return { state: "done", health: h };
+  return { state: "done", health: "fail" };
+}

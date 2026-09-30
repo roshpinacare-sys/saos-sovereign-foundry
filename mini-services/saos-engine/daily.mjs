@@ -48,8 +48,33 @@ const stepWrap = async (name, fn) => {
   }
 };
 
+/* ── T-17 · ENGINE-SIDE SINGLE-FLIGHT + CYCLE-RUN MARKER ────────────────
+ * Measured 2026-09-30: the sovereign's 90s HTTP wait died while the engine
+ * was still mid-cycle (real multi-vote curate ≈ minutes) — and its busy-flag
+ * release let the NEXT cycle overlap the first ON THE SAME ENGINE (a real
+ * double-vote window). The engine now owns the truth: a module-level mutex
+ * makes concurrent runCycle calls impossible, and a cycle-run.json marker
+ * (start + end, try/finally — a killed cycle still closes it) lets the
+ * sovereign POLL for completion instead of holding an HTTP wait that any
+ * healthy signing cycle outlives. */
+let cycleInFlight = false;
+let cycleInFlightSince = null;
+export function cycleRunning() { return cycleInFlight; }
+export function cycleMarker() { return readJson(path.join(STATE, "cycle-run.json"), null); }
+
 export async function runCycle({ now = new Date().toISOString(), persist = true } = {}) {
+  if (cycleInFlight) {
+    /* typed, pollable, and honest — the sovereign journals this as a skip,
+     * never as a fail: nothing malfunctioned, a cycle is already running. */
+    return { ok: false, health: "fail", error: "cycle-in-flight", inFlightSince: cycleInFlightSince, startedAt: now, account: ACCOUNT, steps: {} };
+  }
+  cycleInFlight = true;
+  cycleInFlightSince = now;
+  const cycleT0 = Date.now();
+  const markerFile = path.join(STATE, "cycle-run.json");
+  writeJson(markerFile, { running: true, startedAt: now, pid: process.pid });
   const report = { startedAt: now, account: ACCOUNT, steps: {} };
+  try {
   let intelOut = null;
 
   /* 5b · curate (T-13, T-16 PARALLEL): the measured fuel rail is INDEPENDENT
@@ -338,6 +363,24 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
   report.finishedAt = new Date().toISOString();
   if (persist) writeJson(path.join(STATE, "daily-report.json"), report);
   return report;
+  } finally {
+    /* the marker ALWAYS closes — even on a thrown error mid-body (the
+     * thrown error still propagates to the caller; the marker says fail) */
+    cycleInFlight = false;
+    cycleInFlightSince = null;
+    writeJson(markerFile, {
+      running: false,
+      startedAt: now,
+      finishedAt: new Date().toISOString(),
+      ms: Date.now() - cycleT0,
+      health: report.health ?? "fail",
+      ok: report.ok ?? false,
+      steps: Object.fromEntries(Object.entries(report.steps ?? {}).map(([k, v]) => [k, v?.ok === true])),
+      blockedSteps: report.failures?.blockedSteps ?? null,
+      failedSteps: report.failures?.failedSteps ?? null,
+      error: report.error ?? null,
+    });
+  }
 }
 
 function convAmtExec(convertStep) {

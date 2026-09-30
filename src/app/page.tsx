@@ -161,22 +161,43 @@ export default function Home() {
     setCycling(true)
     setCycleMsg(null)
     try {
+      /* T-17: the engine acks the start IMMEDIATELY and runs the cycle
+       * detached (single-flight + marker). The cockpit polls the engine's
+       * own marker until it closes — a UI wait can never outlive-or-kill a
+       * healthy multi-vote signing cycle again, and the truth message is
+       * built from the ENGINE's own classification, not from a hope. */
       const r = await fetch('/api/saos/engine', { method: 'POST' })
-      const j: EngineResp = await r.json()
-      const hasSteps = j.steps && Object.keys(j.steps).length > 0
-      const stepsStr = () => Object.entries(j.steps ?? {}).map(([k, v]) => `${k}:${v.ok === false ? 'כשל' : v.skipped ? 'דילוג' : 'תקין'}`).join(' · ')
-      if (j.ok) {
-        setCycleMsg(`מחזור הושלם · ${stepsStr()} · מדידה $${(j.rollup?.measuredTotalUsdPerDay ?? 0).toFixed(4)}/יום`)
-      } else if (hasSteps && j.health === 'blocked') {
-        // T-16 truth law: credential-blocked is a LAWFUL wait, not a failure —
-        // the message says exactly which rails are parked and why
-        setCycleMsg(`מחזור הושלם (חסום-חוקי — החתימה ממתינה לאישורי: ${(j.failures?.blockedSteps ?? []).join(', ')}) · ${stepsStr()} · מדידה $${(j.rollup?.measuredTotalUsdPerDay ?? 0).toFixed(4)}/יום`)
-      } else if (hasSteps) {
-        // T-15 truth law: a completed cycle with doctrine-isolated step
-        // failures is NOT "engine unavailable" — name the failing steps
-        setCycleMsg(`מחזור הושלם (חלקי — נכשלו: ${(j.failures?.failedSteps ?? []).join(', ')}) · ${stepsStr()} · מדידה $${(j.rollup?.measuredTotalUsdPerDay ?? 0).toFixed(4)}/יום`)
+      const ack = await r.json()
+      if (!ack.ok && ack.error !== 'cycle-in-flight') {
+        setCycleMsg(`המנוע לא זמין: ${ack.error ?? ack.engine ?? 'שגיאה'}`)
+        setCycling(false)
+        return
+      }
+      if (ack.error === 'cycle-in-flight') {
+        setCycleMsg('מחזור כבר רץ על המנוע — ממתין לסיומו…')
+      }
+      type Marker = { running?: boolean; health?: string; ms?: number; steps?: Record<string, boolean>; blockedSteps?: string[] | null; failedSteps?: string[] | null; error?: string | null }
+      type PollResp = { ok?: boolean; running?: boolean; marker?: Marker | null; rollup?: { measuredTotalUsdPerDay?: number | null } | null; error?: string }
+      const deadline = Date.now() + 15 * 60_000
+      let done: Marker | null = null
+      let rollup: { measuredTotalUsdPerDay?: number | null } | null = null
+      while (Date.now() < deadline) {
+        await new Promise((res) => setTimeout(res, 3000))
+        const st: PollResp = await fetch('/api/saos/cycle-status', { cache: 'no-store' }).then((x) => x.json())
+        const m = st.marker ?? null
+        if (m && m.running === false) { done = m; rollup = st.rollup ?? null; break }
+        if (st.running === false && m && m.running !== false) { done = { ...m, running: false, health: 'fail', error: 'engine-restarted-mid-cycle' }; break }
+      }
+      const stepsStr = () => Object.entries(done?.steps ?? {}).map(([k, ok]) => `${k}:${ok ? 'תקין' : 'כשל'}`).join(' · ')
+      const measured = `$${(rollup?.measuredTotalUsdPerDay ?? 0).toFixed(4)}/יום`
+      if (!done) {
+        setCycleMsg('המחזור עדיין רץ מעבר לתקציב-ההמתנה (15 דק) — המנוע ממשיך בצד-שלו; בדוק את כרטיס-המחזור לעדכון')
+      } else if (done.health === 'ok') {
+        setCycleMsg(`מחזור הושלם (${Math.round((done.ms ?? 0) / 100) / 10}s) · ${stepsStr()} · מדידה ${measured}`)
+      } else if (done.health === 'blocked') {
+        setCycleMsg(`מחזור הושלם (חסום-חוקי — החתימה ממתינה לאישורי: ${(done.blockedSteps ?? []).join(', ')}) · ${stepsStr()} · מדידה ${measured}`)
       } else {
-        setCycleMsg(`המנוע לא זמין: ${j.error ?? j.engine ?? 'שגיאה'}`)
+        setCycleMsg(`מחזור הושלם (כשל — נכשלו: ${(done.failedSteps ?? []).join(', ') || done.error || 'לא-ידוע'}) · ${stepsStr()} · מדידה ${measured}`)
       }
       await load()
     } catch {

@@ -219,46 +219,121 @@ function isConnLevelFailure(err: unknown): boolean {
     && !/timeout|abort/i.test(s);
 }
 
+/* T-17: START-ACK + MARKER POLL. The old flow held a 90s HTTP wait — every
+ * real multi-vote signing cycle outlived it and was journaled "fail" WHILE
+ * ITS VOTES WERE LANDING ON-CHAIN (measured live 16:54-16:57: two real votes
+ * broadcast, two cycle-fail events at exactly 90010/90006 ms), and the
+ * busy-flag release admitted the next cycle INTO the still-running one (a
+ * real double-vote window). Now: POST /cycle returns an immediate start-ack;
+ * the engine owns a cycle-run.json marker (start + end, try/finally) plus a
+ * module-level single-flight mutex; we poll /cycle-status until the marker
+ * closes and classify from the ENGINE's own truth (ok | blocked | fail) with
+ * the engine-measured duration. Guards hoisted, lies removed, overlap dead. */
+const CYCLE_POLL_MS = 4_000;
+const CYCLE_WAIT_MAX_MS = 15 * 60_000; // poll budget — beyond any measured healthy cycle
+
 async function runEngineCycle(core: Core, trigger: "auto" | "kick"): Promise<{ ok: boolean; steps?: Record<string, unknown>; error?: string; ms: number }> {
   if (core.cycleBusy) return { ok: false, error: "cycle-busy", ms: 0 };
   if (core.state.paused && trigger === "auto") return { ok: false, error: "paused", ms: 0 };
   core.cycleBusy = true;
   const t0 = Date.now();
+  type Ack = { ok?: boolean; started?: boolean; error?: string; since?: string | null };
+  const postAck = async (): Promise<{ j?: Ack; err?: unknown }> => {
+    try {
+      const r = await fetch(`${ENGINE_HTTP}/cycle`, { method: "POST", signal: AbortSignal.timeout(8000), cache: "no-store" });
+      return { j: (await r.json()) as Ack };
+    } catch (err) { return { err }; }
+  };
+  const pollStatus = async (): Promise<{ running?: boolean; marker?: { running?: boolean; startedAt?: string; ms?: number; health?: string; steps?: Record<string, unknown>; blockedSteps?: string[] | null; error?: string | null } | null } | null> => {
+    try {
+      const r = await fetch(`${ENGINE_HTTP}/cycle-status`, { signal: AbortSignal.timeout(4000), cache: "no-store" });
+      return (await r.json()) as { running?: boolean; marker?: { running?: boolean; startedAt?: string; ms?: number; health?: string; steps?: Record<string, unknown>; blockedSteps?: string[] | null; error?: string | null } | null };
+    } catch { return null; }
+  };
+  const journalCycleFail = (kind: string, extra: Record<string, unknown>) => {
+    const ms = Date.now() - t0;
+    if (trigger === "auto") {
+      core.state.cycles.autoRuns++; core.state.cycles.fail++;
+      core.state.cycles.lastAt = nowIso(); core.state.cycles.lastOk = false; core.state.cycles.lastHealth = "fail";
+      core.state.cycles.lastMs = ms;
+      core.state.cycles.nextAt = new Date(Date.now() + CYCLE_MS).toISOString();
+    }
+    appendEvent(core, kind, { ms, ...extra });
+    writeJson(SOV_FILE, core.state);
+  };
   try {
     // תיקון T-11: אם המנוע נפל בין-הצצות-שעון — ריפוי-מקדים במקום מחזור-שנכשל
     const pre = await engineHealth(2000);
     if (!pre.up && !(core.state.paused && trigger === "auto")) {
       await healEngine(core, `cycle-preheal(${trigger})`);
     }
-    const attemptPost = async (): Promise<{ j?: { ok?: boolean; steps?: Record<string, unknown>; error?: string }; err?: unknown }> => {
-      try {
-        const r = await fetch(`${ENGINE_HTTP}/cycle`, { method: "POST", signal: AbortSignal.timeout(90_000), cache: "no-store" });
-        const j = (await r.json()) as { ok?: boolean; steps?: Record<string, unknown>; error?: string };
-        return { j };
-      } catch (err) { return { err }; }
-    };
-    let { j, err } = await attemptPost();
-    // תיקון T-14 (הנפילה-האמיתית מ-19:42): כשל-חיבור (fetch failed) — בודקים
-    // דופק, מרפאים אם-צריך, ומנסים פעם-אחת בלבד. המחזור מגולם ביומן כ-retry.
-    if (!j && err !== undefined && isConnLevelFailure(err)) {
+    // 1 · start-ack (one conn-level heal+retry — T-14 pattern preserved)
+    /* ackAt is captured BEFORE the POST: the engine writes its marker's
+     * startedAt DURING request handling, i.e. strictly after this moment —
+     * capturing it after the response would make every marker look "stale"
+     * by a few ms and doom the poll to its full wait budget (measured
+     * 17:30:00: marker .695 vs ack .700 → the exact bug, fixed here). */
+    const ackAt = new Date().toISOString(); // only trust markers opened at/after this moment
+    let ack = await postAck();
+    if (!ack.j && ack.err !== undefined && isConnLevelFailure(ack.err)) {
       const h = await engineHealth(2500);
       if (!h.up) await healEngine(core, `cycle-retry-preheal(${trigger})`);
-      appendEvent(core, `cycle-retry(${trigger})`, { error: String((err as Error)?.message ?? err).slice(0, 120), engineUpAfterHeal: h.up || core.state.watchdog.engineUp });
-      const second = await attemptPost();
-      if (second.j) { j = second.j; err = undefined; }
-      else { err = second.err; }
+      appendEvent(core, `cycle-retry(${trigger})`, { error: String((ack.err as Error)?.message ?? ack.err).slice(0, 120), engineUpAfterHeal: h.up || core.state.watchdog.engineUp });
+      ack = await postAck();
     }
-    const ms = Date.now() - t0;
-    const ok = Boolean(j?.ok);
-    /* T-16 truth taxonomy: the daily cycle now self-classifies its health.
-     * "blocked" = the ONLY failures are typed CREDENTIAL-MISSING — the machine
-     * is lawfully waiting for its operator's revival, NOT malfunctioning.
-     * Counting that as "fail" produced the 11/35 lie-by-composition
-     * (2026-09-30 measured) that poisoned ok-rate metrics and learning. */
-    const health: "ok" | "blocked" | "fail" =
-      j && typeof (j as { health?: unknown }).health === "string"
-        ? ((j as { health: string }).health === "blocked" ? "blocked" : (j as { health: string }).health === "fail" ? "fail" : "ok")
-        : ok ? "ok" : "fail";
+    // 2 · ack outcomes — every path is explicit, none is a silent "fail"
+    if (!ack.j) {
+      const error = String((ack.err as Error)?.message ?? ack.err).slice(0, 160);
+      journalCycleFail(`cycle-error(${trigger})`, { error });
+      return { ok: false, error, ms: Date.now() - t0 };
+    }
+    if (ack.j.error === "cycle-in-flight") {
+      /* a cycle is ALREADY running on the engine (duplicate trigger / kick
+       * while auto is in flight) — a lawful SKIP, never a fail: nothing
+       * malfunctioned and no double-execution was admitted. */
+      appendEvent(core, `cycle-skip(${trigger})`, { reason: "engine-cycle-in-flight", since: ack.j.since ?? null });
+      writeJson(SOV_FILE, core.state);
+      return { ok: false, error: "cycle-in-flight", ms: Date.now() - t0 };
+    }
+    if (!ack.j.started) {
+      const error = String(ack.j.error ?? "unexpected-ack").slice(0, 160);
+      journalCycleFail(`cycle-error(${trigger})`, { error });
+      return { ok: false, error, ms: Date.now() - t0 };
+    }
+    // 3 · poll the engine's own marker until it closes (or the budget dies)
+    const deadline = t0 + CYCLE_WAIT_MAX_MS;
+    let marker: NonNullable<Awaited<ReturnType<typeof pollStatus>>>["marker"] = null;
+    let pollFails = 0;
+    let healedMidCycle = false;
+    for (;;) {
+      await new Promise((r) => setTimeout(r, CYCLE_POLL_MS));
+      const st = await pollStatus();
+      if (!st) {
+        pollFails++;
+        if (pollFails >= 3 && !healedMidCycle) { healedMidCycle = true; await healEngine(core, `cycle-midpoll-heal(${trigger})`); }
+        if (Date.now() > deadline) break;
+        continue;
+      }
+      pollFails = 0;
+      const m = st.marker ?? null;
+      const fresh = !!m && typeof m.startedAt === "string" && m.startedAt >= ackAt;
+      if (fresh && m!.running === false) { marker = m; break; } // normal completion
+      if (st.running === false && fresh && m!.running !== false) {
+        // phantom marker: the engine (re)started mid-cycle — module state says
+        // no cycle runs, the marker never closed ⇒ the process died mid-cycle
+        marker = { ...m!, running: false, health: "fail", error: "engine-restarted-mid-cycle" };
+        break;
+      }
+      if (Date.now() > deadline) break;
+    }
+    // 4 · classify from ENGINE truth (T-16 taxonomy, engine-measured ms)
+    const closedFresh = !!marker && marker.running === false && typeof marker.startedAt === "string" && marker.startedAt >= ackAt;
+    if (!closedFresh) {
+      journalCycleFail(`cycle-fail(${trigger})`, { error: "cycle-wait-timeout", waitMs: CYCLE_WAIT_MAX_MS });
+      return { ok: false, error: "cycle-wait-timeout", ms: Date.now() - t0 };
+    }
+    const health: "ok" | "blocked" | "fail" = marker!.health === "ok" ? "ok" : marker!.health === "blocked" ? "blocked" : "fail";
+    const engineMs = typeof marker!.ms === "number" && marker!.ms! > 0 ? marker!.ms! : Date.now() - t0;
     if (trigger === "auto") {
       core.state.cycles.autoRuns++;
       if (health === "ok") core.state.cycles.ok++;
@@ -267,26 +342,18 @@ async function runEngineCycle(core: Core, trigger: "auto" | "kick"): Promise<{ o
       core.state.cycles.lastAt = nowIso();
       core.state.cycles.lastOk = health === "ok";
       core.state.cycles.lastHealth = health;
-      core.state.cycles.lastMs = ms;
+      core.state.cycles.lastMs = engineMs;
       core.state.cycles.nextAt = new Date(Date.now() + CYCLE_MS).toISOString();
     }
     appendEvent(core, health === "ok" ? `cycle-ok(${trigger})` : health === "blocked" ? `cycle-blocked(${trigger})` : `cycle-fail(${trigger})`, {
-      ms, steps: j?.steps ? Object.keys(j.steps).length : 0,
-      verdict: j?.steps && typeof j.steps === "object" ? (j.steps as Record<string, { verdict?: string }>).peg?.verdict ?? null : null,
-      blockedSteps: (j as { failures?: { blockedSteps?: string[] } } | null)?.failures?.blockedSteps ?? null,
+      ms: engineMs, engineMeasured: true,
+      steps: marker!.steps && typeof marker!.steps === "object" ? Object.keys(marker!.steps).length : 0,
+      verdict: null,
+      blockedSteps: marker!.blockedSteps ?? null,
+      error: marker!.error ?? null,
     });
     writeJson(SOV_FILE, core.state);
-    return { ok, steps: j?.steps, error: j?.error, ms };
-  } catch (e) {
-    const ms = Date.now() - t0;
-    if (trigger === "auto") {
-      core.state.cycles.autoRuns++; core.state.cycles.fail++;
-      core.state.cycles.lastAt = nowIso(); core.state.cycles.lastOk = false; core.state.cycles.lastMs = ms;
-      core.state.cycles.nextAt = new Date(Date.now() + CYCLE_MS).toISOString();
-    }
-    appendEvent(core, `cycle-error(${trigger})`, { ms, error: String((e as Error)?.message ?? e).slice(0, 160) });
-    writeJson(SOV_FILE, core.state);
-    return { ok: false, error: String((e as Error)?.message ?? e).slice(0, 160), ms };
+    return { ok: health === "ok", steps: marker!.steps, error: marker!.error ?? undefined, ms: engineMs };
   } finally {
     core.cycleBusy = false;
   }

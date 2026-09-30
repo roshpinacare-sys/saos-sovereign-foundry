@@ -385,5 +385,45 @@ eq("cred bad-account", validateCredentialText("!bad account pw"), { ok: false, r
 eq("cred oversize", validateCredentialText("acct " + "x".repeat(5000)), { ok: false, reason: "oversize" });
 ok("cred never-echoes-secret-in-result", !JSON.stringify(validateCredentialText("headcorner sekrit-pw")).includes("sekrit-pw"));
 
+/* ── 19 · T-17 signing-era throughput & concurrency truth (pure halves) ──── */
+import {
+  stickyNodeOrder, mergeVoteState, classifyMarker,
+} from "./lib.mjs";
+
+/* stickyNodeOrder: last-good first, deterministic, fault-tolerant */
+eq("sticky moves-lastgood-first", stickyNodeOrder("b", ["a", "b", "c"]), ["b", "a", "c"]);
+eq("sticky unknown-lastgood-unchanged", stickyNodeOrder("z", ["a", "b"]), ["a", "b"]);
+eq("sticky null-lastgood-unchanged", stickyNodeOrder(null, ["a", "b"]), ["a", "b"]);
+eq("sticky filters-falsy-nodes", stickyNodeOrder("b", ["a", null, "b", ""]), ["b", "a"]);
+eq("sticky no-mutation-of-input", (() => { const inp = ["a", "b"]; stickyNodeOrder("b", inp); return JSON.stringify(inp); })(), JSON.stringify(["a", "b"]));
+
+/* mergeVoteState: incremental crash-safe curator state (per landed vote) */
+const DAY = "2026-09-30";
+const prevEmpty = { day: null, votesToday: [], authorsToday: {}, totalVotes: 10, history: [{ at: "2026-09-29T19:45:00Z", day: "2026-09-29", verdict: "VOTED", n: 10, txid: "aa" }] };
+const m1 = mergeVoteState(prevEmpty, DAY, { author: "alice", permlink: "p1", weight: 5000, at: "2026-09-30T17:00:00Z", txid: "tx1" });
+eq("merge resets-votes-on-new-day", m1.votesToday.length, 1);
+eq("merge keeps-totalVotes-across-days", m1.totalVotes, 11);
+eq("merge appends-vote", m1.votesToday[0], { author: "alice", permlink: "p1", weight: 5000, at: "2026-09-30T17:00:00Z", txid: "tx1" });
+eq("merge authors-count", m1.authorsToday, { alice: 1 });
+eq("merge history-trimmed-30", m1.history.length, 2);
+const m2 = mergeVoteState(m1, DAY, { author: "alice", permlink: "p2", weight: 4800, at: "2026-09-30T17:01:00Z", txid: "tx2" });
+eq("merge same-day-accumulates", m2.votesToday.length, 2);
+eq("merge same-author-counts", m2.authorsToday, { alice: 2 });
+eq("merge totalVotes-grows", m2.totalVotes, 12);
+ok("merge never-carries-yesterdays-votes", !JSON.stringify(m2.votesToday).includes("2026-09-29T19:45"));
+const m3 = mergeVoteState(m2, DAY, { author: "bob", permlink: "p3", weight: 4900, at: "2026-09-30T17:02:00Z", txid: null }, "ALREADY-VOTED");
+eq("merge collision-verdict-in-history", m3.history[m3.history.length - 1].verdict, "ALREADY-VOTED");
+eq("merge collision-counts-for-budget", m3.totalVotes, 13);
+eq("merge collision-no-txid", m3.votesToday[2].txid, null);
+
+/* classifyMarker: the sovereign reads ENGINE truth, not an HTTP wait */
+eq("marker running", classifyMarker({ running: true, startedAt: "2026-09-30T17:00:00Z" }), { state: "running", health: null });
+eq("marker done-ok", classifyMarker({ running: false, health: "ok" }), { state: "done", health: "ok" });
+eq("marker done-blocked", classifyMarker({ running: false, health: "blocked" }), { state: "done", health: "blocked" });
+eq("marker done-fail", classifyMarker({ running: false, health: "fail" }), { state: "done", health: "fail" });
+eq("marker garbage-health-is-fail", classifyMarker({ running: false, health: "weird" }), { state: "done", health: "fail" });
+eq("marker absent-is-fail", classifyMarker(null), { state: "absent", health: "fail" });
+eq("marker non-object-is-fail", classifyMarker("junk"), { state: "absent", health: "fail" });
+
 console.log(`\nSELFTEST ${pass}/${pass + fail} ${fail === 0 ? "PASS" : "FAIL"}`);
 process.exit(fail === 0 ? 0 : 1);

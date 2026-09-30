@@ -1,5 +1,5 @@
 {
-  "at": "2026-09-30T16:39:38.272Z",
+  "at": "2026-09-30T17:40:58.050Z",
   "decisions": [
     {
       "kind": "book-depth",
@@ -10,16 +10,7 @@
         "bestAsk": 0.10424354243542436,
         "bestBid": 0.10420011496303344
       },
-      "at": "2026-09-30T16:39:38.272Z"
-    },
-    {
-      "kind": "parity-drift",
-      "decision": "monitor",
-      "reason": "internal feed deviates 419bps from external parity",
-      "action": {
-        "bps": 419
-      },
-      "at": "2026-09-30T16:39:38.272Z"
+      "at": "2026-09-30T17:40:58.050Z"
     },
     {
       "kind": "soldiers",
@@ -28,7 +19,7 @@
       "action": {
         "deployed": true
       },
-      "at": "2026-09-30T16:39:38.272Z"
+      "at": "2026-09-30T17:40:58.050Z"
     },
     {
       "kind": "rc-health",
@@ -37,18 +28,18 @@
       "action": {
         "rcPct": 100
       },
-      "at": "2026-09-30T16:39:38.272Z"
+      "at": "2026-09-30T17:40:58.050Z"
     },
     {
       "kind": "curation",
       "decision": "curator-live",
-      "reason": "voted 10 today (10 total) · VP 85.5% · txid 8fd4f634bf83",
+      "reason": "voted 9 today (29 total) · VP 83.1% · txid 9258fdb43bb0",
       "action": {
-        "votesToday": 0,
-        "vpEff": 85.5,
+        "votesToday": 9,
+        "vpEff": 83.1,
         "verdict": "VOTED"
       },
-      "at": "2026-09-30T16:39:38.272Z"
+      "at": "2026-09-30T17:40:58.050Z"
     }
   ],
   "spreadBpsRec": 4,

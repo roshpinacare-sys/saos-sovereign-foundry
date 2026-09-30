@@ -1,212 +1,282 @@
 {
   "enabled": true,
-  "at": "2026-09-29T19:45:06.126Z",
-  "day": "2026-09-29",
-  "votesTodayCount": 0,
-  "maxPerDay": 10,
+  "at": "2026-09-30T17:30:00.695Z",
+  "day": "2026-09-30",
+  "votesTodayCount": 9,
+  "maxPerDay": 18,
+  "tuningsApplied": [],
   "verdict": "VOTED",
-  "txid": "8fd4f634bf83e6487fb15a0384f2d03947fb1a76",
+  "txid": "9258fdb43bb015057299e47fdd0fa0fda1e2d2e9",
   "error": null,
-  "vpEff": 85.5,
+  "vpEff": 83.1,
   "voted": [
     {
-      "author": "tradelover",
-      "permlink": "my-daily-steem-hop-gaming-c92da0ca18e81",
-      "weight": 4948,
-      "ageMinutes": 31,
-      "tag": "steem",
-      "ok": true,
-      "txid": "8fd4f634bf83e6487fb15a0384f2d03947fb1a76",
-      "error": null
-    },
-    {
-      "author": "nhriyad",
-      "permlink": "jamshed-jhal-bitan-char-majlishpur",
-      "weight": 4942,
-      "ageMinutes": 33,
-      "tag": "steem",
-      "ok": true,
-      "txid": "ff69bc5c50c414150cd038e5317fdcbbe69ce2af",
-      "error": null
-    },
-    {
-      "author": "snehuu",
-      "permlink": "ja2ty-jugando-a-mi-favorito-de-la-infancia-el-juego-sky-tower",
-      "weight": 4927,
-      "ageMinutes": 39,
-      "tag": "steem",
-      "ok": true,
-      "txid": "e74b148e4899dd69ed2bd8ee748b106b6c28b164",
-      "error": null
-    },
-    {
-      "author": "bountyportals",
-      "permlink": "what-to-keep-until-the-payout-is-complete",
-      "weight": 4915,
-      "ageMinutes": 44,
+      "author": "leos11",
+      "permlink": "tron-price-30-9-2026",
+      "weight": 4982,
+      "ageMinutes": 17,
       "tag": "crypto",
       "ok": true,
-      "txid": "d0f0d937f25b686f684ec200c522bcc644769996",
-      "error": null
-    },
-    {
-      "author": "jannat7",
-      "permlink": "black-and-white-flower-and-tree-art",
-      "weight": 4869,
-      "ageMinutes": 62,
-      "tag": "steem",
-      "ok": true,
-      "txid": "2ba3716ddf131eafbf64ede0f13d096cba41b3aa",
-      "error": null
-    },
-    {
-      "author": "d3an",
-      "permlink": "daily-ronin-price-report-29-9-2026",
-      "weight": 4796,
-      "ageMinutes": 91,
-      "tag": "crypto",
-      "ok": true,
-      "txid": "7b1fbeab835361d80065dd8498c808feb6391163",
-      "error": null
-    },
-    {
-      "author": "steemburnup",
-      "permlink": "burn-pool-1790705018857",
-      "weight": 4769,
-      "ageMinutes": 101,
-      "tag": "steem",
-      "ok": true,
-      "txid": "9fd2ffb379e16c3aeb34e4baa08413cedc21fe2f",
-      "error": null
+      "txid": "9258fdb43bb015057299e47fdd0fa0fda1e2d2e9",
+      "error": null,
+      "retried": false
     },
     {
       "author": "rakib078",
-      "permlink": "the-diary-game-or-29-09-2026-or-a-day-by-the-river-and-our-jute-greens-field",
-      "weight": 4670,
-      "ageMinutes": 141,
+      "permlink": "crypto-pre-market-fraud-or",
+      "weight": 4660,
+      "ageMinutes": 145,
       "tag": "steem",
       "ok": true,
-      "txid": "d93911355f00d897768b6497620e0fa9392726bb",
-      "error": null
+      "txid": "07453a553eeb942529bc786a376857fc82cbc4cc",
+      "error": null,
+      "retried": false
     },
     {
-      "author": "sagor1233",
-      "permlink": "starlight-by-nygilia-nft-collection",
-      "weight": 4644,
-      "ageMinutes": 151,
-      "tag": "crypto",
+      "author": "nuts-brain",
+      "permlink": "how-i-have-made-85-000-steem-100-profit-within-57-days-for-you-20260930t145826",
+      "weight": 4643,
+      "ageMinutes": 152,
+      "tag": "steem",
       "ok": true,
-      "txid": "5f0d770a57c17c0e45275fa80ab07d2145ac04e3",
-      "error": null
+      "txid": "be729909e3c3d848c2d85cae3f1451d8f257c508",
+      "error": null,
+      "retried": false
     },
     {
-      "author": "awesome-american",
-      "permlink": "how-i-have-gained-80-000-steem-100-profit-within-57-days-for-you-20260929t163337",
-      "weight": 4542,
-      "ageMinutes": 192,
+      "author": "pattyy",
+      "permlink": "jugue-al-juego-altitude-2abf13ec1705",
+      "weight": 4586,
+      "ageMinutes": 174,
+      "tag": "steem",
+      "ok": true,
+      "txid": "1ee06b076c38c00c953e8b7077f31535fe0df369",
+      "error": null,
+      "retried": false
+    },
+    {
+      "author": "techcirkle",
+      "permlink": "where-ai-actually-earns-its-keep-in-a-medical-practice-back-office",
+      "weight": 4561,
+      "ageMinutes": 184,
+      "tag": "technology",
+      "ok": true,
+      "txid": "c5e5c75b6275107840fc4198f95302327b2d378c",
+      "error": null,
+      "retried": false
+    },
+    {
+      "author": "abandi",
+      "permlink": "is-the-steem-cryptocurrency-a-good-choice-for-investors-20260930t141943",
+      "weight": 4545,
+      "ageMinutes": 190,
       "tag": "crypto",
       "ok": true,
-      "txid": "64aa0e96c6f4e5a1ce106bc9d4bca72f51d9ede5",
-      "error": null
+      "txid": "da719f0512c35f5475638d9d3f8469f59797d862",
+      "error": null,
+      "retried": false
+    },
+    {
+      "author": "bountyportals",
+      "permlink": "september-recap-the-verifiable-parts-of-a-justmix-order",
+      "weight": 4517,
+      "ageMinutes": 202,
+      "tag": "crypto",
+      "ok": true,
+      "txid": "e11df6a4b270808351e8aaf045ad8cc5868b9364",
+      "error": null,
+      "retried": false
+    },
+    {
+      "author": "vik24",
+      "permlink": "the-versatility-of-narrative-inside-college-sports-communications-1790776260",
+      "weight": 4473,
+      "ageMinutes": 219,
+      "tag": "steem",
+      "ok": true,
+      "txid": "415031ea4a02c31d3225d221fcc6808d9ff22575",
+      "error": null,
+      "retried": false
+    },
+    {
+      "author": "rojsa",
+      "permlink": "apps",
+      "weight": 4351,
+      "ageMinutes": 268,
+      "tag": "technology",
+      "ok": true,
+      "txid": "c00ec0e1ba8fc7884e8e5afcbdc35ace5a2dbf25",
+      "error": null,
+      "retried": false
     }
   ],
   "failedVotes": [],
   "rejectedTop": [
-    "faisalamin/20-steem-powerup-8ec7ffb61f61c:too-young",
-    "headcorner/saos-transparency-20260929:self-fleet",
-    "jannat7/farid-store-dagonbhuiyan:author-cap",
-    "tagai-sync2/co8af62433ad74364d12:short-body",
-    "mister-omortson/photography-290:spam-title",
-    "toufiq777/no-matter-how-great-the-danger-the-wise-thing-to-do-is-to-make-the-right-decision-instead-of-giving-in-to-despair:day-cap",
-    "ziomar/the-strategic-bifurcation-of-ai-openai-and-anthropics-competing-trajectories-1790698489:day-cap",
-    "steemburnup/burn-pool-1790697818783:author-cap"
+    "okalok/when-bitcoin-100k:already-voted",
+    "the.journal/senate-considers-key-legislation-to-bolster-market-integrity-and-consumer-safeguards-1790784940:already-voted",
+    "arman.ithm/binance-pump-usdc-spot-trading-tournament-is-live-up-to-50m-usdpump-token-vouchers:already-voted",
+    "steemburnup/burn-pool-1790784219560:already-voted",
+    "headcorner/the-weave-truth-report-the-network-that-verifies-itself-2026-muoab93b:self-fleet",
+    "cr7pt0/2026-09-30-the-latest-it-economic-blockchain-and-coin-news-20260930t153615z:already-voted",
+    "nhriyad/haque-departmental-store-ramnagar:already-voted",
+    "steembasicincome/syl5z9-sbi-curation-report:already-voted"
   ],
   "candidatesScanned": 120,
+  "skippedVotes": [],
   "votesToday": [
     {
-      "author": "tradelover",
-      "permlink": "my-daily-steem-hop-gaming-c92da0ca18e81",
-      "weight": 4948,
-      "at": "2026-09-29T19:45:06.126Z",
-      "txid": "8fd4f634bf83e6487fb15a0384f2d03947fb1a76"
+      "author": "jang",
+      "permlink": "space-weather-news-heart-on-the-sun-solar-forcing-wind-lightning-or-s0-news-sep-30-2026",
+      "weight": 200,
+      "at": "2026-09-30T15:52:39Z",
+      "txid": null,
+      "via": "second-signer"
     },
     {
       "author": "nhriyad",
-      "permlink": "jamshed-jhal-bitan-char-majlishpur",
-      "weight": 4942,
-      "at": "2026-09-29T19:45:06.126Z",
-      "txid": "ff69bc5c50c414150cd038e5317fdcbbe69ce2af"
+      "permlink": "haque-departmental-store-ramnagar",
+      "weight": 200,
+      "at": "2026-09-30T16:07:39Z",
+      "txid": null,
+      "via": "second-signer"
     },
     {
-      "author": "snehuu",
-      "permlink": "ja2ty-jugando-a-mi-favorito-de-la-infancia-el-juego-sky-tower",
-      "weight": 4927,
-      "at": "2026-09-29T19:45:06.126Z",
-      "txid": "e74b148e4899dd69ed2bd8ee748b106b6c28b164"
+      "author": "steembasicincome",
+      "permlink": "syl5z9-sbi-curation-report",
+      "weight": 200,
+      "at": "2026-09-30T16:22:42Z",
+      "txid": null,
+      "via": "second-signer"
     },
     {
-      "author": "bountyportals",
-      "permlink": "what-to-keep-until-the-payout-is-complete",
-      "weight": 4915,
-      "at": "2026-09-29T19:45:06.126Z",
-      "txid": "d0f0d937f25b686f684ec200c522bcc644769996"
+      "author": "sarix",
+      "permlink": "diario-gatuno-posts-fotos-36",
+      "weight": 200,
+      "at": "2026-09-30T16:37:39Z",
+      "txid": null,
+      "via": "second-signer"
     },
     {
-      "author": "jannat7",
-      "permlink": "black-and-white-flower-and-tree-art",
-      "weight": 4869,
-      "at": "2026-09-29T19:45:06.126Z",
-      "txid": "2ba3716ddf131eafbf64ede0f13d096cba41b3aa"
+      "author": "cr7pt0",
+      "permlink": "2026-09-30-the-latest-it-economic-blockchain-and-coin-news-20260930t153615z",
+      "weight": 200,
+      "at": "2026-09-30T16:52:39Z",
+      "txid": null,
+      "via": "second-signer"
     },
     {
-      "author": "d3an",
-      "permlink": "daily-ronin-price-report-29-9-2026",
-      "weight": 4796,
-      "at": "2026-09-29T19:45:06.126Z",
-      "txid": "7b1fbeab835361d80065dd8498c808feb6391163"
+      "author": "the.journal",
+      "permlink": "senate-considers-key-legislation-to-bolster-market-integrity-and-consumer-safeguards-1790784940",
+      "weight": 4928,
+      "at": "2026-09-30T16:54:27Z",
+      "txid": "d322ba23f9d936c4ba7f75791087c9ab32691731"
+    },
+    {
+      "author": "arman.ithm",
+      "permlink": "binance-pump-usdc-spot-trading-tournament-is-live-up-to-50m-usdpump-token-vouchers",
+      "weight": 4897,
+      "at": "2026-09-30T16:56:30Z",
+      "txid": "20c280306295fb1b4d601fafa0387806df560eaf"
     },
     {
       "author": "steemburnup",
-      "permlink": "burn-pool-1790705018857",
-      "weight": 4769,
-      "at": "2026-09-29T19:45:06.126Z",
-      "txid": "9fd2ffb379e16c3aeb34e4baa08413cedc21fe2f"
+      "permlink": "burn-pool-1790784219560",
+      "weight": 4867,
+      "at": "2026-09-30T17:06:39Z",
+      "txid": "4a4b1a4628df43449a9b24e5366f1b93ec493244"
+    },
+    {
+      "author": "janyasai",
+      "permlink": "latest-top-10-hot-post-on-steem-net-2691-30-9-2026",
+      "weight": 4727,
+      "at": "2026-09-30T17:16:27Z",
+      "txid": "3ceed433d9a93cbc1a600d88ced6dfef5d786868"
+    },
+    {
+      "author": "leos11",
+      "permlink": "tron-price-30-9-2026",
+      "weight": 4982,
+      "at": "2026-09-30T17:30:00.695Z",
+      "txid": "9258fdb43bb015057299e47fdd0fa0fda1e2d2e9"
     },
     {
       "author": "rakib078",
-      "permlink": "the-diary-game-or-29-09-2026-or-a-day-by-the-river-and-our-jute-greens-field",
-      "weight": 4670,
-      "at": "2026-09-29T19:45:06.126Z",
-      "txid": "d93911355f00d897768b6497620e0fa9392726bb"
+      "permlink": "crypto-pre-market-fraud-or",
+      "weight": 4660,
+      "at": "2026-09-30T17:30:00.695Z",
+      "txid": "07453a553eeb942529bc786a376857fc82cbc4cc"
     },
     {
-      "author": "sagor1233",
-      "permlink": "starlight-by-nygilia-nft-collection",
-      "weight": 4644,
-      "at": "2026-09-29T19:45:06.126Z",
-      "txid": "5f0d770a57c17c0e45275fa80ab07d2145ac04e3"
+      "author": "nuts-brain",
+      "permlink": "how-i-have-made-85-000-steem-100-profit-within-57-days-for-you-20260930t145826",
+      "weight": 4643,
+      "at": "2026-09-30T17:30:00.695Z",
+      "txid": "be729909e3c3d848c2d85cae3f1451d8f257c508"
     },
     {
-      "author": "awesome-american",
-      "permlink": "how-i-have-gained-80-000-steem-100-profit-within-57-days-for-you-20260929t163337",
-      "weight": 4542,
-      "at": "2026-09-29T19:45:06.126Z",
-      "txid": "64aa0e96c6f4e5a1ce106bc9d4bca72f51d9ede5"
+      "author": "pattyy",
+      "permlink": "jugue-al-juego-altitude-2abf13ec1705",
+      "weight": 4586,
+      "at": "2026-09-30T17:30:00.695Z",
+      "txid": "1ee06b076c38c00c953e8b7077f31535fe0df369"
+    },
+    {
+      "author": "techcirkle",
+      "permlink": "where-ai-actually-earns-its-keep-in-a-medical-practice-back-office",
+      "weight": 4561,
+      "at": "2026-09-30T17:30:00.695Z",
+      "txid": "c5e5c75b6275107840fc4198f95302327b2d378c"
+    },
+    {
+      "author": "abandi",
+      "permlink": "is-the-steem-cryptocurrency-a-good-choice-for-investors-20260930t141943",
+      "weight": 4545,
+      "at": "2026-09-30T17:30:00.695Z",
+      "txid": "da719f0512c35f5475638d9d3f8469f59797d862"
+    },
+    {
+      "author": "bountyportals",
+      "permlink": "september-recap-the-verifiable-parts-of-a-justmix-order",
+      "weight": 4517,
+      "at": "2026-09-30T17:30:00.695Z",
+      "txid": "e11df6a4b270808351e8aaf045ad8cc5868b9364"
+    },
+    {
+      "author": "vik24",
+      "permlink": "the-versatility-of-narrative-inside-college-sports-communications-1790776260",
+      "weight": 4473,
+      "at": "2026-09-30T17:30:00.695Z",
+      "txid": "415031ea4a02c31d3225d221fcc6808d9ff22575"
+    },
+    {
+      "author": "rojsa",
+      "permlink": "apps",
+      "weight": 4351,
+      "at": "2026-09-30T17:30:00.695Z",
+      "txid": "c00ec0e1ba8fc7884e8e5afcbdc35ace5a2dbf25"
     }
   ],
   "authorsToday": {
-    "tradelover": 1,
+    "jang": 1,
     "nhriyad": 1,
-    "snehuu": 1,
-    "bountyportals": 1,
-    "jannat7": 1,
-    "d3an": 1,
+    "steembasicincome": 1,
+    "sarix": 1,
+    "cr7pt0": 1,
+    "the.journal": 1,
+    "arman.ithm": 1,
     "steemburnup": 1,
+    "janyasai": 1,
+    "leos11": 1,
     "rakib078": 1,
-    "sagor1233": 1,
-    "awesome-american": 1
+    "nuts-brain": 1,
+    "pattyy": 1,
+    "techcirkle": 1,
+    "abandi": 1,
+    "bountyportals": 1,
+    "vik24": 1,
+    "rojsa": 1
   },
-  "totalVotes": 10,
+  "totalVotes": 29,
   "history": [
     {
       "at": "2026-09-29T19:42:16.117Z",
@@ -235,6 +305,83 @@
       "verdict": "VOTED",
       "n": 10,
       "txid": "8fd4f634bf83e6487fb15a0384f2d03947fb1a76"
+    },
+    {
+      "at": "2026-09-30T17:16:15.036Z",
+      "day": "2026-09-30",
+      "verdict": "VOTED",
+      "n": 1,
+      "txid": "3ceed433d9a93cbc1a600d88ced6dfef5d786868"
+    },
+    {
+      "at": "2026-09-30T17:30:00.695Z",
+      "day": "2026-09-30",
+      "verdict": "VOTED",
+      "n": 1,
+      "txid": "9258fdb43bb015057299e47fdd0fa0fda1e2d2e9"
+    },
+    {
+      "at": "2026-09-30T17:30:00.695Z",
+      "day": "2026-09-30",
+      "verdict": "VOTED",
+      "n": 1,
+      "txid": "07453a553eeb942529bc786a376857fc82cbc4cc"
+    },
+    {
+      "at": "2026-09-30T17:30:00.695Z",
+      "day": "2026-09-30",
+      "verdict": "VOTED",
+      "n": 1,
+      "txid": "be729909e3c3d848c2d85cae3f1451d8f257c508"
+    },
+    {
+      "at": "2026-09-30T17:30:00.695Z",
+      "day": "2026-09-30",
+      "verdict": "VOTED",
+      "n": 1,
+      "txid": "1ee06b076c38c00c953e8b7077f31535fe0df369"
+    },
+    {
+      "at": "2026-09-30T17:30:00.695Z",
+      "day": "2026-09-30",
+      "verdict": "VOTED",
+      "n": 1,
+      "txid": "c5e5c75b6275107840fc4198f95302327b2d378c"
+    },
+    {
+      "at": "2026-09-30T17:30:00.695Z",
+      "day": "2026-09-30",
+      "verdict": "VOTED",
+      "n": 1,
+      "txid": "da719f0512c35f5475638d9d3f8469f59797d862"
+    },
+    {
+      "at": "2026-09-30T17:30:00.695Z",
+      "day": "2026-09-30",
+      "verdict": "VOTED",
+      "n": 1,
+      "txid": "e11df6a4b270808351e8aaf045ad8cc5868b9364"
+    },
+    {
+      "at": "2026-09-30T17:30:00.695Z",
+      "day": "2026-09-30",
+      "verdict": "VOTED",
+      "n": 1,
+      "txid": "415031ea4a02c31d3225d221fcc6808d9ff22575"
+    },
+    {
+      "at": "2026-09-30T17:30:00.695Z",
+      "day": "2026-09-30",
+      "verdict": "VOTED",
+      "n": 1,
+      "txid": "c00ec0e1ba8fc7884e8e5afcbdc35ace5a2dbf25"
+    },
+    {
+      "at": "2026-09-30T17:30:00.695Z",
+      "day": "2026-09-30",
+      "verdict": "VOTED",
+      "n": 9,
+      "txid": "9258fdb43bb015057299e47fdd0fa0fda1e2d2e9"
     }
   ]
 }

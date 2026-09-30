@@ -1,26 +1,28 @@
 {
-  "bootedAt": "2026-09-30T15:26:15.021Z",
-  "pid": 2742,
+  "bootedAt": "2026-09-30T17:34:17.192Z",
+  "pid": 9211,
   "armed": true,
   "paused": false,
   "watchdog": {
-    "checks": 361,
-    "downs": 2,
-    "heals": 14,
-    "healVerified": 14,
+    "checks": 419,
+    "downs": 5,
+    "heals": 17,
+    "healVerified": 16,
     "healFailed": 0,
-    "lastCheckAt": "2026-09-30T16:42:15.072Z",
+    "lastCheckAt": "2026-09-30T17:43:17.206Z",
     "engineUp": true,
-    "lastSpawnAt": "2026-09-30T15:26:15.038Z"
+    "lastSpawnAt": null
   },
   "cycles": {
-    "autoRuns": 38,
-    "ok": 24,
-    "fail": 14,
-    "lastAt": "2026-09-30T16:36:20.187Z",
-    "lastOk": false,
-    "lastMs": 5156,
-    "nextAt": "2026-09-30T16:46:20.187Z"
+    "autoRuns": 43,
+    "ok": 26,
+    "fail": 17,
+    "blocked": 0,
+    "lastAt": "2026-09-30T17:35:18.219Z",
+    "lastOk": true,
+    "lastHealth": "ok",
+    "lastMs": 14995,
+    "nextAt": "2026-09-30T17:45:18.219Z"
   },
   "selftest": {
     "runs": 0,
@@ -30,13 +32,37 @@
     "total": null
   },
   "cred": {
-    "present": false,
-    "firstDownAt": "2026-09-30T15:26:19.051Z",
-    "lastDownAt": "2026-09-30T16:42:15.075Z",
+    "present": true,
+    "firstDownAt": null,
+    "lastDownAt": "2026-09-30T16:48:15.090Z",
     "alerts": 2,
     "lastAlertAt": "2026-09-30T16:27:15.068Z"
   },
   "control": [
+    {
+      "at": "2026-09-30T17:34:17.192Z",
+      "action": "boot",
+      "by": "instrumentation",
+      "note": "SovereignCore armed"
+    },
+    {
+      "at": "2026-09-30T17:29:15.682Z",
+      "action": "boot",
+      "by": "instrumentation",
+      "note": "SovereignCore armed"
+    },
+    {
+      "at": "2026-09-30T17:27:38.295Z",
+      "action": "boot",
+      "by": "instrumentation",
+      "note": "SovereignCore armed"
+    },
+    {
+      "at": "2026-09-30T17:25:54.215Z",
+      "action": "boot",
+      "by": "instrumentation",
+      "note": "SovereignCore armed"
+    },
     {
       "at": "2026-09-30T15:26:15.021Z",
       "action": "boot",

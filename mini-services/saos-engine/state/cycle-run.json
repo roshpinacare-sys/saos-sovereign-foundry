@@ -1,0 +1,23 @@
+{
+  "running": false,
+  "startedAt": "2026-09-30T17:40:58.050Z",
+  "finishedAt": "2026-09-30T17:41:15.877Z",
+  "ms": 17827,
+  "health": "ok",
+  "ok": true,
+  "steps": {
+    "observe": true,
+    "intel": true,
+    "tick": true,
+    "peg": true,
+    "convert": true,
+    "curate": true,
+    "execute": true,
+    "soldiers": true,
+    "learn": true,
+    "report": true
+  },
+  "blockedSteps": [],
+  "failedSteps": [],
+  "error": null
+}

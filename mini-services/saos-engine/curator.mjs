@@ -26,9 +26,10 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { rpcCall } from "./measure.mjs";
+import { rpcCall, accountState } from "./measure.mjs";
 import { executeAs, masterAccount, armedConf, execPaused, loadCredential } from "./signer.mjs";
 import { learningTunings } from "./learning.mjs";
+import { mergeVoteState } from "./lib.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const STATE = path.join(DIR, "state");
@@ -169,7 +170,7 @@ export async function runCurator({ now = new Date().toISOString() } = {}) {
   const nowMs = Date.parse(now);
 
   const prev = readJson(CUR_FILE, { day: null, votesToday: [], authorsToday: {}, totalVotes: 0, history: [] });
-  const carried = prev.day === day ? prev : { votesToday: [], authorsToday: {}, totalVotes: prev.totalVotes ?? 0, history: prev.history ?? [] };
+  let carried = prev.day === day ? prev : { votesToday: [], authorsToday: {}, totalVotes: prev.totalVotes ?? 0, history: prev.history ?? [] };
 
   const base = {
     enabled: p.enabled, at: now, day,
@@ -228,32 +229,79 @@ export async function runCurator({ now = new Date().toISOString() } = {}) {
    * T-14 hardening (measured live 19:42:16): async broadcast returns BEFORE
    * block inclusion — two adjacent-block votes can still hit the 3s assert.
    * The rejection is ATOMIC (the vote never landed) ⇒ one clean retry after
-   * 3.5s is provably safe (cannot double-vote; worst case both fail). */
+   * 3.5s is provably safe (cannot double-vote; worst case both fail).
+   * T-17 FAST PATH: guards hoisted OUT of the loop — ONE RC measure + ONE
+   * DGPO per run instead of per-vote re-reads (~6s+/vote of pure network
+   * waste; a full 18-vote run crawled ~18min inside the 90s sovereign wait
+   * = the two real votes counted "fail"). Same laws, same evidence, dead
+   * latency removed. PLUS: incremental state write after EACH landed vote —
+   * a mid-loop kill can no longer lose votesToday (pre-T-17 the write
+   * happened only after the WHOLE loop), and the concurrent-cycle
+   * double-vote window closes because the next run reads fresh dedup state. */
+  const accState = await accountState(master);
+  const rcPct = accState.ok ? (accState.rcPct ?? null) : null;
+  let dgpo = null, dgpoAt = 0;
+  const dgpoR0 = await rpcCall("condenser_api.get_dynamic_global_properties", []);
+  if (dgpoR0.ok) { dgpo = dgpoR0.result; dgpoAt = Date.now(); }
+
   const isVoteIntervalAssert = (err) =>
     /MIN_VOTE_INTERVAL|Can only vote once every 3 seconds/i.test(String(err ?? ""));
+  /* T-17 · SECOND-SIGNER COLLISION LAW (measured live 16:37/16:52 + 15:56/16:27
+   * orders): the account history carries vote + limit_order + custom_json
+   * ("saos.weave.core.v1" checkpoints) ops that NEVER passed this engine's
+   * exec-log — an external agent-signer holds the same credential and runs
+   * the same doctrine on the same account. When the chain rejects OUR vote
+   * because a vote already landed "in a similar way", that is a DEDUP EVENT,
+   * not a failure: it must not break the run (fail-closed is for real
+   * malfunctions), and the account's VP budget must count it honestly. */
+  const isAlreadyVoted = (err) =>
+    /already voted in a similar way|You have already voted/i.test(String(err ?? ""));
   const results = [];
   let lastAt = 0;
+  const noteState = () => writeJson(CUR_FILE, { ...base, vpEff, votesToday: carried.votesToday, authorsToday: carried.authorsToday, totalVotes: carried.totalVotes, history: carried.history });
   for (const v of plan.selected) {
     const waitMs = lastAt ? 3200 - (Date.now() - lastAt) : 0;
     if (waitMs > 0) await new Promise((r) => setTimeout(r, waitMs));
-    let res = await executeAs(master, [[
+    if (dgpo && Date.now() - dgpoAt > 60_000) {
+      const g = await rpcCall("condenser_api.get_dynamic_global_properties", []);
+      if (g.ok) { dgpo = g.result; dgpoAt = Date.now(); }
+    }
+    const voteOp = [[
       "vote", { voter: master, author: v.author, permlink: v.permlink, weight: v.weight },
-    ]], { tag: "curate", role: "posting" });
+    ]];
+    let res = await executeAs(master, voteOp, { tag: "curate", role: "posting", rcPct, dgpo, dgpoAt });
     let retried = false;
     if (!res.ok && isVoteIntervalAssert(res.error)) {
       await new Promise((r) => setTimeout(r, 3500));
       retried = true;
-      res = await executeAs(master, [[
-        "vote", { voter: master, author: v.author, permlink: v.permlink, weight: v.weight },
-      ]], { tag: "curate", role: "posting" });
+      res = await executeAs(master, voteOp, { tag: "curate", role: "posting", rcPct, dgpo, dgpoAt });
     }
     lastAt = Date.now();
-    results.push({ ...v, ok: !!res.ok, txid: res.txid ?? null, error: res.error ?? null, retried });
-    if (!res.ok) break;
+    if (res.ok) {
+      results.push({ ...v, ok: true, txid: res.txid ?? null, error: null, retried });
+      carried = mergeVoteState(carried, day, { author: v.author, permlink: v.permlink, weight: v.weight, at: now, txid: res.txid });
+      noteState();
+      continue;
+    }
+    if (isAlreadyVoted(res.error)) {
+      /* the vote already exists on-chain (this or the second signer's earlier
+       * vote) — count it into the day's budget, keep the loop alive */
+      results.push({ ...v, ok: false, skipped: "already-voted-elsewhere", txid: null, error: res.error, retried });
+      carried = mergeVoteState(carried, day, { author: v.author, permlink: v.permlink, weight: v.weight, at: now, txid: null }, "ALREADY-VOTED");
+      noteState();
+      continue;
+    }
+    results.push({ ...v, ok: false, txid: res.txid ?? null, error: res.error ?? null, retried });
+    break; /* real failure — fail-closed, never burn RC on a dead rail */
   }
   const okVotes = results.filter((r) => r.ok);
-  const failed = results.filter((r) => !r.ok);
-  const verdict = okVotes.length ? (failed.length ? "PARTIAL" : "VOTED") : "BROADCAST-FAIL";
+  const failed = results.filter((r) => !r.ok && !r.skipped);
+  const skipped = results.filter((r) => r.skipped);
+  /* T-17 truth: a collision-covered run is NOT a failure — the account DID
+   * curate today (the second signer landed those votes); name it honestly. */
+  const verdict = okVotes.length
+    ? (failed.length ? "PARTIAL" : "VOTED")
+    : (skipped.length && !failed.length ? "ALL-ALREADY-VOTED" : "BROADCAST-FAIL");
 
   const out = {
     ...base, verdict,
@@ -262,16 +310,13 @@ export async function runCurator({ now = new Date().toISOString() } = {}) {
     voted: okVotes, failedVotes: failed,
     rejectedTop: plan.rejected.slice(0, 8).map((r) => `${r.key}:${r.reason}`),
     candidatesScanned: posts.length,
+    skippedVotes: results.filter((r) => r.skipped).map((r) => `${r.author}/${r.permlink}:${r.skipped}`),
   };
-  const votesToday = [
-    ...carried.votesToday,
-    ...okVotes.map((v) => ({ author: v.author, permlink: v.permlink, weight: v.weight, at: now, txid: v.txid })),
-  ];
-  const authorsToday = { ...carried.authorsToday };
-  for (const v of okVotes) authorsToday[v.author] = (authorsToday[v.author] ?? 0) + 1;
+  /* carried ALREADY holds every landed vote (T-17 incremental merges) — the
+   * final write records the run verdict in history, never re-appends votes. */
   writeJson(CUR_FILE, {
-    ...out, votesToday, authorsToday,
-    totalVotes: carried.totalVotes + okVotes.length,
+    ...out, votesToday: carried.votesToday, authorsToday: carried.authorsToday,
+    totalVotes: carried.totalVotes,
     history: [...carried.history, { at: now, day, verdict, n: okVotes.length, txid: out.txid }].slice(-30),
   });
   appendLine(path.join(STATE, "events.jsonl"), {

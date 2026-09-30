@@ -4,7 +4,7 @@
  * signing is doctrine-capped in signer.mjs; credentials never leave memory;
  * every broadcast is journaled with txids (never keys).
  */
-import { runCycle } from "./daily.mjs";
+import { runCycle, cycleRunning, cycleMarker } from "./daily.mjs";
 import { externalParity, internalFeed, accountState, openOrders, measureAll } from "./measure.mjs";
 import { execStatus, credentialState, armedConf, adoptCredentialText, verifyRoles, spoilagePublic } from "./signer.mjs";
 import { soldiersPublic } from "./soldiers.mjs";
@@ -22,6 +22,7 @@ const STATE = path.join(DIR, "state");
 const ACCOUNT = process.env.SAOS_ACCOUNT || "headcorner";
 
 const readJson = (p, d = null) => { try { return JSON.parse(fs.readFileSync(p, "utf8")); } catch { return d; } };
+const appendLine = (p, v) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.appendFileSync(p, JSON.stringify(v) + "\n"); };
 const readLines = (p, n = 20) => {
   try {
     return fs.readFileSync(p, "utf8").trim().split("\n").filter(Boolean).slice(-n)
@@ -68,8 +69,20 @@ async function handle(req) {
   }
   if (p === "/cycle") {
     if (req.method !== "POST") return json({ ok: false, error: "POST required" }, 405);
-    const r = await runCycle();
-    return json(r);
+    /* T-17: START-ACK. The POST returns immediately; the cycle runs detached.
+     * The sovereign polls /cycle-status for the marker — no HTTP wait can
+     * outlive-or-kill a healthy multi-vote signing cycle again, and the
+     * engine-side mutex (daily.mjs cycleInFlight) makes overlap impossible. */
+    if (cycleRunning()) {
+      return json({ ok: false, error: "cycle-in-flight", since: cycleMarker()?.startedAt ?? null });
+    }
+    void runCycle().catch((e) => {
+      appendLine(path.join(STATE, "events.jsonl"), { type: "cycle.detached-error", at: new Date().toISOString(), error: String(e?.message ?? e).slice(0, 200) });
+    });
+    return json({ ok: true, started: true, at: new Date().toISOString() });
+  }
+  if (p === "/cycle-status") {
+    return json({ ok: true, at: new Date().toISOString(), running: cycleRunning(), marker: cycleMarker() });
   }
   if (p === "/live") {
     try {
@@ -119,7 +132,7 @@ async function handle(req) {
                      : "credential secured but not matching this account's authorities — install the proposedPubkeys on steemit.com, or paste the CURRENT password instead",
     });
   }
-  return json({ ok: false, error: "not-found", routes: ["/health", "/status", "/cycle", "/live", "/fills", "/exec-status", "/fleet", "/adopt-credential"] }, 404);
+  return json({ ok: false, error: "not-found", routes: ["/health", "/status", "/cycle", "/cycle-status", "/live", "/fills", "/exec-status", "/fleet", "/adopt-credential"] }, 404);
 }
 
 // T-15 SINGLE-INSTANCE LAW (measured live: 3 duplicate engine processes were

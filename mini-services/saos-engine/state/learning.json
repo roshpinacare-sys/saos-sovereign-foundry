@@ -1,61 +1,62 @@
 {
-  "at": "2026-09-30T16:39:38.272Z",
+  "at": "2026-09-30T17:40:58.050Z",
   "enabled": true,
-  "runsTotal": 42,
+  "runsTotal": 47,
   "verdict": "LEARNED",
   "metrics": {
     "cycles": {
-      "window": 40,
-      "oks": 25,
-      "fails": 15,
+      "window": 45,
+      "oks": 27,
+      "fails": 18,
       "blocked": 0,
-      "okRate": 62.5,
+      "okRate": 60,
       "blockedRate": 0,
       "failReasons": {
         "conn": 3,
-        "none": 12
+        "none": 15
       },
       "msP50": 9691,
-      "msP90": 21288
+      "msP90": 23051
     },
     "curator": {
       "present": true,
-      "totalVotes": 10,
-      "window": 4,
+      "totalVotes": 29,
+      "window": 15,
       "verdicts": {
         "BROADCAST-FAIL": 3,
-        "VOTED": 1
+        "VOTED": 12
       },
-      "vpEff": 85.5,
-      "meanAgeMinutes": 88.5,
+      "vpEff": 83.1,
+      "meanAgeMinutes": 172.3,
       "tagsVoted": {
-        "steem": 6,
-        "crypto": 4
+        "crypto": 3,
+        "steem": 4,
+        "technology": 2
       },
       "dayCapsInRow": 0,
-      "maxPerDay": 10
+      "maxPerDay": 18
     },
     "exec": {
-      "window": 8,
+      "window": 11,
       "fails": 0,
       "lastError": null
     },
     "watchdog": {
-      "checks": 358,
-      "downs": 2,
-      "heals": 14,
-      "healVerified": 14,
+      "checks": 416,
+      "downs": 5,
+      "heals": 17,
+      "healVerified": 16,
       "healFailed": 0,
-      "lastCheckAt": "2026-09-30T16:39:15.069Z",
+      "lastCheckAt": "2026-09-30T17:40:17.204Z",
       "engineUp": true,
-      "lastSpawnAt": "2026-09-30T15:26:15.038Z"
+      "lastSpawnAt": null
     }
   },
   "lessons": [
     {
       "id": "cycle-conn-fails",
       "severity": "high",
-      "evidence": "cycles 25/40 ok · conn-fails 3 (connection-level)",
+      "evidence": "cycles 27/45 ok · conn-fails 3 (connection-level)",
       "lesson": "connection-level cycle kills waste 10-minute sovereignty slots",
       "action": "FIXED T-14: engine idleTimeout 255 + sovereign one-shot conn-retry with heal-gate"
     }
@@ -63,7 +64,7 @@
   "tunings": {},
   "tuningsApplied": [],
   "lessonsTotal": {
-    "cycle-conn-fails": 42
+    "cycle-conn-fails": 47
   },
   "honesty": "learning reads recorded history only · tunings hard-clamped (LEARN_CLAMP) · doctrine laws untouchable"
 }

@@ -155,3 +155,26 @@
 {"at":"2026-09-30T16:27:15.068Z","kind":"cred-missing","verdict":"SIGNING-DEAD","agentsAffected":["curate","execute","soldiers","promo"],"revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}
 {"at":"2026-09-30T16:33:45.717Z","kind":"cycle-blocked(kick)","ms":3223,"steps":10,"verdict":"OFFER-READY","blockedSteps":["curate","execute","soldiers"]}
 {"at":"2026-09-30T16:36:20.188Z","kind":"cycle-fail(auto)","ms":5156,"steps":10,"verdict":"OFFER-READY"}
+{"at":"2026-09-30T16:46:24.082Z","kind":"cycle-fail(auto)","ms":9051,"steps":10,"verdict":"OFFER-READY"}
+{"at":"2026-09-30T16:49:15.092Z","kind":"cred-restored"}
+{"at":"2026-09-30T16:55:40.932Z","kind":"cycle-fail(kick)","ms":90010,"steps":0,"verdict":null,"blockedSteps":null}
+{"at":"2026-09-30T16:57:45.037Z","kind":"cycle-fail(auto)","ms":90006,"steps":0,"verdict":null}
+{"at":"2026-09-30T17:07:45.038Z","kind":"cycle-fail(auto)","ms":90006,"steps":0,"verdict":null}
+{"at":"2026-09-30T17:16:15.042Z","kind":"cycle-ok(auto)","ms":10,"steps":0,"verdict":null}
+{"at":"2026-09-30T17:25:54.215Z","kind":"boot","pid":8474,"resumed":false,"carriedOver":{"checks":402,"cyclesOk":25,"heals":14}}
+{"at":"2026-09-30T17:25:54.226Z","kind":"watchdog-down-again"}
+{"at":"2026-09-30T17:25:54.227Z","kind":"heal-attempt","reason":"watchdog"}
+{"at":"2026-09-30T17:25:54.235Z","kind":"heal-spawn","reason":"watchdog","pid":8499}
+{"at":"2026-09-30T17:27:38.295Z","kind":"boot","pid":8607,"resumed":false,"carriedOver":{"checks":403,"cyclesOk":25,"heals":15}}
+{"at":"2026-09-30T17:27:38.306Z","kind":"watchdog-down-again"}
+{"at":"2026-09-30T17:27:38.306Z","kind":"heal-attempt","reason":"watchdog"}
+{"at":"2026-09-30T17:27:38.314Z","kind":"heal-spawn","reason":"watchdog","pid":8631}
+{"at":"2026-09-30T17:27:42.323Z","kind":"heal-verified","up":true}
+{"at":"2026-09-30T17:29:15.682Z","kind":"boot","pid":8743,"resumed":false,"carriedOver":{"checks":404,"cyclesOk":25,"heals":16}}
+{"at":"2026-09-30T17:29:15.692Z","kind":"watchdog-down-again"}
+{"at":"2026-09-30T17:29:15.693Z","kind":"heal-attempt","reason":"watchdog"}
+{"at":"2026-09-30T17:29:15.700Z","kind":"heal-spawn","reason":"watchdog","pid":8768}
+{"at":"2026-09-30T17:29:19.712Z","kind":"heal-verified","up":true}
+{"at":"2026-09-30T17:34:17.193Z","kind":"boot","pid":9211,"resumed":false,"carriedOver":{"checks":409,"cyclesOk":25,"heals":17}}
+{"at":"2026-09-30T17:34:17.212Z","kind":"watchdog-up"}
+{"at":"2026-09-30T17:35:18.219Z","kind":"cycle-ok(auto)","ms":14995,"engineMeasured":true,"steps":10,"verdict":null,"blockedSteps":[],"error":null}
