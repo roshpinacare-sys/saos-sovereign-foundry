@@ -100,9 +100,13 @@ const GRAPHENE_ACCOUNT = "headcorner";
 // Forensic money-flow (deep ledger trace 2026-09-10, on-chain verified):
 //   in:  31.219502 TRX from outside (29.943347 TGUYnMLu… + 1.276142 returned by idx1 + 0.000013 dust)
 //   out: 18.704323 TRX swept in ONE minute (2026-09-08 13:23) by idx0+idx1+idx2 → TG6SrsM… (external)
-//   then 2026-09-09 09:23 TG6SrsM… → TMXHfFQd… (2020 wallet) 17.099234 TRX — SITTING there
-//   then 2026-09-09 09:25 SOL swept from 9knfnF… → A2Y1d3… 0.023976 SOL — SITTING there
+//   then 2026-09-09 09:23 TG6SrsM… → TMXHfFQd… (2020 wallet) 17.099234 TRX
+//   then 2026-09-09 09:25 SOL swept from 9knfnF… → A2Y1d3… 0.023976 SOL
 //   residual = activation/network fees (7 fresh accounts × ~1.1 TRX) — computed as live residual
+// Task 10 (2026-09-30): these are FROZEN FORENSIC facts from the 2026-09-10 trace — they are now served
+// under `forensic: { asOf: "2026-09-10", … }` and phrased past-tense, never under the live generatedAt.
+// Live balances (chains/summary) remain live and unchanged.
+const FORENSIC_FLOW_ASOF = "2026-09-10";
 const FLOW_EXTERNAL_IN_TRX = 31.219502;
 const FLOW_SWEPT_OUT_TRX = 18.704323;
 const FLOW_OUT_TARGETS = {
@@ -381,7 +385,7 @@ async function buildTreasury() {
       label: t17.label, address: FLOW_OUT_TARGETS.tron17, chain: "TRON", status: t17.status,
       error: t17.error, native: t17.native, nativeSymbol: "TRX",
       receivedFromUs: 17.099234,
-      note: "קיבל 17.099234 TRX ב-2026-09-09 09:23 ואז +1.0 TRX ב-2026-09-10 02:30 מאותו-מקור (41432f3c…) — 18.099245 יושבים שם (roast 10.09: הטענה '17.09 יושב מאז' התיישנה). ארנק מ-2020-09-15 רדום מ-2023; דורש אימות בעלים שזה ארנק שלו"
+      note: "קיבל 17.099234 TRX ב-2026-09-09 09:23 ואז +1.0 TRX ב-2026-09-10 02:30 מאותו-מקור (41432f3c…) — 18.099245 נצפו שם לאחרונה 2026-09-10 (הטענה הישנה '17.09 יושב מאז' התיישנה ותוקנה ב-roast 10.09). ארנק מ-2020-09-15 רדום מ-2023; דורש אימות בעלים שזה ארנק שלו"
     });
     await sleep(350);
     const solOut = await solRow("יעד SOL (ניקוז סולנה)", FLOW_OUT_TARGETS.sol);
@@ -389,7 +393,7 @@ async function buildTreasury() {
       label: solOut.label, address: FLOW_OUT_TARGETS.sol, chain: "SOLANA", status: solOut.status,
       error: solOut.error, native: solOut.native, nativeSymbol: "SOL",
       receivedFromUs: 0.023976117,
-      note: "קיבל 0.023976 SOL ב-2026-09-09 09:25 — שתי דקות אחרי ה-TRX; לא זז מאז"
+      note: "קיבל 0.023976 SOL ב-2026-09-09 09:25 — שתי דקות אחרי ה-TRX; לא נצפה זז עד המדידה האחרונה " + FORENSIC_FLOW_ASOF
     });
     await sleep(350);
     const funder = await tronRow("מקור המימון הראשוני", FLOW_OUT_TARGETS.funder);
@@ -437,7 +441,10 @@ async function buildTreasury() {
       gapToUsdtSettlement: Math.max(0, TRX_PER_USDT_TRANSFER - totalTrx)
     },
     constants: { trxPerUsdtTransfer: TRX_PER_USDT_TRANSFER },
-    flow: {
+    // Task 10 (2026-09-30): forensic/live split — the frozen 2026-09-10 trace now lives under
+    // `forensic` with its own asOf; the story is phrased past-tense. Live balances + generatedAt stay live.
+    forensic: {
+      asOf: FORENSIC_FLOW_ASOF,
       externalInTrx: FLOW_EXTERNAL_IN_TRX,
       sweptOutTrx: FLOW_SWEPT_OUT_TRX,
       burnedFeesTrx: burnedFees >= 0 ? Math.round(burnedFees * 1e6) / 1e6 : null,
@@ -445,9 +452,9 @@ async function buildTreasury() {
         "2026-09-05 19:39 — ארנק idx0 הופעל עם 29.943347 TRX ממקור חיצוני",
         "2026-09-05..07 — הכסף נע בתוך משפחת הארנקים (idx0↔idx1↔idx2↔idx3↔idx5) — 7 כתובות חדשות נפתחו ונשרפו ~1.1 TRX עמלת-הפעלה לכל אחת",
         "2026-09-08 13:23 — ריקון מתואם: idx0+idx1+idx2 שלחו 18.704323 TRX בדקה אחת לכתובת חיצונית (צומת-היציאה)",
-        "2026-09-09 09:23 — הצומת העביר 17.099234 TRX לארנק מ-2020; 2026-09-10 02:30 — עוד 1.0 TRX מאותו-מקור — 18.099245 יושב שם עד היום (" + FLOW_OUT_TARGETS.tron17.slice(0, 10) + "…)",
-        "2026-09-09 09:25 — גם סולנה נוקזה: 0.023976 SOL מהכספת הפורנזית לכתובת חיצונית — לא זזה מאז",
-        "מה שנשאר אצלנו: " + totalTrxFamily.toFixed(4) + " TRX פרוסים על idx0..idx5 — כל שאר היתרות של ETH/SOL/USDT = 0"
+        "2026-09-09 09:23 — הצומת העביר 17.099234 TRX לארנק מ-2020; 2026-09-10 02:30 — עוד 1.0 TRX מאותו-מקור — 18.099245 נצפו שם לאחרונה 2026-09-10 (" + FLOW_OUT_TARGETS.tron17.slice(0, 10) + "…)",
+        "2026-09-09 09:25 — גם סולנה נוקזה: 0.023976 SOL מהכספת הפורנזית לכתובת חיצונית — לא נצפה זז עד המדידה האחרונה 2026-09-10",
+        "בקריאה-חיה זו: " + totalTrxFamily.toFixed(4) + " TRX פרוסים על idx0..idx5 (יתרות-חיות — מעודכנות בסיכום למעלה); כל שאר היתרות של ETH/SOL/USDT = 0"
       ],
       outflows
     },
@@ -513,7 +520,8 @@ export async function GET(req: Request) {
         grapheneLiquid: null,
         gapToUsdtSettlement: null
       },
-      flow: {
+      forensic: {
+        asOf: FORENSIC_FLOW_ASOF,
         externalInTrx: FLOW_EXTERNAL_IN_TRX,
         sweptOutTrx: FLOW_SWEPT_OUT_TRX,
         burnedFeesTrx: null,

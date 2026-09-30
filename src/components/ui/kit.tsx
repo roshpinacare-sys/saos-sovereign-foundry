@@ -20,6 +20,9 @@ export function cn(...parts: Array<string | false | null | undefined>): string {
 
 export function fmtTime(iso: string | Date | null | undefined): string {
   if (!iso) return "—";
+  // Task 10: a date-only stamp (e.g. a forensic asOf "2026-09-10") must render as the date —
+  // parsing it as a datetime rendered a misleading fake clock time ("עודכן 03:00").
+  if (typeof iso === "string" && /^\d{4}-\d{2}-\d{2}$/.test(iso.trim())) return iso.trim();
   const d = typeof iso === "string" ? new Date(iso) : iso;
   if (Number.isNaN(d.getTime())) return "—";
   return d.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", second: "2-digit" });

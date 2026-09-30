@@ -215,6 +215,7 @@ function TreasuryBody({ data, onRefresh, refreshing }: { data: TreasuryResponse;
           rows={data.chains.tron.rows}
           explorer={data.chains.tron.explorer}
           nativeSymbol="TRX"
+          lastChecked={data.generatedAt}
         />
         <AddressTablePanel
           title="Ethereum — ארנק חדש + כספת"
@@ -222,6 +223,7 @@ function TreasuryBody({ data, onRefresh, refreshing }: { data: TreasuryResponse;
           rows={data.chains.evm.rows}
           explorer={data.chains.evm.explorer}
           nativeSymbol="ETH"
+          lastChecked={data.generatedAt}
         />
       </div>
 
@@ -231,6 +233,7 @@ function TreasuryBody({ data, onRefresh, refreshing }: { data: TreasuryResponse;
         rows={data.chains.solana.rows}
         explorer={data.chains.solana.explorer}
         nativeSymbol="SOL"
+        lastChecked={data.generatedAt}
       />
 
       <GraphenePanel rows={data.chains.graphene.rows} account={data.account} lastChecked={data.generatedAt} onRefresh={onRefresh} refreshing={refreshing} />
@@ -243,14 +246,14 @@ function TreasuryBody({ data, onRefresh, refreshing }: { data: TreasuryResponse;
 }
 
 function MoneyFlowPanel({ data }: { data: TreasuryResponse }) {
-  const f = data.flow;
+  const f = data.forensic;
   if (!f || !f.outflows?.length) return null;
   return (
     <Panel
-      title="מסלול הכסף — פורנזיה מלאה של כל עסקה (מאומת מול הרשת)"
+      title={`מעקב-פורנזי ${f.asOf} — מסלול הכסף (מאומת מול הרשת)`}
       icon={<Route aria-hidden className="size-4 text-amber-300" />}
-      source="מעקב לדג׳ר מלא · TronGrid + Solana RPC"
-      lastChecked={data.generatedAt}
+      source={`מעקב לדג׳ר מלא · TronGrid + Solana RPC · נצפה לאחרונה ${f.asOf}`}
+      lastChecked={f.asOf}
     >
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
         <div className="glass rounded-xl p-3">
@@ -283,7 +286,7 @@ function MoneyFlowPanel({ data }: { data: TreasuryResponse }) {
       </ol>
 
       <div className="mt-3 space-y-2">
-        <p className="text-[11px] font-bold text-zinc-300">יעדי-היציאה — היתרות שלהם כרגע (ציבורי):</p>
+        <p className="text-[11px] font-bold text-zinc-300">יעדי-היציאה — היתרות שלהם כרגע (קריאה-חיה) · המסלול עצמו = מעקב-פורנזי {f.asOf}:</p>
         {f.outflows.map((o) => (
           <div key={o.address} className="glass rounded-xl p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -325,16 +328,18 @@ function AddressTablePanel({
   icon,
   rows,
   explorer,
-  nativeSymbol
+  nativeSymbol,
+  lastChecked
 }: {
   title: string;
   icon: React.ReactNode;
   rows: TreasuryBalanceRow[];
   explorer: string;
   nativeSymbol: string;
+  lastChecked: string | null;
 }) {
   return (
-    <Panel title={title} icon={icon} source="/api/saos/treasury" lastChecked={null}>
+    <Panel title={title} icon={icon} source="/api/saos/treasury" lastChecked={lastChecked}>
       <ul className="scroll-slim max-h-96 space-y-2 overflow-y-auto pl-1">
         {rows.map((r) => (
           <li key={r.address} className="glass rounded-xl p-3">

@@ -370,7 +370,7 @@ function GatePanel({ data, onRefresh, refreshing }: { data: LiveGateResponse; on
       title="שער live — רשימת בדיקה"
       icon={<ShieldCheck className="size-4 text-emerald-400" aria-hidden />}
       source="/api/saos/live-gate"
-      lastChecked={null}
+      lastChecked={data.generatedAt ?? null}
       onRefresh={onRefresh}
       refreshing={refreshing}
       actions={<Badge tone={data.readyForLive ? "ok" : "danger"}>{data.readyForLive ? "readyForLive" : "חסום ל-live"}</Badge>}

@@ -35,12 +35,17 @@ const BUGS = [
 ] as const;
 
 /** documented open non-bug items — source: docs/next-steps.md (roast 63: עודכן — session revocation נסגר ב-roast 60 עם epoch+secret mixing והוכח חי) */
-const OPEN_ITEMS = [
-  "GitHub Actions CI — אין runner; הרצה ידנית בלבד",
-  "bun run build — חסום-סביבה (לא נבדק מחוץ לסנדבוקס)",
-  "SH-3 — קובץ היסטורי לא מסווג בהיסטוריית git (החלטת בעלים)",
-  "RC מחסור ב-HIVE (0.003%) — מגביל עיבוד עגנים לכל ~25 דק' (בריף ראש-המטה 2026-09-10)"
-];
+/** Task 10 (2026-09-30): פריט-RC עודכן — הבריף הקפוא 2026-09-10 הוחלף במודל-חי (hive-rc-live.ts) + פליטה-חיה 09-30 בריאה; לכל פריט תג "עודכן" */
+const OPEN_ITEMS_REGISTRY: { source: string; updated: string; items: Array<{ text: string; asOf?: string }> } = {
+  source: "docs/next-steps.md",
+  updated: "2026-09-11",
+  items: [
+    { text: "GitHub Actions CI — אין runner; הרצה ידנית בלבד" },
+    { text: "bun run build — חסום-סביבה (לא נבדק מחוץ לסנדבוקס)" },
+    { text: "SH-3 — קובץ היסטורי לא מסווג בהיסטוריית git (החלטת בעלים)" },
+    { text: "RC-HIVE: מודל-חי במקום-בריף-ישן — פליטה-חיה 09-30 בריאה (energy_census 12/12·steem+12/12·hive ≥97%)", asOf: "2026-09-30" }
+  ]
+};
 
 const SUITE = [
   { name: "lint", cmd: "bun run lint", what: "eslint (flat config, next core-web-vitals)" },
@@ -136,8 +141,10 @@ export function AuditTab() {
           >
             <div className="space-y-2">
               <div className="rounded-lg border border-zinc-800 bg-zinc-900/70 p-3">
-                {/* FIX(canonical-merge 2026-09-29): הספירה נגזרת-מהנתונים — הסוויטה גדלה 7→11 (רוסט-63: אין מספרים-קפואים) */}
-                <div className="text-xs font-bold text-zinc-200">selftest קרנל (11 תכונות)</div>
+                {/* FIX(canonical-merge 2026-09-29 + Task 10): הספירה נגזרת-מהנתונים מהקרנל עצמו — אסור מספר-קפוא (הסוויטה גדלה 7→11; fallback "…" בזמן-טעינה) */}
+                <div className="text-xs font-bold text-zinc-200">
+                  selftest קרנל ({kernelQ.state === "ready" ? kernelQ.data.result.checks.length : "…"} תכונות)
+                </div>
                 {kernelQ.state === "ready" ? (
                   <div className="mt-1.5">
                     <Badge tone={kernelQ.data.ok ? "ok" : "danger"}>{kernelQ.data.ok ? `${kernelQ.data.result.checks.length}/${kernelQ.data.result.checks.length} עברו` : "נכשל"}</Badge>
@@ -222,12 +229,16 @@ export function AuditTab() {
           <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-2.5">
             <div className="text-[10px] font-bold uppercase tracking-wide text-amber-400">פתוחים (מתועד)</div>
             <ul className="mt-1 list-inside list-disc space-y-0.5">
-              {OPEN_ITEMS.map((i) => (
-                <li key={i} className="text-[11px] leading-relaxed text-zinc-300">
-                  {i}
+              {OPEN_ITEMS_REGISTRY.items.map((item) => (
+                <li key={item.text} className="text-[11px] leading-relaxed text-zinc-300">
+                  <span className="inline-flex flex-wrap items-center gap-1.5">
+                    <span>{item.text}</span>
+                    <Badge tone="neutral" className="shrink-0">עודכן {item.asOf ?? OPEN_ITEMS_REGISTRY.updated}</Badge>
+                  </span>
                 </li>
               ))}
             </ul>
+            <p className="mt-1 text-[10px] text-zinc-500">מקור הרישום: {OPEN_ITEMS_REGISTRY.source} · תאריך-עדכון בסיס: {OPEN_ITEMS_REGISTRY.updated}</p>
           </div>
           <div className="mt-2.5">
             <div className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">מסמכי המערכת (docs/)</div>

@@ -22,7 +22,7 @@
 ## כלי-אופס/תשתית
 | סקריפט | תפקיד |
 |---|---|
-| api-check.mjs | סוויטת-121 הבדיקות (bun run test) |
+| api-check.mjs | סוויטת-198 הטענות (bun run test; Task 10 2026-09-30: 191 report() + 7 envReport() call-sites — הרישום הישן "121" היה קפוא) |
 | concurrency-check.mjs | בדיקת-מקביליות (bun run verify) |
 | release-truth-audit.mjs | סקר-אמת-שחרור |
 | backup.mjs / restore.mjs / cleanup.mjs | גיבוי/שחזור/ניקוי (bun run backup/restore/cleanup) |

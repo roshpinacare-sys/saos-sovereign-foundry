@@ -56,7 +56,7 @@ export const RATE_RULES = {
   "repo-status": { name: "repo-status", perMinute: envLimit("repo-status", 30) },
   decisions: { name: "decisions", perMinute: envLimit("decisions", 30) },
   "live-proof": { name: "live-proof", perMinute: envLimit("live-proof", 6) },
-  "breakthrough-demo": { name: "breakthrough-demo", perMinute: envLimit("breakthrough-demo", 10) },
+  "breakthrough-proof": { name: "breakthrough-proof", perMinute: envLimit("breakthrough-proof", 10) }, // Task 10: renamed from breakthrough-demo
   "owner-keys": { name: "owner-keys", perMinute: envLimit("owner-keys", 6) },
   "owner-keys-read": { name: "owner-keys-read", perMinute: envLimit("owner-keys-read", 30) },
   "keys-map": { name: "keys-map", perMinute: envLimit("keys-map", 20) },

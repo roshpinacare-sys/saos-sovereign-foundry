@@ -287,8 +287,8 @@
 | נושא | שינוי מצב |
 |---|---|
 | פריצת-דרך מוכחת | **שעון אטומי מבוזר** — ראשי עד 6 רשתות נקשרים לשורש Merkle 32B, keyless, $0.00, נמדד חי (ריצת-עדות: 15.9ms compute, הוכחה 435B, אימות 6.8ms) — docs/BREAKTHROUGH.md |
-| endpoint חדש | `GET /api/saos/breakthrough-demo` (rate 10/min) — מדידות חיות + טבלת השוואה + מדריך אימות עצמאי |
-| UI | טאב "פריצת הדרך" (הרץ הדגמה חיה + מדדים + עדים + השוואה) |
+| endpoint חדש | `GET /api/saos/breakthrough-proof` (נקרא בעבר breakthrough-demo; שונה ב-Task 10) (rate 10/min) — מדידות חיות + טבלת השוואה + מדריך אימות עצמאי |
+| UI | טאב "פריצת הדרך" (הרץ הוכחה חיה + מדדים + עדים + השוואה) |
 | אודיט קוד | docs/technological-audit.md — ייחודי: DAG סובל-פיצולים + גבול-אמת encoded + השעון האטומי כהרכבה; סטנדרטי: Merkle/canonical-json/kernel |
 | בדיקות | api-check 162/162 (§29 ×15) · concurrency 8/8 |
 

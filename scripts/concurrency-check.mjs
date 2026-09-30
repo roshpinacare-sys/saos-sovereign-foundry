@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * concurrency-check — proof that parallel seals cannot corrupt the chain
- * (part of `bun run check`). Requires the dev server on localhost:3000.
+ * (part of `bun run check`). Requires the dev server on localhost:3100 (Task 10: gate port aligned to :3100).
  *
  * Fires N concurrent POST /api/saos/seal (default 8) and asserts:
  *   1. every response is HTTP 200 (never 500)
@@ -11,7 +11,7 @@
  *   5. DB consistency via /verify-chain: receipt chain intact, every seal
  *      rootMatches, every leaf proof verified
  */
-const BASE = process.env.SAOS_BASE_URL ?? "http://localhost:3000";
+const BASE = process.env.SAOS_BASE_URL ?? "http://localhost:3100";
 const N = Math.max(2, Math.min(10, Number(process.argv[2] ?? 8)));
 
 let pass = 0, fail = 0;

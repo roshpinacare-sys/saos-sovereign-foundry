@@ -94,7 +94,7 @@ export function assertWritesEnabled(): ModeState {
  *
  * Roast 56-4 fixed ONLY the anchor-pulse POST gate; every other consumer
  * (preflight, /status, /live-gate, /live-proof, /repo-status,
- * /breakthrough-demo, anchor-pulse GET) kept reading the sync cache —
+ * /breakthrough-proof, anchor-pulse GET) kept reading the sync cache —
  * LIVE-caught this round: preflight computed `mode` from the stale cache at
  * its top and refreshed the health only ~170 lines later, so one payload
  * could say "אין חותם מחובר" (mode.broadcastCapable=false) while its OWN

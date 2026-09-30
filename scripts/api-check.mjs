@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * api-check — API contract verification (part of `bun run check`).
- * Requires the dev server on http://localhost:3000 (bun run dev).
+ * Requires the dev server on http://localhost:3100 (bun run dev — Task 10: gate port aligned to :3100).
  *
  * Checks:
  *   1. every endpoint answers HTTP 200 with ok:true (never 500)
@@ -42,13 +42,13 @@
  *      is a warn (never a fail), unknown network still fail-closed
  *  27. signer: SignRequest creatable for ETHEREUM/SOLANA (dry doc, audited
  *      instructions), drills cancelled — no lingering open queue
- *   Task 14 (breakthrough demo — cross-chain atomic state proof):
- *  29. breakthrough-demo: structure, 6 witnesses, bounded time, tiny proofs
+ *   Task 14 (breakthrough proof — cross-chain atomic state proof):
+ *  29. breakthrough-proof: structure, 6 witnesses, bounded time, tiny proofs
  *      (<1KB), in-process re-verification, $0.00 keyless, honest comparison
  *      table (ours measured / references labeled), no secrets, checkpoint
  *      chaining, honest zero-witness failure, fresh digests per run
  */
-const BASE = process.env.SAOS_BASE_URL ?? "http://localhost:3000";
+const BASE = process.env.SAOS_BASE_URL ?? "http://localhost:3100";
 const ADMIN_KEY = process.env.SAOS_ADMIN_KEY ?? "";
 let pass = 0, fail = 0, skipped = 0;
 const failures = [];
@@ -681,13 +681,13 @@ async function main() {
   report("live-proof: rate limit rule active for the endpoint", lpB.rateLimit?.active === true && lpB.rateLimit?.liveProofPerMinute > 0, `${lpB.rateLimit?.liveProofPerMinute}/min`);
   report("live-proof: decisions view present (openCritical keys, no fake closures)", Array.isArray(lpB.decisions?.openCritical) && typeof lpB.decisions?.openTotal === "number", `open=${lpB.decisions?.openTotal} critical=[${(lpB.decisions?.openCritical ?? []).join(",")}]`);
 
-  // 29. Task 14 — breakthrough-demo: שעון אטומי מבוזר (structure, measurements, honesty, safety)
-  console.log("\n29. breakthrough-demo (Task 14 — שעון אטומי מבוזר):");
+  // 29. Task 14 — breakthrough-proof (renamed from breakthrough-demo, Task 10 2026-09-30): שעון אטומי מבוזר (structure, measurements, honesty, safety)
+  console.log("\n29. breakthrough-proof (Task 14 — שעון אטומי מבוזר):");
   const btT0 = Date.now();
-  const bt = await j("/api/saos/breakthrough-demo");
+  const bt = await j("/api/saos/breakthrough-proof");
   const btWallMs = Date.now() - btT0;
   const btB = bt.body ?? {};
-  const btD = btB.demo ?? {};
+  const btD = btB.proof ?? {};
   report(
     "breakthrough: required structure present",
     bt.status === 200 && btB.ok === true && typeof btD.kind === "string" && Array.isArray(btD.networks) && Array.isArray(btB.comparison?.rows) && typeof btB.safety === "object",
@@ -700,7 +700,7 @@ async function main() {
   report(
     "breakthrough: safety is machine-checkable — no broadcast/tx/signing/wallet, read-only live calls",
     btB.safety?.broadcast === false && btB.safety?.transaction === false && btB.safety?.signing === false && btB.safety?.wallet === false && btB.safety?.liveCalls === "read-only",
-    "the demo proves value without touching any chain state"
+    "the proof run demonstrates value without touching any chain state"
   );
   report(
     "breakthrough: comparison table — exactly one ours row (measured), every other row marked as reference",
@@ -736,7 +736,7 @@ async function main() {
     );
     report(
       "breakthrough: checkpoint chained into the evidence receipt chain",
-      /^[0-9a-f]{64}$/.test(btD.checkpoint?.digest ?? "") && typeof btD.checkpoint?.persisted === "boolean" && btD.checkpoint?.kind === "breakthrough-demo",
+      /^[0-9a-f]{64}$/.test(btD.checkpoint?.digest ?? "") && typeof btD.checkpoint?.persisted === "boolean" && btD.checkpoint?.kind === "breakthrough-proof",
       `digest=${(btD.checkpoint?.digest ?? "").slice(0, 12)}… persisted=${btD.checkpoint?.persisted}`
     );
     const btFailedOk = (btD.witnesses?.failed ?? 0) === (btD.witnesses?.excluded?.length ?? 0) && btD.networks?.filter((x) => x.witnessed === false).every((x) => typeof x.reason === "string" && x.reason.length > 0);
@@ -745,9 +745,9 @@ async function main() {
     report("breakthrough: zero witnesses → honest failure (available:false, statement, no invented root)", btD.available === false && btD.root === null && typeof btD.statement === "string" && btD.statement.length > 0, "no-egress environment stays honest");
   }
   const bt2T0 = Date.now();
-  const bt2 = await j("/api/saos/breakthrough-demo");
+  const bt2 = await j("/api/saos/breakthrough-proof");
   const bt2WallMs = Date.now() - bt2T0;
-  const bt2D = bt2.body?.demo ?? {};
+  const bt2D = bt2.body?.proof ?? {};
   const bt2DigestOk =
     (btD.checkpoint?.digest ?? null) === null
       ? (bt2D.checkpoint?.digest ?? null) === null && bt2WallMs < 30_000 // no-witness environment: both honest-null

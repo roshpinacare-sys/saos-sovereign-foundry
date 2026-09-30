@@ -15,7 +15,8 @@ import { saosModeFresh, type ModeState } from "@/lib/saos/modes";
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/saos/breakthrough-demo — הדגמת פריצת הדרך (Task 14).
+ * GET /api/saos/breakthrough-proof — הוכחת פריצת-הדרך החיה (Task 14; שונה מ-"breakthrough-demo" ב-Task 10, 2026-09-30 —
+ * זו הוכחה חיה שנמדדת בכל קריאה, לא "הדגמה").
  *
  * Runs the Cross-Chain Atomic State Proof LIVE on every call:
  *   1. read-only probes of all 6 networks (keyless, cached 60s, 2.5s timeout)
@@ -33,7 +34,7 @@ export const dynamic = "force-dynamic";
  * failure degrades its own field into honest data.
  */
 export async function GET(req: Request) {
-  const rl = enforceRateLimit("breakthrough-demo", req);
+  const rl = enforceRateLimit("breakthrough-proof", req);
   if (!rl.allowed) {
     return NextResponse.json({ ok: false, error: "rate-limited", retryAfterSec: rl.retryAfterSec }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } });
   }
@@ -66,7 +67,7 @@ export async function GET(req: Request) {
     return NextResponse.json({
       ok: true,
       timestamp,
-      demo: {
+      proof: {
         kind: "cross-chain-atomic-state-proof",
         available: false,
         statement: "לא ניתן כרגע להרכיב שעון אטומי — אין עדים זמינים (לא הומצאו נתונים)",
@@ -79,8 +80,8 @@ export async function GET(req: Request) {
         verificationGuide: verificationGuide(),
         safety: safetyBlock(mode),
         errors,
-        note: "הדגמת פריצת-דרך (Task 14): קריאה בלבד — אין עסקה, אין שידור, אין חתימה, אין סודות בפלט",
-        generatedBy: "GET /api/saos/breakthrough-demo"
+        note: "הוכחת פריצת-דרך (Task 14; שונה מ-'הדגמה' ב-Task 10): קריאה בלבד — אין עסקה, אין שידור, אין חתימה, אין סודות בפלט",
+        generatedBy: "GET /api/saos/breakthrough-proof"
       }
     });
   }
@@ -91,19 +92,19 @@ export async function GET(req: Request) {
     digest: null,
     prevDigest: null,
     persisted: false,
-    kind: "breakthrough-demo",
+    kind: "breakthrough-proof",
     suppressed: null
   };
   try {
-    const receipt = await appendReceipt("breakthrough-demo", {
+    const receipt = await appendReceipt("breakthrough-proof", {
       root: clock.root,
       witnesses: clock.witnesses.map((w) => ({ network: w.network, headBlock: w.headBlock, readAt: w.readAt })),
       excludedNetworks: clock.excluded.map((x) => x.network),
       totalComputeMs: Math.round(clock.timings.totalComputeMs), // integers only — canonicalizer is fail-closed on floats
       proofSizeBytesJson: clock.metrics.proofSizeBytesJson,
-      demoKind: "cross-chain-atomic-state-proof"
+      proofKind: "cross-chain-atomic-state-proof"
     });
-    checkpoint = { digest: receipt.receipt.digest, prevDigest: receipt.receipt.prevDigest, persisted: receipt.persisted, kind: "breakthrough-demo", suppressed: receipt.suppressed ?? null };
+    checkpoint = { digest: receipt.receipt.digest, prevDigest: receipt.receipt.prevDigest, persisted: receipt.persisted, kind: "breakthrough-proof", suppressed: receipt.suppressed ?? null };
   } catch (e) {
     errors.push(`checkpoint: ${coarseError(e, "receipt-append-failed")}`);
   }
@@ -123,7 +124,7 @@ export async function GET(req: Request) {
   return NextResponse.json({
     ok: true,
     timestamp,
-    demo: {
+    proof: {
       kind: "cross-chain-atomic-state-proof",
       available: clock.ok,
       statement: `ברגע ${timestamp}: מצב הראש של ${clock.witnesses.length} רשתות חיות נקשר לשורש אחד ${clock.root.slice(0, 16)}… (32 בייט, SHA-256)`,
@@ -164,8 +165,8 @@ export async function GET(req: Request) {
     comparison: { note: COMPARISON_NOTE, rows: COMPARISON_ROWS },
     safety: safetyBlock(mode),
     errors,
-    note: "הדגמת פריצת-דרך (Task 14): קריאה בלבד — אין עסקה, אין שידור, אין חתימה, אין סודות בפלט",
-    generatedBy: "GET /api/saos/breakthrough-demo"
+    note: "הוכחת פריצת-דרך (Task 14; שונה מ-'הדגמה' ב-Task 10): קריאה בלבד — אין עסקה, אין שידור, אין חתימה, אין סודות בפלט",
+    generatedBy: "GET /api/saos/breakthrough-proof"
   });
 }
 
@@ -177,6 +178,6 @@ function safetyBlock(mode: ModeState) {
     wallet: false,
     liveCalls: "read-only" as const,
     broadcastCapable: mode.broadcastCapable,
-    note: "ההדגמה קוראת ראשים ציבוריים בלבד — אין שידור, אין חתימה, אין ארנק, אין סודות; העלות הכספית אפסית מבנית"
+    note: "ההוכחה קוראת ראשים ציבוריים בלבד — אין שידור, אין חתימה, אין ארנק, אין סודות; העלות הכספית אפסית מבנית"
   };
 }

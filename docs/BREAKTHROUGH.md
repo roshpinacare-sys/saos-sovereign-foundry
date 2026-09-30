@@ -5,9 +5,9 @@
 
 ## Abstract (EN)
 
-The SAOS Sovereign Foundry demonstrates — live, keyless, and at zero cost — a **Cross-Chain Atomic State Proof**: at a single instant T, the head state of up to six heterogeneous blockchain networks (Graphene DPoS ×3, TVM DPoS, EVM PoS, SVM PoS) is bound into **one 32-byte SHA-256 Merkle root**, with inclusion proofs of **~0.35–0.44 KB** that are **independently re-verifiable by any third party against public RPCs in under 10 ms**. Unlike oracle networks (Chainlink, LayerZero), no keys, no gas, no fees and no operator trust are required: every witness value is public chain state that a verifier re-reads directly. Unlike OpenTimestamps, confidence is not bound to a single chain's block cadence — six independent consensus sets are witnessed simultaneously, and each run is checkpoint-chained into an append-only evidence DAG. The full pipeline — read, commit, prove, verify — completes in **< 16 ms** of compute in a recorded run. Zero transactions, zero signatures, zero secrets: the demo is machine-checkably read-only.
+The SAOS Sovereign Foundry demonstrates — live, keyless, and at zero cost — a **Cross-Chain Atomic State Proof**: at a single instant T, the head state of up to six heterogeneous blockchain networks (Graphene DPoS ×3, TVM DPoS, EVM PoS, SVM PoS) is bound into **one 32-byte SHA-256 Merkle root**, with inclusion proofs of **~0.35–0.44 KB** that are **independently re-verifiable by any third party against public RPCs in under 10 ms**. Unlike oracle networks (Chainlink, LayerZero), no keys, no gas, no fees and no operator trust are required: every witness value is public chain state that a verifier re-reads directly. Unlike OpenTimestamps, confidence is not bound to a single chain's block cadence — six independent consensus sets are witnessed simultaneously, and each run is checkpoint-chained into an append-only evidence DAG. The full pipeline — read, commit, prove, verify — completes in **< 16 ms** of compute in a recorded run. Zero transactions, zero signatures, zero secrets: the proof run is machine-checkably read-only.
 
-**One-line proof:** `curl -s http://localhost:3000/api/saos/breakthrough-demo`
+**One-line proof:** `curl -s http://localhost:3100/api/saos/breakthrough-proof`
 
 ---
 
@@ -51,10 +51,10 @@ The SAOS Sovereign Foundry demonstrates — live, keyless, and at zero cost — 
 ## 5 · הוכחה חיה (Live Proof — פקודה אחת)
 
 ```bash
-curl -s http://localhost:3000/api/saos/breakthrough-demo | jq '.demo.root, .demo.timings, .demo.metrics'
+curl -s http://localhost:3100/api/saos/breakthrough-proof | jq '.proof.root, .proof.timings, .proof.metrics'
 ```
 
-או ב-UI: טאב **"פריצת הדרך"** ← כפתור **"הרץ הדגמה חיה"**.
+או ב-UI: טאב **"פריצת הדרך"** ← כפתור **"הרץ הוכחה חיה"**.
 
 ### ריצה מתועדת (2026-09-08T02:04:44.115Z, sandbox):
 
@@ -96,7 +96,7 @@ curl -s http://localhost:3000/api/saos/breakthrough-demo | jq '.demo.root, .demo
 
 ## 9 · בטיחות (Iron Rules)
 
-ההדגמה: **קריאה בלבד** — אפס עסקאות, אפס שידור, אפס חתימה, אפס ארנק, אפס סודות בפלט. נאכף מבנית ונבדק מכונה (api-check §29: `safety.broadcast === false` וכו').
+ההוכחה: **קריאה בלבד** — אפס עסקאות, אפס שידור, אפס חתימה, אפס ארנק, אפס סודות בפלט. נאכף מבנית ונבדק מכונה (api-check §29: `safety.broadcast === false` וכו').
 
 ---
 

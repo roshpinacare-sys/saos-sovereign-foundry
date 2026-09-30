@@ -297,6 +297,8 @@ export interface LiveGateResponse {
   warnings: { id: string; detail: string }[];
   checks: { id: string; status: "pass" | "warn" | "fail"; detail: string }[];
   mode?: string;
+  /** Task 10: the route serves generatedAt — GatePanel now renders it instead of lastChecked=null */
+  generatedAt?: string;
   [k: string]: unknown;
 }
 
@@ -429,7 +431,7 @@ export interface RevokeAllResponse {
   note?: string;
 }
 
-// ─── /breakthrough-demo (Task 14) ────────────────────────────────────────────
+// ─── /breakthrough-proof (Task 14; renamed from breakthrough-demo in Task 10, 2026-09-30) ──
 
 export interface BreakthroughComparisonRow {
   system: string;
@@ -443,10 +445,10 @@ export interface BreakthroughComparisonRow {
   ours: boolean;
 }
 
-export interface BreakthroughDemoResponse {
+export interface BreakthroughProofResponse {
   ok: boolean;
   timestamp: string;
-  demo: {
+  proof: {
     kind: string;
     available: boolean;
     statement: string;
@@ -757,8 +759,10 @@ export interface TreasuryResponse {
     gapToUsdtSettlement: number | null;
   };
   constants: { trxPerUsdtTransfer: number };
-  /** forensic money-flow story (Task 44 recon, on-chain verified) */
-  flow: {
+  /** Task 10 (2026-09-30): forensic/live split — the frozen 2026-09-10 ledger trace lives under `forensic`
+   *  with its own asOf (past-tense story); live balances + generatedAt stay live and separate. */
+  forensic: {
+    asOf: string;
     externalInTrx: number;
     sweptOutTrx: number;
     burnedFeesTrx: number | null;

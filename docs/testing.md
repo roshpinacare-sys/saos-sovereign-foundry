@@ -1,28 +1,28 @@
 # בדיקות — SAOS Sovereign Foundry v2
 
-עודכן: 2026-09-07 (Task 5)
+עודכן: 2026-09-30 (Task 10 — truth pass: ספירות נגזרות מהקוד, לא קפואות)
 
 ## 1. איך מריצים
 
 ```bash
 # === הפקודה האחת (חובה לפני commit) — דורשת dev server רץ ===
-bun run check     # lint + typecheck + test (26 בדיקות API) + verify (8 פעימות מקבילות)
+bun run check     # lint + typecheck + test (198 טענות API) + verify (8 פעימות מקבילות)
 
 # רכיבים בנפרד:
 bun run lint        # eslint . — נקי = יציאה 0
 bun run typecheck   # tsc --noEmit
-bun run test        # scripts/api-check.mjs — חוזה מלא על 9 ה-endpoints + fail-closed
+bun run test        # scripts/api-check.mjs — חוזה מלא על 28 endpoints + fail-closed
 bun run verify      # scripts/concurrency-check.mjs — 8 POST /seal מקבילים + אינבריאנטות
 bun run build       # הגדרה בלבד — אסור להריץ בסנדבוקס (ר' §4 build)
 
 # selftest הקרנל:
-curl -s http://localhost:3000/api/saos/kernel | jq '.result.ok, .result.checks'
+curl -s http://localhost:3100/api/saos/kernel | jq '.result.ok, .result.checks'
 
 # אימות השרשרת המלא (מקבילת verify-pack, מרובה-חותמים):
-curl -s http://localhost:3000/api/saos/verify-chain | jq '.ok, .receiptChain, .totals'
+curl -s http://localhost:3100/api/saos/verify-chain | jq '.ok, .receiptChain, .totals'
 
 # פעימה + idempotency:
-curl -s -X POST localhost:3000/api/saos/seal -H 'Content-Type: application/json' \
+curl -s -X POST localhost:3100/api/saos/seal -H 'Content-Type: application/json' \
   -d '{"stamps":4,"batchId":"my-key-1"}' | jq .ok,.seal.height   # ריצה שנייה → idempotent:true
 ```
 
@@ -30,21 +30,25 @@ curl -s -X POST localhost:3000/api/saos/seal -H 'Content-Type: application/json'
 
 | סוג | כלי | מיקום | מה בודק |
 |---|---|---|---|
-| selftest תכונה | קרנל פנימי | `kernel.ts → kernelSelftest()` | 7 בדיקות: דטרמיניזם, טבלת-GAS, dedupe קשיח, שמירת-ערך, fail-closed, רגישות-סדר, שער אפס-גז |
+| selftest תכונה | קרנל פנימי | `kernel.ts → kernelSelftest()` | 11 בדיקות: דטרמיניזם, טבלת-GAS, dedupe קשיח, שמירת-ערך, fail-closed, רגישות-סדר, שער אפס-גז (the-door), שער-תפקיד (harvest=treasury בלבד), קישור-ריליי (relay_ack↔relay), הקדמות-חותמות בסילים חוזרים, canonical-bigint (דחיית 2^90) — נספרו מ-`checks.push`/`add(` בקרנל עצמו (Task 10, 2026-09-30) |
 | אימות מרקל | verify-pack | `api/saos/verify-pack` | בניית עץ מחדש + הוכחה/אימות לכל עלה + rootMatches |
 | fail-closed של API | ידני/curl | כל הנתיבים | קלט שגוי → `ok:false` ב-HTTP 200 (לעולם לא 500) |
 | lint | eslint 9 flat | `eslint.config.mjs` | core-web-vitals + typescript + no-unused-vars(warn) |
 | types | tsc | — | strict |
 | E2E דפדפן | agent-browser | ידני | 5 לשוניות, desktop+mobile, פעימה, אפס שגיאות קונסולה |
 
-**אין** פריימוורק בדיקות יחידה (ויטסט/Jest לא מותקנים) — שכבת הבדיקה: selftest-כ-API + סקריפטי check (api-check 26 בדיקות + concurrency-check). פריימוורק יחידה נשאר פער מוכר ב-next-steps.
+**אין** פריימוורק בדיקות יחידה (ויטסט/Jest לא מותקנים) — שכבת הבדיקה: selftest-כ-API + סקריפטי check (api-check 198 טענות + concurrency-check). פריימוורק יחידה נשאר פער מוכר ב-next-steps.
 
-## 3. תוצאות אחרונות (סוף Task 4, 2026-09-07)
+> **מדידת-גודל הסוויטה (Task 10, 2026-09-30):** `198 טענות` = ספירה סטטית של נקודות-הטענה ב-`scripts/api-check.mjs`: 191 קריאות-`report()` (193 מופעים של `report(` פחות ההגדרה ופחות קריאת-ההאצלה הפנימית של `envReport`) + 7 קריאות-`envReport()`. בריצה-חיה חלק מהטענות מדלגות בכנות (SKIP owner-held) — המספר הסטטי הוא גודל-החוזה, לא תוצאת-ריצה.
+
+## 3. תוצאות אחרונות (סוף Task 4, 2026-09-07 — היסטוריית-ריצות אמיתיות)
+
+> הסוויטה גדלה עם-החוזה: 26 (Task 4) → 162/162 בהריצה-החיה המתועדת האחרונה (2026-09-08, Task 13/14) → **198 טענות** בחוזה נכון ל-2026-09-30 (Task 10, מדידה סטטית לעיל). הרשומות למטה נשמרו כפי-שנמדדו — לא משוכתבו.
 
 | בדיקה | תוצאה | ראיה |
 |---|---|---|
 | `bun run check` (הפקודה האחת) | ✅ lint נקי + tsc נקי + api-check 26/26 + concurrency 8/8 | הרצה מלאה |
-| api-check — כל 9 endpoints + fail-closed | ✅ 26 passed, 0 failed | scripts/api-check.mjs |
+| api-check — כל ה-endpoints של-אז (9) + fail-closed | ✅ 26 passed, 0 failed | scripts/api-check.mjs |
 | concurrency-check — 8 POST /seal מקבילים | ✅ 8/8 ok, heights 13..20 רציפים יחודיים, roots יחודיים, 170–213ms | scripts/concurrency-check.mjs |
 | verify-chain scope=chain | ✅ ok, receiptChain ok, 0 digestErrors/linkErrors, `forks:[17]` מדווח, כל החותמים all-verified | curl |
 | idempotency (אותו batchId ×2) | ✅ ריצה שנייה: `idempotent:true`, אותו height/root | api-check |
@@ -376,7 +380,7 @@ lint ✅ · typecheck ✅ · api-check **45/45** ✅ · concurrency **8/8** (hei
 | בדיקה | תוצאה |
 |---|---|
 | `bun run lint` / `bun run typecheck` | ✅ נקי |
-| `bun run test` (api-check) | ✅ **162 passed, 0 failed** (147 → 162: §29 breakthrough-demo ×15) |
+| `bun run test` (api-check) | ✅ **162 passed, 0 failed** (147 → 162: §29 breakthrough ×15; ה-endpoint נקרא אז breakthrough-demo, שונה ל-breakthrough-proof ב-Task 10) |
 | `bun run verify 8` (concurrency) | ✅ 8/8 — heights רצופים (111→118), שרשרת תקינה, 25 חותמות/184 עלים all-verified |
 | `GET /api/saos/live-proof` חי | ✅ service=ok · safeLive=true · 5/6 רשתות מאומתות-קריאה (STEEM/HIVE/TRON/ETH chainId=0x1/SOL slots) · BLURT כנה לא-מאומתת (egress) · CI success @382d30e · errors=[] |
 | דפדפן (desktop 1280 / mobile 390 / 360) | ✅ כרטיס "הוכחת חיים" מוצג · אפס overflow · אפס שגיאות קונסול · RTL תקין |
@@ -386,7 +390,7 @@ lint ✅ · typecheck ✅ · api-check **45/45** ✅ · concurrency **8/8** (hei
 
 structure(18-field contract) · service∈{ok,degraded,down} · **אפס דפוסי-סוד ב-payload כולו** · 6 רשתות עם probe objects · not-configured = מצב (probe source≠env) · לכל probe reason כנה (בטוח ללא-אינטרנט) · רשתות חסומות מציגות blocker · **safety בדיק-מכונה: אין שידור/עסקה/חתימה/ארנק** · proofRoot/proofHeight תואמי חותמה · rate-limit rule פעיל · decisions view ללא סגירות-פיקטיביות.
 
-### §29 breakthrough-demo — 15 הבדיקות חוזה חדשות (Task 14)
+### §29 breakthrough-proof (נקרא בעבר breakthrough-demo — שונה ב-Task 10, 2026-09-30) — 15 הבדיקות חוזה חדשות (Task 14)
 
 structure (kind+networks+comparison+safety) · 6 רשתות בטבלת העדים · **זמן-חסום (wall < 30s, compute מדוד)** · אפס דפוסי-סוד (כולל דפוס Bearer) · **safety בדיק-מכונה** (broadcast/transaction/signing/wallet=false, liveCalls=read-only) · טבלת-השוואה כנה (בדיוק שורת-ours אחת `measured:true`, כל השאר `measured:false`) · ביטחון כן (SHA-256 256/128, ≥3 limitations, אין fake-bits — independentConsensusSets כמספר) · מדריך אימות צד-שלישי ≥4 צעדים · **לענף-עדים>0**: שורש 64-hex + עלה-לכל-עד 64-hex · הוכחות נוצרו ונאמתו-מחדש (allVerified) · הוכחה <1KB + root 32B + ≤4 ops · $0.00/keyless/gas 0/tx 0 · checkpoint משורשר (digest 64-hex + persisted בוליאני) · נופים עם reason כנה · **לענף-אפס-עדים**: available=false + root=null + הצהרה כנה (בטוח-CI-ללא-egress) · ריצה שנייה: digest טרי + זמן-חסום.
 

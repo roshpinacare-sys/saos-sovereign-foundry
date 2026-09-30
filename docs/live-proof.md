@@ -81,7 +81,7 @@
 ## 5. איך מאמתים שוב (נוהל 60 שניות)
 
 ```bash
-curl -s http://localhost:3000/api/saos/live-proof | python3 -m json.tool | head -60
+curl -s http://localhost:3100/api/saos/live-proof | python3 -m json.tool | head -60
 # או ב-UI: סקירה כללית → הכרטיס "הוכחת חיים — Live Proof" → בדיקה מחדש
 # אימות מלא:
 bun run check   # lint + typecheck + api-check + concurrency

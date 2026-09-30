@@ -263,7 +263,7 @@ export const EP = {
   verifyLive: "/api/saos/verify-live",
   agentBridge: "/api/saos/agent-bridge",
   research: "/api/saos/research",
-  breakthroughDemo: "/api/saos/breakthrough-demo",
+  breakthroughProof: "/api/saos/breakthrough-proof",
   treasury: "/api/saos/treasury",
   treasuryOps: "/api/saos/treasury-ops"
 } as const;

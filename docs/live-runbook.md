@@ -24,8 +24,8 @@
 1. `.env` (מחוץ לגיט, לעולם לא נשלח): `SAOS_MODE=live` + `SAOS_LIVE_CONFIRM=YES`.
 2. אימות שהמשתנים הדרושים קיימים: `DATABASE_URL`, `SAOS_ADMIN_KEY_HASH`, `SAOS_ADMIN_KEY` (מקומי), `SAOS_SESSION_TTL_H`, `HIVE_RC_PCT`, `TRON_ENERGY` · אופציונליים: `ETH_RPC_URL`, `SOL_RPC_URL`, `ETH_CHAIN_ID`, `SOL_CLUSTER`.
 3. הרצה-מחדש של השרת (`bun run dev`).
-4. בדיקה: `curl -s :3000/api/saos/status | jq '.mode, .broadcastCapable'` → צפי: `live`, `false`.
-5. הוכחת חיים: `curl -s :3000/api/saos/live-proof` → `service=ok`, `safeLive=true`.
+4. בדיקה: `curl -s :3100/api/saos/status | jq '.mode, .broadcastCapable'` → צפי: `live`, `false`.
+5. הוכחת חיים: `curl -s :3100/api/saos/live-proof` → `service=ok`, `safeLive=true`.
 6. חזרה ל-dry-run: קביעת `SAOS_MODE=dry-run` + הרצה-מחדש (אין צורך לגעת ב-LIVE_CONFIRM).
 
 ## 3. אימות-חי שוטף (כל הקריאות קריאה-בלבד)

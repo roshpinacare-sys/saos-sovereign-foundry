@@ -4,7 +4,8 @@
   "private": true,
   "description": "SAOS Sovereign Foundry v2 — cross-network anchoring, energy sovereignty and evidence-carrying economy platform. אנחנו מנצחים את הבלוקצ'יין",
   "scripts": {
-    "dev": "next dev -p 3000 2>&1 | tee dev.log",
+    "dev": "next dev -p 3100 2>&1 | tee dev.log",
+    "start": "next start -p 3100",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "bun scripts/api-check.mjs",

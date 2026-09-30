@@ -23,9 +23,9 @@ bun run dev                      # next dev -p 3000 — רץ ברקע
 בדיקת בריאות ראשונה:
 
 ```bash
-curl -s http://localhost:3000/api/saos/status  | head -c 120
-curl -s http://localhost:3000/api/saos/kernel  | jq '.result.ok'           # צפי: true
-curl -s http://localhost:3000/api/saos/verify-pack | jq '.rootMatches'     # צפי: true (אחרי פעימה ראשונה)
+curl -s http://localhost:3100/api/saos/status  | head -c 120
+curl -s http://localhost:3100/api/saos/kernel  | jq '.result.ok'           # צפי: true
+curl -s http://localhost:3100/api/saos/verify-pack | jq '.rootMatches'     # צפי: true (אחרי פעימה ראשונה)
 ```
 
 ## 2. משתני סביבה
@@ -42,17 +42,17 @@ curl -s http://localhost:3000/api/saos/verify-pack | jq '.rootMatches'     # צ�
 
 | פעולה | פקודה |
 |---|---|
-| הרצת פעימת עגינה | `curl -s -X POST localhost:3000/api/saos/seal -H 'Content-Type: application/json' -d '{"stamps":6,"memo":"pulse"}'` |
-| selftest | `curl -s localhost:3000/api/saos/kernel \| jq .result.ok` |
-| הוכחות | `curl -s localhost:3000/api/saos/verify-pack \| jq '.rootMatches,.allVerified'` |
-| תוכנית TRON | `curl -s 'localhost:3000/api/saos/energy?net=tron&trx=6500&txs=4'` |
-| תוכנית HIVE | `curl -s 'localhost:3000/api/saos/energy?net=hive&rc=0.6'` |
-| כלכלה | `curl -s 'localhost:3000/api/saos/economy?fly=30'` |
+| הרצת פעימת עגינה | `curl -s -X POST localhost:3100/api/saos/seal -H 'Content-Type: application/json' -d '{"stamps":6,"memo":"pulse"}'` |
+| selftest | `curl -s localhost:3100/api/saos/kernel \| jq .result.ok` |
+| הוכחות | `curl -s localhost:3100/api/saos/verify-pack \| jq '.rootMatches,.allVerified'` |
+| תוכנית TRON | `curl -s 'localhost:3100/api/saos/energy?net=tron&trx=6500&txs=4'` |
+| תוכנית HIVE | `curl -s 'localhost:3100/api/saos/energy?net=hive&rc=0.6'` |
+| כלכלה | `curl -s 'localhost:3100/api/saos/economy?fly=30'` |
 | lint / types | `bun run lint` · `bun run typecheck` |
 | **בדיקה מלאה (פקודה אחת)** | `bun run check` — lint+typecheck+test(26)+verify(8 מקבילות); דורש dev רץ |
 | בדיקות חוזה בלבד | `bun run test` (scripts/api-check.mjs) |
 | בדיקת מקביליות | `bun run verify` (scripts/concurrency-check.mjs; N פרמטרי: `node scripts/concurrency-check.mjs 10`) |
-| אימות שרשרת מלא | `curl -s localhost:3000/api/saos/verify-chain \| jq .ok,.receiptChain,.totals` |
+| אימות שרשרת מלא | `curl -s localhost:3100/api/saos/verify-chain \| jq .ok,.receiptChain,.totals` |
 | שחזור `at` לקבלות (חד-פעמי, אידמפוטנטי) | `bun scripts/backfill-receipt-at.ts` |
 | לוג חי | `tail -f dev.log` (קריאת-זנב בלבד — תמיד הרשומות האחרונות) |
 
@@ -67,7 +67,7 @@ cp db/custom.db "backups/custom-$(date +%Y%m%d-%H%M%S).db"   # צור backups/ �
 # 3. החל
 bun run db:push
 # 4. אימות
-curl -s localhost:3000/api/saos/status | jq .ok
+curl -s localhost:3100/api/saos/status | jq .ok
 ```
 
 אם `db push` דורש reset (שינוי דורש-מחיקה): הפסק, שקול `prisma migrate dev` לשימור, או הסכם לאיבוד נתוני-ריצה עם גיבוי בצד.
@@ -76,7 +76,7 @@ curl -s localhost:3000/api/saos/status | jq .ok
 
 ```bash
 rm -rf .next db/custom.db && bun run db:push && bun run dev
-curl -s -X POST localhost:3000/api/saos/seal -d '{}' -H 'Content-Type: application/json'  # פעימה ראשונה
+curl -s -X POST localhost:3100/api/saos/seal -d '{}' -H 'Content-Type: application/json'  # פעימה ראשונה
 ```
 
 ### 4.3 הרשאות — איך מגדירים מפתח-מנהל (Task 5)
@@ -117,8 +117,8 @@ bun run cleanup --yes     # רק עם גיבוי מאומת <24h; אחרת נד�
 ### 4.6 שער ה-live (Task 5)
 
 ```bash
-curl -s http://localhost:3000/api/saos/live-gate | jq '{readyForLive, blockers, warnings}'
-curl -s -X POST -H "Authorization: Bearer $KEY" http://localhost:3000/api/saos/live-gate | jq .readyForLive
+curl -s http://localhost:3100/api/saos/live-gate | jq '{readyForLive, blockers, warnings}'
+curl -s -X POST -H "Authorization: Bearer $KEY" http://localhost:3100/api/saos/live-gate | jq .readyForLive
 ```
 
 חובה לפני כל מעבר ל-live: `readyForLive=true` (אפס blockers). ה-POST מחייב הרשאה ונרשם ב-audit.
@@ -170,7 +170,7 @@ git push origin main
 ### בדיקת טיסה לפני כל עוגן
 
 ```bash
-curl -s "http://localhost:3000/api/saos/anchor-preflight" | jq '{readyForAnchor, blockers, recommendedNextAction}'
+curl -s "http://localhost:3100/api/saos/anchor-preflight" | jq '{readyForAnchor, blockers, recommendedNextAction}'
 # readyForAnchor=false ⇒ עצור — השלם את החוסמים המפורטים. אין עוקף.
 ```
 
@@ -228,7 +228,7 @@ git grep -lIE 'ghp_[A-Za-z0-9]{20,}|-----BEGIN [A-Z ]*PRIVATE' -- . || echo clea
 
 המערכת בסנדבוקס רצה כעת ב-**live ללא-שידור** (`SAOS_MODE=live` + `SAOS_LIVE_CONFIRM=YES` — הגנה כפולה; `broadcastCapable` נשאר false עד חותם חיצוני). נוהל מלא: **docs/live-runbook.md** · תיעוד-ראייה: **docs/live-proof.md**. קיצור:
 
-1. בדיקת-חיים שוטפת: `curl -s :3000/api/saos/live-proof` → `service=ok`, `safeLive=true`, `errors=[]`.
+1. בדיקת-חיים שוטפת: `curl -s :3100/api/saos/live-proof` → `service=ok`, `safeLive=true`, `errors=[]`.
 2. ב-live, `POST /seal` דורש הפעלה מאומתת (cookie או `Authorization: Bearer <key>`) — ההיגיון: פעימה ב-live נחשבת broadcast-adjacent.
 3. הסוויטה מודעת-מצב: api-check מתחבר אוטומטית כשמצב=live (§1b), concurrency-check בהתאמה + Retry-After לחלון-auth; `verify` רץ דרך bun (טוען `.env` אוטומטית — node לא).
 4. חלון ה-auth (8/min, 60s) מתרוקן ע"י ה-burst בסוף api-check — בין ריצות עוקבות חכו ~60s (הסוויטה עצמה מתקנת זאת בניסיון-חוזה מבוקר).

@@ -40,7 +40,7 @@ key-broker) אבל **אין רישום-קבוע ברוטציה של הצי** —
 
 | beat | מחזור | מה נמדד/נעשה | kill-switch |
 |---|---|---|---|
-| `health` | 15 דק' | probe של app:3000 + כל 5 שירותי-ה-foundry | — |
+| `health` | 15 דק' | probe של app:3100 (Task 10: השער על :3100) + כל 5 שירותי-ה-foundry | — |
 | `drift-report` | 30 דק' | ספירות-drift של הכספת (נתונים-ציבוריים בלבד) → פנקס | — |
 | `selftest` | 2 שעות | kernel-selftest בתהליך-בן אפמרלי + נוכחות node_modules/prisma/db | — |
 | `backup-freshness` | 6 שעות | גיל הגיבוי הטרי; אם >24h → טריגר גיבוי-חי אצל ה-signer | `SAOS_NO_ROT_BACKUP=1` |

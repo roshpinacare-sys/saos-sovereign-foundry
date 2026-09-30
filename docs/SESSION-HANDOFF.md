@@ -31,7 +31,7 @@ bun run release-truth-audit                        # צפוי: <X>/6 PASS (רא�
 ## מצב רגע-המסירה (state snapshot)
 - **HEAD**: <short-sha> — "<נושא-ה-commit האחרון>" (דחיפה אומתה: <כן/לא + ראיה>)
 - **שירותים**: guardian :3031 <חי/מת + ראיה> · chief-of-staff :3032 <חי/מת + ראיה> ·
-  פיתוח next :3000 <רץ/כבוי>
+  פיתוח next :3100 (Task 10) <רץ/כבוי>
 - **בריף אחרון**: docs/briefings/BRIEF-<ts>.md — שורת-המצב המרכזית ממנו: <ציטוט קצר>
 - **release-truth-audit**: <X>/6 — מה נכשל ולמה: <שורה לכל נכשל, או "הכל ירוק">
 

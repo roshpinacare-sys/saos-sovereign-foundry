@@ -10,7 +10,7 @@
 | פורט | שירות | ריפו | מקור-אמת בקוד | הערות |
 |---|---|---|---|---|
 | **3000** | web — saos-sovereign-platform (האם) | saos-sovereign-platform | `package.json` → `next dev -p 3000` | הממשק-הראשי; Caddyfile: הכל 403 (Task-5) |
-| **3000** | web — saos-sovereign-foundry | saos-sovereign-foundry | `package.json` → `next dev -p 3000` | מכונות-נפרדות — אין-התנגשות; שני-ה-web-ים על 3000 לפי-מוסכמה |
+| **3100** | web — saos-sovereign-foundry (שער-הרשת) | saos-sovereign-foundry | `package.json` → `next dev -p 3100` | **תוקן 2026-09-30 (Task 10)**: חי בפועל על :3100 — הרישום הקודם "3000" היה מיושן מול-החי; package.json + api-check/concurrency BASE + בדיקות-הבריאות של rotation-keeper/chief-of-staff/fleet-cure יושרו כולם ל-:3100 באותו-commit |
 | **3003** | relay-service (ריליי-סוכנים) | saos-control-center | `mini-services/relay-service` + `scripts/boot-all.ts` | emit-מושתת על 3004 |
 | **3004** | relay-emit (סלוט-הפליטה של הריליי) | saos-control-center | `mini-services/revenue-governor/index.ts` → `RELAY_EMIT :3004/emit` | ⚠️ כנגד-ה-heart-service למטה — כפילות-פוטנציאלית בין-מכונות, להכריע ב-CI |
 | **3004** | heart-service (פעימת-הלב, twin) | Saosmartwallet (Zip) | `mini-services/heart-service/index.ts:119` → `HEART_PORT ?? 3004` | נפוץ-טעות-שיוך: **אינו ב-steem** — steem מכיל רק את key-broker הפרוש |

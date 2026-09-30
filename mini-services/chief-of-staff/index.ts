@@ -46,7 +46,7 @@ const CHIEF_LOG = path.join(import.meta.dir, "chief.log");
 // (Bearer admin key, same as a human), which keeps every fail-closed gate
 // (mode, authority-gate, cooldown, ambiguity discipline, public verification).
 //   kill-switch: SAOS_NO_ANCHOR_PULSE=1   ·   economic gate: ANCHOR_PULSE_INTERVAL_MIN
-const APP_URL = "http://127.0.0.1:3000";
+const APP_URL = "http://127.0.0.1:3100"; // Task 10 (2026-09-30): gate port aligned to :3100 (docs/PORTS.md)
 const PULSE_CHECK_MS = 5 * 60_000;
 const PULSE_FIRST_DELAY_MS = 45_000;
 const PULSE_INTERVAL_MIN = Math.max(35, Number(process.env.ANCHOR_PULSE_INTERVAL_MIN ?? 360));

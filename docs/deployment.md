@@ -21,8 +21,8 @@ git clone <repo> saos && cd saos
 bun install
 cp .env.example .env          # ואז למלא — ר' §3
 bun run db:push               # יצירת/עדכון סכימת SQLite
-bun run dev                   # http://localhost:3000
-bun run check                 # lint + typecheck + api(45) + concurrency(8) — חייב לעבור מלא
+bun run dev                   # http://localhost:3100
+bun run check                 # lint + typecheck + api(198) + concurrency(8) — חייב לעבור מלא
 ```
 
 ## 3. משתני סביבה נדרשים

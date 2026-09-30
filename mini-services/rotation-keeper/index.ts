@@ -8,7 +8,7 @@
  * אורגת) אך **לא היה רשום באופן-קבוע ברוטציה של הצי** — ההשתתפות הייתה
  * אד-הוק לפי-סוכן. השירות הזה הוא הרגל-הקבועה של ה-foundry ברוטציה:
  *
- *   1. health          — כל 15 דק': probe לכל שירותי-ה-foundry (:3000 האפליקציה,
+ *   1. health          — כל 15 דק': probe לכל שירותי-ה-foundry (:3100 האפליקציה — Task 10, 2026-09-30;
  *                          3031 guardian, 3032 chief, 3033 signer, 3034 fleet-cure,
  *                          3040 key-broker) + רישום.
  *   2. drift-report    — כל 30 דק': קורא מה-signer :3033 /keys/status (Bearer,
@@ -80,7 +80,7 @@ interface ServiceTarget {
 
 // ── targets (loopback only, public data only) ────────────────────────────────
 const SERVICES: ServiceTarget[] = [
-  { name: "app", url: "http://127.0.0.1:3000/api/saos/status" },
+  { name: "app", url: "http://127.0.0.1:3100/api/saos/status" },
   { name: "vault-guardian", url: "http://127.0.0.1:3031/health" },
   { name: "chief-of-staff", url: "http://127.0.0.1:3032/health" },
   { name: "external-signer", url: "http://127.0.0.1:3033/health", bearer: true },
