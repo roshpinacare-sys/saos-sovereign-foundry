@@ -1,30 +1,31 @@
 {
-  "startedAt": "2026-10-01T21:40:45.684Z",
+  "startedAt": "2026-10-01T21:44:40.211Z",
   "account": "headcorner",
   "steps": {
     "observe": {
       "name": "observe",
       "ok": true,
-      "ms": 2226,
+      "ms": 2048,
       "account": "headcorner",
       "parity": {
-        "steemUsd": 0.06328,
-        "sbdUsd": 0.644614,
-        "parity": 0.09816727529963669,
-        "source": "coingecko"
+        "steemUsd": 0.06318,
+        "sbdUsd": 0.6069102955307609,
+        "parity": 0.1041010516138093,
+        "source": "internal-feed-fallback+derived-sbd",
+        "lowConfidence": true
       },
       "feed": 0.1041010516138093,
       "band": {
         "ok": true,
         "reason": "band-ok",
-        "bps": -570
+        "bps": 0
       },
-      "steemUsd": 0.06328,
-      "sbdUsd": 0.644614,
+      "steemUsd": 0.06318,
+      "sbdUsd": 0.6069102955307609,
       "inventory": {
         "steem": 126.678,
         "sbd": 0.152,
-        "spOwn": 4035.282274612963,
+        "spOwn": 4035.283020941377,
         "rcPct": 100
       },
       "ordersOk": true,
@@ -110,16 +111,15 @@
         "node": "https://steemapi.boylikegirl.club",
         "windowNote": "no reward ops inside the measured window — rails dormant, not a parse failure (deep-scan documented separately)"
       },
-      "summary": "parity 0.09816727529963669 (coingecko) · fills 51 · fuel 0$"
+      "summary": "parity 0.1041010516138093 (internal-feed-fallback+derived-sbd) · fills 51 · fuel 0$"
     },
     "intel": {
       "name": "intel",
       "ok": true,
-      "ms": 1444,
-      "verdict": "DECISIONS:5",
+      "ms": 1609,
+      "verdict": "DECISIONS:4",
       "decisions": [
         "book-depth:hold-shape",
-        "parity-drift:arb-window",
         "soldiers:grids-live",
         "rc-health:healthy",
         "curation:curator-armed"
@@ -135,28 +135,28 @@
       "name": "tick",
       "ok": true,
       "ms": 0,
-      "runCount": 134,
+      "runCount": 135,
       "simFills": 7,
       "simFeesMu": 3500,
-      "events": 6
+      "events": 3
     },
     "peg": {
       "name": "peg",
       "ok": true,
-      "ms": 694,
+      "ms": 700,
       "verdict": "OFFER-READY",
       "asks": 0,
       "bids": 0,
       "flowAsks": 4,
       "flowBids": 0,
       "staleCount": 3,
-      "skew": 0.292755,
+      "skew": 0.293163,
       "book": {
         "bestAsk": 0.10428616122640526,
         "bestBid": 0.100014,
         "askDepthSteem": 2404.163,
-        "bidDepthSbd": 2987.642,
-        "at": "2026-10-01T21:40:45.684Z"
+        "bidDepthSbd": 2987.055,
+        "at": "2026-10-01T21:44:40.211Z"
       },
       "market": {
         "tradesPerDay": 63,
@@ -173,36 +173,36 @@
     "convert": {
       "name": "convert",
       "ok": true,
-      "ms": 0,
+      "ms": 1,
       "verdict": "CONVERT-HOLD",
       "amountSbd": 0,
-      "edgeBps": 5513,
-      "marketSbdUsd": 0.644614,
-      "impliedSbdUsd": 0.607871,
+      "edgeBps": 6477,
+      "marketSbdUsd": 0.60691,
+      "impliedSbdUsd": 0.60691,
       "marketSourceNote": "external-measured"
     },
     "curate": {
       "name": "curate",
       "ok": false,
-      "ms": 2,
+      "ms": 1,
       "error": "CREDENTIAL-MISSING: .secrets/headcorner.key not found (sandbox cold-reset wipes gitignored secrets). Revival (self-service, zero restart): drop the account's CURRENT master-password file as upload/hea"
     },
     "execute": {
       "name": "execute",
       "ok": false,
-      "ms": 1,
+      "ms": 0,
       "error": "CREDENTIAL-MISSING: .secrets/headcorner.key not found (sandbox cold-reset wipes gitignored secrets). Revival (self-service, zero restart): drop the account's CURRENT master-password file as upload/hea"
     },
     "soldiers": {
       "name": "soldiers",
       "ok": false,
-      "ms": 1,
+      "ms": 0,
       "error": "CREDENTIAL-MISSING: .secrets/headcorner.key not found (sandbox cold-reset wipes gitignored secrets). Revival (self-service, zero restart): drop the account's CURRENT master-password file as upload/hea"
     },
     "learn": {
       "name": "learn",
       "ok": true,
-      "ms": 832,
+      "ms": 3,
       "verdict": "LEARNED",
       "lessons": [
         "cycle-conn-fails",
@@ -210,7 +210,7 @@
         "unclassified-fail-legacy"
       ],
       "tunings": [],
-      "discoveryVerdict": "OPTIONS-FOUND",
+      "discoveryVerdict": "FRESH-CACHED",
       "topOpportunities": [
         "spread-wide(measured)",
         "tags-realloc(measured)",
@@ -220,7 +220,7 @@
     "recruit": {
       "name": "recruit",
       "ok": true,
-      "ms": 1,
+      "ms": 0,
       "verdict": "FULL-STRENGTH",
       "active": 8,
       "total": 8
@@ -228,9 +228,9 @@
     "economics": {
       "name": "economics",
       "ok": true,
-      "ms": 2,
+      "ms": 1,
       "totalMeasuredUsdPerDay": 0,
-      "totalEstUsdPerDay": 0.612917,
+      "totalEstUsdPerDay": 0.611949,
       "rails": 6,
       "measuredCount": 1,
       "estimatedCount": 2,
@@ -276,5 +276,5 @@
       "soldiers"
     ]
   },
-  "finishedAt": "2026-10-01T21:40:50.887Z"
+  "finishedAt": "2026-10-01T21:44:44.573Z"
 }
