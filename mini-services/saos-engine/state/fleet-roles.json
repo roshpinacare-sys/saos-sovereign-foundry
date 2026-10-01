@@ -1,0 +1,106 @@
+{
+  "verdict": "FULL-STRENGTH",
+  "active": 8,
+  "total": 8,
+  "ladderNote": "תפקיד נרשם רק כשהראיה שלו קיימת במדינת-המנוע — מדוד, לא מובטח; תפקיד-מת מתדרג ל-planned בכל מחזור",
+  "roster": [
+    {
+      "id": "market-analyst",
+      "role": "אנליסט-שוק",
+      "lane": "measurement",
+      "capability": "marketPulse 24h — fills/volume/spread/depth of the whole venue",
+      "status": "active",
+      "cadence": "cycle",
+      "truthContract": "numbers only from market_history_api reads, labeled measured",
+      "recruitedAt": "2026-10-01T21:39:37.902Z",
+      "evidence": "state/market.json: 63 trades/24h measured (vol 1808.422 STEEM)",
+      "priorStatus": "active"
+    },
+    {
+      "id": "rc-economist",
+      "role": "כלכלן-RC",
+      "lane": "resource",
+      "capability": "RC tank economics + equilibrium governor — the volume ceiling law",
+      "status": "active",
+      "cadence": "3s tick",
+      "truthContract": "costs measured by live manabar deltas (rc-probe), never invented",
+      "recruitedAt": "2026-10-01T21:39:37.902Z",
+      "evidence": "state/hyper-grid.json: equilibrium 32086 ops/day measured (RC governor live)",
+      "priorStatus": "active"
+    },
+    {
+      "id": "fill-auditor",
+      "role": "מבקר-עסקאות",
+      "lane": "truth",
+      "capability": "chain-truth fill/op counters over account history (max(state, chain-truth))",
+      "status": "active",
+      "cadence": "cycle+tail",
+      "truthContract": "countDayFillsFromHistory / countDayOrderOpsFromHistory on real rows",
+      "recruitedAt": "2026-10-01T21:39:37.902Z",
+      "evidence": "state/observe.json: 51 chain-truth fills counted (last 2026-10-01T21:18:27.000Z)",
+      "priorStatus": "active"
+    },
+    {
+      "id": "treasury-sentinel",
+      "role": "שומר-אוצר",
+      "lane": "arbitrage",
+      "capability": "convert-arb edge monitor — SBD print path held honest (dust-or-capped)",
+      "status": "active",
+      "cadence": "cycle",
+      "truthContract": "edge in bps from measured market vs implied, HOLD verdict honest",
+      "recruitedAt": "2026-10-01T21:39:37.902Z",
+      "evidence": "state/convert-plan.json: CONVERT-HOLD (edge 5513bps)",
+      "priorStatus": "active"
+    },
+    {
+      "id": "content-strategist",
+      "role": "אסטרטג-תוכן",
+      "lane": "growth",
+      "capability": "daily SEO-smart promo report — network presence without exposure",
+      "status": "active",
+      "cadence": "daily",
+      "truthContract": "posted txid journaled; claims never exceed the measured state",
+      "recruitedAt": "2026-10-01T21:39:37.902Z",
+      "evidence": "state/daily-report.json: report step ok (promo rail armed in doctrine, perDay ≥ 1)",
+      "priorStatus": "active"
+    },
+    {
+      "id": "curation-steward",
+      "role": "מושל-קיורציה",
+      "lane": "fuel",
+      "capability": "doctrine vote rail — day-cap enforced on max(state, chain-truth)",
+      "status": "active",
+      "cadence": "cycle",
+      "truthContract": "budgetCounted basis journaled on every verdict",
+      "recruitedAt": "2026-10-01T21:39:37.902Z",
+      "evidence": "state/curator.json: VP-FLOOR (budgetCounted ?, basis state)",
+      "priorStatus": "active"
+    },
+    {
+      "id": "integrity-auditor",
+      "role": "מבקר-שלמות",
+      "lane": "truth",
+      "capability": "offline deterministic selftest core (237 vectors) — the honesty contract itself",
+      "status": "active",
+      "cadence": "on change",
+      "truthContract": "PASS required before any deploy; failures block",
+      "recruitedAt": "2026-10-01T21:39:37.902Z",
+      "evidence": "state/selftest-last-run.json: 266/266 PASS at 2026-10-01T21:37:38.634Z",
+      "priorStatus": "active"
+    },
+    {
+      "id": "fleet-recruiter",
+      "role": "מגייס-הצבא",
+      "lane": "doctrine",
+      "capability": "this very ladder — turns running capabilities into accountable stations",
+      "status": "active",
+      "cadence": "cycle",
+      "truthContract": "a role exists only with named evidence in state",
+      "recruitedAt": "2026-10-01T21:39:37.902Z",
+      "evidence": "this roster file — the recruiter ran and wrote it",
+      "priorStatus": "active"
+    }
+  ],
+  "at": "2026-10-01T21:40:45.684Z",
+  "pid": 1213
+}

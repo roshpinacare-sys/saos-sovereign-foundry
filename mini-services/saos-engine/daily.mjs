@@ -29,6 +29,8 @@ import { postDailyReport } from "./promo.mjs";
 import { runCurator } from "./curator.mjs";
 import { runLearning } from "./learning.mjs";
 import { runDiscovery } from "./discovery.mjs";
+import { runRecruiter } from "./recruiter.mjs";
+import { runEconomics } from "./economics.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const STATE = path.join(DIR, "state");
@@ -447,6 +449,30 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
       tunings: learning.tuningsApplied,
       discoveryVerdict: discovery.verdict,
       topOpportunities: discovery.opportunities?.slice(0, 3).map((o) => `${o.id}(${o.potentialClass})`) ?? [],
+    };
+  });
+
+  /* T-21 · recruit: הצבא מפתח את עצמו — every cycle the engine re-inspects
+   * its own state and recruits/demotes NAMED stations by evidence. Fail-
+   * isolated like all steps; the roster file is the cockpit's source. */
+  report.steps.recruit = await stepWrap("recruit", async () => {
+    const roster = runRecruiter(now);
+    return { verdict: roster.verdict, active: roster.active, total: roster.total };
+  });
+
+  /* T-21 · economics: the multi-rail rollup (measured | estimated | blocked
+   * per rail, totals never merged across classes) — the honest answer to
+   * "how do we turn the simulated array into real value": you can only
+   * monetize what you can SEE. */
+  report.steps.economics = await stepWrap("economics", async () => {
+    const econ = runEconomics(now);
+    return {
+      totalMeasuredUsdPerDay: econ.totalMeasuredUsdPerDay,
+      totalEstUsdPerDay: econ.totalEstUsdPerDay,
+      rails: econ.rails.length,
+      measuredCount: econ.measuredCount,
+      estimatedCount: econ.estimatedCount,
+      blockedCount: econ.blockedCount,
     };
   });
 

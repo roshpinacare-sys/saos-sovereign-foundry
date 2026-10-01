@@ -226,3 +226,21 @@
 {"at":"2026-09-30T21:54:33.363Z","kind":"cycle-ok(auto)","ms":15068,"engineMeasured":true,"steps":10,"verdict":null,"blockedSteps":[],"error":null}
 {"at":"2026-09-30T22:04:33.377Z","kind":"cycle-ok(auto)","ms":15203,"engineMeasured":true,"steps":10,"verdict":null,"blockedSteps":[],"error":null}
 {"at":"2026-09-30T22:14:33.405Z","kind":"cycle-ok(auto)","ms":15542,"engineMeasured":true,"steps":10,"verdict":null,"blockedSteps":[],"error":null}
+{"at":"2026-10-01T20:04:40.191Z","kind":"boot","pid":1094,"resumed":false,"carriedOver":{"checks":697,"cyclesOk":52,"heals":22}}
+{"at":"2026-10-01T20:04:40.201Z","kind":"watchdog-down-again"}
+{"at":"2026-10-01T20:04:40.202Z","kind":"heal-attempt","reason":"watchdog"}
+{"at":"2026-10-01T20:04:40.211Z","kind":"heal-spawn","reason":"watchdog","pid":1131}
+{"at":"2026-10-01T20:04:48.233Z","kind":"heal-verified","up":true}
+{"at":"2026-10-01T20:04:48.234Z","kind":"cred-missing","verdict":"SIGNING-DEAD","agentsAffected":["curate","execute","soldiers","promo"],"revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}
+{"at":"2026-10-01T20:05:37.231Z","kind":"cycle-blocked(auto)","ms":8199,"engineMeasured":true,"steps":10,"verdict":null,"blockedSteps":["curate","execute","soldiers"],"error":null}
+{"at":"2026-10-01T20:14:48.211Z","kind":"cycle-blocked(auto)","ms":4898,"engineMeasured":true,"steps":10,"verdict":null,"blockedSteps":["curate","execute","soldiers"],"error":null}
+{"at":"2026-10-01T20:24:48.212Z","kind":"cycle-blocked(auto)","ms":5325,"engineMeasured":true,"steps":10,"verdict":null,"blockedSteps":["curate","execute","soldiers"],"error":null}
+{"at":"2026-10-01T20:34:48.212Z","kind":"cycle-blocked(auto)","ms":4265,"engineMeasured":true,"steps":10,"verdict":null,"blockedSteps":["curate","execute","soldiers"],"error":null}
+{"at":"2026-10-01T20:44:48.214Z","kind":"cycle-blocked(auto)","ms":6459,"engineMeasured":true,"steps":10,"verdict":null,"blockedSteps":["curate","execute","soldiers"],"error":null}
+{"at":"2026-10-01T20:54:48.214Z","kind":"cycle-blocked(auto)","ms":4350,"engineMeasured":true,"steps":10,"verdict":null,"blockedSteps":["curate","execute","soldiers"],"error":null}
+{"at":"2026-10-01T21:00:40.240Z","kind":"cred-restored"}
+{"at":"2026-10-01T21:04:52.214Z","kind":"cycle-ok(auto)","ms":11245,"engineMeasured":true,"steps":10,"verdict":null,"blockedSteps":[],"error":null}
+{"at":"2026-10-01T21:14:52.218Z","kind":"cycle-ok(auto)","ms":10679,"engineMeasured":true,"steps":10,"verdict":null,"blockedSteps":[],"error":null}
+{"at":"2026-10-01T21:24:52.218Z","kind":"cycle-ok(auto)","ms":9302,"engineMeasured":true,"steps":10,"verdict":null,"blockedSteps":[],"error":null}
+{"at":"2026-10-01T21:34:48.217Z","kind":"cycle-fail(auto)","ms":4266,"engineMeasured":true,"steps":10,"verdict":null,"blockedSteps":[],"error":null}
+{"at":"2026-10-01T21:38:40.262Z","kind":"cred-missing","verdict":"SIGNING-DEAD","agentsAffected":["curate","execute","soldiers","promo"],"revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}

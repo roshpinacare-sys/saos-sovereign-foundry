@@ -27,6 +27,8 @@ const PATHS = {
   discovery: `${ENGINE}/state/discovery.json`,
   hyperGrid: `${ENGINE}/state/hyper-grid.json`,
   hyperOps: `${ENGINE}/state/hyper-ops.json`,
+  fleetRoles: `${ENGINE}/state/fleet-roles.json`,
+  economics: `${ENGINE}/state/economics.json`,
 };
 const ENGINE_HTTP = "http://127.0.0.1:3040";
 const CACHE_TTL_MS = 45_000;
@@ -232,7 +234,7 @@ export async function GET() {
   if (cache && Date.now() - cache.at < CACHE_TTL_MS) {
     return NextResponse.json(cache.data);
   }
-  const [state, offer, observe, dailyReport, convertPlan, eventsTail, soldiers, curator, intel, execLogTail, ordersRaw, rcRaw, accRaw, fills, eng, execHttp, learning, discovery, fleetHttp, hyperGrid, hyperOps] = await Promise.all([
+  const [state, offer, observe, dailyReport, convertPlan, eventsTail, soldiers, curator, intel, execLogTail, ordersRaw, rcRaw, accRaw, fills, eng, execHttp, learning, discovery, fleetHttp, hyperGrid, hyperOps, fleetRoles, economicsFile] = await Promise.all([
     readJsonSafe(PATHS.state),
     readJsonSafe(PATHS.offer),
     readJsonSafe(PATHS.observe),
@@ -254,6 +256,8 @@ export async function GET() {
     engineFleet(),
     readJsonSafe(PATHS.hyperGrid),
     readJsonSafe(PATHS.hyperOps),
+    readJsonSafe(PATHS.fleetRoles),
+    readJsonSafe(PATHS.economics),
   ]);
 
   const orders = (ordersRaw ?? []).map((o) => {
@@ -461,6 +465,32 @@ export async function GET() {
     credential: credData,
     spoilage,
     hyper,
+    /* T-21: the recruiter's evidence-based roster + the multi-rail economics
+     * rollup — both written by the engine's own cycles (state files = truth) */
+    roles: (fleetRoles as Record<string, unknown> | null)
+      ? {
+          verdict: (fleetRoles as any).verdict ?? null,
+          active: (fleetRoles as any).active ?? null,
+          total: (fleetRoles as any).total ?? null,
+          ladderNote: (fleetRoles as any).ladderNote ?? null,
+          roster: ((fleetRoles as any).roster ?? []).slice(0, 12),
+        }
+      : null,
+    economics: (economicsFile as Record<string, unknown> | null)
+      ? {
+          asof: (economicsFile as any).asof ?? null,
+          rails: ((economicsFile as any).rails ?? []).map((r: any) => ({
+            id: r.id, label: r.label, measuredUsdPerDay: r.measuredUsdPerDay ?? null,
+            estUsdPerDay: r.estUsdPerDay ?? null, confidence: r.confidence, note: r.note,
+          })),
+          totalMeasuredUsdPerDay: (economicsFile as any).totalMeasuredUsdPerDay ?? null,
+          totalEstUsdPerDay: (economicsFile as any).totalEstUsdPerDay ?? null,
+          measuredCount: (economicsFile as any).measuredCount ?? null,
+          estimatedCount: (economicsFile as any).estimatedCount ?? null,
+          blockedCount: (economicsFile as any).blockedCount ?? null,
+          law: (economicsFile as any).law ?? null,
+        }
+      : null,
     sources: { kind: "sovereign-local", paths: PATHS, engineHttp: ENGINE_HTTP },
     notes: [
       "אמת-מוטבעת-על-שרשרת בלבד — real.fills נמדד מ-fill_order חי",

@@ -607,3 +607,185 @@ export function diffHyperTick({ planned, live, epsBps = 2, ttlMs = 60_000, nowMs
   }
   return { cancelIds, creates, unchanged: cancelIds.length === 0 && creates.length === 0 };
 }
+
+/* ═══════════════════════════ T-21 · IDENTITY-INTEGRITY LAW ═══════════════════════════
+ * Proven live 2026-10-01 21:00: ONE unverified paste ("testuser …") flipped
+ * masterAccount() → every measurement rail (RC, book ownership, cancels,
+ * governor economics) silently measured a FOREIGN account for hours — the
+ * hyper layer's burn collapsed 500× and the machine went quiet with an
+ * honest-looking GOVERNOR-ACCUMULATING verdict. LAW: the account of record
+ * is the DOCTRINE account (env > default). A credential file can kill
+ * SIGNING (typed CREDENTIAL-MISSING / FOREIGN-CREDENTIAL) — it can never
+ * steal MEASUREMENT. Pure. */
+export function doctrineAccount(envAcct, fileAcct = undefined) {
+  const d = String(envAcct ?? "").trim() || "headcorner";
+  return d;
+}
+
+/** the adopt gate: a paste may install a credential ONLY for the doctrine
+ * account. Anything else is refused at the door (nothing written, nothing
+ * cached), journaled honestly by the caller. Pure. */
+export function credentialGate(fileAcct, doctrine) {
+  const f = String(fileAcct ?? "").trim();
+  const d = String(doctrine ?? "").trim();
+  if (!f) return { allow: false, reason: "credential-format: account field missing" };
+  if (!d) return { allow: false, reason: "no-doctrine-account" };
+  if (f !== d) {
+    return {
+      allow: false,
+      reason: `ACCOUNT-MISMATCH-DOCTRINE: pasted "${f}" but this engine's account of record is "${d}" — measurement rails stay untouched; paste the ${d} credential`,
+    };
+  }
+  return { allow: true, reason: null };
+}
+
+/** RC-anomaly guard (defense-in-depth for the same class of bug): the RC
+ * tank of the doctrine account is stable on human timescales — a >10× drop
+ * between consecutive reads means the identity flipped or the RPC lied.
+ * No burn on anomaly; the next honest read heals it. Pure. */
+export function rcAnomaly(lastMaxRc, maxRc, ratio = 0.1) {
+  const l = Number(lastMaxRc), m = Number(maxRc);
+  if (!(m > 0)) return true;                    // no evidence → no burn (T-18 lineage)
+  if (!(l > 0)) return false;                   // first read — nothing to compare
+  return m < l * ratio;
+}
+
+/* ═══════════════════════════ T-21 · THE RECRUITER (הצבא מפתח את עצמו) ═══════════════════════════
+ * Operator order: "לברר איך האוטונומיה והריבונות מפתחת את הצבא ומגייסת עוד
+ * תפקידים לבד". The recruiter is the doctrine that turns EXISTING running
+ * capabilities into NAMED stations with truth-contracts — a role is
+ * recruited only when its enabling evidence exists in the engine's state
+ * (measured, not promised), and demoted to planned/blocked when the evidence
+ * goes stale. Every row carries the exact state file that proves it. Pure. */
+export function recruitRoles({ evidence = {}, now = null, prior = {} } = {}) {
+  const at = now ?? null;
+  // each candidate: id, role, lane, capability (what it DOES), evidence-key
+  // (must be truthy-ish to recruit), cadence, truthContract
+  const CANDIDATES = [
+    { id: "market-analyst", role: "אנליסט-שוק", lane: "measurement", capability: "marketPulse 24h — fills/volume/spread/depth of the whole venue", key: "marketPulse", cadence: "cycle", truthContract: "numbers only from market_history_api reads, labeled measured" },
+    { id: "rc-economist", role: "כלכלן-RC", lane: "resource", capability: "RC tank economics + equilibrium governor — the volume ceiling law", key: "rcEconomics", cadence: "3s tick", truthContract: "costs measured by live manabar deltas (rc-probe), never invented" },
+    { id: "fill-auditor", role: "מבקר-עסקאות", lane: "truth", capability: "chain-truth fill/op counters over account history (max(state, chain-truth))", key: "fillAudit", cadence: "cycle+tail", truthContract: "countDayFillsFromHistory / countDayOrderOpsFromHistory on real rows" },
+    { id: "treasury-sentinel", role: "שומר-אוצר", lane: "arbitrage", capability: "convert-arb edge monitor — SBD print path held honest (dust-or-capped)", key: "convert", cadence: "cycle", truthContract: "edge in bps from measured market vs implied, HOLD verdict honest" },
+    { id: "content-strategist", role: "אסטרטג-תוכן", lane: "growth", capability: "daily SEO-smart promo report — network presence without exposure", key: "promo", cadence: "daily", truthContract: "posted txid journaled; claims never exceed the measured state" },
+    { id: "curation-steward", role: "מושל-קיורציה", lane: "fuel", capability: "doctrine vote rail — day-cap enforced on max(state, chain-truth)", key: "curation", cadence: "cycle", truthContract: "budgetCounted basis journaled on every verdict" },
+    { id: "integrity-auditor", role: "מבקר-שלמות", lane: "truth", capability: "offline deterministic selftest core (237 vectors) — the honesty contract itself", key: "selftest", cadence: "on change", truthContract: "PASS required before any deploy; failures block" },
+    { id: "fleet-recruiter", role: "מגייס-הצבא", lane: "doctrine", capability: "this very ladder — turns running capabilities into accountable stations", key: "recruiter", cadence: "cycle", truthContract: "a role exists only with named evidence in state" },
+  ];
+  const priorById = {};
+  for (const r of (Array.isArray(prior?.roster) ? prior.roster : [])) {
+    if (r && r.id) priorById[r.id] = r;
+  }
+  const roster = [];
+  for (const c of CANDIDATES) {
+    const has = !!(evidence?.[c.key]);
+    const prev = priorById[c.id];
+    const status = has ? "active" : "planned";
+    roster.push({
+      id: c.id, role: c.role, lane: c.lane, capability: c.capability,
+      status, cadence: c.cadence, truthContract: c.truthContract,
+      /* recruitedAt survives demotion: a station's history is not amnesiac —
+       * the roster shows WHEN it first became real, even if evidence died */
+      recruitedAt: has ? (prev?.recruitedAt ?? at) : (prev?.recruitedAt ?? null),
+      evidence: has ? (typeof evidence[c.key] === "string" ? evidence[c.key] : c.key) : null,
+      priorStatus: prev?.status ?? null,
+    });
+  }
+  const active = roster.filter((r) => r.status === "active").length;
+  return {
+    verdict: active >= roster.length ? "FULL-STRENGTH" : active > 0 ? "RECRUITED" : "DRAFT",
+    active, total: roster.length,
+    ladderNote: "תפקיד נרשם רק כשהראיה שלו קיימת במדינת-המנוע — מדוד, לא מובטח; תפקיד-מת מתדרג ל-planned בכל מחזור",
+    roster,
+    at,
+  };
+}
+
+/* ═══════════════════════════ T-21 · MULTI-RAIL ECONOMICS (המערך-הכלכלי → ערך אמיתי) ═══════════════════════════
+ * One honest rollup of EVERY value rail the machine runs, each labeled
+ * measured | estimated | blocked with its own note. Never sums across
+ * confidence classes into one lie — totals are per-class. Pure. */
+export function aggregateRails({ realizedSbdTotal = null, realizedWindowDays = null, sbdUsd = null, curationEstSteemPerDay = null, steemUsd = null, convertEdgeBps = null, convertAmountSbd = null, convertVerdict = null, promoPostsPerDay = null, promoEstUsdPerPost = null, fuelUsdPerDay = null, hyperOpsPerDay = null, parity = null, fillsToday = null, marketFillsPerDay = null } = {}) {
+  /* null/empty → null (Number(null)===0 is the classic lie: missing evidence
+   * must never classify as a measured ZERO) */
+  const r6 = (v) => (v == null || v === "" || !Number.isFinite(Number(v)) ? null : Number(v));
+  const usd = (sbd) => (sbd != null && r6(sbdUsd) != null ? Math.round(sbd * sbdUsd * 1e6) / 1e6 : null);
+  const rails = [];
+
+  // 1 · realized trading (MEASURED from chain fills when a window exists)
+  const realizedSbd = r6(realizedSbdTotal);
+  const perDaySbd = realizedSbd != null && r6(realizedWindowDays) > 0 ? realizedSbd / realizedWindowDays : null;
+  rails.push({
+    id: "market-making", label: "מעשה-שוק · ספר-STEEM/SBD",
+    measuredUsdPerDay: usd(perDaySbd), estUsdPerDay: null,
+    confidence: perDaySbd != null ? "measured" : "blocked",
+    note: perDaySbd != null
+      ? `realized ${Math.round(realizedSbd * 1000) / 1000} SBD over ${realizedWindowDays}d (chain fills) — היסטורי, אינו תחזית`
+      : "no fill window yet — measured once real fills accumulate",
+    meta: { realizedSbdTotal: realizedSbd, fillsToday: r6(fillsToday) ?? 0 },
+  });
+
+  // 2 · curation fuel (ESTIMATED from public reward-fund math)
+  const curSteem = r6(curationEstSteemPerDay);
+  const curUsd = curSteem != null && r6(steemUsd) != null ? Math.round(curSteem * steemUsd * 1e6) / 1e6 : null;
+  rails.push({
+    id: "curation", label: "קיורציה · מסילת-דלק",
+    measuredUsdPerDay: null, estUsdPerDay: curUsd,
+    confidence: curUsd != null ? "estimated" : "blocked",
+    note: curUsd != null ? `~${Math.round(curSteem * 100) / 100} STEEM/יום — ESTIMATED (payout clock ~7d, first verification T-18c)` : "no discovery estimate yet",
+  });
+
+  // 3 · fuel rollup from observe (author+curation ops est)
+  const fuel = r6(fuelUsdPerDay);
+  rails.push({
+    id: "fuel", label: "דלק-רשת · author+curation ops",
+    measuredUsdPerDay: null, estUsdPerDay: fuel,
+    confidence: fuel != null ? "estimated" : "blocked",
+    note: fuel != null ? "observe fuel meter (estimated — window-labeled)" : "no fuel window",
+  });
+
+  // 4 · convert-arb potential (BLOCKED-honest unless armed)
+  const edge = r6(convertEdgeBps);
+  const amt = r6(convertAmountSbd);
+  const convSbdPerDay = amt != null && edge != null && edge > 0 ? amt * (edge / 10000) : null;
+  rails.push({
+    id: "convert-arb", label: "ארביטרז'-המרה · SBD print path",
+    measuredUsdPerDay: null, estUsdPerDay: usd(convSbdPerDay),
+    confidence: convertVerdict === "CONVERT-HOLD" ? "blocked" : convSbdPerDay != null ? "estimated" : "blocked",
+    note: convertVerdict === "CONVERT-HOLD"
+      ? `HOLD honest (${edge != null ? `${Math.round(edge)}bps edge` : "no edge"}, dust-or-capped) — the rail is armed-in-doctrine, not burning`
+      : convSbdPerDay != null ? `edge ${Math.round(edge)}bps on ${amt} SBD` : "no edge evidence",
+  });
+
+  // 5 · promo (ESTIMATED)
+  const posts = r6(promoPostsPerDay), perPost = r6(promoEstUsdPerPost);
+  rails.push({
+    id: "promo", label: "קידום-רשת · תוכן SEO-חכם",
+    measuredUsdPerDay: null, estUsdPerDay: posts != null && perPost != null ? Math.round(posts * perPost * 1e6) / 1e6 : null,
+    confidence: posts != null && perPost != null ? "estimated" : "blocked",
+    note: "payouts estimated from account reward history; post txids journaled",
+  });
+
+  // 6 · hyper presence (NOT dollars — presence ops, the volume layer)
+  rails.push({
+    id: "hyper-presence", label: "היפר-גריד · נוכחות-ספר",
+    measuredUsdPerDay: null, estUsdPerDay: null,
+    confidence: r6(hyperOpsPerDay) != null ? "measured" : "blocked",
+    note: r6(hyperOpsPerDay) != null
+      ? `${Math.round(hyperOpsPerDay)} ops/day measured — presence + optionality, deliberately NOT priced as profit`
+      : "no ops evidence",
+    meta: { opsPerDay: r6(hyperOpsPerDay) },
+  });
+
+  const sum = (k) => rails.reduce((a, r) => a + (r[k] ?? 0), 0);
+  const round6 = (v) => Math.round(v * 1e6) / 1e6;
+  return {
+    rails,
+    totalMeasuredUsdPerDay: round6(sum("measuredUsdPerDay")),
+    totalEstUsdPerDay: round6(sum("estUsdPerDay")),
+    measuredCount: rails.filter((r) => r.confidence === "measured").length,
+    estimatedCount: rails.filter((r) => r.confidence === "estimated").length,
+    blockedCount: rails.filter((r) => r.confidence === "blocked").length,
+    law: "סכום-מדוד וסכום-מוערך לעולם לא מתמזגים — שתי שורות-אמת נפרדות",
+    parity: r6(parity),
+  };
+}

@@ -37,7 +37,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import {
   planLadder, rcEconomics, rcGovernor, RC_COSTS,
-  countDayOrderOpsFromHistory, diffHyperTick,
+  countDayOrderOpsFromHistory, diffHyperTick, rcAnomaly,
 } from "./lib.mjs";
 import { rpcCall, accountState, openOrders } from "./measure.mjs";
 import { executeOps, armedConf, execPaused, masterAccount, loadCredential } from "./signer.mjs";
@@ -236,6 +236,15 @@ async function tickInner() {
   /* reads (parallel): RC + book + live orders */
   const [rc, book, liveR] = await Promise.all([readRc(), readBook(), readLiveHyper(account)]);
   if (!rc) return finish({ lastVerdict: "NO-RC-EVIDENCE", lastVerdictAt: now.toISOString() });
+  /* T-21 RC-ANOMALY GUARD (defense-in-depth for the identity-hijack class):
+   * the doctrine account's RC tank cannot legally shrink 10× between two
+   * reads — when it does, the read is a lie (identity flip / RPC poison).
+   * No burn on anomaly; the guard is proven by the selftest vectors. */
+  if (rcAnomaly(st.lastMaxRc, rc.max)) {
+    journalVerdict("RC-ANOMALY-NO-BURN");
+    return finish({ lastVerdict: "RC-ANOMALY-NO-BURN", lastVerdictAt: now.toISOString(), rcPct: rc.pct, lastMaxRc: st.lastMaxRc ?? null, anomalyMaxRc: rc.max });
+  }
+  baseState.lastMaxRc = rc.max;
   if (!book || !(book.bestAsk > 0) || !(book.bestBid > 0)) return finish({ lastVerdict: "NO-BOOK", lastVerdictAt: now.toISOString(), rcPct: rc.pct });
   if (rc.pct < hc.minRcPct) {
     journalVerdict("RC-FLOOR");
@@ -378,7 +387,10 @@ async function tailSample() {
   const day = new Date().toISOString().slice(0, 10);
   const tail = await chainTailCount(account, day);
   if (!tail) return;
-  const opsDay = readJson(OPS_FILE, { day, opsToday: 0 });
+  /* T-21 day-rollover law (the stale-09-30 ledger cosmetic bug): the tail
+   * sampler must never resurrect yesterday's day/opsToday into the ledger */
+  const opsDay = readJson(OPS_FILE, { day, opsToday: 0, chainTail: null, chainTailAt: null });
+  if (opsDay.day !== day) { opsDay.day = day; opsDay.opsToday = 0; opsDay.chainTail = null; }
   writeJson(OPS_FILE, { ...opsDay, chainTail: tail, chainTailAt: new Date().toISOString() });
 }
 

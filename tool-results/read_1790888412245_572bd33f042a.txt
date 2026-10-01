@@ -1,0 +1,1197 @@
+     1→'use client'
+     2→
+     3→import { useCallback, useEffect, useState } from 'react'
+     4→import { Badge } from '@/components/ui/badge'
+     5→import { Button } from '@/components/ui/button'
+     6→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+     7→import { Progress } from '@/components/ui/progress'
+     8→import { Separator } from '@/components/ui/separator'
+     9→import {
+    10→  Activity, Anchor, Banknote, BatteryCharging, Brain, BrainCircuit, CircleCheck, Cpu, GitBranch, HeartPulse, KeyRound, Lightbulb, PauseCircle,
+    11→  Play, PlayCircle, Radio, RefreshCw, Route, Scale, ShieldCheck, Sigma, Target, TrendingUp, Users, Wallet, Wrench, Zap
+    12→} from 'lucide-react'
+    13→
+    14→type Order = { orderid: number; side: string; base: string; quote: string; unit: number; created: string }
+    15→type Status = {
+    16→  ok?: boolean
+    17→  asof?: string
+    18→  engine?: { up?: boolean; info?: { account?: string; keyless?: boolean } | null }
+    19→  grid?: { runCount?: number; simFills?: number; simFeesMu?: number; grids?: { id?: string; strategy?: string; active?: boolean }[] }
+    20→  observe?: {
+    21→    parity?: { parity?: number; source?: string; lowConfidence?: boolean; steemUsd?: number; sbdUsd?: number }
+    22→    feed?: number
+    23→    band?: { ok?: boolean; bps?: number; reason?: string }
+    24→    inventory?: { steem?: number; sbd?: number; spOwn?: number; rcPct?: number } | null
+    25→    ordersOk?: boolean
+    26→    orders?: unknown[]
+    27→    fills?: number
+    28→    lastFillAt?: string | null
+    29→    fuel?: { fuelUsdPerDay?: number | null; authorUsdPerDay?: number | null; curationOps?: number; authorOps?: number; windowNote?: string | null; windowSpanDays?: number; histLen?: number }
+    30→  } | null
+    31→  offer?: {
+    32→    verdict?: string; parityBps?: number | null; blocker?: string[] | null
+    33→    marks?: { paritySbdPerSteem?: number; source?: string; lowConfidence?: boolean; internalFeed?: number; dragK?: number; floor?: number; ceiling?: number }
+    34→    plan?: { asks?: unknown[]; bids?: unknown[]; flowAsks?: unknown[]; flowBids?: unknown[] }
+    35→    flow?: { bestAsk?: number; bestBid?: number; spacingBps?: number; levels?: number; askBudgetSteem?: number; bidBudgetSbd?: number; feedAnchor?: number | null; flowAsks?: number; flowBids?: number } | null
+    36→    book?: { bestAsk?: number | null; bestBid?: number | null; askDepthSteem?: number | null; bidDepthSbd?: number | null; at?: string } | null
+    37→    market?: {
+    38→      at?: string; windowHours?: number; class?: string; trades?: number; tradesPerDay?: number; volSteem?: number
+    39→      priceMin?: number | null; priceMax?: number | null; rangeBps?: number | null; sizeP50?: number | null; sizeP90?: number | null
+    40→      book?: { bestAsk?: number | null; bestBid?: number | null; spreadBps?: number | null; askDepthSteem?: number | null; bidDepthSbd?: number | null }
+    41→    } | null
+    42→    publishedAt?: string
+    43→  }
+    44→  live?: { orders?: Order[]; orderTotals?: { askedSteem?: number; bidSbd?: number }; balances?: { steem: string; sbd: string; vests: string } | null; chainReadOk?: boolean }
+    45→  profit?: {
+    46→    fills?: number; buys?: number; sells?: number
+    47→    realizedSbd?: number; positionSteem?: number; positionAvgCost?: number | null
+    48→    unbasedSteem?: number; unbasedSbd?: number; unrealizedAtParitySbd?: number | null
+    49→    parityRef?: number | null
+    50→  }
+    51→  rails?: {
+    52→    fuel?: number | null; author?: number | null; fuelWindowNote?: string | null; fuelHistory?: string
+    53→    deployedSteem?: number; bidSbd?: number; bookEmpty?: boolean; bookNote?: string | null
+    54→    convert?: { verdict?: string | null; reason?: string | null; amountSbd?: number; marketSbdUsd?: number | null; impliedSbdUsd?: number | null; marketSourceNote?: string | null; at?: string | null } | null
+    55→    autonomy?: { ok?: boolean; lastCycle?: string | null; steps?: Record<string, string> } | null
+    56→    note?: string
+    57→  }
+    58→  daily?: { ok?: boolean; health?: 'ok' | 'blocked' | 'fail'; failures?: { failedSteps?: string[]; blockedSteps?: string[] }; finishedAt?: string; rollup?: { realizedSbd?: number | null; deployedSteem?: number | null; measuredTotalUsdPerDay?: number | null; honesty?: string } }
+    59→  measuredPerDay?: number | null
+    60→  spoilage?: { daysBlocked?: number; votesForegone?: number; estSteemForegone?: number; class?: string; note?: string } | null
+    61→  hyper?: {
+    62→    running?: boolean | null; lastVerdict?: string | null; lastVerdictAt?: string | null; lastTickAt?: string | null
+    63→    ticks?: number | null; rcPct?: number | null; liveHyper?: number | null; label?: string | null; lastTxid?: string | null
+    64→    governor?: { pairs?: number; ops?: number; carry?: number; reason?: string; headroom?: number; burnPerDay?: number } | null
+    65→    economics?: { regenPerDay?: number; pairCost?: number; pairsPerDay?: number; opsPerDay?: number; reason?: string } | null
+    66→    ops?: {
+    67→      day?: string; opsToday?: number; opsDayCap?: number; lastTxid?: string | null
+    68→      chainTail?: { creates?: number; cancels?: number; total?: number } | null; chainTailAt?: string | null
+    69→    } | null
+    70→  } | null
+    71→  execution?: {
+    72→    credentialPresent?: boolean; fingerprint?: string | null; account?: string
+    73→    armed?: boolean; standingOrder?: boolean; operatorPaused?: boolean
+    74→    verdict?: string | null; reason?: string | null; guidance?: string | null
+    75→    proposedPubkeys?: Record<string, string> | null
+    76→    roles?: Record<string, { pubkey?: string; matched?: boolean }> | null
+    77→    caps?: Record<string, number> | null
+    78→    log?: { at?: string; tag?: string; account?: string; ok?: boolean; txid?: string | null; ops?: string[]; error?: string | null }[]
+    79→  } | null
+    80→  soldiers?: {
+    81→    deployed?: boolean; at?: string | null
+    82→    accounts?: { name?: string; fingerprint?: string }[]
+    83→    fundingTxid?: string | null; fundedEach?: { steem?: number; sbd?: number } | null
+    84→  } | null
+    85→  curator?: {
+    86→    verdict?: string | null; day?: string | null
+    87→    votesToday?: number; totalVotes?: number; vpEff?: number | null; maxPerDay?: number | null
+    88→    txid?: string | null; candidatesScanned?: number | null
+    89→    lastVotes?: { author?: string; permlink?: string; weight?: number; txid?: string | null }[]
+    90→    rejectedTop?: string[] | null
+    91→  } | null
+    92→  intel?: {
+    93→    at?: string | null
+    94→    decisions?: { kind?: string; decision?: string; reason?: string }[]
+    95→    book?: { bestAsk?: number | null; bestBid?: number | null; spreadBps?: number | null } | null
+    96→    spreadBpsRec?: number | null
+    97→  } | null
+    98→  learning?: {
+    99→    verdict?: string | null; at?: string | null; runsTotal?: number
+   100→    lessons?: { id?: string; severity?: string; lesson?: string; evidence?: string; action?: string }[]
+   101→    tuningsApplied?: { key?: string; from?: number; to?: number; added?: string; because?: string }[]
+   102→    tunings?: Record<string, unknown> | null
+   103→    lessonsTotal?: Record<string, number> | null
+   104→    cycleMetrics?: { okRate?: number | null; window?: number; failReasons?: Record<string, number> | null; msP50?: number | null }
+   105→  } | null
+   106→  discovery?: {
+   107→    verdict?: string | null; at?: string | null
+   108→    opportunities?: { id?: string; kind?: string; potentialClass?: string; evidence?: string; potential?: string | number | null; gate?: string }[]
+   109→    topTags?: { tag?: string; payoutsSbd?: number }[]
+   110→    curationEst?: { dailyPoolSteem?: number; estimatedSteemPerDay?: number; note?: string } | null
+   111→  } | null
+   112→  fleet?: {
+   113→    at?: string; verdict?: string
+   114→    counts?: { total?: number; alive?: number; idle?: number; blocked?: number; dead?: number }
+   115→    agents?: { id: string; role: string; status: 'ALIVE' | 'IDLE' | 'BLOCKED' | 'DEAD'; ageMin?: number | null; blockedBy?: string | null; evidence: string; revival?: string }[]
+   116→    honesty?: string
+   117→    lostEraNote?: string
+   118→  } | null
+   119→  credential?: {
+   120→    present?: boolean; keyFile?: string; armedButNoCredential?: boolean
+   121→    missingSince?: string | null; alerts?: number
+   122→    agentsAffected?: string[]; revival?: string | null
+   123→  } | null
+   124→  events?: { type?: string; at?: string; [k: string]: unknown }[]
+   125→}
+   126→type EngineResp = { ok?: boolean; health?: 'ok' | 'blocked' | 'fail'; failures?: { failedSteps?: string[]; blockedSteps?: string[] }; steps?: Record<string, { ok?: boolean; skipped?: boolean; verdict?: string; error?: string }>; rollup?: { measuredTotalUsdPerDay?: number | null; realizedSbd?: number | null }; finishedAt?: string; error?: string; engine?: string }
+   127→type Sovereign = {
+   128→  ok?: boolean
+   129→  at?: string
+   130→  state?: {
+   131→    bootedAt?: string; pid?: number; paused?: boolean
+   132→    watchdog?: { checks?: number; downs?: number; heals?: number; healVerified?: number; healFailed?: number; engineUp?: boolean; lastSpawnAt?: string | null }
+   133→    cycles?: { autoRuns?: number; ok?: number; fail?: number; blocked?: number; lastAt?: string | null; lastOk?: boolean | null; lastHealth?: string | null; lastMs?: number | null; nextAt?: string | null }
+   134→    selftest?: { runs?: number; lastAt?: string | null; lastOk?: boolean | null; passed?: number | null; total?: number | null }
+   135→  }
+   136→  intervals?: { watchdogSec?: number; cycleSec?: number; selftestSec?: number }
+   137→  events?: { at?: string; kind?: string; [k: string]: unknown }[]
+   138→}
+   139→
+   140→const f2 = (v?: number | null) => (typeof v === 'number' ? v.toFixed(2) : '—')
+   141→const uptimeStr = (bootedAt?: string): string => {
+   142→  if (!bootedAt) return '—'
+   143→  const sec = Math.max(0, Math.floor((Date.now() - new Date(bootedAt).getTime()) / 1000))
+   144→  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60)
+   145→  return h > 0 ? `${h}ש ${m}דק` : `${m}דק`
+   146→}
+   147→
+   148→export default function Home() {
+   149→  const [s, setS] = useState<Status | null>(null)
+   150→  const [sov, setSov] = useState<Sovereign | null>(null)
+   151→  const [loading, setLoading] = useState(false)
+   152→  const [cycling, setCycling] = useState(false)
+   153→  const [acting, setActing] = useState<string | null>(null)
+   154→  const [cycleMsg, setCycleMsg] = useState<string | null>(null)
+   155→  const [actMsg, setActMsg] = useState<string | null>(null)
+   156→  const [err, setErr] = useState<string | null>(null)
+   157→  // T-16 paste-revival state (the secret is never stored beyond this component)
+   158→  const [adoptText, setAdoptText] = useState('')
+   159→  const [adoptBusy, setAdoptBusy] = useState(false)
+   160→  const [adoptMsg, setAdoptMsg] = useState<{ ok: boolean; text: string } | null>(null)
+   161→
+   162→  const load = useCallback(async () => {
+   163→    setLoading(true)
+   164→    setErr(null)
+   165→    try {
+   166→      const a = await fetch('/api/saos/status', { cache: 'no-store' })
+   167→      setS(await a.json())
+   168→    } catch {
+   169→      setErr('קריאת-הסטטוס נכשלה — נסה רענון')
+   170→    } finally {
+   171→      setLoading(false)
+   172→    }
+   173→  }, [])
+   174→
+   175→  const loadSov = useCallback(async () => {
+   176→    try {
+   177→      const a = await fetch('/api/saos/sovereign', { cache: 'no-store' })
+   178→      setSov(await a.json())
+   179→    } catch { /* next poll retries */ }
+   180→  }, [])
+   181→
+   182→  const runCycle = useCallback(async () => {
+   183→    setCycling(true)
+   184→    setCycleMsg(null)
+   185→    try {
+   186→      /* T-17: the engine acks the start IMMEDIATELY and runs the cycle
+   187→       * detached (single-flight + marker). The cockpit polls the engine's
+   188→       * own marker until it closes — a UI wait can never outlive-or-kill a
+   189→       * healthy multi-vote signing cycle again, and the truth message is
+   190→       * built from the ENGINE's own classification, not from a hope. */
+   191→      const r = await fetch('/api/saos/engine', { method: 'POST' })
+   192→      const ack = await r.json()
+   193→      if (!ack.ok && ack.error !== 'cycle-in-flight') {
+   194→        setCycleMsg(`המנוע לא זמין: ${ack.error ?? ack.engine ?? 'שגיאה'}`)
+   195→        setCycling(false)
+   196→        return
+   197→      }
+   198→      if (ack.error === 'cycle-in-flight') {
+   199→        setCycleMsg('מחזור כבר רץ על המנוע — ממתין לסיומו…')
+   200→      }
+   201→      type Marker = { running?: boolean; health?: string; ms?: number; steps?: Record<string, boolean>; blockedSteps?: string[] | null; failedSteps?: string[] | null; error?: string | null }
+   202→      type PollResp = { ok?: boolean; running?: boolean; marker?: Marker | null; rollup?: { measuredTotalUsdPerDay?: number | null } | null; error?: string }
+   203→      const deadline = Date.now() + 15 * 60_000
+   204→      let done: Marker | null = null
+   205→      let rollup: { measuredTotalUsdPerDay?: number | null } | null = null
+   206→      while (Date.now() < deadline) {
+   207→        await new Promise((res) => setTimeout(res, 3000))
+   208→        const st: PollResp = await fetch('/api/saos/cycle-status', { cache: 'no-store' }).then((x) => x.json())
+   209→        const m = st.marker ?? null
+   210→        if (m && m.running === false) { done = m; rollup = st.rollup ?? null; break }
+   211→        if (st.running === false && m && m.running !== false) { done = { ...m, running: false, health: 'fail', error: 'engine-restarted-mid-cycle' }; break }
+   212→      }
+   213→      const stepsStr = () => Object.entries(done?.steps ?? {}).map(([k, ok]) => `${k}:${ok ? 'תקין' : 'כשל'}`).join(' · ')
+   214→      const measured = `$${(rollup?.measuredTotalUsdPerDay ?? 0).toFixed(4)}/יום`
+   215→      if (!done) {
+   216→        setCycleMsg('המחזור עדיין רץ מעבר לתקציב-ההמתנה (15 דק) — המנוע ממשיך בצד-שלו; בדוק את כרטיס-המחזור לעדכון')
+   217→      } else if (done.health === 'ok') {
+   218→        setCycleMsg(`מחזור הושלם (${Math.round((done.ms ?? 0) / 100) / 10}s) · ${stepsStr()} · מדידה ${measured}`)
+   219→      } else if (done.health === 'blocked') {
+   220→        setCycleMsg(`מחזור הושלם (חסום-חוקי — החתימה ממתינה לאישורי: ${(done.blockedSteps ?? []).join(', ')}) · ${stepsStr()} · מדידה ${measured}`)
+   221→      } else {
+   222→        setCycleMsg(`מחזור הושלם (כשל — נכשלו: ${(done.failedSteps ?? []).join(', ') || done.error || 'לא-ידוע'}) · ${stepsStr()} · מדידה ${measured}`)
+   223→      }
+   224→      await load()
+   225→    } catch {
+   226→      setCycleMsg('הרצת-המחזור נכשלה — בדוק שהמנוע רץ על :3040')
+   227→    } finally {
+   228→      setCycling(false)
+   229→    }
+   230→  }, [load])
+   231→
+   232→  const sovAct = useCallback(async (action: string, label: string) => {
+   233→    setActing(action)
+   234→    setActMsg(null)
+   235→    try {
+   236→      const r = await fetch('/api/saos/sovereign', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) })
+   237→      const j = await r.json()
+   238→      setActMsg(j?.ok ? `${label}: בוצע` : `${label}: נכשל — ${j?.error ?? 'שגיאה'}`)
+   239→      await Promise.all([loadSov(), load()])
+   240→    } catch {
+   241→      setActMsg(`${label}: הרכיב לא זמין כרגע`)
+   242→    } finally {
+   243→      setActing(null)
+   244→    }
+   245→  }, [load, loadSov])
+   246→
+   247→  // T-16 · paste-revival: adopt the credential, chain-verify it instantly,
+   248→  // then refresh the cockpit so the banner flips to alive. The pasted text
+   249→  // lives only in this component's state and the POST body — never logged.
+   250→  const adoptCred = useCallback(async () => {
+   251→    if (!adoptText.trim() || adoptBusy) return
+   252→    setAdoptBusy(true)
+   253→    setAdoptMsg(null)
+   254→    try {
+   255→      const r = await fetch('/api/saos/adopt-credential', {
+   256→        method: 'POST',
+   257→        headers: { 'Content-Type': 'application/json' },
+   258→        body: JSON.stringify({ text: adoptText }),
+   259→      })
+   260→      const j = await r.json()
+   261→      if (j?.ok && j?.verified) {
+   262→        setAdoptMsg({ ok: true, text: `אומץ ואומת מול-השרשרת (${j.account} · טביעת-אצבע ${j.fingerprint}) — המחזור-הבא מקים את הצי החותם` })
+   263→        setAdoptText('')
+   264→        await load()
+   265→      } else if (j?.ok) {
+   266→        setAdoptMsg({ ok: false, text: `אומץ אך לא נמצא תואם לחשבון (${j.reason ?? 'CREDENTIAL-MISMATCH'}) — התקן את המפתחות-המוצעים ב-steemit.com או הדבק את הסיסמה-הנוכחית` })
+   267→      } else {
+   268→        setAdoptMsg({ ok: false, text: `אימוץ נכשל: ${j?.reason ?? j?.error ?? 'שגיאה'}` })
+   269→      }
+   270→    } catch {
+   271→      setAdoptMsg({ ok: false, text: 'המנוע לא זמין — נסה שוב' })
+   272→    } finally {
+   273→      setAdoptBusy(false)
+   274→    }
+   275→  }, [adoptText, adoptBusy, load])
+   276→
+   277→  useEffect(() => {
+   278→    load()
+   279→    loadSov()
+   280→    const t = setInterval(load, 30000)
+   281→    const t2 = setInterval(loadSov, 30000)
+   282→    return () => { clearInterval(t); clearInterval(t2) }
+   283→  }, [load, loadSov])
+   284→
+   285→  const realFills = s?.profit?.fills ?? 0
+   286→  const realized = s?.profit?.realizedSbd
+   287→  const usdPerDay = s?.measuredPerDay ?? null
+   288→  const orders = s?.live?.orders ?? []
+   289→  const asks = orders.filter((o) => o.side === 'ask')
+   290→  const bids = orders.filter((o) => o.side === 'bid')
+   291→  const engineUp = s?.engine?.up ?? false
+   292→  const target = 1000
+   293→
+   294→  return (
+   295→    <div dir="rtl" className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
+   296→      {/* HEADER */}
+   297→      <header className="sticky top-0 z-20 border-b border-slate-800 bg-slate-950/90 backdrop-blur supports-[backdrop-filter]:bg-slate-950/70">
+   298→        <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between gap-3">
+   299→          <div className="flex items-center gap-3 min-w-0">
+   300→            <div className="h-9 w-9 shrink-0 rounded-lg bg-emerald-500/15 border border-emerald-500/30 grid place-items-center">
+   301→              <Radio className="h-5 w-5 text-emerald-400" aria-hidden />
+   302→            </div>
+   303→            <div className="min-w-0">
+   304→              <h1 className="text-sm sm:text-lg font-bold leading-tight truncate">
+   305→                <span dir="ltr" className="inline-block align-baseline">SAOS <span className="hidden sm:inline">SOVEREIGN </span>COCKPIT</span>
+   306→                <span> · תא-הפיקוד</span>
+   307→              </h1>
+   308→              <p className="text-xs text-slate-400 truncate">headcorner · מנוע-ריבוני-מקומי · אמת-מוטבעת-על-שרשרת · אפס-תלות-חיצונית</p>
+   309→            </div>
+   310→          </div>
+   311→          <div className="flex items-center gap-2 shrink-0">
+   312→            <Badge className={engineUp ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/15' : 'bg-rose-500/15 text-rose-400 border-rose-500/30 hover:bg-rose-500/15'}>
+   313→              <span className="relative flex h-2 w-2 me-1.5">
+   314→                {engineUp && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />}
+   315→                <span className={`relative inline-flex rounded-full h-2 w-2 ${engineUp ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+   316→              </span>
+   317→              {engineUp ? 'מנוע-חי' : 'מנוע-כבוי'}
+   318→            </Badge>
+   319→            <Button variant="outline" size="sm" onClick={load} disabled={loading} className="border-slate-700 hover:bg-slate-800">
+   320→              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} aria-hidden />
+   321→              <span className="hidden sm:inline ms-1.5">רענון</span>
+   322→            </Button>
+   323→          </div>
+   324→        </div>
+   325→      </header>
+   326→
+   327→      <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-6">
+   328→        {err && (
+   329→          <Card className="mb-4 border-rose-500/30 bg-rose-500/5">
+   330→            <CardContent className="p-4 text-sm text-rose-300">{err}</CardContent>
+   331→          </Card>
+   332→        )}
+   333→
+   334→        {/* T-15 · אזעקת-חתימה-מתה — לעולם לא שוב ריקבון-שקט: 3 סוכנים מתים בשקט יום-שלם עד שזה נחשף.
+   335→            המערכת חייבת לצרוח בראש-העמוד, עם נתיב-ההקמה המדויק. */}
+   336→        {s?.credential?.armedButNoCredential && (
+   337→          <Card className="mb-4 border-rose-500/40 bg-rose-500/10" role="alert">
+   338→            <CardContent className="p-4">
+   339→              <div className="flex items-start gap-3">
+   340→                <div className="h-9 w-9 shrink-0 rounded-lg bg-rose-500/20 border border-rose-500/40 grid place-items-center">
+   341→                  <KeyRound className="h-5 w-5 text-rose-400" aria-hidden />
+   342→                </div>
+   343→                <div className="min-w-0">
+   344→                  <p className="text-sm font-bold text-rose-300">חתימה-מתה · האישורי לא נמצא ({s.credential.agentsAffected?.join(', ') ?? 'סוכנים-חותמים'} לא עובדים)</p>
+   345→                  <p className="text-xs text-rose-200/80 mt-1 leading-relaxed">
+   346→                    איפוס-הסביבה מחק את <code className="text-rose-300" dir="ltr">{s.credential.keyFile ?? '.secrets/headcorner.key'}</code>
+   347→                    {s.credential.missingSince && <> · מת כנראה מאז <span dir="ltr">{s.credential.missingSince.slice(0, 16).replace('T', ' ')}</span> UTC</>}
+   348→                    · הספר על-השרשרת נשאר חי, המחזורים ממשיכים — רק פעולות-חתימה מושבתות.
+   349→                  </p>
+   350→                  <p className="text-xs text-emerald-300/90 mt-1.5 font-semibold leading-relaxed">
+   351→                    ההקמה (שירות-עצמי, אפס-ריסטרט): הדבק את האישורי למטה — המנוע מאבטח (0600), מאמץ, ומאמת מול-השרשרת באותו-רגע. ערוץ-חלופי: הפל את קובץ-הסיסמה-הראשית כ-<code dir="ltr">upload/headcorner.txt</code>.
+   352→                  </p>
+   353→                  {/* T-16 · בזבוז-VP — המחיר-הנראה של החתימה-החסומה (מדוד + מוערך) */}
+   354→                  {!!s.spoilage && ((s.spoilage.votesForegone ?? 0) > 0 || (s.spoilage.estSteemForegone ?? 0) > 0) && (
+   355→                    <p className="text-xs text-amber-300 mt-1.5 font-semibold">
+   356→                      בזבוז-VP מתמשך: <span dir="ltr">{s.spoilage.votesForegone}</span> קולות-שנמנעו ב־<span dir="ltr">{s.spoilage.daysBlocked}</span> ימי-חסימה
+   357→                      {(s.spoilage.estSteemForegone ?? 0) > 0 && <> · ~<span dir="ltr">{s.spoilage.estSteemForegone}</span> STEEM שנמנעו <Badge variant="outline" className="mx-1 border-amber-500/40 text-amber-300 text-[10px] px-1 py-0">מוערך</Badge></>}
+   358→                      <span className="text-amber-200/60 font-normal"> · {s.spoilage.note}</span>
+   359→                    </p>
+   360→                  )}
+   361→                  {/* T-16 · paste-revival — הדרך-המהירה ביותר בחזרה לצי-חותם */}
+   362→                  <div className="mt-2 flex flex-col sm:flex-row gap-2">
+   363→                    <input
+   364→                      type="password"
+   365→                      value={adoptText}
+   366→                      onChange={(e) => setAdoptText(e.target.value)}
+   367→                      onKeyDown={(e) => { if (e.key === 'Enter') void adoptCred() }}
+   368→                      placeholder="הדבק כאן: <שם-חשבון> <סיסמה-ראשית> — נשלח ישירות למנוע (0600), לעולם לא נרשם"
+   369→                      aria-label="הדבקת אישורי-חשבון להקמה"
+   370→                      className="flex-1 rounded-md border border-rose-500/30 bg-slate-950/60 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-rose-500/40"
+   371→                      dir="ltr"
+   372→                      autoComplete="off"
+   373→                    />
+   374→                    <Button
+   375→                      size="sm"
+   376→                      disabled={adoptBusy || !adoptText.trim()}
+   377→                      onClick={() => void adoptCred()}
+   378→                      className="bg-rose-600 hover:bg-rose-500 text-white font-bold min-h-[36px]"
+   379→                    >
+   380→                      {adoptBusy ? 'מאמת מול-השרשרת…' : 'אמץ ואמת'}
+   381→                    </Button>
+   382→                  </div>
+   383→                  {adoptMsg && (
+   384→                    <p className={`text-xs mt-1.5 font-semibold ${adoptMsg.ok ? 'text-emerald-300' : 'text-amber-300'}`} role="status">
+   385→                      {adoptMsg.text}
+   386→                    </p>
+   387→                  )}
+   388→                </div>
+   389→              </div>
+   390→            </CardContent>
+   391→          </Card>
+   392→        )}
+   393→
+   394→        {!s && !err && (
+   395→          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+   396→            {[...Array(6)].map((_, i) => (
+   397→              <Card key={i} className="border-slate-800 bg-slate-900/60 animate-pulse">
+   398→                <CardContent className="p-6 h-32" />
+   399→              </Card>
+   400→            ))}
+   401→          </div>
+   402→        )}
+   403→
+   404→        {s && (
+   405→          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+   406→            {/* הצי · אמת-אחת לכל-הסוכנים (T-15) — התשובה המבנית ל"60+ סוכנים, רובם מתים" */}
+   407→            <Card className="border-orange-500/25 bg-gradient-to-br from-orange-500/10 to-slate-900/60 md:col-span-2 lg:col-span-3">
+   408→              <CardHeader className="pb-2">
+   409→                <CardTitle className="flex items-center gap-2 text-sm text-orange-300 flex-wrap">
+   410→                  <Users className="h-4 w-4" aria-hidden /> הצי · רישום-סוכנים מאוחד (T-15)
+   411→                  <Badge variant="default" className={
+   412→                    s.fleet?.verdict === 'FLEET-OK' ? 'bg-emerald-500/20 text-emerald-300'
+   413→                      : s.fleet?.verdict?.startsWith('DEAD') ? 'bg-rose-500/20 text-rose-300'
+   414→                      : 'bg-amber-500/20 text-amber-300'
+   415→                  }>{s.fleet?.verdict ?? '—'}</Badge>
+   416→                </CardTitle>
+   417→              </CardHeader>
+   418→              <CardContent>
+   419→                <div className="flex items-center gap-2 flex-wrap text-xs">
+   420→                  <Badge variant="outline" className="border-emerald-500/40 text-emerald-300">חיים {s.fleet?.counts?.alive ?? '—'}</Badge>
+   421→                  <Badge variant="outline" className="border-slate-600/50 text-slate-300">בהמתנה-חוקית {s.fleet?.counts?.idle ?? '—'}</Badge>
+   422→                  <Badge variant="outline" className="border-amber-500/40 text-amber-300">חסומים {s.fleet?.counts?.blocked ?? '—'}</Badge>
+   423→                  <Badge variant="outline" className={((s.fleet?.counts?.dead ?? 0) > 0) ? 'border-rose-500/40 text-rose-300' : 'border-slate-600/50 text-slate-400'}>מתים {s.fleet?.counts?.dead ?? '—'}</Badge>
+   424→                  <span className="text-slate-500">· סה\"כ {s.fleet?.counts?.total ?? '—'} סוכנים · חיות-נמדדת מהפלט-המוקלט של כל סוכן (לא ספירות-יומרה)</span>
+   425→                </div>
+   426→                <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 max-h-80 overflow-y-auto pe-1">
+   427→                  {(s.fleet?.agents ?? []).map((a) => (
+   428→                    <div key={a.id} className="rounded-lg border border-slate-800 bg-slate-900/50 p-3">
+   429→                      <div className="flex items-center justify-between gap-2">
+   430→                        <span className="text-xs font-bold text-slate-100" dir="ltr">{a.id}</span>
+   431→                        <Badge variant="outline" className={
+   432→                          a.status === 'ALIVE' ? 'border-emerald-500/40 text-emerald-300'
+   433→                            : a.status === 'IDLE' ? 'border-slate-600/50 text-slate-400'
+   434→                            : a.status === 'BLOCKED' ? 'border-amber-500/40 text-amber-300'
+   435→                            : 'border-rose-500/40 text-rose-300'
+   436→                        }>{a.status === 'ALIVE' ? 'חי' : a.status === 'IDLE' ? 'המתנה' : a.status === 'BLOCKED' ? 'חסום' : 'מת'}</Badge>
+   437→                      </div>
+   438→                      <p className="text-[11px] text-slate-500 mt-1 leading-snug">{a.role}</p>
+   439→                      <p className="text-[11px] text-slate-600 mt-1 leading-snug" dir="ltr">{a.evidence}</p>
+   440→                      {a.status === 'BLOCKED' && a.blockedBy && (
+   441→                        <p className="text-[11px] text-amber-300/90 mt-1">חסום-על-ידי: {a.blockedBy === 'credential-missing' ? 'אישורי-חסר' : a.blockedBy}{a.revival ? ` · ${a.revival}` : ''}</p>
+   442→                      )}
+   443→                    </div>
+   444→                  ))}
+   445→                  {!s.fleet?.agents?.length && (
+   446→                    <p className="text-xs text-slate-500">הרישום-המאוחד ייפתח כשהמנוע יגיב…</p>
+   447→                  )}
+   448→                </div>
+   449→                <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
+   450→                  {s.fleet?.lostEraNote ?? 'הרישום הזה הוא האמת היחידה על-הסוכנים.'} · {s.fleet?.honesty ?? ''}
+   451→                </p>
+   452→              </CardContent>
+   453→            </Card>
+   454→
+   455→            {/* ריבונות-מתמשכת · המערכת דואגת לעצמה (T-10) */}
+   456→            <Card className="border-violet-500/25 bg-gradient-to-br from-violet-500/10 to-slate-900/60">
+   457→              <CardHeader className="pb-2">
+   458→                <CardTitle className="flex items-center gap-2 text-sm text-violet-300">
+   459→                  <ShieldCheck className="h-4 w-4" aria-hidden /> ריבונות-מתמשכת · דואגת-לעצמה (T-10)
+   460→                </CardTitle>
+   461→              </CardHeader>
+   462→              <CardContent>
+   463→                <div className="flex items-center gap-2 flex-wrap">
+   464→                  <Badge variant="default" className={sov?.state?.paused ? 'bg-amber-500/20 text-amber-300' : 'bg-violet-500/20 text-violet-300'}>
+   465→                    <span className="relative flex h-2 w-2 me-1.5">
+   466→                      {!sov?.state?.paused && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-60" />}
+   467→                      <span className={`relative inline-flex rounded-full h-2 w-2 ${sov?.state?.paused ? 'bg-amber-400' : 'bg-violet-400'}`} />
+   468→                    </span>
+   469→                    {sov?.state?.paused ? 'מושהה' : 'חמושה-אוטומטית'}
+   470→                  </Badge>
+   471→                  <Badge variant="outline" className="border-slate-700 text-slate-300">זמן-רציפות: {uptimeStr(sov?.state?.bootedAt)}</Badge>
+   472→                </div>
+   473→                <dl className="grid grid-cols-2 gap-2 text-sm mt-3">
+   474→                  <div><dt className="text-xs text-slate-500">בדיקות-דופק</dt><dd className="font-bold tabular-nums">{sov?.state?.watchdog?.checks ?? '—'} <span className="text-xs text-slate-500">· נפילות {sov?.state?.watchdog?.downs ?? 0}</span></dd></div>
+   475→                  <div><dt className="text-xs text-slate-500">ריפויים-עצמיים</dt><dd className="font-bold tabular-nums">{sov?.state?.watchdog?.heals ?? 0} <span className="text-xs text-emerald-400">(אומתו {sov?.state?.watchdog?.healVerified ?? 0})</span></dd></div>
+   476→                  <div><dt className="text-xs text-slate-500">מחזורים-אוטומטיים</dt><dd className={`font-bold tabular-nums ${((sov?.state?.cycles?.ok ?? 0) > 0 && sov?.state?.cycles?.lastOk !== false) ? 'text-emerald-400' : 'text-slate-300'}`}>{sov?.state?.cycles?.ok ?? 0} תקינים · {sov?.state?.cycles?.blocked ?? 0} חסומים-חוקי · {sov?.state?.cycles?.fail ?? 0} כשלים</dd></div>
+   477→                  <div><dt className="text-xs text-slate-500">מחזור-בא-בעקבות</dt><dd className="font-bold tabular-nums text-xs">{sov?.state?.cycles?.nextAt ? `${Math.max(0, Math.round((new Date(sov.state.cycles.nextAt).getTime() - Date.now()) / 60000))} דק` : '—'}</dd></div>
+   478→                  <div className="col-span-2"><dt className="text-xs text-slate-500">ביקורת-איכות (selftest)</dt>
+   479→                    <dd className="font-bold flex items-center gap-2">
+   480→                      {sov?.state?.selftest?.lastAt ? (
+   481→                        <>
+   482→                          <Badge variant="outline" className={sov.state.selftest.lastOk ? 'border-emerald-500/40 text-emerald-400' : 'border-rose-500/40 text-rose-400'}>
+   483→                            {sov.state.selftest.lastOk ? 'עובר' : 'נכשל'} {sov.state.selftest.passed}/{sov.state.selftest.total}
+   484→                          </Badge>
+   485→                          <span className="text-xs text-slate-500">כל 6 שעות</span>
+   486→                        </>
+   487→                      ) : <span className="text-xs text-slate-500">ריצה-ראשונה בעוד רגעים…</span>}
+   488→                    </dd>
+   489→                  </div>
+   490→                </dl>
+   491→                <div className="grid grid-cols-3 gap-2 mt-3">
+   492→                  <Button onClick={() => sovAct(sov?.state?.paused ? 'resume' : 'pause', sov?.state?.paused ? 'הפעלה' : 'השהיה')} disabled={acting !== null} size="sm" variant="outline" aria-label={sov?.state?.paused ? 'הפעל-ריבונות' : 'השהה-ריבונות'} className="border-slate-700 hover:bg-slate-800 px-0">
+   493→                    {sov?.state?.paused ? <PlayCircle className="h-4 w-4" aria-hidden /> : <PauseCircle className="h-4 w-4" aria-hidden />}
+   494→                    <span className="sr-only">{sov?.state?.paused ? 'הפעל ריבונות' : 'השהה ריבונות'}</span>
+   495→                    <span className="text-[11px] ms-1">{sov?.state?.paused ? 'הפעל' : 'השהה'}</span>
+   496→                  </Button>
+   497→                  <Button onClick={() => sovAct('kick-cycle', 'כפיית-מחזור')} disabled={acting !== null || sov?.state?.paused} size="sm" variant="outline" aria-label="כפה-מחזור-ריבונות" className="border-slate-700 hover:bg-slate-800 px-0">
+   498→                    <HeartPulse className="h-4 w-4" aria-hidden />
+   499→                    <span className="text-[11px] ms-1">מחזור</span>
+   500→                  </Button>
+   501→                  <Button onClick={() => sovAct('force-heal', 'כפיית-ריפוי')} disabled={acting !== null} size="sm" variant="outline" aria-label="כפה-ריפוי-ריבונות" className="border-slate-700 hover:bg-slate-800 px-0">
+   502→                    <Wrench className="h-4 w-4" aria-hidden />
+   503→                    <span className="text-[11px] ms-1">ריפוי</span>
+   504→                  </Button>
+   505→                </div>
+   506→                {actMsg && <p className="text-[11px] text-violet-300/90 mt-2 break-words">{actMsg}</p>}
+   507→                <Separator className="my-3 bg-slate-800" />
+   508→                <div className="space-y-1 max-h-24 overflow-y-auto">
+   509→                  {(sov?.events ?? []).slice(0, 4).map((e, i) => (
+   510→                    <div key={i} className="flex items-center gap-2 text-[11px] text-slate-500">
+   511→                      <span className="tabular-nums">{e.at?.slice(11, 19)}</span>
+   512→                      <span className="text-violet-300/80">{e.kind}</span>
+   513→                    </div>
+   514→                  ))}
+   515→                  {!sov?.events?.length && <p className="text-[11px] text-slate-500">יומן-החלטות ייפתח עם הביקורת-הראשונה…</p>}
+   516→                </div>
+   517→                <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
+   518→                  עצמאית-מהפעלה-שלך: מתעוררת עם השרת · דופק כל {sov?.intervals?.watchdogSec ?? 60} שניות · מחזור כל {Math.round((sov?.intervals?.cycleSec ?? 600) / 60)} דק · איכות כל {Math.round((sov?.intervals?.selftestSec ?? 21600) / 3600)} שעות. החתימה על-השרשרת מוחזקת-מנוע מאז T-12 (הוראת-עומד, מוגבלת-דוקטרינה) · השהיה = מתג-ההרג שלך.
+   519→                </p>
+   520→              </CardContent>
+   521→            </Card>
+   522→
+   523→            {/* מנוע-ריבוני מקומי · שליטה (T-9d) */}
+   524→            <Card className="border-cyan-500/25 bg-gradient-to-br from-cyan-500/10 to-slate-900/60">
+   525→              <CardHeader className="pb-2">
+   526→                <CardTitle className="flex items-center gap-2 text-sm text-cyan-300">
+   527→                  <Cpu className="h-4 w-4" aria-hidden /> מנוע-ריבוני-מקומי · :3040 (T-9)
+   528→                </CardTitle>
+   529→              </CardHeader>
+   530→              <CardContent>
+   531→                <div className="flex items-center gap-2 flex-wrap">
+   532→                  <Badge variant={engineUp ? 'default' : 'secondary'} className={engineUp ? 'bg-emerald-500/20 text-emerald-300' : ''}>
+   533→                    {engineUp ? 'למעלה · מפתח-מוחזק-מנוע · מוגבל-דוקטרינה' : 'מושבת'}
+   534→                  </Badge>
+   535→                  <Badge variant="outline" className="border-slate-700 text-slate-300">account: {s?.engine?.info?.account ?? 'headcorner'}</Badge>
+   536→                </div>
+   537→                <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+   538→                  observe → intel → tick → peg → convert → curate → execute → soldiers → learn → report — הכל מקומי, אפס-רפו-חיצוני. חתימה-מנוע-מוחזקת מאז T-12 (מוגבלת-דוקטרינה) · מתג-הרג = השהיה.
+   539→                </p>
+   540→                <Button onClick={runCycle} disabled={cycling || !engineUp} size="sm" aria-label="הרץ-מחזור-מנוע" className="mt-3 w-full bg-cyan-500/20 text-cyan-200 border border-cyan-500/40 hover:bg-cyan-500/30">
+   541→                  <Play className="h-4 w-4 me-1.5" aria-hidden />
+   542→                  {cycling ? 'מריץ מחזור…' : 'הרץ מחזור עכשיו'}
+   543→                </Button>
+   544→                {cycleMsg && <p className="text-[11px] text-cyan-300/90 mt-2 leading-relaxed break-words">{cycleMsg}</p>}
+   545→                <Separator className="my-3 bg-slate-800" />
+   546→                <dl className="grid grid-cols-2 gap-2 text-sm">
+   547→                  <div><dt className="text-xs text-slate-500">מחזור-אחרון</dt><dd className="font-bold tabular-nums text-xs">{s?.rails?.autonomy?.lastCycle ? s.rails.autonomy.lastCycle.slice(11, 19) + ' UTC' : '—'}</dd></div>
+   548→                  <div><dt className="text-xs text-slate-500">טיקים</dt><dd className="font-bold tabular-nums">{s?.grid?.runCount ?? '—'}</dd></div>
+   549→                </dl>
+   550→              </CardContent>
+   551→            </Card>
+   552→
+   553→            {/* מד-אמת חי */}
+   554→            <Card className="border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 to-slate-900/60">
+   555→              <CardHeader className="pb-2">
+   556→                <CardTitle className="flex items-center gap-2 text-sm text-emerald-300">
+   557→                  <Sigma className="h-4 w-4" aria-hidden /> מד-אמת חי · מילויים-מהשרשרת
+   558→                </CardTitle>
+   559→              </CardHeader>
+   560→              <CardContent>
+   561→                <div className="text-4xl font-black text-emerald-400 tabular-nums">{realFills}</div>
+   562→                <p className="text-xs text-slate-400 mt-1">fill_order אמת בחלון-המדידה</p>
+   563→                <Separator className="my-3 bg-slate-800" />
+   564→                <dl className="grid grid-cols-2 gap-2 text-sm">
+   565→                  <div><dt className="text-xs text-slate-500">ממומש (A-10)</dt><dd className={`font-bold tabular-nums ${((realized ?? 0) >= 0 ? 'text-emerald-400' : 'text-amber-400')}`}>{typeof realized === 'number' ? `${realized.toFixed(3)} SBD` : '—'}</dd></div>
+   566→                  <div><dt className="text-xs text-slate-500">מילוי-אחרון</dt><dd className="font-bold tabular-nums text-xs">{s?.observe?.lastFillAt ? s.observe.lastFillAt.slice(0, 16).replace('T', ' ') : '—'}</dd></div>
+   567→                </dl>
+   568→              </CardContent>
+   569→            </Card>
+   570→
+   571→            {/* רווחיות-אמת (A-10) */}
+   572→            <Card className="border-amber-500/25 bg-gradient-to-br from-amber-500/10 to-slate-900/60">
+   573→              <CardHeader className="pb-2">
+   574→                <CardTitle className="flex items-center gap-2 text-sm text-amber-300">
+   575→                  <Banknote className="h-4 w-4" aria-hidden /> רווחיות-אמת · יסוד-עלות ממומש
+   576→                </CardTitle>
+   577→              </CardHeader>
+   578→              <CardContent>
+   579→                <div className="flex items-baseline gap-2">
+   580→                  <span className={`text-3xl font-black tabular-nums ${((s?.profit?.realizedSbd ?? 0) >= 0 ? 'text-emerald-400' : 'text-amber-400')}`}>
+   581→                    {typeof s?.profit?.realizedSbd === 'number' ? `${s.profit.realizedSbd.toFixed(3)} SBD` : '—'}
+   582→                  </span>
+   583→                  <span className="text-xs text-slate-400">ממומש (A-10)</span>
+   584→                </div>
+   585→                <Separator className="my-3 bg-slate-800" />
+   586→                <dl className="grid grid-cols-2 gap-2 text-sm">
+   587→                  <div><dt className="text-xs text-slate-500">פוזיציה פתוחה</dt><dd className="font-bold tabular-nums">{typeof s?.profit?.positionSteem === 'number' ? s.profit.positionSteem.toFixed(1) : '—'} STEEM</dd></div>
+   588→                  <div><dt className="text-xs text-slate-500">יסוד-עלות ממוצע</dt><dd className="font-bold tabular-nums">{s?.profit?.positionAvgCost ?? '—'}</dd></div>
+   589→                  <div><dt className="text-xs text-slate-500">בלתי-ממומש @ פאריטי</dt><dd className={`font-bold tabular-nums ${((s?.profit?.unrealizedAtParitySbd ?? 0) >= 0 ? 'text-emerald-400' : 'text-amber-400')}`}>{typeof s?.profit?.unrealizedAtParitySbd === 'number' ? `${s.profit.unrealizedAtParitySbd.toFixed(3)} SBD` : '—'}</dd></div>
+   590→                  <div><dt className="text-xs text-slate-500">ספר · נזיל</dt><dd className="font-bold tabular-nums">{f2(s?.rails?.deployedSteem)} / {s?.live?.balances?.steem ?? '—'}</dd></div>
+   591→                </dl>
+   592→                <p className="text-[11px] leading-relaxed text-slate-500 mt-2">
+   593→                  כנות: מכירה בלי יסוד-עלות נמדד ({typeof s?.profit?.unbasedSteem === 'number' ? s.profit.unbasedSteem.toFixed(1) : '—'} STEEM → {typeof s?.profit?.unbasedSbd === 'number' ? s.profit.unbasedSbd.toFixed(1) : '—'} SBD) נרשמת unbased — לא נטענת כרווח.
+   594→                </p>
+   595→              </CardContent>
+   596→            </Card>
+   597→
+   598→            {/* מסילות-אמת (T-9) */}
+   599→            <Card className="border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 to-slate-900/60">
+   600→              <CardHeader className="pb-2">
+   601→                <CardTitle className="flex items-center gap-2 text-sm text-emerald-300">
+   602→                  <Route className="h-4 w-4" aria-hidden /> מסילות-אמת · מדידה-מקומית-ריבונית
+   603→                </CardTitle>
+   604→              </CardHeader>
+   605→              <CardContent>
+   606→                <dl className="grid grid-cols-2 gap-2 text-sm">
+   607→                  <div><dt className="text-xs text-slate-500">דלק-קיורציה/יום</dt><dd className={`font-bold tabular-nums ${((s?.rails?.fuel ?? 0) > 0) ? 'text-emerald-400' : 'text-amber-400'}`}>{typeof s?.rails?.fuel === 'number' ? `$${s.rails.fuel.toFixed(4)}` : '—'}</dd></div>
+   608→                  <div><dt className="text-xs text-slate-500">מחבר/יום</dt><dd className="font-bold tabular-nums">{typeof s?.rails?.author === 'number' ? `$${s.rails.author.toFixed(4)}` : '—'}</dd></div>
+   609→                  <div><dt className="text-xs text-slate-500">הון-עובד מוצב</dt><dd className={`font-bold tabular-nums ${s?.rails?.bookEmpty ? 'text-amber-400' : 'text-emerald-400'}`}>{f2(s?.rails?.deployedSteem)} STEEM</dd></div>
+   610→                  <div><dt className="text-xs text-slate-500">SBD בספר</dt><dd className="font-bold tabular-nums">{f2(s?.rails?.bidSbd)}</dd></div>
+   611→                  <div className="col-span-2">
+   612→                    <dt className="text-xs text-slate-500">מסילת-ההמרה D-023 (פנ-$1 → ‎3.5 ימים → STEEM)</dt>
+   613→                    <dd className="font-bold flex flex-wrap items-center gap-2 mt-0.5">
+   614→                      <Badge variant={s?.rails?.convert?.verdict === 'CONVERT-PLAN' ? 'default' : 'secondary'} className={s?.rails?.convert?.verdict === 'CONVERT-PLAN' ? 'bg-emerald-500/20 text-emerald-300' : ''}>
+   615→                        {s?.rails?.convert?.verdict ?? '—'}
+   616→                      </Badge>
+   617→                      {s?.rails?.convert?.impliedSbdUsd != null && (
+   618→                        <span className="text-xs text-slate-400">proxy-מרומז: ${s.rails.convert.impliedSbdUsd.toFixed(3)} (לא-מזין-חימוש)</span>
+   619→                      )}
+   620→                    </dd>
+   621→                    {s?.rails?.convert?.marketSourceNote && <dd className="text-[11px] text-slate-500 mt-1 leading-relaxed">{s.rails.convert.marketSourceNote}</dd>}
+   622→                  </div>
+   623→                  <div className="col-span-2">
+   624→                    <dt className="text-xs text-slate-500">אוטונומיה (מחזור-מנוע)</dt>
+   625→                    <dd className="font-bold flex items-center gap-2 flex-wrap">
+   626→                      <Badge variant={s?.rails?.autonomy?.ok ? 'default' : 'secondary'} className={s?.rails?.autonomy?.ok ? 'bg-emerald-500/20 text-emerald-300' : ''}>
+   627→                        {s?.rails?.autonomy?.ok ? 'CYCLE-OK' : s?.rails?.autonomy ? 'DEGRADED' : 'טרם-רץ'}
+   628→                      </Badge>
+   629→                      {s?.rails?.autonomy?.steps && <span className="text-xs text-slate-500">{Object.entries(s.rails.autonomy.steps).map(([k, v]) => `${k}:${v}`).join(' · ')}</span>}
+   630→                    </dd>
+   631→                  </div>
+   632→                </dl>
+   633→                {(s?.rails?.bookNote || s?.rails?.fuelWindowNote) && (
+   634→                  <p className="text-[11px] leading-relaxed text-amber-400/80 mt-2">
+   635→                    {s?.rails?.bookNote && <span className="block">{s.rails.bookNote}</span>}
+   636→                    {s?.rails?.fuelWindowNote && <span className="block">{s.rails.fuelWindowNote}</span>}
+   637→                  </p>
+   638→                )}
+   639→              </CardContent>
+   640→            </Card>
+   641→
+   642→            {/* משימה */}
+   643→            <Card className="border-slate-800 bg-slate-900/60">
+   644→              <CardHeader className="pb-2">
+   645→                <CardTitle className="flex items-center gap-2 text-sm text-slate-300">
+   646→                  <Target className="h-4 w-4" aria-hidden /> המשימה · $1000/יום
+   647→                </CardTitle>
+   648→              </CardHeader>
+   649→              <CardContent>
+   650→                <div className="flex items-baseline gap-2">
+   651→                  <span className="text-3xl font-black tabular-nums">${usdPerDay !== null ? usdPerDay.toFixed(2) : '—'}</span>
+   652→                  <span className="text-xs text-slate-400">נמדד/יום · מתוך ${target}</span>
+   653→                </div>
+   654→                <Progress value={Math.min(((usdPerDay ?? 0) / target) * 100, 100)} className="mt-3 h-2 bg-slate-800 [&>div]:bg-amber-400" />
+   655→                <p className="text-[11px] leading-relaxed text-slate-500 mt-2">
+   656→                  {s?.execution?.verdict === 'VERIFIED'
+   657→                    ? 'מצב-חי (T-12): המנוע חתום וריבוני — ספר-פאריטי פרוס בחוקי-הרצפה, צי-חיילים על-הספר, מסילת-קידום רצה, הכל מוגבל-דוקטרינה ומתועד-על-השרשרת. ההכנסה נמדדת ממילויים אמת בלבד.'
+   658→                    : 'כל-מסילות-הביצוע קיימות וחמושות (ספר · המרה · חיילים · קידום) — מוגבלות-דוקטרינה. החסימה-היחידה: התאמת-מפתח.'}
+   659→                </p>
+   660→              </CardContent>
+   661→            </Card>
+   662→
+   663→            {/* מה-יש-לנו · פוטנציאל-ריבוני (T-10) */}
+   664→            {(() => {
+   665→              const steemLiquid = parseFloat(String(s?.live?.balances?.steem ?? '').replace(/[^0-9.]/g, '')) || 0
+   666→              const sbdLiquid = parseFloat(String(s?.live?.balances?.sbd ?? '').replace(/[^0-9.]/g, '')) || 0
+   667→              const parity = s?.offer?.marks?.paritySbdPerSteem ?? null
+   668→              const steemUsd = s?.observe?.parity?.steemUsd ?? null
+   669→              const capitalUsd = parity ? steemLiquid * parity + sbdLiquid : (steemUsd ? steemLiquid * steemUsd + sbdLiquid : null)
+   670→              const rate = usdPerDay ?? 0
+   671→              const needed = capitalUsd && rate > 0 ? capitalUsd * (1000 / rate) : null
+   672→              return (
+   673→                <Card className="border-teal-500/25 bg-gradient-to-br from-teal-500/10 to-slate-900/60">
+   674→                  <CardHeader className="pb-2">
+   675→                    <CardTitle className="flex items-center gap-2 text-sm text-teal-300">
+   676→                      <TrendingUp className="h-4 w-4" aria-hidden /> מה-יש-לנו · פוטנציאל-ריבוני (T-10)
+   677→                    </CardTitle>
+   678→                  </CardHeader>
+   679→                  <CardContent>
+   680→                    <dl className="grid grid-cols-2 gap-2 text-sm">
+   681→                      <div><dt className="text-xs text-slate-500">הון-נזיל (STEEM)</dt><dd className="font-bold tabular-nums">{steemLiquid > 0 ? steemLiquid.toFixed(1) : '—'}</dd></div>
+   682→                      <div><dt className="text-xs text-slate-500">SBD נזיל</dt><dd className="font-bold tabular-nums">{sbdLiquid > 0 ? sbdLiquid.toFixed(2) : '—'}</dd></div>
+   683→                      <div><dt className="text-xs text-slate-500">שווי-הון-עובד (מוערך)</dt><dd className="font-bold tabular-nums text-teal-300">{capitalUsd ? `$${capitalUsd.toFixed(2)}` : '—'}</dd></div>
+   684→                      <div><dt className="text-xs text-slate-500">קצב-נמדד (כנות)</dt><dd className="font-bold tabular-nums">${rate.toFixed(4)}/יום</dd></div>
+   685→                    </dl>
+   686→                    <Separator className="my-3 bg-slate-800" />
+   687→                    <ul className="space-y-1.5 text-[11px] leading-relaxed text-slate-300">
+   688→                      <li className="flex items-start gap-1.5"><CircleCheck className="h-3 w-3 mt-0.5 text-emerald-400 shrink-0" aria-hidden /><span><b className="text-slate-100">ספר-פאריטי</b> — תשתית מוכנה מלאה: תכנון OFFER-READY בכל-מחזור + ביצוע-מוסיף (D-021/D-022) + רצפת-ערך (r134-VF1). הפוטנציאל: קציר-מרווחים מעל-פאריטי על ~925 STEEM.</span></li>
+   689→                      <li className="flex items-start gap-1.5"><CircleCheck className="h-3 w-3 mt-0.5 text-emerald-400 shrink-0" aria-hidden /><span><b className="text-slate-100">קיורציה</b> — נמדדה $4.26/יום כשהייתה פעילה; כרגע רדומה, ממתינה ל-authority פוסטינג (שער X-1). הכלי קיים ומתוכנת (A-12).</span></li>
+   690→                      <li className="flex items-start gap-1.5"><CircleCheck className="h-3 w-3 mt-0.5 text-emerald-400 shrink-0" aria-hidden /><span><b className="text-slate-100">מסילת-המרה D-023</b> — יתרון פנימי שנמדד +40.8% (SBD→STEEM פנ-$1); מתחממת אוטומטית כשהאסקים קוצרים SBD.</span></li>
+   691→                      <li className="flex items-start gap-1.5"><CircleCheck className="h-3 w-3 mt-0.5 text-emerald-400 shrink-0" aria-hidden /><span><b className="text-slate-100">ריבונות-רציפה (היום)</b> — watchdog + מחזורים-אוטומטיים + ביקורת-איכות + ריפוי-עצמי; זמן-רציפות חי בכרטיס הראשון.</span></li>
+   692→                    </ul>
+   693→                    <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
+   694→                      כנות: פוטנציאל ≠ רווח-נמדד. בקצב-הנמדד הנוכחי ${rate.toFixed(4)}/יום, ל-$1000/יום נדרש הון של {needed ? `≈ $${needed.toFixed(0)}` : '—'} (אנלוגיית X-2) או מסילות-תשואה-גבוהות-יותר. כל-מספר כאן חי וממקור-chain או מדידה-מקומית.
+   695→                    </p>
+   696→                  </CardContent>
+   697→                </Card>
+   698→              )
+   699→            })()}
+   700→
+   701→            {/* ביצוע-חי · מפתח-ראשי (T-12) */}
+   702→            <Card className="border-violet-500/25 bg-gradient-to-br from-violet-500/10 to-slate-900/60">
+   703→              <CardHeader className="pb-2">
+   704→                <CardTitle className="flex items-center gap-2 text-sm text-violet-300">
+   705→                  <KeyRound className="h-4 w-4" aria-hidden /> ביצוע-חי · מפתח-ראשי (T-12)
+   706→                </CardTitle>
+   707→              </CardHeader>
+   708→              <CardContent>
+   709→                <div className="flex items-center gap-2 flex-wrap">
+   710→                  <Badge variant="outline" className={
+   711→                    s?.execution?.verdict === 'VERIFIED' ? 'border-emerald-500/40 text-emerald-400'
+   712→                    : s?.execution?.operatorPaused ? 'border-amber-500/40 text-amber-400'
+   713→                    : 'border-violet-500/40 text-violet-300'
+   714→                  }>
+   715→                    {s?.execution?.verdict ?? (s?.execution?.credentialPresent ? 'בודק' : 'אין-תעודה')}
+   716→                  </Badge>
+   717→                  {s?.execution?.fingerprint && <span className="text-[11px] text-slate-500">טביעת-אצבע: {s.execution.fingerprint}</span>}
+   718→                  {s?.execution?.armed != null && (
+   719→                    <span className={`text-[11px] ${s.execution.armed ? 'text-emerald-400' : 'text-amber-400'}`}>
+   720→                      {s.execution.armed ? 'חמוש · דוקטרינה-מוגבל' : 'מושהה/מנוטרל'}
+   721→                    </span>
+   722→                  )}
+   723→                </div>
+   724→                {s?.execution?.verdict === 'CREDENTIAL-MISMATCH' && (
+   725→                  <p className="text-[11px] leading-relaxed text-amber-400/90 mt-2">
+   726→                    כנות: התעודה שהועלתה תקינה-מבנית אך המפתחות-הנגזרים-ממנה אינם תואמים את רשויות-השרשרת של {s.execution?.account ?? 'החשבון'} (נבדק מול הרשאות חיות). שני-מסלולים: (א) העלה את סיסמת-האם-הנוכחית כ-upload/headcorner.txt — המנוע מאבטח ומאמץ אוטומטית; (ב) ב-steemit.com → Permissions החלף את המפתחות ל-proposedPubkeys — לאחר-צעד-אחד זה המערכת ריבונית-מלאה לתמיד.
+   727→                  </p>
+   728→                )}
+   729→                {s?.execution?.proposedPubkeys && (
+   730→                  <div className="mt-2 rounded-lg border border-slate-800 bg-slate-950/80 p-2 text-[10px] leading-relaxed text-slate-400 font-mono overflow-x-auto">
+   731→                    {Object.entries(s.execution.proposedPubkeys).map(([k, v]) => <div key={k}><span className="text-violet-300">{k}</span>: {v}</div>)}
+   732→                  </div>
+   733→                )}
+   734→                {s?.execution?.roles && (
+   735→                  <div className="flex flex-wrap gap-1.5 mt-2">
+   736→                    {Object.entries(s.execution.roles).map(([k, v]) => (
+   737→                      <Badge key={k} variant="outline" className={v.matched ? 'border-emerald-500/40 text-emerald-400' : 'border-slate-700 text-slate-500'}>{k}:{v.matched ? 'תואם' : 'לא-תואם'}</Badge>
+   738→                    ))}
+   739→                  </div>
+   740→                )}
+   741→                {!!s?.execution?.log?.length && (
+   742→                  <div className="mt-2 max-h-32 overflow-y-auto rounded-lg border border-slate-800 divide-y divide-slate-800/70">
+   743→                    {[...s.execution.log].reverse().map((l, i) => (
+   744→                      <div key={i} className="px-2 py-1.5 text-[10px] flex flex-wrap gap-x-2 items-center">
+   745→                        <span className="text-slate-500 tabular-nums">{l.at?.replace('T', ' ')?.slice(0, 19)}</span>
+   746→                        <Badge variant="outline" className={l.ok ? 'border-emerald-500/40 text-emerald-400' : 'border-red-500/40 text-red-400'}>{l.tag ?? l.ops?.join('+') ?? '?'}</Badge>
+   747→                        {l.txid && <span className="text-slate-400 font-mono">tx {l.txid.slice(0, 12)}…</span>}
+   748→                        {l.error && <span className="text-red-400">{l.error.slice(0, 60)}</span>}
+   749→                      </div>
+   750→                    ))}
+   751→                  </div>
+   752→                )}
+   753→              </CardContent>
+   754→            </Card>
+   755→
+   756→            {/* חיילים · צי-גרידים (T-12) */}
+   757→            <Card className="border-cyan-500/25 bg-gradient-to-br from-cyan-500/10 to-slate-900/60">
+   758→              <CardHeader className="pb-2">
+   759→                <CardTitle className="flex items-center gap-2 text-sm text-cyan-300">
+   760→                  <Users className="h-4 w-4" aria-hidden /> חיילים · צי-גרידים (T-12)
+   761→                </CardTitle>
+   762→              </CardHeader>
+   763→              <CardContent>
+   764→                <div className="flex items-center gap-2 flex-wrap">
+   765→                  <Badge variant="outline" className={s?.soldiers?.deployed ? 'border-emerald-500/40 text-emerald-400' : 'border-cyan-500/40 text-cyan-300'}>
+   766→                    {s?.soldiers?.deployed ? `פרוס · ${s.soldiers.accounts?.length ?? 0} חיילים` : 'ממתין-לפריסה'}
+   767→                  </Badge>
+   768→                  {s?.soldiers?.fundedEach && (
+   769→                    <span className="text-[11px] text-slate-500">{s.soldiers.fundedEach.steem} STEEM + {s.soldiers.fundedEach.sbd} SBD לחייל</span>
+   770→                  )}
+   771→                </div>
+   772→                {!!s?.soldiers?.accounts?.length && (
+   773→                  <div className="mt-2 space-y-1">
+   774→                    {s.soldiers.accounts.map((a, i) => (
+   775→                      <div key={i} className="flex items-center justify-between text-xs">
+   776→                        <span className="font-bold text-slate-200">{a.name}</span>
+   777→                        <span className="text-slate-500 font-mono text-[10px]">fp {a.fingerprint}</span>
+   778→                      </div>
+   779→                    ))}
+   780→                  </div>
+   781→                )}
+   782→                {!s?.soldiers?.deployed && (
+   783→                  <p className="text-[11px] leading-relaxed text-slate-500 mt-2">
+   784→                    תוכנית-הצי: 3 חיילים (hcsoldier1..3) · מומנו מהמאסטר · כל-אחד מריץ סולם-מיקרו-משלו עם-אותן-חוקי-רצפת/פאריטי — מעמיק את האחיזה בספר. הפריסה חסומה-כנות עד-התאמת-מפתח (fail-closed).
+   785→                  </p>
+   786→                )}
+   787→              </CardContent>
+   788→            </Card>
+   789→
+   790→            {/* קיורציה · מסילת-דלק (T-13) */}
+   791→            <Card className="border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 to-slate-900/60">
+   792→              <CardHeader className="pb-2">
+   793→                <CardTitle className="flex items-center gap-2 text-sm text-emerald-300">
+   794→                  <BatteryCharging className="h-4 w-4" aria-hidden /> קיורציה · מסילת-דלק (T-13)
+   795→                </CardTitle>
+   796→              </CardHeader>
+   797→              <CardContent>
+   798→                <div className="flex items-center gap-2 flex-wrap">
+   799→                  <Badge variant="outline" className={s?.curator?.verdict === 'VOTED' ? 'border-emerald-500/40 text-emerald-400' : s?.curator?.verdict === 'DAY-CAP' ? 'border-amber-500/40 text-amber-400' : 'border-slate-500/40 text-slate-400'}>
+   800→                    {s?.curator?.verdict === 'VOTED' ? 'חי · מצביע'
+   801→                      : s?.curator?.verdict === 'DAY-CAP' ? 'מכסה-יומית מלאה'
+   802→                      : s?.curator?.verdict ? s.curator.verdict : 'מתחמם'}
+   803→                  </Badge>
+   804→                  {s?.curator?.vpEff != null && (
+   805→                    <span className="text-[11px] text-slate-500">VP אפקטיבי <b className="tabular-nums text-slate-300">{s.curator.vpEff}%</b> · רצפה 60%</span>
+   806→                  )}
+   807→                </div>
+   808→                <dl className="grid grid-cols-3 gap-2 mt-3">
+   809→                  <div><dt className="text-xs text-slate-500">הצבעות-היום</dt><dd className="font-bold tabular-nums text-emerald-400">{s?.curator?.votesToday ?? 0}/{s?.curator?.maxPerDay ?? 10}</dd></div>
+   810→                  <div><dt className="text-xs text-slate-500">סה״כ</dt><dd className="font-bold tabular-nums">{s?.curator?.totalVotes ?? 0}</dd></div>
+   811→                  <div><dt className="text-xs text-slate-500">מועמדים-נסרקו</dt><dd className="font-bold tabular-nums">{s?.curator?.candidatesScanned ?? '—'}</dd></div>
+   812→                </dl>
+   813→                {!!s?.curator?.lastVotes?.length && (
+   814→                  <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+   815→                    {s.curator.lastVotes.map((v, i) => (
+   816→                      <div key={i} className="flex items-center justify-between text-xs gap-2">
+   817→                        <span className="font-bold text-slate-200 truncate">{v.author}<span className="text-slate-500 font-normal"> · {v.permlink?.slice(0, 24)}</span></span>
+   818→                        <span className="text-slate-500 font-mono text-[10px] shrink-0">w{(v.weight ?? 0) / 100}% · {v.txid?.slice(0, 8)}</span>
+   819→                      </div>
+   820→                    ))}
+   821→                  </div>
+   822→                )}
+   823→                <p className="text-[11px] leading-relaxed text-slate-500 mt-2">
+   824→                  ה-VP המלא (98%+) ישב בטל — עכשיו 4034 SP עובדים: הצבעות-בוקר טריות עם-ירידת-משקל-לפי-גיל, מכסה-יומית, רצפת-VP, אפס-הצבעה-עצמית, סינון-ספאם. מפתח-פרסום בלבד — פעולת-הצבעה לא-יכולה להזיז כספים. התשואה נמדדת מ-curation_reward חי (מסילת-הדלק).
+   825→                </p>
+   826→              </CardContent>
+   827→            </Card>
+   828→
+   829→            {/* למידה-מתמשכת · גדילה (T-14) */}
+   830→            <Card className="border-cyan-500/25 bg-gradient-to-br from-cyan-500/10 to-slate-900/60">
+   831→              <CardHeader className="pb-2">
+   832→                <CardTitle className="flex items-center gap-2 text-sm text-cyan-300">
+   833→                  <BrainCircuit className="h-4 w-4" aria-hidden /> למידה-מתמשכת · גדילה (T-14)
+   834→                </CardTitle>
+   835→              </CardHeader>
+   836→              <CardContent>
+   837→                <div className="flex items-center gap-2 flex-wrap">
+   838→                  <Badge variant="outline" className={s?.learning?.verdict === 'LEARNED' ? 'border-cyan-500/40 text-cyan-300' : 'border-slate-500/40 text-slate-400'}>
+   839→                    {s?.learning?.verdict === 'LEARNED' ? 'למד · התעדכן'
+   840→                      : s?.learning?.verdict === 'NO-NEW-LESSONS' ? 'אין-שיעורים-חדשים (תקין)'
+   841→                      : s?.learning?.verdict ? s.learning.verdict : 'הלולאה תרוץ במחזור-הבא'}
+   842→                  </Badge>
+   843→                  {s?.learning?.cycleMetrics?.okRate != null && (
+   844→                    <span className="text-[11px] text-slate-500">מחזורים-תקינים <b className="tabular-nums text-slate-300">{s.learning.cycleMetrics.okRate}%</b> מ-{s.learning.cycleMetrics.window ?? 0} אחרונים</span>
+   845→                  )}
+   846→                  {!!s?.learning?.runsTotal && (
+   847→                    <span className="text-[11px] text-slate-500">סבבי-למידה: <b className="tabular-nums text-slate-300">{s.learning.runsTotal}</b></span>
+   848→                  )}
+   849→                </div>
+   850→                {!!s?.learning?.lessons?.length ? (
+   851→                  <ul className="space-y-1.5 mt-3 max-h-44 overflow-y-auto">
+   852→                    {s.learning.lessons.map((l, i) => (
+   853→                      <li key={i} className="text-[11px] leading-relaxed">
+   854→                        <div className="flex items-start gap-1.5">
+   855→                          <Badge variant="outline" className={l.severity === 'high' ? 'border-rose-500/40 text-rose-300 shrink-0' : l.severity === 'medium' ? 'border-amber-500/40 text-amber-300 shrink-0' : 'border-slate-600/50 text-slate-400 shrink-0'}>{l.severity ?? '?'}</Badge>
+   856→                          <span><b className="text-slate-100">{l.lesson}</b></span>
+   857→                        </div>
+   858→                        {l.evidence && <div className="text-slate-500 mr-6">ראיה: {l.evidence}</div>}
+   859→                        {l.action && <div className="text-cyan-400/90 mr-6">פעולה: {l.action}</div>}
+   860→                      </li>
+   861→                    ))}
+   862→                  </ul>
+   863→                ) : (
+   864→                  <p className="text-[11px] text-slate-500 mt-2">לומד מהיסטוריה-מוקלטת בלבד — אפס המצאות: היסטוריה-ריקה = שיעורים-אפס.</p>
+   865→                )}
+   866→                {!!s?.learning?.tuningsApplied?.length && (
+   867→                  <div className="mt-2 text-[11px]">
+   868→                    <span className="text-slate-500">כיוונים-חסומים-שהוחלו: </span>
+   869→                    {s.learning.tuningsApplied.map((t, i) => (
+   870→                      <Badge key={i} variant="outline" className="border-cyan-500/30 text-cyan-300 mr-1 font-mono text-[10px]">
+   871→                        {t.key}{t.to != null ? ` ${t.from}→${t.to}` : t.added ? ` +${t.added}` : ''}
+   872→                      </Badge>
+   873→                    ))}
+   874→                    <div className="text-slate-600 mt-1">מוגבל-חוק (LEARN_CLAMP 30–60% משקל · גיל 5–12 דק · תגיות ≤8) — החוקים (רצפת-VF1, רצפת-VP, מכסה-יומית) בלתי-נגישים-ללמידה.</div>
+   875→                  </div>
+   876→                )}
+   877→                {!!s?.discovery?.opportunities?.length && (
+   878→                  <div className="mt-3 border-t border-slate-800 pt-2">
+   879→                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mb-1">
+   880→                      <Lightbulb className="h-3.5 w-3.5 text-amber-300" aria-hidden /> אופציות-גדילה-שהתגלו ({s.discovery.verdict === 'OPTIONS-FOUND' ? 'מדורגות' : s.discovery.verdict ?? '—'})
+   881→                    </div>
+   882→                    <ul className="space-y-1 max-h-36 overflow-y-auto">
+   883→                      {s.discovery.opportunities.map((o, i) => (
+   884→                        <li key={i} className="text-[11px] leading-relaxed flex items-start gap-1.5">
+   885→                          <Badge variant="outline" className={o.potentialClass === 'measured' ? 'border-emerald-500/40 text-emerald-300 shrink-0' : o.potentialClass === 'estimated' ? 'border-amber-500/40 text-amber-300 shrink-0' : 'border-slate-600/50 text-slate-400 shrink-0'}>{o.potentialClass === 'measured' ? 'נמדד' : o.potentialClass === 'estimated' ? 'מוערך' : 'פוטנציאל'}</Badge>
+   886→                          <span><b className="text-slate-100">{o.kind}</b> — <span className="text-slate-400">{o.evidence}</span>{o.gate && <span className="text-slate-600"> · שער: {o.gate}</span>}</span>
+   887→                        </li>
+   888→                      ))}
+   889→                    </ul>
+   890→                    {!!s.discovery.curationEst?.estimatedSteemPerDay && (
+   891→                      <p className="text-[10px] text-slate-500 mt-1">אומדן-מנת-קיורציה ציבורי: ~{s.discovery.curationEst.estimatedSteemPerDay} STEEM/יום (מוערך — רק curation_reward חי נחשב-נמדד)</p>
+   892→                    )}
+   893→                  </div>
+   894→                )}
+   895→                <p className="text-[11px] text-slate-500 mt-2">לולאה-סוגרת-עצמה: קורא-היסטוריה → שיעורים-מבוססי-ראיות → כיוונים-חסומים → המחזור-הבא רץ-חכם-יותר. הגילוי מדרג ביושר: נמדד &gt; מוערך &gt; פוטנציאל, ולעולם לא מבצע — השערים מחליטים.</p>
+   896→              </CardContent>
+   897→            </Card>
+   898→
+   899→            {/* מיקרו-מסחר · דופק-רשת (T-19) — השוק נמדד, לא מובטח */}
+   900→            <Card className="border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 to-slate-900/60">
+   901→              <CardHeader className="pb-2">
+   902→                <CardTitle className="flex items-center gap-2 text-sm text-emerald-300">
+   903→                  <Activity className="h-4 w-4" aria-hidden /> מיקרו-מסחר · דופק-רשת (T-19)
+   904→                </CardTitle>
+   905→              </CardHeader>
+   906→              <CardContent>
+   907→                <div className="flex items-center gap-2 flex-wrap">
+   908→                  <Badge variant="outline" className="border-emerald-500/40 text-emerald-300">נמדד</Badge>
+   909→                  {s?.offer?.market?.tradesPerDay != null ? (
+   910→                    <span className="text-[11px] text-slate-500">
+   911→                      כל-השוק: <b className="tabular-nums text-slate-200">{s.offer.market.tradesPerDay}</b> עסקאות/יום ({s.offer.market.trades ?? 0} ב-{s.offer.market.windowHours ?? 24}ש) · נפח <b className="tabular-nums text-slate-200">{s.offer.market.volSteem ?? 0}</b> STEEM
+   912→                    </span>
+   913→                  ) : (
+   914→                    <span className="text-[11px] text-slate-500">מדידת-דופק-השוק תרוץ במחזור-הבא (מקצב 30 דק)</span>
+   915→                  )}
+   916→                  {!!s?.offer?.market?.book?.spreadBps && (
+   917→                    <span className="text-[11px] text-slate-500">מרווח-ספר <b className="tabular-nums text-slate-200">{s.offer.market.book.spreadBps}bps</b></span>
+   918→                  )}
+   919→                  {!!s?.offer?.market?.rangeBps && (
+   920→                    <span className="text-[11px] text-slate-500">תנודה-24ש <b className="tabular-nums text-slate-200">{s.offer.market.rangeBps}bps</b></span>
+   921→                  )}
+   922→                </div>
+   923→                {s?.offer?.flow ? (
+   924→                  <div className="mt-3 border-t border-slate-800 pt-2 text-[11px] space-y-1">
+   925→                    <div className="flex items-center gap-1.5 text-slate-400">
+   926→                      <Target className="h-3.5 w-3.5 text-emerald-300" aria-hidden /> שכבת-זרימה <b className="text-emerald-300">פעילה</b> — נוכחות בחזית-הספר
+   927→                    </div>
+   928→                    <div className="text-slate-500 mr-5">
+   929→                      {s.offer.flow.flowAsks ?? 0} asks חזיתיים מ-{s.offer.flow.bestAsk ?? '—'} · {s.offer.flow.flowBids ?? 0} bids מ-{s.offer.flow.bestBid ?? '—'} · מרווח {s.offer.flow.spacingBps}bps · תקציב {s.offer.flow.askBudgetSteem ?? 0} STEEM / {s.offer.flow.bidBudgetSbd ?? 0} SBD
+   930→                    </div>
+   931→                    <div className="text-slate-600 mr-5">
+   932→                      עוגן-אמת: לעולם לא מוכרים מתחת לפיד-העדים ({s.offer.flow.feedAnchor ?? '—'} SBD/STEEM) — השוק-החי-היחיד-שקיים. רצפת-VF1 ({s.offer.marks?.floor ?? '—'}) שומרת על 80% מההון.
+   933→                    </div>
+   934→                  </div>
+   935→                ) : (
+   936→                  <p className="text-[11px] text-slate-500 mt-2">שכבת-הזרימה מושהית — אין קריאת-ספר-חי במחזור-האחרון (המנוע ממשיך בשכבת-הערך בלבד).</p>
+   937→                )}
+   938→                {!!s?.offer?.book && (
+   939→                  <div className="mt-2 text-[11px] text-slate-500">
+   940→                    ספר-חי: asks {s.offer.book.bestAsk ?? '—'} / bids {s.offer.book.bestBid ?? '—'} · עומק {s.offer.book.askDepthSteem ?? '—'} STEEM / {s.offer.book.bidDepthSbd ?? '—'} SBD
+   941→                  </div>
+   942→                )}
+   943→                <p className="text-[11px] text-slate-500 mt-2">אמת-מדידה: השוק-הפנימי סוחר ~49 עסקאות/יום (נמדד 2026-09-30) — זו התקרה-הכנה של כל אסטרטגיית-לכידה במקום-הזה. המכונה מייצרת נוכחות-מקסימלית בחזית ולוכדת נתח-זרימה, בלי להבטיח זרימה שהשוק לא נותן.</p>
+   944→              </CardContent>
+   945→            </Card>
+   946→
+   947→            {/* HYPER-GRID · שכבת-הנפח (T-19b) — המנוע שמייצר אלפי פעולות-שרשרת ביום */}
+   948→            <Card className="border-amber-500/25 bg-gradient-to-br from-amber-500/10 to-slate-900/60">
+   949→              <CardHeader className="pb-2">
+   950→                <CardTitle className="flex items-center gap-2 text-sm text-amber-300">
+   951→                  <Zap className="h-4 w-4" aria-hidden /> HYPER-GRID · שכבת-הנפח (T-19b)
+   952→                </CardTitle>
+   953→              </CardHeader>
+   954→              <CardContent>
+   955→                <div className="flex items-center gap-2 flex-wrap">
+   956→                  <Badge variant="outline" className="border-amber-500/40 text-amber-300">
+   957→                    {s?.hyper?.running ? 'חי' : 'כבוי'} · {s?.hyper?.lastVerdict ?? '—'}
+   958→                  </Badge>
+   959→                  {s?.hyper?.ops?.opsToday != null && (
+   960→                    <span className="text-[11px] text-slate-500">
+   961→                      <b className="tabular-nums text-amber-200">{s.hyper.ops.opsToday.toLocaleString()}</b> ops היום מתוך תקציב <b className="tabular-nums text-slate-200">{(s.hyper.ops.opsDayCap ?? 0).toLocaleString()}</b>
+   962→                    </span>
+   963→                  )}
+   964→                  {s?.hyper?.liveHyper != null && (
+   965→                    <span className="text-[11px] text-slate-500">הזמנות-חיות: <b className="tabular-nums text-slate-200">{s.hyper.liveHyper}</b></span>
+   966→                  )}
+   967→                  {s?.hyper?.rcPct != null && (
+   968→                    <span className="text-[11px] text-slate-500">RC: <b className="tabular-nums text-slate-200">{s.hyper.rcPct}%</b></span>
+   969→                  )}
+   970→                </div>
+   971→                {s?.hyper?.ops?.opsToday != null && (s.hyper.ops.opsDayCap ?? 0) > 0 && (
+   972→                  <div className="mt-2">
+   973→                    <Progress value={Math.min(100, (s.hyper.ops.opsToday / (s.hyper.ops.opsDayCap ?? 1)) * 100)} aria-label="ops day budget" />
+   974→                  </div>
+   975→                )}
+   976→                {s?.hyper?.economics?.opsPerDay != null && (
+   977→                  <div className="mt-3 border-t border-slate-800 pt-2 text-[11px] space-y-1">
+   978→                    <div className="text-slate-400">
+   979→                      שיווי-משקל-נמדד: <b className="tabular-nums text-amber-200">{s.hyper.economics.opsPerDay.toLocaleString()}</b> ops/יום — מיכל-RC {s.hyper.economics.regenPerDay != null ? `${(s.hyper.economics.regenPerDay / 1e12).toFixed(2)} טריליון` : '—'} שמתחדש 20%/יום, זוג-ריקוט (ביטול+יצירה) עולה {(s.hyper.economics.pairCost ?? 0) > 0 ? ((s.hyper.economics.pairCost ?? 0) / 1e6).toFixed(1) + 'M RC' : '—'} (מדידה-חיה rc-probe 2026-09-30).
+   980→                    </div>
+   981→                    <div className="text-slate-500">
+   982→                      לעומת התקציב-הישן (1,500/יום): זהו שיפור של <b className="text-amber-300">×{(s.hyper.economics.opsPerDay / 1500).toFixed(0)}</b> בנפח-הייצור. המושל שומר: רצפת-RC 25% (הצבעות לעולם לא נחנקות), שורף-רק-את-מה-שמתחדש.
+   983→                    </div>
+   984→                    {!!s?.hyper?.ops?.chainTail && (
+   985→                      <div className="text-slate-600">
+   986→                        אמת-שרשרת (זנב-400-אופס, {s.hyper.ops.chainTailAt ? new Date(s.hyper.ops.chainTailAt).toLocaleTimeString('he-IL') : '—'}): {s.hyper.ops.chainTail.creates ?? 0} יצירות + {s.hyper.ops.chainTail.cancels ?? 0} ביטולים = <b className="tabular-nums">{s.hyper.ops.chainTail.total ?? 0}</b> פעולות-ספר של-החשבון-כולו (היפר + מחזור + חותם-שני).
+   987→                      </div>
+   988→                    )}
+   989→                    <div className="text-slate-600">
+   990→                      סולם-ה-100,000× (חוק-גידול נמדד): ops/יום ∝ מיכל-RC ∝ SP. היום 4,034 SP → ~32k/יום; 40k SP → ~320k/יום; תקרת-קצב-השרשרת (טקס/3ש × אצווה) ≈ 2.9M/יום. המנוף: האצלת-RC נכנסת אוטומטית ל-max_rc — השכבה מרוויחה ריאות בלי-שינוי-קוד.
+   991→                    </div>
+   992→                  </div>
+   993→                )}
+   994→                {s?.hyper?.lastTxid && (
+   995→                  <div className="mt-2 text-[10px] text-slate-600 font-mono break-all">
+   996→                    שידור-אחרון: {s.hyper.lastTxid} · טיק-אחרון {s?.hyper?.lastTickAt ? new Date(s.hyper.lastTickAt).toLocaleTimeString('he-IL') : '—'} · טיקים: {s?.hyper?.ticks ?? 0}
+   997→                  </div>
+   998→                )}
+   999→                <p className="text-[11px] text-slate-500 mt-2">כנות: ops = נוכחות-ואופציה, לא רווח. כל פעולה ממקמת-מחדש רמה-חוקית בחזית-הספר (עוגן-פיד + תקרה); מילויים נמדדים בנפרד (fill_order) וה-P&amp;L נשאר כן (A-10). TTL-ריקוט מתויג כשימור-נוכחות — אפס-ציפייה-למילוי.</p>
+  1000→              </CardContent>
+  1001→            </Card>
+  1002→
+  1003→            {/* אינטליגנציה · מפעילה-את-עצמה (T-12) */}
+  1004→            <Card className="border-fuchsia-500/25 bg-gradient-to-br from-fuchsia-500/10 to-slate-900/60">
+  1005→              <CardHeader className="pb-2">
+  1006→                <CardTitle className="flex items-center gap-2 text-sm text-fuchsia-300">
+  1007→                  <Brain className="h-4 w-4" aria-hidden /> אינטליגנציה · מחליטה-בעצמה (T-12)
+  1008→                </CardTitle>
+  1009→              </CardHeader>
+  1010→              <CardContent>
+  1011→                {s?.intel?.book?.spreadBps != null && (
+  1012→                  <div className="flex items-center gap-3 text-xs text-slate-400 mb-2">
+  1013→                    <span>מרווח-ספר: <b className="tabular-nums text-slate-200">{s.intel.book.spreadBps}bps</b></span>
+  1014→                    {s.intel.book.bestAsk != null && <span>ask {s.intel.book.bestAsk.toFixed(4)}</span>}
+  1015→                    {s.intel.book.bestBid != null && <span>bid {s.intel.book.bestBid.toFixed(4)}</span>}
+  1016→                  </div>
+  1017→                )}
+  1018→                {!s?.intel?.decisions?.length ? (
+  1019→                  <p className="text-sm text-slate-500">הסריקה-הראשונה תרוץ במחזור-הבא (כל 10 דק)</p>
+  1020→                ) : (
+  1021→                  <ul className="space-y-1.5 max-h-44 overflow-y-auto">
+  1022→                    {s.intel.decisions.map((d, i) => (
+  1023→                      <li key={i} className="text-[11px] leading-relaxed flex items-start gap-1.5">
+  1024→                        <Badge variant="outline" className="border-fuchsia-500/30 text-fuchsia-300 shrink-0">{d.kind}</Badge>
+  1025→                        <span><b className="text-slate-100">{d.decision}</b> — <span className="text-slate-400">{d.reason}</span></span>
+  1026→                      </li>
+  1027→                    ))}
+  1028→                  </ul>
+  1029→                )}
+  1030→                <p className="text-[11px] text-slate-500 mt-2">כל-החלטה עם-נימוק — המפעיל רואה הכל, המערכת מריצה הכל בעצמה.</p>
+  1031→              </CardContent>
+  1032→            </Card>
+  1033→
+  1034→            {/* פאריטי + הצעה */}
+  1035→            <Card className="border-slate-800 bg-slate-900/60">
+  1036→              <CardHeader className="pb-2">
+  1037→                <CardTitle className="flex items-center gap-2 text-sm text-slate-300">
+  1038→                  <Scale className="h-4 w-4" aria-hidden /> הצעת-פאריטי · peg
+  1039→                </CardTitle>
+  1040→              </CardHeader>
+  1041→              <CardContent>
+  1042→                <div className="flex items-center gap-2 flex-wrap">
+  1043→                  <Badge className={s?.offer?.verdict === 'OFFER-READY' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/15 text-amber-400 border-amber-500/30'}>
+  1044→                    <CircleCheck className="h-3 w-3 me-1" aria-hidden />{s?.offer?.verdict ?? '—'}
+  1045→                  </Badge>
+  1046→                  {s?.offer?.marks?.lowConfidence && <Badge variant="outline" className="border-amber-500/40 text-amber-400">מקור-פנימי · ביטחון-מופחת</Badge>}
+  1047→                </div>
+  1048→                <dl className="grid grid-cols-2 gap-2 text-sm mt-3">
+  1049→                  <div><dt className="text-xs text-slate-500">פאריטי</dt><dd className="font-bold tabular-nums">{s?.offer?.marks?.paritySbdPerSteem ?? '—'}</dd></div>
+  1050→                  <div><dt className="text-xs text-slate-500">סטייה (bps)</dt><dd className="font-bold tabular-nums">{s?.offer?.parityBps ?? '—'}</dd></div>
+  1051→                  <div><dt className="text-xs text-slate-500">אסקים</dt><dd className="font-bold tabular-nums text-amber-400">{s?.offer?.plan?.asks?.length ?? '—'}</dd></div>
+  1052→                  <div><dt className="text-xs text-slate-500">בידים</dt><dd className="font-bold tabular-nums text-emerald-400">{s?.offer?.plan?.bids?.length ?? '—'}</dd></div>
+  1053→                  <div><dt className="text-xs text-slate-500">רצפה</dt><dd className="font-bold tabular-nums">{s?.offer?.marks?.floor ?? '—'}</dd></div>
+  1054→                  <div><dt className="text-xs text-slate-500">dragK</dt><dd className="font-bold tabular-nums">{s?.offer?.marks?.dragK ?? '—'}</dd></div>
+  1055→                </dl>
+  1056→                <p className="text-[11px] text-slate-500 mt-2">דוקטרינה: אמת-מחיר-או-כלום · אין-מכירה-מתחת-לפאריטי · מקור: {s?.offer?.marks?.source ?? '—'}</p>
+  1057→              </CardContent>
+  1058→            </Card>
+  1059→
+  1060→            {/* יתרות ודלק */}
+  1061→            <Card className="border-slate-800 bg-slate-900/60">
+  1062→              <CardHeader className="pb-2">
+  1063→                <CardTitle className="flex items-center gap-2 text-sm text-slate-300">
+  1064→                  <Wallet className="h-4 w-4" aria-hidden /> יתרות-ודלק · headcorner
+  1065→                </CardTitle>
+  1066→              </CardHeader>
+  1067→              <CardContent>
+  1068→                {s?.live?.balances ? (
+  1069→                  <dl className="grid grid-cols-2 gap-2 text-sm">
+  1070→                    <div><dt className="text-xs text-slate-500">STEEM נזיל</dt><dd className="font-bold tabular-nums">{s.live.balances.steem}</dd></div>
+  1071→                    <div><dt className="text-xs text-slate-500">SBD</dt><dd className="font-bold tabular-nums">{s.live.balances.sbd}</dd></div>
+  1072→                    <div className="col-span-2"><dt className="text-xs text-slate-500">מלאי-מוקפא בפקודות-פתוחות</dt><dd className="font-bold">{asks.length} אסקים · {bids.length} בידים חיים</dd></div>
+  1073→                  </dl>
+  1074→                ) : (
+  1075→                  <p className="text-sm text-slate-500">קריאת-chain לא-זמינה כרגע (RPC) — מוצג-בכנות</p>
+  1076→                )}
+  1077→                <Separator className="my-3 bg-slate-800" />
+  1078→                <div className="flex items-center justify-between text-sm">
+  1079→                  <div className="flex items-center gap-2">
+  1080→                    <BatteryCharging className="h-4 w-4 text-emerald-400" aria-hidden />
+  1081→                    <span className="text-xs text-slate-500">דלק-RC</span>
+  1082→                  </div>
+  1083→                  <span className={`font-bold tabular-nums ${typeof s?.live?.rc?.rcPct === 'number' && s.live.rc.rcPct < 20 ? 'text-amber-400' : 'text-emerald-400'}`}>
+  1084→                    {typeof s?.live?.rc?.rcPct === 'number' ? `${s.live.rc.rcPct}%` : '—'}
+  1085→                  </span>
+  1086→                </div>
+  1087→                <div className="flex items-center justify-between text-sm mt-1.5">
+  1088→                  <span className="text-xs text-slate-500 ps-6">רשת-טריגרים</span>
+  1089→                  <span className="font-bold">{s?.grid?.grids?.filter((g) => g.active).length ?? 0}/{s?.grid?.grids?.length ?? 0} פעילים</span>
+  1090→                </div>
+  1091→              </CardContent>
+  1092→            </Card>
+  1093→
+  1094→            {/* סולם-חי */}
+  1095→            <Card className="border-slate-800 bg-slate-900/60 md:col-span-2 lg:col-span-2">
+  1096→              <CardHeader className="pb-2">
+  1097→                <CardTitle className="flex items-center gap-2 text-sm text-slate-300">
+  1098→                  <Activity className="h-4 w-4" aria-hidden /> הסולם-החי · פקודות-פתוחות על ספר-STEEM
+  1099→                </CardTitle>
+  1100→              </CardHeader>
+  1101→              <CardContent>
+  1102→                {orders.length === 0 ? (
+  1103→                  <p className="text-sm text-slate-500">
+  1104→                    הספר ריק באמת (ordersOk: {String(s?.observe?.ordersOk ?? true)}) — כל ההון נזיל וממתין לפריסה בשער-האופרטור. התוכנית הדוקטרינית מוכנה בכל-מחזור.
+  1105→                  </p>
+  1106→                ) : (
+  1107→                  <div className="max-h-72 overflow-y-auto rounded-lg border border-slate-800">
+  1108→                    <table className="w-full text-sm">
+  1109→                      <thead className="sticky top-0 bg-slate-900 text-xs text-slate-400">
+  1110→                        <tr>
+  1111→                          <th className="text-start font-medium px-3 py-2">orderid</th>
+  1112→                          <th className="text-start font-medium px-3 py-2">צד</th>
+  1113→                          <th className="text-start font-medium px-3 py-2">מוכן-למכירה</th>
+  1114→                          <th className="text-start font-medium px-3 py-2">מקבל</th>
+  1115→                          <th className="text-start font-medium px-3 py-2">יחידה SBD/STEEM</th>
+  1116→                        </tr>
+  1117→                      </thead>
+  1118→                      <tbody>
+  1119→                        {orders.map((o) => (
+  1120→                          <tr key={o.orderid} className="border-t border-slate-800/70 hover:bg-slate-800/40 transition-colors">
+  1121→                            <td className="px-3 py-2 tabular-nums text-slate-400">{o.orderid}</td>
+  1122→                            <td className="px-3 py-2">
+  1123→                              <Badge variant="outline" className={o.side === 'ask' ? 'border-amber-500/40 text-amber-400' : 'border-emerald-500/40 text-emerald-400'}>
+  1124→                                {o.side === 'ask' ? 'מכירה' : 'קנייה'}
+  1125→                              </Badge>
+  1126→                            </td>
+  1127→                            <td className="px-3 py-2 tabular-nums">{o.base}</td>
+  1128→                            <td className="px-3 py-2 tabular-nums text-slate-300">{o.quote}</td>
+  1129→                            <td className="px-3 py-2 tabular-nums font-bold">{o.unit.toFixed(4)}</td>
+  1130→                          </tr>
+  1131→                        ))}
+  1132→                      </tbody>
+  1133→                    </table>
+  1134→                  </div>
+  1135→                )}
+  1136→              </CardContent>
+  1137→            </Card>
+  1138→
+  1139→            {/* רשת-טריגרים */}
+  1140→            <Card className="border-slate-800 bg-slate-900/60">
+  1141→              <CardHeader className="pb-2">
+  1142→                <CardTitle className="flex items-center gap-2 text-sm text-slate-300">
+  1143→                  <GitBranch className="h-4 w-4" aria-hidden /> רשת-הטריגרים · דבר-גורר-דבר
+  1144→                </CardTitle>
+  1145→              </CardHeader>
+  1146→              <CardContent>
+  1147→                <dl className="grid grid-cols-2 gap-2 text-sm">
+  1148→                  <div><dt className="text-xs text-slate-500">טיקים</dt><dd className="font-bold tabular-nums">{s?.grid?.runCount ?? '—'}</dd></div>
+  1149→                  <div><dt className="text-xs text-slate-500">מילויי-סימולציה</dt><dd className="font-bold tabular-nums">{s?.grid?.simFills ?? '—'}</dd></div>
+  1150→                  <div><dt className="text-xs text-slate-500">עמלות-סימולציה (µ)</dt><dd className="font-bold tabular-nums">{f2(s?.grid?.simFeesMu)}</dd></div>
+  1151→                  <div><dt className="text-xs text-slate-500">גרידים-פעילים</dt><dd className="font-bold">{s?.grid?.grids?.filter((g) => g.active).length ?? 0}/{s?.grid?.grids?.length ?? 0}</dd></div>
+  1152→                </dl>
+  1153→                <p className="text-[11px] text-slate-500 mt-2">טיק מזריק אירועים ל-bus → peg ומוביל ניזונים ממנו — השרשרת הפנימית חיה.</p>
+  1154→              </CardContent>
+  1155→            </Card>
+  1156→
+  1157→            {/* יומן-אירועים מקומי */}
+  1158→            <Card className="border-slate-800 bg-slate-900/60 md:col-span-2 lg:col-span-3">
+  1159→              <CardHeader className="pb-2">
+  1160→                <CardTitle className="flex items-center gap-2 text-sm text-slate-300">
+  1161→                  <Anchor className="h-4 w-4" aria-hidden /> יומן-אירועים · מנוע-ריבוני (state/events.jsonl)
+  1162→                </CardTitle>
+  1163→              </CardHeader>
+  1164→              <CardContent>
+  1165→                {!s?.events?.length ? (
+  1166→                  <p className="text-sm text-slate-500">אין-אירועים עדיין — השכבה-הריבונית מריצה מחזורים אוטומטית כל 10 דק (T-10)</p>
+  1167→                ) : (
+  1168→                  <div className="max-h-64 overflow-y-auto rounded-lg border border-slate-800 divide-y divide-slate-800/70">
+  1169→                    {[...s.events].reverse().map((e, i) => (
+  1170→                      <div key={i} className="px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs hover:bg-slate-800/40 transition-colors">
+  1171→                        <span className="text-slate-500 tabular-nums">{e.at?.replace('T', ' ')?.slice(0, 19)}</span>
+  1172→                        <Badge variant="outline" className="border-cyan-500/30 text-cyan-300">{e.type ?? '?'}</Badge>
+  1173→                        {Object.entries(e)
+  1174→                          .filter(([k, v]) => !['type', 'at'].includes(k) && v !== null && v !== undefined && typeof v !== 'object')
+  1175→                          .slice(0, 4)
+  1176→                          .map(([k, v]) => <span key={k} className="text-slate-400">{k}: {String(v)}</span>)}
+  1177→                      </div>
+  1178→                    ))}
+  1179→                  </div>
+  1180→                )}
+  1181→              </CardContent>
+  1182→            </Card>
+  1183→          </div>
+  1184→        )}
+  1185→      </main>
+  1186→
+  1187→      {/* FOOTER — sticky */}
+  1188→      <footer className="mt-auto border-t border-slate-800 bg-slate-950">
+  1189→        <div className="mx-auto max-w-6xl px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+  1190→          <p>אמת-מוטבעת-על-שרשרת בלבד · מפתח-מוחזק-מנוע · מוגבל-דוקטרינה · לעולם לא נרשם · ראיות: mini-services/saos-engine/state</p>
+  1191→          <p>T-12 · ריבונות-מלאה · {s?.asof?.slice(11, 19) ?? ''} UTC</p>
+  1192→        </div>
+  1193→      </footer>
+  1194→    </div>
+  1195→  )
+  1196→}
+  1197→

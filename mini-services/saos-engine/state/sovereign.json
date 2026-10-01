@@ -1,28 +1,28 @@
 {
-  "bootedAt": "2026-09-30T17:34:17.192Z",
-  "pid": 9211,
+  "bootedAt": "2026-10-01T20:04:40.191Z",
+  "pid": 1094,
   "armed": true,
   "paused": false,
   "watchdog": {
-    "checks": 697,
-    "downs": 10,
-    "heals": 22,
-    "healVerified": 21,
+    "checks": 795,
+    "downs": 11,
+    "heals": 23,
+    "healVerified": 22,
     "healFailed": 0,
-    "lastCheckAt": "2026-09-30T22:21:19.278Z",
+    "lastCheckAt": "2026-10-01T21:41:40.260Z",
     "engineUp": true,
-    "lastSpawnAt": "2026-09-30T18:43:17.269Z"
+    "lastSpawnAt": "2026-10-01T20:04:40.211Z"
   },
   "cycles": {
-    "autoRuns": 71,
-    "ok": 52,
-    "fail": 19,
-    "blocked": 0,
-    "lastAt": "2026-09-30T22:14:33.405Z",
-    "lastOk": true,
-    "lastHealth": "ok",
-    "lastMs": 15542,
-    "nextAt": "2026-09-30T22:24:33.405Z"
+    "autoRuns": 81,
+    "ok": 55,
+    "fail": 20,
+    "blocked": 6,
+    "lastAt": "2026-10-01T21:34:48.217Z",
+    "lastOk": false,
+    "lastHealth": "fail",
+    "lastMs": 4266,
+    "nextAt": "2026-10-01T21:44:48.217Z"
   },
   "selftest": {
     "runs": 0,
@@ -32,13 +32,19 @@
     "total": null
   },
   "cred": {
-    "present": true,
-    "firstDownAt": null,
-    "lastDownAt": "2026-09-30T16:48:15.090Z",
-    "alerts": 2,
-    "lastAlertAt": "2026-09-30T16:27:15.068Z"
+    "present": false,
+    "firstDownAt": "2026-10-01T21:38:40.262Z",
+    "lastDownAt": "2026-10-01T21:41:40.263Z",
+    "alerts": 4,
+    "lastAlertAt": "2026-10-01T21:38:40.262Z"
   },
   "control": [
+    {
+      "at": "2026-10-01T20:04:40.191Z",
+      "action": "boot",
+      "by": "instrumentation",
+      "note": "SovereignCore armed"
+    },
     {
       "at": "2026-09-30T17:34:17.192Z",
       "action": "boot",
@@ -147,12 +153,6 @@
       "at": "2026-09-29T17:44:38.777Z",
       "action": "boot",
       "by": "instrumentation",
-      "note": "SovereignCore armed"
-    },
-    {
-      "at": "2026-09-29T17:42:39.754Z",
-      "action": "boot",
-      "by": "api-snapshot",
       "note": "SovereignCore armed"
     }
   ]

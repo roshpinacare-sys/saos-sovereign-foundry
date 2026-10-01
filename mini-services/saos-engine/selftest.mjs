@@ -5,6 +5,7 @@
 import {
   dragK, inventorySkew, planLadder, planConvert, classifyStale, pnlFromFills, guardDepth, parityVerdict,
   MIN_LEVEL, ASK_FLOOR_BPS,
+  doctrineAccount, credentialGate, rcAnomaly, recruitRoles, aggregateRails,
 } from "./lib.mjs";
 import { tick, fold } from "./grid.mjs";
 import { classifyAgent } from "./fleet.mjs";
@@ -588,5 +589,58 @@ const dEmpty = diffHyperTick({ planned: [], live: [LIVE()], epsBps: 2, ttlMs: 60
 eq("diff empty-plan-cancels-live", dEmpty.cancelIds, [2_100_000_001]);
 ok("diff ids-immutable-input", (() => { const live = [LIVE()]; diffHyperTick({ planned: [], live, epsBps: 2, ttlMs: 0, nowMs: 0 }); return live[0].orderid === 2_100_000_001; })());
 
+/* ═════ T-21 · IDENTITY-INTEGRITY: doctrine account, adopt gate, RC anomaly ═════ */
+eq("doctrine env-wins", doctrineAccount("hc2"), "hc2");
+eq("doctrine default", doctrineAccount(""), "headcorner");
+eq("doctrine file-NEVER-wins (the proven hijack)", doctrineAccount(undefined, "testuser"), "headcorner");
+eq("gate same-account-allowed", credentialGate("headcorner", "headcorner").allow, true);
+ok("gate foreign-refused", credentialGate("testuser", "headcorner").allow === false);
+ok("gate foreign-reason-names-both", /testuser.*headcorner|headcorner.*testuser/.test(credentialGate("testuser", "headcorner").reason ?? ""));
+ok("gate empty-account-refused", credentialGate("", "headcorner").allow === false);
+ok("rcAnomaly first-read-ok", rcAnomaly(null, 6.1e12) === false);
+ok("rcAnomaly stable-ok", rcAnomaly(6.1e12, 6.14e12) === false);
+ok("rcAnomaly 10x-drop-blocks", rcAnomaly(6.1e12, 6.1e10) === true);
+ok("rcAnomaly no-evidence-blocks", rcAnomaly(6.1e12, 0) === true);
+ok("rcAnomaly growth-never-anomaly", rcAnomaly(6.1e12, 6.1e13) === false);
+
+/* ═════ T-21 · RECRUITER: a role exists only with named evidence ═════ */
+const full = recruitRoles({ evidence: { marketPulse: "m", rcEconomics: "r", fillAudit: "f", convert: "c", promo: "p", curation: "cu", selftest: "s", recruiter: "x" }, now: "2026-10-01T22:00:00Z", prior: {} });
+eq("recruit full-verdict", full.verdict, "FULL-STRENGTH");
+eq("recruit full-count", full.active, 8);
+ok("recruit rows-carry-truth-contract", full.roster.every((r) => typeof r.truthContract === "string" && r.truthContract.length > 8));
+ok("recruit rows-carry-evidence", full.roster.every((r) => r.status !== "active" || (r.evidence ?? "").length > 0));
+const partial = recruitRoles({ evidence: { recruiter: "x", curation: "cu" }, now: "2026-10-01T22:00:00Z", prior: {} });
+eq("recruit partial-verdict", partial.verdict, "RECRUITED");
+eq("recruit partial-count", partial.active, 2);
+ok("recruit missing-role-planned", partial.roster.find((r) => r.id === "market-analyst").status === "planned");
+const demoted = recruitRoles({ evidence: { recruiter: "x" }, now: "2026-10-01T23:00:00Z", prior: partial });
+ok("recruit stale-role-demoted", demoted.roster.find((r) => r.id === "curation-steward").status === "planned" && demoted.roster.find((r) => r.id === "curation-steward").priorStatus === "active");
+ok("recruit recruitedAt-preserved", demoted.roster.find((r) => r.id === "curation-steward").recruitedAt === "2026-10-01T22:00:00Z");
+
+/* ═════ T-21 · MULTI-RAIL ECONOMICS: totals never merge across classes ═════ */
+const econRails = aggregateRails({
+  realizedSbdTotal: 3.0, realizedWindowDays: 7, sbdUsd: 0.64, steemUsd: 0.065,
+  curationEstSteemPerDay: 9.68, convertEdgeBps: 6409, convertAmountSbd: 0, convertVerdict: "CONVERT-HOLD",
+  promoPostsPerDay: 1, promoEstUsdPerPost: null, fuelUsdPerDay: 0.2, hyperOpsPerDay: 32086, parity: 0.1,
+});
+ok("econ measured-mm", econRails.rails.find((r) => r.id === "market-making").measuredUsdPerDay != null);
+ok("econ curation-estimated", econRails.rails.find((r) => r.id === "curation").confidence === "estimated");
+ok("econ convert-blocked-honest", econRails.rails.find((r) => r.id === "convert-arb").confidence === "blocked");
+ok("econ hyper-presence-not-priced", econRails.rails.find((r) => r.id === "hyper-presence").measuredUsdPerDay === null);
+ok("econ totals-separate", econRails.totalMeasuredUsdPerDay !== econ.totalEstUsdPerDay);
+ok("econ measured-never-inflated-by-est", econRails.totalMeasuredUsdPerDay === Math.round(3 / 7 * 0.64 * 1e6) / 1e6);
+const econNoData = aggregateRails({});
+ok("econ empty-all-blocked", econNoData.blockedCount === econNoData.rails.length && econNoData.totalMeasuredUsdPerDay === 0 && econNoData.totalEstUsdPerDay === 0);
+ok("econ junk-tolerated", aggregateRails({ realizedSbdTotal: "x", curationEstSteemPerDay: NaN }).rails.find((r) => r.id === "market-making").measuredUsdPerDay === null);
+
 console.log(`\nSELFTEST ${pass}/${pass + fail} ${fail === 0 ? "PASS" : "FAIL"}`);
+/* T-21 · last-run marker: the recruiter's evidence for the integrity-auditor
+ * role — written ONLY on a full run, never by a partial import. */
+try {
+  const fs = await import("node:fs");
+  const path = await import("node:path");
+  const STATE = path.join(path.dirname(new URL(import.meta.url).pathname), "state");
+  fs.mkdirSync(STATE, { recursive: true });
+  fs.writeFileSync(path.join(STATE, "selftest-last-run.json"), JSON.stringify({ pass, fail, at: new Date().toISOString(), vectors: pass + fail }, null, 2));
+} catch { /* state dir may be read-only in CI — the verdict above stands */ }
 process.exit(fail === 0 ? 0 : 1);

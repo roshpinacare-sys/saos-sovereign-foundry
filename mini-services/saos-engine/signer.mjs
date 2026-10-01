@@ -18,7 +18,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { rpcCall, accountState } from "./measure.mjs";
 import { SEED_ORDERS, wifFor, derivePub, buildTx, fingerprint } from "./steemtx.mjs";
-import { validateCredentialText, vpSpoilage, stickyNodeOrder } from "./lib.mjs";
+import { validateCredentialText, vpSpoilage, stickyNodeOrder, credentialGate, doctrineAccount } from "./lib.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const SECRETS = path.join(DIR, "..", "..", ".secrets");
@@ -91,6 +91,16 @@ const mem = { identities: {}, master: null, keyFileFp: null }; // account → { 
 export function adoptCredentialText(text, { source = "paste" } = {}) {
   const v = validateCredentialText(text);
   if (!v.ok) return { ok: false, reason: v.reason };
+  /* T-21 IDENTITY-INTEGRITY GATE: a paste for a FOREIGN account is refused
+   * at the door — nothing written, nothing cached, nothing measured. The
+   * proven-live failure (2026-10-01: one diagnostic paste flipped every
+   * measurement rail to "testuser" for hours) dies here. The account name
+   * is public; the refusal is journaled WITHOUT any secret material. */
+  const gate = credentialGate(v.account, masterAccount());
+  if (!gate.allow) {
+    appendLine(path.join(STATE, "events.jsonl"), { type: "cred.adopt-refused", at: new Date().toISOString(), source, account: v.account, doctrine: masterAccount(), reason: gate.reason });
+    return { ok: false, reason: gate.reason, doctrineAccount: masterAccount() };
+  }
   // same normalized split as the validator — the secret stays inside this scope
   const fields = String(text ?? "").trim().split(/[\s:=]+/).filter(Boolean);
   const secret = fields.slice(1).join(" ");
@@ -130,19 +140,51 @@ function noteCredMissing() {
     writeJson(CRED_ALARM_FILE, prev);
   } catch { /* best effort — never crash the caller on alarm bookkeeping */ }
 }
+
+/* T-21 · foreign-credential alarm: the file exists but names a DIFFERENT
+ * account than the doctrine account of record. Signing is honestly dead
+ * (FOREIGN-CREDENTIAL thrown); measurement stays on the doctrine account.
+ * Journaled at most once/hour like the missing alarm — no spam. */
+function noteForeignCredential(fileAcct) {
+  try {
+    const now = new Date().toISOString();
+    const prev = readJson(CRED_ALARM_FILE, { missingSince: null, lastAlertAt: null, alerts: 0, foreignSince: null, foreignAccount: null });
+    if (!prev.foreignSince || prev.foreignAccount !== fileAcct) { prev.foreignSince = now; prev.foreignAccount = fileAcct; }
+    const hourAgo = Date.now() - 3600_000;
+    if (!prev.lastAlertAt || Date.parse(prev.lastAlertAt) < hourAgo) {
+      prev.lastAlertAt = now;
+      prev.alerts = (prev.alerts ?? 0) + 1;
+      appendLine(LOG_FILE, { at: now, tag: "cred-foreign", verdict: "SIGNING-DEAD", fileAccount: fileAcct, doctrine: masterAccount(), revival: `paste the ${masterAccount()} credential (cockpit wallet console)` });
+      appendLine(path.join(STATE, "events.jsonl"), { type: "cred.foreign", at: now, verdict: "SIGNING-DEAD", fileAccount: fileAcct, doctrine: masterAccount(), agentsAffected: ["curate", "execute", "soldiers", "promo"] });
+    }
+    writeJson(CRED_ALARM_FILE, prev);
+  } catch { /* best effort — never crash the caller on alarm bookkeeping */ }
+}
+
 export function credentialState() {
   let present = false;
   try { fs.accessSync(KEY_FILE, fs.constants.R_OK); present = true; } catch { present = false; }
   const alarm = readJson(CRED_ALARM_FILE, { missingSince: null, lastAlertAt: null, alerts: 0 });
   const conf = armedConf();
+  /* T-21 transparency: the file's own account vs the doctrine account of
+   * record — a difference is a FOREIGN credential (signing dead, honest). */
+  const fileAcct = credentialFileAccount();
+  const doctrine = masterAccount();
+  const foreign = present && fileAcct != null && fileAcct !== doctrine;
   return {
     present,
     keyFile: ".secrets/headcorner.key",
+    doctrineAccount: doctrine,
+    credentialAccount: fileAcct,
+    foreignCredential: foreign,
+    foreignSince: foreign ? (alarm.foreignSince ?? null) : null,
     armedButNoCredential: !!conf.armed && !present,
     missingSince: present ? null : (alarm.missingSince ?? null),
     alerts: alarm.alerts ?? 0,
-    agentsAffected: present ? [] : ["curate", "execute", "soldiers", "promo"],
-    revival: present ? null : "drop the CURRENT master-password file as upload/headcorner.txt → engine secures+adopts automatically (0600, upload copy removed, zero restart)",
+    agentsAffected: present ? (foreign ? ["curate", "execute", "soldiers", "promo"] : []) : ["curate", "execute", "soldiers", "promo"],
+    revival: present
+      ? (foreign ? `the key file holds "${fileAcct}" but the account of record is "${doctrine}" — paste the ${doctrine} credential in the wallet console` : null)
+      : "drop the CURRENT master-password file as upload/headcorner.txt → engine secures+adopts automatically (0600, upload copy removed, zero restart)",
   };
 }
 
@@ -233,6 +275,13 @@ export function loadCredential(account = null) {
     const fields = raw.trim().split(/[\s:=]+/).filter(Boolean);
     if (fields.length < 2) throw new Error("credential-format");
     acct = fields[0]; password = fields.slice(1).join(" ");
+    /* T-21: a credential file for a FOREIGN account is a typed honest
+     * kill of SIGNING — measurement rails keep running on the doctrine
+     * account (masterAccount() never reads this file anymore). */
+    if (acct !== masterAccount()) {
+      noteForeignCredential(acct);
+      throw new Error(`FOREIGN-CREDENTIAL: the key file holds "${acct}" but this engine's account of record is "${masterAccount()}" — paste the ${masterAccount()} credential to revive signing`);
+    }
   }
   const id = identity(acct);
   id.password = password;
@@ -241,17 +290,24 @@ export function loadCredential(account = null) {
 
 export function masterAccount() {
   if (mem.master) return mem.master;
-  // T-15: the account NAME is public (it's on-chain) — a missing credential
-  // file must never crash callers with a raw ENOENT here; the typed
-  // CREDENTIAL-MISSING alarm belongs to loadCredential (the secret read).
-  let acct = null;
+  /* T-21 IDENTITY-INTEGRITY LAW (the proven-live hijack, killed):
+   * the account of record is the DOCTRINE account — NEVER the first field
+   * of a credential file. A wrong or hostile paste can kill SIGNING (typed
+   * CREDENTIAL-MISSING / FOREIGN-CREDENTIAL below) but can never steal
+   * MEASUREMENT: RC, book ownership, cancels, governor economics all stay
+   * pinned to the doctrine account no matter what lands in .secrets/. */
+  mem.master = doctrineAccount(process.env.SAOS_ACCOUNT);
+  return mem.master;
+}
+
+/** the credential file's own account field (public info) — transparency
+ * only: it can DIFFER from masterAccount() (foreign credential), and that
+ * difference must be visible, not silent. Never used for routing. */
+export function credentialFileAccount() {
   try {
     const raw = fs.readFileSync(KEY_FILE, "utf8");
-    const fields = raw.trim().split(/[\s:=]+/).filter(Boolean);
-    acct = fields[0] ?? null;
-  } catch { /* fall through to the known public account name */ }
-  mem.master = acct || process.env.SAOS_ACCOUNT || "headcorner";
-  return mem.master;
+    return raw.trim().split(/[\s:=]+/).filter(Boolean)[0] ?? null;
+  } catch { return null; }
 }
 
 export function credentialFingerprint(account = null) {
@@ -330,6 +386,7 @@ export async function execStatus() {
     credential: cred,
     fingerprint: ver?.fingerprint ?? null,
     account: master,
+    credentialAccount: credentialFileAccount(),
     armed: conf.armed && !execPaused(),
     standingOrder: conf.armed,
     operatorPaused: execPaused(),
