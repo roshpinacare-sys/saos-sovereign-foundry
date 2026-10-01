@@ -9,14 +9,14 @@
       "note": "no fill window yet — measured once real fills accumulate",
       "meta": {
         "realizedSbdTotal": -0.76543,
-        "fillsToday": 54
+        "fillsToday": 53
       }
     },
     {
       "id": "curation",
       "label": "קיורציה · מסילת-דלק",
       "measuredUsdPerDay": null,
-      "estUsdPerDay": 0.617862,
+      "estUsdPerDay": 0.617589,
       "confidence": "estimated",
       "note": "~9.7 STEEM/יום — ESTIMATED (payout clock ~7d, first verification T-18c)"
     },
@@ -32,9 +32,9 @@
       "id": "convert-arb",
       "label": "ארביטרז'-המרה · SBD print path",
       "measuredUsdPerDay": null,
-      "estUsdPerDay": 3.878247,
+      "estUsdPerDay": 3.555838,
       "confidence": "estimated",
-      "note": "edge 6335bps on 10 SBD"
+      "note": "edge 5518bps on 10 SBD"
     },
     {
       "id": "promo",
@@ -57,17 +57,17 @@
     }
   ],
   "totalMeasuredUsdPerDay": 0,
-  "totalEstUsdPerDay": 4.496109,
+  "totalEstUsdPerDay": 4.173427,
   "measuredCount": 1,
   "estimatedCount": 3,
   "blockedCount": 2,
   "law": "סכום-מדוד וסכום-מוערך לעולם לא מתמזגים — שתי שורות-אמת נפרדות",
-  "parity": 0.10410105276068886,
-  "asof": "2026-10-01T22:34:40.210Z",
+  "parity": 0.09883505300221755,
+  "asof": "2026-10-01T22:54:40.260Z",
   "context": {
-    "venueFillsPerDay": 66,
-    "venueVolSteem24h": 2320.212,
-    "ourFillsObservable": 54,
+    "venueFillsPerDay": 68,
+    "venueVolSteem24h": 2490.762,
+    "ourFillsObservable": 53,
     "scalingLaw": "ops/day ∝ RC ∝ SP — ההון-החכם מכפיל את התקרה, לא את הקוד"
   },
   "pid": 1213

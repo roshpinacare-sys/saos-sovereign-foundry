@@ -250,3 +250,6 @@
 {"at":"2026-10-01T22:14:44.218Z","kind":"cycle-blocked(auto)","ms":3928,"engineMeasured":true,"steps":12,"verdict":null,"blockedSteps":["curate","execute","soldiers"],"error":null}
 {"at":"2026-10-01T22:24:48.220Z","kind":"cycle-blocked(auto)","ms":5219,"engineMeasured":true,"steps":16,"verdict":null,"blockedSteps":["curate","execute","soldiers"],"error":null}
 {"at":"2026-10-01T22:34:48.218Z","kind":"cycle-blocked(auto)","ms":4368,"engineMeasured":true,"steps":16,"verdict":null,"blockedSteps":["curate","execute","soldiers"],"error":null}
+{"at":"2026-10-01T22:38:40.292Z","kind":"cred-missing","verdict":"SIGNING-DEAD","agentsAffected":["curate","execute","soldiers","promo"],"revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}
+{"at":"2026-10-01T22:44:48.244Z","kind":"cycle-blocked(auto)","ms":5118,"engineMeasured":true,"steps":16,"verdict":null,"blockedSteps":["curate","execute","soldiers"],"error":null}
+{"at":"2026-10-01T22:54:48.268Z","kind":"cycle-blocked(auto)","ms":5344,"engineMeasured":true,"steps":16,"verdict":null,"blockedSteps":["curate","execute","soldiers"],"error":null}

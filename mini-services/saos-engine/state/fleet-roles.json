@@ -13,7 +13,7 @@
       "cadence": "cycle",
       "truthContract": "numbers only from market_history_api reads, labeled measured",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/market.json: 66 trades/24h measured (vol 2320.212 STEEM)",
+      "evidence": "state/market.json: 68 trades/24h measured (vol 2490.762 STEEM)",
       "priorStatus": "active"
     },
     {
@@ -37,7 +37,7 @@
       "cadence": "cycle+tail",
       "truthContract": "countDayFillsFromHistory / countDayOrderOpsFromHistory on real rows",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/observe.json: 54 chain-truth fills counted (last 2026-10-01T22:18:36.000Z)",
+      "evidence": "state/observe.json: 53 chain-truth fills counted (last 2026-10-01T22:48:39.000Z)",
       "priorStatus": "active"
     },
     {
@@ -49,7 +49,7 @@
       "cadence": "cycle",
       "truthContract": "edge in bps from measured market vs implied, HOLD verdict honest",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/convert-plan.json: CONVERT-PLAN (edge 6335bps)",
+      "evidence": "state/convert-plan.json: CONVERT-PLAN (edge 5518bps)",
       "priorStatus": "active"
     },
     {
@@ -85,7 +85,7 @@
       "cadence": "daily (T-22 standing)",
       "truthContract": "PASS required before any deploy; failures block",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/selftest-last-run.json: 282/282 PASS at 2026-10-01T22:23:08.183Z",
+      "evidence": "state/selftest-last-run.json: 282/282 PASS at 2026-10-01T22:34:57.966Z",
       "priorStatus": "active"
     },
     {
@@ -109,10 +109,10 @@
       "cadence": "6h",
       "truthContract": "findings carry url+date from real search results; no finding without a source",
       "recruitedAt": "2026-10-01T22:23:08.223Z",
-      "evidence": "state/webintel.json: 20 sourced findings, age 0h — external recon live",
+      "evidence": "state/webintel.json: 20 sourced findings, age 1h — external recon live",
       "priorStatus": "active"
     }
   ],
-  "at": "2026-10-01T22:34:40.210Z",
+  "at": "2026-10-01T22:54:40.260Z",
   "pid": 1213
 }

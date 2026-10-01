@@ -1,24 +1,23 @@
 {
   "account": "headcorner",
   "parity": {
-    "steemUsd": 0.06373,
-    "sbdUsd": 0.6121936167783505,
-    "parity": 0.10410105276068886,
-    "source": "internal-feed-fallback+derived-sbd",
-    "lowConfidence": true
+    "steemUsd": 0.06369,
+    "sbdUsd": 0.644407,
+    "parity": 0.09883505300221755,
+    "source": "coingecko"
   },
   "feed": 0.10410105276068886,
   "band": {
     "ok": true,
     "reason": "band-ok",
-    "bps": 0
+    "bps": -506
   },
-  "steemUsd": 0.06373,
-  "sbdUsd": 0.6121936167783505,
+  "steemUsd": 0.06369,
+  "sbdUsd": 0.644407,
   "inventory": {
     "steem": 115.972,
-    "sbd": 51.338,
-    "spOwn": 4035.2925488689316,
+    "sbd": 68.394,
+    "spOwn": 4035.2963684305396,
     "rcPct": 100
   },
   "ordersOk": true,
@@ -26,10 +25,10 @@
     {
       "orderid": 2026100103,
       "side": "ask",
-      "base": "255.825 STEEM",
-      "quote": "25.827 SBD",
-      "unit": 0.100956,
-      "created": "2026-10-01T22:18:42"
+      "base": "85.275 STEEM",
+      "quote": "8.596 SBD",
+      "unit": 0.100803,
+      "created": "2026-10-01T22:48:45"
     },
     {
       "orderid": 2026100191,
@@ -56,19 +55,19 @@
       "created": "2026-10-01T20:48:00"
     }
   ],
-  "fills": 54,
-  "lastFillAt": "2026-10-01T22:18:36.000Z",
+  "fills": 53,
+  "lastFillAt": "2026-10-01T22:48:39.000Z",
   "pnl": {
-    "fills": 54,
-    "buys": 35,
-    "sells": 19,
-    "boughtSteem": 158.004,
-    "spentSbd": 16.782,
-    "soldSteem": 547.585,
-    "proceedsSbd": 54.98,
-    "realizedSbd": -0.76543,
-    "unbasedSteem": 389.581,
-    "unbasedSbd": 38.96343,
+    "fills": 53,
+    "buys": 32,
+    "sells": 21,
+    "boughtSteem": 51.948,
+    "spentSbd": 5.311,
+    "soldSteem": 718.135,
+    "proceedsSbd": 72.036,
+    "realizedSbd": 0.020078,
+    "unbasedSteem": 666.187,
+    "unbasedSbd": 66.704922,
     "positionSteem": 0,
     "positionCostSbd": 0,
     "positionAvgCost": null
@@ -79,7 +78,7 @@
     "authorVestsPerDay": 0,
     "curationOps": 0,
     "authorOps": 0,
-    "windowSpanDays": 3.9,
+    "windowSpanDays": 3.79,
     "windowOps": 1001,
     "measured": true,
     "fuelUsdPerDay": 0,
@@ -88,5 +87,5 @@
     "node": "https://steemapi.boylikegirl.club",
     "windowNote": "no reward ops inside the measured window — rails dormant, not a parse failure (deep-scan documented separately)"
   },
-  "at": "2026-10-01T22:34:40.210Z"
+  "at": "2026-10-01T22:54:40.260Z"
 }
