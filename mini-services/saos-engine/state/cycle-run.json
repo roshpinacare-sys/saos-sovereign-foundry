@@ -1,8 +1,8 @@
 {
   "running": false,
-  "startedAt": "2026-10-01T21:44:40.211Z",
-  "finishedAt": "2026-10-01T21:44:44.573Z",
-  "ms": 4362,
+  "startedAt": "2026-10-01T22:34:40.210Z",
+  "finishedAt": "2026-10-01T22:34:44.579Z",
+  "ms": 4368,
   "health": "blocked",
   "ok": false,
   "steps": {
@@ -15,8 +15,12 @@
     "execute": false,
     "soldiers": false,
     "learn": true,
-    "recruit": true,
+    "webintel": true,
+    "content": true,
+    "rctank": true,
+    "selftest": true,
     "economics": true,
+    "recruit": true,
     "report": true
   },
   "blockedSteps": [

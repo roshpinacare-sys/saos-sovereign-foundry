@@ -1,0 +1,19 @@
+{
+  "day": "2026-10-01",
+  "at": "2026-10-01T22:20:15.557Z",
+  "account": "headcorner",
+  "verdict": "MEASURED",
+  "maxRc": 6138717856759,
+  "rcPct": 100,
+  "opsPerDayEquilibrium": 32086,
+  "prevDayMaxRc": null,
+  "growthPct": null,
+  "scalingLaw": "ops/day ∝ RC ∝ SP — העקומה הזאת מדודה יום-יום, לא מובטחת",
+  "history": [
+    {
+      "day": "2026-10-01",
+      "maxRc": 6138717856759,
+      "opsPerDay": 32086
+    }
+  ]
+}

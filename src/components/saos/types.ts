@@ -130,6 +130,66 @@ export type Status = {
     totalMeasuredUsdPerDay?: number | null
     totalEstUsdPerDay?: number | null
   } | null
+  /* T-22f · the standing teams (T-22) — engine-computed (one-body law), cockpit only renders.
+   * Loose but honest: nullable exactly where the engine emits null. */
+  webintel?: {
+    verdict?: string | null
+    fetchedAt?: string | null
+    totalFindings?: number
+    droppedJunk?: number
+    failedScans?: number
+    scans?: {
+      id?: string
+      note?: string
+      count?: number
+      dropped?: number
+      findings?: {
+        title?: string
+        url?: string
+        snippet?: string
+        host?: string
+        date?: string | null
+        query?: string
+        fetchedAt?: string | null
+      }[]
+    }[]
+    history?: { fetchedAt?: string | null; totalFindings?: number; verdict?: string | null }[]
+    law?: string | null
+    ms?: number | null
+  } | null
+  content?: {
+    verdict?: string | null
+    draftedAt?: string | null
+    draftsQueued?: number
+    exposureBlocked?: number
+    queue?: {
+      id?: string
+      title?: string
+      body?: string
+      tags?: string[]
+      angle?: string
+      seoNote?: string
+      status?: string
+      draftedAt?: string | null
+      groundedOn?: string[]
+    }[]
+    law?: string | null
+    bridgeError?: string | null
+    ms?: number | null
+  } | null
+  rcTank?: {
+    day?: string | null
+    at?: string | null
+    account?: string | null
+    verdict?: string | null
+    maxRc?: number | null
+    rcPct?: number | null
+    opsPerDayEquilibrium?: number | null
+    prevDayMaxRc?: number | null
+    growthPct?: number | null
+    history?: { day?: string; maxRc?: number | null; opsPerDay?: number | null }[]
+    scalingLaw?: string | null
+  } | null
 }
 
 export type EngineResp = { ok?: boolean; health?: 'ok' | 'blocked' | 'fail'; failures?: { failedSteps?: string[]; blockedSteps?: string[] }; steps?: Record<string, { ok?: boolean; skipped?: boolean; verdict?: string; error?: string }>; rollup?: { measuredTotalUsdPerDay?: number | null; realizedSbd?: number | null }; finishedAt?: string; error?: string; engine?: string }

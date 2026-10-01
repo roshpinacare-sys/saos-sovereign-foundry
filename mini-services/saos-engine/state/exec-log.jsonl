@@ -327,3 +327,4 @@
 {"at":"2026-10-01T20:04:46.763Z","tag":"cred-missing","verdict":"SIGNING-DEAD","keyFile":"/home/z/my-project/.secrets/headcorner.key","revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}
 {"at":"2026-10-01T21:00:39.537Z","tag":"credential-adopted","source":"cockpit-paste","account":"testuser","fingerprint":"151a1d9f"}
 {"at":"2026-10-01T21:33:07.798Z","tag":"cred-foreign","verdict":"SIGNING-DEAD","fileAccount":"testuser","doctrine":"headcorner","revival":"paste the headcorner credential (cockpit wallet console)"}
+{"at":"2026-10-01T22:33:22.843Z","tag":"cred-missing","verdict":"SIGNING-DEAD","keyFile":"/home/z/my-project/.secrets/headcorner.key","revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}

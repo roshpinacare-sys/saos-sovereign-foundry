@@ -56,3 +56,4 @@ server.log
 # secrets — never commit
 upload/
 .secrets/
+tool-results/

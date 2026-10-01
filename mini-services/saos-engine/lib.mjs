@@ -668,8 +668,9 @@ export function recruitRoles({ evidence = {}, now = null, prior = {} } = {}) {
     { id: "treasury-sentinel", role: "שומר-אוצר", lane: "arbitrage", capability: "convert-arb edge monitor — SBD print path held honest (dust-or-capped)", key: "convert", cadence: "cycle", truthContract: "edge in bps from measured market vs implied, HOLD verdict honest" },
     { id: "content-strategist", role: "אסטרטג-תוכן", lane: "growth", capability: "daily SEO-smart promo report — network presence without exposure", key: "promo", cadence: "daily", truthContract: "posted txid journaled; claims never exceed the measured state" },
     { id: "curation-steward", role: "מושל-קיורציה", lane: "fuel", capability: "doctrine vote rail — day-cap enforced on max(state, chain-truth)", key: "curation", cadence: "cycle", truthContract: "budgetCounted basis journaled on every verdict" },
-    { id: "integrity-auditor", role: "מבקר-שלמות", lane: "truth", capability: "offline deterministic selftest core (237 vectors) — the honesty contract itself", key: "selftest", cadence: "on change", truthContract: "PASS required before any deploy; failures block" },
+    { id: "integrity-auditor", role: "מבקר-שלמות", lane: "truth", capability: "offline deterministic selftest core (the honesty contract itself, run daily by the machine)", key: "selftest", cadence: "daily (T-22 standing)", truthContract: "PASS required before any deploy; failures block" },
     { id: "fleet-recruiter", role: "מגייס-הצבא", lane: "doctrine", capability: "this very ladder — turns running capabilities into accountable stations", key: "recruiter", cadence: "cycle", truthContract: "a role exists only with named evidence in state" },
+    { id: "web-intel", role: "מודיעין-רשת", lane: "growth", capability: "external eyes — rotating web scans of the STEEM/SBD ecosystem, competitors and market news, feeding the strategist and the analyst", key: "webIntel", cadence: "6h", truthContract: "findings carry url+date from real search results; no finding without a source" },
   ];
   const priorById = {};
   for (const r of (Array.isArray(prior?.roster) ? prior.roster : [])) {
@@ -788,4 +789,47 @@ export function aggregateRails({ realizedSbdTotal = null, realizedWindowDays = n
     law: "סכום-מדוד וסכום-מוערך לעולם לא מתמזגים — שתי שורות-אמת נפרדות",
     parity: r6(parity),
   };
+}
+
+/* ═══════════════════════════ T-22 · WEB-INTEL NORMALIZER (עיניים-חיצוניות) ═══════════════════════════
+ * The machine's own external-intelligence team: raw search results are
+ * normalized into dated, sourced findings — a finding without url+source is
+ * not a finding (the truth contract of the web-intel station). Pure.
+ * Junk-tolerant: bad rows drop, never poison the file. */
+export function normalizeWebIntel({ results = [], query = "", fetchedAt = null } = {}) {
+  const cut = (s, n) => String(s ?? "").slice(0, n);
+  const findings = [];
+  for (const r of (Array.isArray(results) ? results : [])) {
+    if (!r || typeof r !== "object") continue;
+    const url = typeof r.url === "string" && r.url.startsWith("http") ? r.url : null;
+    const title = typeof r.name === "string" && r.name.trim().length > 3 ? r.name.trim() : null;
+    if (!url || !title) continue; // no-source findings are not findings
+    findings.push({
+      url, title: cut(title, 200),
+      snippet: cut(r.snippet ?? "", 400) || null,
+      host: cut(r.host_name ?? "", 100) || null,
+      date: cut(r.date ?? "", 40) || null,
+      query: cut(query, 120) || null,
+      fetchedAt,
+    });
+  }
+  return { findings, count: findings.length, dropped: (Array.isArray(results) ? results.length : 0) - findings.length };
+}
+
+/* T-22 · WEB-INTEL STALENESS: fresh = fetched within `maxAgeMs`. Freshness is
+ * the recruiter's evidence gate — stale intel demotes the station honestly.
+ * Shape-tolerant: the file may hold a flat findings array OR the run doc's
+ * scans[].findings layout — both count, junk rows never count. */
+export function webIntelFresh(file, nowMs = Date.now(), maxAgeMs = 26 * 3600_000) {
+  if (!file || typeof file !== "object") return null;
+  const at = file.fetchedAt ? Date.parse(file.fetchedAt) : NaN;
+  if (!Number.isFinite(at)) return null;
+  const ageMs = nowMs - at;
+  const flat = Array.isArray(file.findings) ? file.findings : [];
+  const inScans = Array.isArray(file.scans)
+    ? file.scans.flatMap((s) => (s && Array.isArray(s.findings) ? s.findings : []))
+    : [];
+  const findings = [...flat, ...inScans].filter((f) => f && f.url && f.title);
+  if (ageMs < 0 || ageMs > maxAgeMs || findings.length === 0) return null;
+  return { ageMs, findings: findings.length };
 }

@@ -1,6 +1,6 @@
 {
-  "lastTickAt": "2026-10-01T21:37:35.419Z",
-  "ticks": 1779,
+  "lastTickAt": "2026-10-01T22:22:57.227Z",
+  "ticks": 1794,
   "nextId": 2100000054,
   "conf": {
     "enabled": true,
@@ -19,7 +19,7 @@
     "maxOpsPerTx": 24
   },
   "lastVerdict": "CREDENTIAL-MISSING",
-  "lastVerdictAt": "2026-10-01T21:37:35.419Z",
+  "lastVerdictAt": "2026-10-01T22:22:57.227Z",
   "rcPct": 100,
   "opsToday": 0,
   "lastTxid": "a8a4875a3976aaf60ee2d7fdbfa79bfda6bc5948",
@@ -43,7 +43,7 @@
     "reason": "measured-equilibrium"
   },
   "day": "2026-10-01",
-  "lastError": "FOREIGN-CREDENTIAL: the key file holds \"testuser\" but this engine's account of record is \"headcorner\" — paste the headco",
+  "lastError": "CREDENTIAL-MISSING: .secrets/headcorner.key not found (sandbox cold-reset wipes gitignored secrets). Revival (self-servi",
   "carryGovernor": 0.07730116556442024,
   "running": true,
   "blocker": null

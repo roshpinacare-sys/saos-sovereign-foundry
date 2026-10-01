@@ -1,10 +1,12 @@
 {
-  "verdict": "CONVERT-HOLD",
-  "reason": "dust-or-capped",
-  "edgeBps": 6477,
-  "amountSbd": 0,
-  "marketSbdUsd": 0.60691,
-  "impliedSbdUsd": 0.60691,
+  "verdict": "CONVERT-PLAN",
+  "reason": "psm-hysteresis-armed",
+  "edgeBps": 6335,
+  "amountSbd": 10,
+  "expectedSteem": 96.060508,
+  "windowDays": 3.5,
+  "marketSbdUsd": 0.612194,
+  "impliedSbdUsd": 0.612194,
   "marketSourceNote": "external-measured",
-  "at": "2026-10-01T21:44:40.211Z"
+  "at": "2026-10-01T22:34:40.210Z"
 }

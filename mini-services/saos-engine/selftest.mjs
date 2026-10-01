@@ -6,7 +6,9 @@ import {
   dragK, inventorySkew, planLadder, planConvert, classifyStale, pnlFromFills, guardDepth, parityVerdict,
   MIN_LEVEL, ASK_FLOOR_BPS,
   doctrineAccount, credentialGate, rcAnomaly, recruitRoles, aggregateRails,
+  normalizeWebIntel, webIntelFresh,
 } from "./lib.mjs";
+import { sanitizeDraft } from "./content.mjs";
 import { tick, fold } from "./grid.mjs";
 import { classifyAgent } from "./fleet.mjs";
 
@@ -604,9 +606,9 @@ ok("rcAnomaly no-evidence-blocks", rcAnomaly(6.1e12, 0) === true);
 ok("rcAnomaly growth-never-anomaly", rcAnomaly(6.1e12, 6.1e13) === false);
 
 /* ═════ T-21 · RECRUITER: a role exists only with named evidence ═════ */
-const full = recruitRoles({ evidence: { marketPulse: "m", rcEconomics: "r", fillAudit: "f", convert: "c", promo: "p", curation: "cu", selftest: "s", recruiter: "x" }, now: "2026-10-01T22:00:00Z", prior: {} });
+const full = recruitRoles({ evidence: { marketPulse: "m", rcEconomics: "r", fillAudit: "f", convert: "c", promo: "p", curation: "cu", selftest: "s", recruiter: "x", webIntel: "w" }, now: "2026-10-01T22:00:00Z", prior: {} });
 eq("recruit full-verdict", full.verdict, "FULL-STRENGTH");
-eq("recruit full-count", full.active, 8);
+eq("recruit full-count", full.active, 9);
 ok("recruit rows-carry-truth-contract", full.roster.every((r) => typeof r.truthContract === "string" && r.truthContract.length > 8));
 ok("recruit rows-carry-evidence", full.roster.every((r) => r.status !== "active" || (r.evidence ?? "").length > 0));
 const partial = recruitRoles({ evidence: { recruiter: "x", curation: "cu" }, now: "2026-10-01T22:00:00Z", prior: {} });
@@ -616,6 +618,36 @@ ok("recruit missing-role-planned", partial.roster.find((r) => r.id === "market-a
 const demoted = recruitRoles({ evidence: { recruiter: "x" }, now: "2026-10-01T23:00:00Z", prior: partial });
 ok("recruit stale-role-demoted", demoted.roster.find((r) => r.id === "curation-steward").status === "planned" && demoted.roster.find((r) => r.id === "curation-steward").priorStatus === "active");
 ok("recruit recruitedAt-preserved", demoted.roster.find((r) => r.id === "curation-steward").recruitedAt === "2026-10-01T22:00:00Z");
+
+/* ═════ T-22 · WEB-INTEL: no-source findings are not findings ═════ */
+const rawIntel = [
+  { url: "https://example.com/a", name: "Real finding", snippet: "s", host_name: "example.com", date: "2026-10-01" },
+  { url: "https://example.com/b", name: "Second real finding", snippet: "s2", host_name: "example.com", date: "2026-10-01" },
+  { url: "not-a-url", name: "bad url dropped" },
+  null,
+  { title: "no url dropped" },
+];
+const norm = normalizeWebIntel({ results: rawIntel, query: "q", fetchedAt: "2026-10-01T22:00:00Z" });
+eq("webintel good-kept", norm.count, 2);
+eq("webintel junk-dropped", norm.dropped, 3);
+ok("webintel fields-cut", norm.findings[0].url === "https://example.com/a" && norm.findings[0].host === "example.com");
+eq("webintel empty-input", normalizeWebIntel({ results: "junk" }).count, 0);
+const freshOk = webIntelFresh({ fetchedAt: "2026-10-01T22:00:00Z", findings: norm.findings }, Date.parse("2026-10-02T00:00:00Z"));
+ok("webintel fresh-2h", freshOk != null && freshOk.findings === 2);
+ok("webintel stale-null", webIntelFresh({ fetchedAt: "2026-09-01T00:00:00Z", findings: norm.findings }, Date.parse("2026-10-02T00:00:00Z")) === null);
+ok("webintel empty-findings-null", webIntelFresh({ fetchedAt: "2026-10-01T22:00:00Z", findings: [] }, Date.parse("2026-10-02T00:00:00Z")) === null);
+ok("webintel scans-shape-counts", webIntelFresh({ fetchedAt: "2026-10-01T22:00:00Z", scans: [{ findings: norm.findings }, { findings: [null, { url: "https://x.y/c", title: "third" }] }] }, Date.parse("2026-10-02T00:00:00Z"))?.findings === 3);
+
+/* ═════ T-22 · CONTENT OPS: the exposure law is enforced in pure code ═════ */
+const goodDraft = sanitizeDraft({ title: "How RC economics shapes Steem trading tools", body: "x".repeat(200), tags: ["steem", "rc", "trading"], angle: "educational" });
+ok("content valid-draft-passes", goodDraft != null && goodDraft.tags.length === 3);
+ok("content tags-normalized", sanitizeDraft({ title: "A title long enough here", body: "x".repeat(150), tags: ["STEEM!", "Trading"] })?.tags.join(",") === "steem,trading");
+ok("content stub-blocked", sanitizeDraft({ title: "short", body: "x", tags: ["a", "b"] }) === null);
+ok("content too-few-tags-blocked", sanitizeDraft({ title: "A title long enough here", body: "x".repeat(150), tags: ["onlyone"] }) === null);
+ok("content exposure-headcorner-blocked", sanitizeDraft({ title: "How headcorner trades the SBD book", body: "x".repeat(200), tags: ["a", "b"] }) === null);
+ok("content exposure-army-blocked", sanitizeDraft({ title: "Our multi-account coordination story", body: "x".repeat(200), tags: ["a", "b"] }) === null);
+ok("content exposure-profit-blocked", sanitizeDraft({ title: "Guaranteed profit method inside", body: "x".repeat(200), tags: ["a", "b"] }) === null);
+ok("content null-input", sanitizeDraft(null) === null);
 
 /* ═════ T-21 · MULTI-RAIL ECONOMICS: totals never merge across classes ═════ */
 const econRails = aggregateRails({

@@ -31,6 +31,9 @@ import { runLearning } from "./learning.mjs";
 import { runDiscovery } from "./discovery.mjs";
 import { runRecruiter } from "./recruiter.mjs";
 import { runEconomics } from "./economics.mjs";
+import { runWebIntel } from "./webintel.mjs";
+import { runContent } from "./content.mjs";
+import { runRcTank, rcTankState } from "./rctank.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const STATE = path.join(DIR, "state");
@@ -452,12 +455,54 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
     };
   });
 
-  /* T-21 · recruit: הצבא מפתח את עצמו — every cycle the engine re-inspects
-   * its own state and recruits/demotes NAMED stations by evidence. Fail-
-   * isolated like all steps; the roster file is the cockpit's source. */
-  report.steps.recruit = await stepWrap("recruit", async () => {
-    const roster = runRecruiter(now);
-    return { verdict: roster.verdict, active: roster.active, total: roster.total };
+  /* T-22 · WEB-INTEL TEAM: external eyes on the ecosystem — rotating sourced
+   * scans (price news, chain developments, SBD market, competitors). The
+   * cadence gate lives inside runWebIntel (6h); every finding carries a
+   * url — the machine no longer depends on the operator for discovery. */
+  report.steps.webintel = await stepWrap("webintel", async () => {
+    const out = await runWebIntel({ now });
+    return { verdict: out.verdict, totalFindings: out.totalFindings ?? null, failedScans: out.failedScans ?? null, lastAt: out.lastAt ?? null, ms: out.ms ?? null };
+  });
+
+  /* T-22 · CONTENT TEAM: smart discussion drafts, grounded on measured
+   * telemetry + web intel, exposure-law-checked in pure code, queued for the
+   * promo rail (broadcast only after credential verification). Cadence 12h. */
+  report.steps.content = await stepWrap("content", async () => {
+    const out = await runContent({ now });
+    return { verdict: out.verdict, draftsQueued: out.draftsQueued ?? 0, exposureBlocked: out.exposureBlocked ?? 0, lastAt: out.lastAt ?? null, ms: out.ms ?? null };
+  });
+
+  /* T-22 · RC-TANK: the daily measured curve of the 100,000× law
+   * (max_rc + equilibrium ops/day + growth). Read-only — runs with or
+   * without a credential. Day-gated here (one chain read/day). */
+  report.steps.rctank = await stepWrap("rctank", async () => {
+    const today = now.slice(0, 10);
+    const cached = rcTankState();
+    if (cached?.day === today) return { verdict: cached.verdict ?? "CADENCE-GATED", maxRc: cached.maxRc ?? null, opsPerDayEquilibrium: cached.opsPerDayEquilibrium ?? null, growthPct: cached.growthPct ?? null, day: today };
+    const out = await runRcTank({ now, account: ACCOUNT });
+    return { verdict: out.verdict, maxRc: out.maxRc ?? null, opsPerDayEquilibrium: out.opsPerDayEquilibrium ?? null, growthPct: out.growthPct ?? null, day: out.day ?? today };
+  });
+
+  /* T-22 · STANDING SELFTEST: the machine audits its own laws daily —
+   * the deterministic vectors run in a clean child process (offline, no
+   * network) and refresh state/selftest-last-run.json. The integrity-
+   * auditor's evidence is now refreshed BY the machine, not by a dev run. */
+  report.steps.selftest = await stepWrap("selftest", async () => {
+    const today = now.slice(0, 10);
+    const last = readJson(path.join(STATE, "selftest-last-run.json"), null);
+    if (last?.at && String(last.at).slice(0, 10) === today && last.fail === 0) {
+      return { verdict: "CADENCE-GATED", pass: last.pass, fail: last.fail, at: last.at };
+    }
+    const sp = Bun.spawnSync(["bun", "selftest.mjs"], { cwd: DIR, stdout: "pipe", stderr: "pipe" });
+    const outText = `${sp.stdout.toString()}\n${sp.stderr.toString()}`;
+    const m = outText.match(/SELFTEST (\d+)\/(\d+) (PASS|FAIL)/);
+    const fresh = readJson(path.join(STATE, "selftest-last-run.json"), null);
+    return {
+      verdict: sp.exitCode === 0 && m ? `SELFTEST-${m[3]}` : "SELFTEST-FAIL",
+      pass: fresh?.pass ?? (m ? Number(m[1]) : null),
+      fail: fresh?.fail ?? (m ? Number(m[2]) - Number(m[1]) : null),
+      exitCode: sp.exitCode,
+    };
   });
 
   /* T-21 · economics: the multi-rail rollup (measured | estimated | blocked
@@ -474,6 +519,15 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
       estimatedCount: econ.estimatedCount,
       blockedCount: econ.blockedCount,
     };
+  });
+
+  /* T-21/22 · recruit (moved LAST of the state-writing steps): הצבא מפתח את
+   * עצמו — the recruiter re-inspects EVERY state artifact the cycle just
+   * wrote (webintel/content/selftest/rctank included) and recruits/demotes
+   * NAMED stations by same-cycle evidence, not last-cycle lag. */
+  report.steps.recruit = await stepWrap("recruit", async () => {
+    const roster = runRecruiter(now);
+    return { verdict: roster.verdict, active: roster.active, total: roster.total };
   });
 
   /* 10 · report: profitability rollup */

@@ -1,290 +1,59 @@
 import { NextResponse } from "next/server";
-import { readFile } from "node:fs/promises";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 /**
- * T-9 · cockpit status — SOVEREIGN-LOCAL edition.
- * The 16-repo estate at /home/z/audit was lost (environment reset); the engine
- * now lives INSIDE this project (mini-services/saos-engine) and every source
- * below is either (a) engine state written by real cycles, or (b) live chain
- * reads over public RPC. Zero secrets, zero external repo dependency.
+ * T-22 · THIN PROXY — THE ONE-BODY LAW (שכבות-שמדברות-שפה-אחת).
+ * History: this route re-implemented engine domain logic (a second
+ * pnlFromFills, second chain readers, FOUR hardcoded "headcorner" account
+ * strings) — exactly the "layers killing each other in different languages"
+ * the operator ordered killed. Now: every domain fact is computed ONCE by
+ * the engine (/status on :3040 — its own doctrine account, its own laws);
+ * this route only RENDERS the engine's truth into the cockpit's contract
+ * (field-picking + display strings). If the engine is down, the last-good
+ * response is served STALE-marked — never silently re-measured here.
  */
-const ENGINE = "/home/z/my-project/mini-services/saos-engine";
-const PATHS = {
-  state: `${ENGINE}/state/state.json`,
-  offer: `${ENGINE}/state/offer.json`,
-  observe: `${ENGINE}/state/observe.json`,
-  dailyReport: `${ENGINE}/state/daily-report.json`,
-  convertPlan: `${ENGINE}/state/convert-plan.json`,
-  events: `${ENGINE}/state/events.jsonl`,
-  soldiers: `${ENGINE}/state/soldiers.json`,
-  curator: `${ENGINE}/state/curator.json`,
-  intel: `${ENGINE}/state/intel.json`,
-  execLog: `${ENGINE}/state/exec-log.jsonl`,
-  learning: `${ENGINE}/state/learning.json`,
-  discovery: `${ENGINE}/state/discovery.json`,
-  hyperGrid: `${ENGINE}/state/hyper-grid.json`,
-  hyperOps: `${ENGINE}/state/hyper-ops.json`,
-  fleetRoles: `${ENGINE}/state/fleet-roles.json`,
-  economics: `${ENGINE}/state/economics.json`,
-};
 const ENGINE_HTTP = "http://127.0.0.1:3040";
 const CACHE_TTL_MS = 45_000;
-let cache: { at: number; data: unknown } | null = null;
+let cache: { at: number; data: unknown; good: boolean } | null = null;
 
-async function readJsonSafe(path: string): Promise<unknown> {
+async function engineStatus(): Promise<{ up: boolean; data: Record<string, unknown> | null }> {
   try {
-    return JSON.parse(await readFile(path, "utf8"));
+    const r = await fetch(`${ENGINE_HTTP}/status`, { signal: AbortSignal.timeout(15_000), cache: "no-store" });
+    if (!r.ok) return { up: false, data: null };
+    return { up: true, data: (await r.json()) as Record<string, unknown> };
   } catch {
-    return null;
+    return { up: false, data: null };
   }
-}
-
-async function readLinesTail(path: string, n = 8): Promise<unknown[]> {
-  try {
-    const raw = await readFile(path, "utf8");
-    const lines = raw.trim().split("\n").filter(Boolean);
-    return lines.slice(-n).map((l) => {
-      try {
-        return JSON.parse(l);
-      } catch {
-        return { unparsed: l.slice(0, 120) };
-      }
-    });
-  } catch {
-    return [];
-  }
-}
-
-async function engineHealth(): Promise<{ up: boolean; info?: Record<string, unknown> }> {
-  try {
-    const r = await fetch(`${ENGINE_HTTP}/health`, { signal: AbortSignal.timeout(3000), cache: "no-store" });
-    if (!r.ok) return { up: false };
-    return { up: true, info: (await r.json()) as Record<string, unknown> };
-  } catch {
-    return { up: false };
-  }
-}
-
-/* T-12: live execution status from the engine (self-proving role check inside) */
-async function engineExecStatus(): Promise<Record<string, unknown> | null> {
-  try {
-    const r = await fetch(`${ENGINE_HTTP}/exec-status`, { signal: AbortSignal.timeout(18000), cache: "no-store" });
-    if (!r.ok) return null;
-    return (await r.json()) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
-
-/* T-15: the unified agent registry + credential truth (light engine route) */
-async function engineFleet(): Promise<Record<string, unknown> | null> {
-  try {
-    const r = await fetch(`${ENGINE_HTTP}/fleet`, { signal: AbortSignal.timeout(6000), cache: "no-store" });
-    if (!r.ok) return null;
-    return (await r.json()) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
-
-async function rpc<T>(method: string, params: unknown): Promise<T | null> {
-  for (const node of ["https://steemapi.boylikegirl.club", "https://api.justyy.com", "https://api.steemit.com"]) {
-    try {
-      const r = await fetch(node, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jsonrpc: "2.0", method, params, id: 1 }),
-        signal: AbortSignal.timeout(12000),
-      });
-      if (!r.ok) continue;
-      const d = await r.json();
-      if (d.error) continue;
-      return d.result as T;
-    } catch {
-      /* try next node */
-    }
-  }
-  return null;
-}
-
-const NAI: Record<string, string> = { "@@000000013": "SBD", "@@000000021": "STEEM" };
-
-/* ── A-10 מד-רווחיות: יסוד-עלות-ממוצע על מילויים-אמת (unbased ≠ רווח) ────── */
-type Fill = { seq: number; side: "ask" | "bid"; steem: number; sbd: number };
-
-function pnlFromFills(fills: Fill[]) {
-  const r6 = (v: number) => Math.round(v * 1e6) / 1e6;
-  let position = 0, cost = 0, realized = 0, unbasedSbd = 0, unbased = 0;
-  let bought = 0, spent = 0, sold = 0, proceeds = 0, buys = 0, sells = 0;
-  for (const f of fills) {
-    if (f.side === "bid") {
-      buys++; bought = r6(bought + f.steem); spent = r6(spent + f.sbd);
-      position = r6(position + f.steem); cost = r6(cost + f.sbd);
-    } else {
-      sells++; sold = r6(sold + f.steem); proceeds = r6(proceeds + f.sbd);
-      if (position > 1e-9) {
-        const based = Math.min(f.steem, position);
-        const avg = cost / position;
-        realized = r6(realized + f.sbd * (based / f.steem) - avg * based);
-        const rest = r6(f.steem - based);
-        cost = r6(cost - avg * based); position = r6(position - based);
-        if (rest > 1e-9) { unbased = r6(unbased + rest); unbasedSbd = r6(unbasedSbd + f.sbd * (rest / f.steem)); }
-      } else {
-        unbased = r6(unbased + f.steem); unbasedSbd = r6(unbasedSbd + f.sbd);
-      }
-    }
-  }
-  return {
-    fills: fills.length, buys, sells,
-    boughtSteem: bought, spentSbd: spent,
-    soldSteem: sold, proceedsSbd: proceeds,
-    realizedSbd: realized,
-    unbasedSteem: unbased, unbasedSbd: unbasedSbd,
-    positionSteem: position, positionCostSbd: cost,
-    positionAvgCost: position > 1e-9 ? Math.round((cost / position) * 1e6) / 1e6 : null,
-  };
-}
-
-async function liveFills(): Promise<Fill[]> {
-  const nodes = ["https://steemapi.boylikegirl.club", "https://api.justyy.com", "https://api.steemit.com"];
-  let hist: [number, { op?: unknown; timestamp?: string }][] = [];
-  for (const node of nodes) {
-    try {
-      const r = await fetch(node, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jsonrpc: "2.0", method: "account_history_api.get_account_history", params: { account: "headcorner", start: -1, limit: 400 }, id: 1 }),
-        signal: AbortSignal.timeout(12000),
-      });
-      if (!r.ok) continue;
-      const d = await r.json();
-      if (d.error) continue;
-      hist = d.result?.history ?? [];
-      if (hist.length > 0) break;
-    } catch {
-      /* try next node */
-    }
-  }
-  if (hist.length === 0) {
-    for (const node of nodes) {
-      try {
-        const r = await fetch(node, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ jsonrpc: "2.0", method: "condenser_api.get_account_history", params: ["headcorner", -1, 100], id: 1 }),
-          signal: AbortSignal.timeout(12000),
-        });
-        if (!r.ok) continue;
-        const d = await r.json();
-        if (d.error) continue;
-        hist = d.result ?? [];
-        if (hist.length > 0) break;
-      } catch {
-        /* try next node */
-      }
-    }
-  }
-  const out: Fill[] = [];
-  try {
-    const amt = (x: unknown): { v: number; sym: string } | null => {
-      if (typeof x === "string") {
-        const [v, sym] = x.split(" ");
-        return sym && Number(v) > 0 ? { v: Number(v), sym } : null;
-      }
-      const o = x as { amount?: string; nai?: string; precision?: number } | null;
-      if (o?.amount != null && o?.nai) {
-        const v = Number(o.amount) / 10 ** (o.precision ?? 3);
-        const sym = NAI[o.nai] ?? o.nai;
-        return v > 0 ? { v, sym } : null;
-      }
-      return null;
-    };
-    for (const [, x] of hist ?? []) {
-      const rawOp = (x as { op?: unknown })?.op;
-      const op = Array.isArray(rawOp) ? { type: rawOp[0], value: rawOp[1] } : (rawOp ?? {}) as { type?: string; value?: Record<string, unknown> };
-      const v = op.value ?? {};
-      if (op.type !== "fill_order_operation" && op.type !== "fill_order") continue;
-      const cur = amt(v.current_pays), opn = amt(v.open_pays);
-      if (!cur || !opn) continue;
-      const isCur = v.current_owner === "headcorner";
-      const mine = isCur ? cur : opn, theirs = isCur ? opn : cur;
-      if (mine.sym === "STEEM" && theirs.sym === "SBD") out.push({ seq: 0, side: "ask", steem: mine.v, sbd: theirs.v });
-      else if (mine.sym === "SBD" && theirs.sym === "STEEM") out.push({ seq: 0, side: "bid", steem: theirs.v, sbd: mine.v });
-    }
-  } catch { /* honest partial */ }
-  return out;
-}
-
-async function rcFromRcApi(): Promise<number | null> {
-  const r = await rpc<{ rc_accounts?: { rc_manabar: { current_mana: string }; max_rc: string }[] }>(
-    "rc_api.find_rc_accounts",
-    { accounts: ["headcorner"] }
-  );
-  const rc = r?.rc_accounts?.[0];
-  if (!rc) return null;
-  const cur = parseInt(rc.rc_manabar?.current_mana ?? "0", 10);
-  const max = parseInt(rc.max_rc ?? "0", 10);
-  return max > 0 ? Math.round((cur / max) * 1000) / 10 : null;
 }
 
 export async function GET() {
-  if (cache && Date.now() - cache.at < CACHE_TTL_MS) {
+  if (cache && cache.good && Date.now() - cache.at < CACHE_TTL_MS) {
     return NextResponse.json(cache.data);
   }
-  const [state, offer, observe, dailyReport, convertPlan, eventsTail, soldiers, curator, intel, execLogTail, ordersRaw, rcRaw, accRaw, fills, eng, execHttp, learning, discovery, fleetHttp, hyperGrid, hyperOps, fleetRoles, economicsFile] = await Promise.all([
-    readJsonSafe(PATHS.state),
-    readJsonSafe(PATHS.offer),
-    readJsonSafe(PATHS.observe),
-    readJsonSafe(PATHS.dailyReport),
-    readJsonSafe(PATHS.convertPlan),
-    readLinesTail(PATHS.events, 10),
-    readJsonSafe(PATHS.soldiers),
-    readJsonSafe(PATHS.curator),
-    readJsonSafe(PATHS.intel),
-    readLinesTail(PATHS.execLog, 8),
-    rpc<any[]>("condenser_api.get_open_orders", ["headcorner"]),
-    rcFromRcApi(),
-    rpc<any[]>("condenser_api.get_accounts", [["headcorner"]]),
-    liveFills(),
-    engineHealth(),
-    engineExecStatus(),
-    readJsonSafe(PATHS.learning),
-    readJsonSafe(PATHS.discovery),
-    engineFleet(),
-    readJsonSafe(PATHS.hyperGrid),
-    readJsonSafe(PATHS.hyperOps),
-    readJsonSafe(PATHS.fleetRoles),
-    readJsonSafe(PATHS.economics),
-  ]);
+  const { up, data: s } = await engineStatus();
+  if (!up || !s) {
+    /* honest degradation: last-good stale-marked, or a hard down answer */
+    if (cache?.good) {
+      const stale = { ...(cache.data as Record<string, unknown>), stale: true, asof: new Date().toISOString() };
+      return NextResponse.json(stale);
+    }
+    return NextResponse.json({
+      ok: false, asof: new Date().toISOString(), engine: { up: false },
+      sources: { kind: "thin-proxy", engineHttp: ENGINE_HTTP },
+      notes: ["המנוע אינו זמין — אין מדידה-עוקפת-מנוע (חוק-הגוף-האחד)"],
+    }, { status: 503 });
+  }
 
-  const orders = (ordersRaw ?? []).map((o) => {
-    const sp = o.sell_price as { base: string; quote: string } | undefined;
-    const base = sp?.base ?? "?";
-    const side = base.includes("STEEM") ? "ask" : "bid";
-    const [bAmt, bSym] = base.split(" ");
-    const [qAmt, qSym] = (sp?.quote ?? "? ?").split(" ");
-    const unit = Number(bAmt) > 0 ? Number(qAmt) / Number(bAmt) : 0;
-    return {
-      orderid: o.orderid,
-      side,
-      base: `${bAmt} ${bSym}`,
-      quote: `${qAmt} ${qSym}`,
-      unit: Math.round(unit * 1e6) / 1e6,
-      created: o.created,
-    };
-  });
-
-  const a = accRaw?.[0];
-  const balances = a
-    ? { steem: a.balance ?? null, sbd: a.sbd_balance ?? null, vests: a.vesting_shares ?? null }
-    : null;
-  const rc = rcRaw ? { rcPct: rcRaw } : null;
-
+  const observe = (s.observe ?? null) as Record<string, any> | null;
+  const offer = (s.offer ?? null) as Record<string, any> | null;
+  const daily = (s.daily ?? null) as Record<string, any> | null;
+  const convertPlan = (s.convertPlan ?? null) as Record<string, any> | null;
+  const live = (s.live ?? {}) as Record<string, any>;
+  const orders = live.orders ?? [];
   const orderTotals = orders.reduce(
-    (acc, o) => {
+    (acc: { askedSteem: number; bidSbd: number }, o: { side: string; base: string }) => {
       const amt = Number(String(o.base).split(" ")[0]) || 0;
       if (o.side === "ask") acc.askedSteem = Math.round((acc.askedSteem + amt) * 1e3) / 1e3;
       else acc.bidSbd = Math.round((acc.bidSbd + amt) * 1e3) / 1e3;
@@ -293,78 +62,48 @@ export async function GET() {
     { askedSteem: 0, bidSbd: 0 }
   );
 
-  const obs = observe as Record<string, any> | null;
-  const p = pnlFromFills(fills);
-  const parityRef = (offer as any)?.marks?.paritySbdPerSteem ?? null;
-  const profit = {
-    ...p,
-    parityRef,
-    unrealizedAtParitySbd:
-      p.positionSteem > 1e-9 && parityRef
-        ? Math.round((p.positionSteem * parityRef - p.positionCostSbd) * 1e6) / 1e6
-        : null,
-    method: "יסוד-עלות-ממוצע על fill_order חי (A-10) · מכירה-בלי-יסוד = unbased, לא רווח",
-  };
-
-  /* ── מסילות-אמת (T-9): מדידה מקומית-ריבונית בלבד — אפס קבצי-KPI מאחזקים ── */
-  const daily = dailyReport as Record<string, any> | null;
-  const cp = convertPlan as Record<string, any> | null;
-  const fuelUsdPerDay = obs?.fuel?.fuelUsdPerDay ?? null;
-  const authorUsdPerDay = obs?.fuel?.authorUsdPerDay ?? null;
+  /* display composition (presentation only — the numbers are the engine's) */
+  const fuelUsdPerDay = observe?.fuel?.fuelUsdPerDay ?? null;
+  const authorUsdPerDay = observe?.fuel?.authorUsdPerDay ?? null;
   const rails = {
     fuel: fuelUsdPerDay,
     author: authorUsdPerDay,
-    fuelWindowNote: obs?.fuel?.windowNote ?? null,
-    fuelHistory: obs?.fuel?.curationOps > 0
-      ? `מסילת-הדלק חיה — ${obs.fuel.curationOps} פעולות-קיורציה בחלון-המדידה (${obs.fuel.windowSpanDays}d)`
-      : (execHttp as any)?.credential?.present === false
-        ? "המסילה חמושה אך חתימה-מתה (אישורי אבד באיפוס-הסביבה) — ההקמה: הפלת upload/headcorner.txt"
-        : "קיורציה אחרונה נמדדה 2026-09-09 — המסילה הוצתה-מחדש ב-T-13 (curator חי), התשואה תימדד מהפאייאוטים-הבאים",
+    fuelWindowNote: observe?.fuel?.windowNote ?? null,
+    fuelHistory:
+      (observe?.fuel?.curationOps ?? 0) > 0
+        ? `מסילת-הדלק חיה — ${observe.fuel.curationOps} פעולות-קיורציה בחלון-המדידה (${observe.fuel.windowSpanDays}d)`
+        : "המסילה חמושה; חתימה-חסומה עד אימות-אישורי (שער-הדוקטרינה) — ההקמה: הדבקת סיסמת-master עדכנית בקונסול הארנק",
     deployedSteem: orderTotals.askedSteem,
     bidSbd: orderTotals.bidSbd,
     bookEmpty: orders.length === 0,
-    bookNote: orders.length === 0
-      ? "הספר ריק — 925 STEEM נזילים ממתינים לפריסה; התוכנית OFFER-READY מוכנה, ביצוע = שער-אופרטור (X-1)"
-      : null,
-    convert: cp
+    bookNote: orders.length === 0 ? "הספר ריק — הנזילים ממתינים לאימות-חתימה; התוכנית OFFER-READY מוכנה במחזור" : null,
+    convert: convertPlan
       ? {
-          verdict: cp.verdict ?? null,
-          reason: cp.reason ?? null,
-          amountSbd: cp.amountSbd ?? 0,
-          marketSbdUsd: cp.marketSbdUsd ?? null,
-          impliedSbdUsd: cp.impliedSbdUsd ?? null,
-          marketSourceNote: cp.marketSourceNote ?? null,
-          at: cp.at ?? null,
+          verdict: convertPlan.verdict ?? null,
+          reason: convertPlan.reason ?? null,
+          amountSbd: convertPlan.amountSbd ?? 0,
+          marketSbdUsd: convertPlan.marketSbdUsd ?? null,
+          impliedSbdUsd: convertPlan.impliedSbdUsd ?? null,
+          marketSourceNote: convertPlan.marketSourceNote ?? null,
+          at: convertPlan.at ?? null,
         }
       : null,
     autonomy: daily
       ? {
           ok: daily.ok ?? false,
           lastCycle: daily.finishedAt ?? daily.startedAt ?? null,
-          steps: Object.fromEntries(Object.entries(daily.steps ?? {}).map(([k, v]: [string, any]) => [k, v?.ok === false ? "fail" : v?.skipped ? "skip" : "ok"])),
+          steps: Object.fromEntries(
+            Object.entries(daily.steps ?? {}).map(([k, v]: [string, any]) => [k, v?.ok === false ? "fail" : v?.skipped ? "skip" : "ok"])
+          ),
         }
       : null,
-    note: "כל המדידות מקומיות-ריבוניות (מנוע :3040) או מהשרשרת חי — אפס-תלות באחזקת-רפו חיצונית",
+    note: "כל המספרים מחושבים פעם-אחת במנוע :3040 — שכבת-התצוגה מציגה, לא מודדת",
   };
+  const measuredPerDay =
+    (daily?.rollup?.measuredTotalUsdPerDay as number | undefined) ?? null;
 
-  const measuredPerDay = (daily?.rollup?.measuredTotalUsdPerDay as number | undefined) ??
-    Math.round(((fuelUsdPerDay ?? 0) + (authorUsdPerDay ?? 0)) * 1e4) / 1e4;
-
-  /* ── T-12: execution + soldiers + intel (public fields ONLY — no secrets) ── */
-  const sold = soldiers as Record<string, any> | null;
-  const itel = intel as Record<string, any> | null;
-  const execution = {
-    ...(execHttp ?? null),
-    log: execLogTail,
-  };
-  const soldiersPublic = {
-    deployed: !!sold?.deployed,
-    at: sold?.at ?? null,
-    accounts: (sold?.accounts ?? []).map((a: any) => ({ name: a.name, fingerprint: a.fingerprint })),
-    fundingTxid: sold?.fundingTxid ?? null,
-    fundedEach: sold?.fundedEach ?? null,
-  };
-  /* T-13: curation rail — live measured state (public fields only) */
+  /* public-only reshapes of engine truth (field-picking, zero math) */
+  const curator = (s.curator ?? null) as Record<string, any> | null;
   const curatorPublic = curator
     ? {
         verdict: curator.verdict ?? null,
@@ -379,16 +118,14 @@ export async function GET() {
         rejectedTop: curator.rejectedTop ?? null,
       }
     : null;
+  const intel = (s.intel ?? null) as Record<string, any> | null;
   const intelPublic = {
-    at: itel?.at ?? null,
-    decisions: (itel?.decisions ?? []).map((d: any) => ({ kind: d.kind, decision: d.decision, reason: d.reason })),
-    book: itel?.book ?? null,
-    spreadBpsRec: itel?.spreadBpsRec ?? null,
+    at: intel?.at ?? null,
+    decisions: (intel?.decisions ?? []).map((d: any) => ({ kind: d.kind, decision: d.decision, reason: d.reason })),
+    book: intel?.book ?? null,
+    spreadBpsRec: intel?.spreadBpsRec ?? null,
   };
-
-  /* T-14: continuous-learning + growth-discovery (public fields only) */
-  const learn = learning as Record<string, any> | null;
-  const disc = discovery as Record<string, any> | null;
+  const learn = (s.learning ?? null) as Record<string, any> | null;
   const learningPublic = learn
     ? {
         verdict: learn.verdict ?? null,
@@ -406,6 +143,7 @@ export async function GET() {
         },
       }
     : null;
+  const disc = (s.discovery ?? null) as Record<string, any> | null;
   const discoveryPublic = disc
     ? {
         verdict: disc.verdict ?? null,
@@ -415,91 +153,85 @@ export async function GET() {
         curationEst: disc.curationEst ?? null,
       }
     : null;
-
-  /* T-15: the unified agent registry + credential truth (single source of
-   * truth for every agent claim — replaces scattered/legacy counts) */
-  const fleetData = (fleetHttp as any)?.fleet ?? null;
-  const credData = (fleetHttp as any)?.credential ?? (execHttp as any)?.credential ?? null;
-  /* T-16: the visible price of the blocked signing rail (measured days/votes
-   * + ESTIMATED steem — engine-side spoilagePublic, honest classes) */
-  const spoilage = (fleetHttp as any)?.spoilage ?? null;
-
-  /* T-19b HYPER-GRID: the volume layer — live meter, day counter, measured
-   * economics, chain-tail verification. State files = engine's own writes. */
-  const hyper = (hyperGrid as any) ? {
-    running: (hyperGrid as any)?.running ?? null,
-    lastVerdict: (hyperGrid as any)?.lastVerdict ?? null,
-    lastVerdictAt: (hyperGrid as any)?.lastVerdictAt ?? null,
-    lastTickAt: (hyperGrid as any)?.lastTickAt ?? null,
-    ticks: (hyperGrid as any)?.ticks ?? null,
-    rcPct: (hyperGrid as any)?.rcPct ?? null,
-    liveHyper: (hyperGrid as any)?.liveHyper ?? null,
-    label: (hyperGrid as any)?.label ?? null,
-    lastTxid: (hyperGrid as any)?.lastTxid ?? null,
-    governor: (hyperGrid as any)?.governor ?? null,
-    economics: (hyperGrid as any)?.economics ?? null,
-    ops: (hyperOps as any) ?? null,
-  } : null;
+  const hyperRaw = (s.hyper ?? {}) as Record<string, any>;
+  const hyper = { ...hyperRaw.runtime, ops: hyperRaw.ops ?? null, running: hyperRaw.running ?? null, startedAt: hyperRaw.startedAt ?? null };
+  const soldiersRaw = (s.soldiers ?? null) as Record<string, any> | null;
+  const soldiersPublic = soldiersRaw
+    ? {
+        deployed: !!soldiersRaw.deployed,
+        at: soldiersRaw.at ?? null,
+        accounts: (soldiersRaw.accounts ?? []).map((a: any) => ({ name: a.name, fingerprint: a.fingerprint })),
+        fundingTxid: soldiersRaw.fundingTxid ?? null,
+        fundedEach: soldiersRaw.fundedEach ?? null,
+      }
+    : null;
+  const rolesRaw = (s.roles ?? null) as Record<string, any> | null;
+  const econRaw = (s.economics ?? null) as Record<string, any> | null;
 
   const data = {
     ok: true,
     asof: new Date().toISOString(),
-    account: "headcorner",
-    engine: { up: eng.up, info: eng.info ?? null, keyless: (eng.info as any)?.keyless ?? false },
-    grid: state,
-    observe: obs,
+    account: s.account ?? null,
+    engine: { up: true, info: { service: "saos-engine", doctrine: "one-body" }, keyless: false },
+    grid: s.state ?? null,
+    observe,
     offer,
-    live: { orders, orderTotals, balances, rc, chainReadOk: orders.length > 0 || balances !== null },
-    profit,
+    live: {
+      orders,
+      orderTotals,
+      balances: live.balances ?? null,
+      rc: live.rcPct != null ? { rcPct: live.rcPct } : null,
+      chainReadOk: !!live.chainReadOk,
+    },
+    profit: s.profit ?? null,
     rails,
     daily,
     measuredPerDay,
-    events: eventsTail,
-    execution,
+    events: s.events ?? [],
+    execution: { ...(s.execution ?? null), log: s.execLog ?? [] },
     soldiers: soldiersPublic,
     curator: curatorPublic,
     intel: intelPublic,
     learning: learningPublic,
     discovery: discoveryPublic,
-    fleet: fleetData,
-    credential: credData,
-    spoilage,
+    fleet: s.fleet ?? null,
+    credential: s.credential ?? null,
+    spoilage: s.spoilage ?? null,
     hyper,
-    /* T-21: the recruiter's evidence-based roster + the multi-rail economics
-     * rollup — both written by the engine's own cycles (state files = truth) */
-    roles: (fleetRoles as Record<string, unknown> | null)
+    /* T-21/22: roster + rails + the standing teams + the measured RC curve */
+    roles: rolesRaw
       ? {
-          verdict: (fleetRoles as any).verdict ?? null,
-          active: (fleetRoles as any).active ?? null,
-          total: (fleetRoles as any).total ?? null,
-          ladderNote: (fleetRoles as any).ladderNote ?? null,
-          roster: ((fleetRoles as any).roster ?? []).slice(0, 12),
+          verdict: rolesRaw.verdict ?? null,
+          active: rolesRaw.active ?? null,
+          total: rolesRaw.total ?? null,
+          ladderNote: rolesRaw.ladderNote ?? null,
+          roster: (rolesRaw.roster ?? []).slice(0, 12),
         }
       : null,
-    economics: (economicsFile as Record<string, unknown> | null)
+    economics: econRaw
       ? {
-          asof: (economicsFile as any).asof ?? null,
-          rails: ((economicsFile as any).rails ?? []).map((r: any) => ({
+          asof: econRaw.asof ?? null,
+          rails: (econRaw.rails ?? []).map((r: any) => ({
             id: r.id, label: r.label, measuredUsdPerDay: r.measuredUsdPerDay ?? null,
             estUsdPerDay: r.estUsdPerDay ?? null, confidence: r.confidence, note: r.note,
           })),
-          totalMeasuredUsdPerDay: (economicsFile as any).totalMeasuredUsdPerDay ?? null,
-          totalEstUsdPerDay: (economicsFile as any).totalEstUsdPerDay ?? null,
-          measuredCount: (economicsFile as any).measuredCount ?? null,
-          estimatedCount: (economicsFile as any).estimatedCount ?? null,
-          blockedCount: (economicsFile as any).blockedCount ?? null,
-          law: (economicsFile as any).law ?? null,
+          totalMeasuredUsdPerDay: econRaw.totalMeasuredUsdPerDay ?? null,
+          totalEstUsdPerDay: econRaw.totalEstUsdPerDay ?? null,
+          measuredCount: econRaw.measuredCount ?? null,
+          estimatedCount: econRaw.estimatedCount ?? null,
+          blockedCount: econRaw.blockedCount ?? null,
+          law: econRaw.law ?? null,
         }
       : null,
-    sources: { kind: "sovereign-local", paths: PATHS, engineHttp: ENGINE_HTTP },
+    webintel: s.webintel ?? null,
+    content: s.content ?? null,
+    rcTank: s.rcTank ?? null,
+    sources: { kind: "thin-proxy-one-body", engineHttp: ENGINE_HTTP, doctrineAccount: s.account ?? null },
     notes: [
-      "אמת-מוטבעת-על-שרשרת בלבד — real.fills נמדד מ-fill_order חי",
-      "T-12: מפתח-ראשי מוחזק-מנוע, מוגבל-דוקטרינה, לעולם לא נרשם/נשלח — רק טביעות-אצבע ציבוריות",
-      "T-9: האחוזה בת-16-הרפו אבדה באיפוס-סביבה — המנוע נבנה-מחדש מקומית (ראה docs/ESTATE-INVENTORY.md)",
-      "T-14: למידה-מתמשכת — שיעורים מהיסטוריה-מוקלטת, כיוונים-חסומים (LEARN_CLAMP), גילוי אופציות-גדילה על-הרשת",
-      "T-15: רישום-סוכנים מאוחד (fleet) — חיות-נמדדת לכל סוכן, אפס ספירות-יומרה; אזעקת-אישורי-חסר צורמת (עוד לא רוטב-בשקט)",
+      "חוק-הגוף-האחד (T-22): כל עובדת-דומיין מחושבת פעם-אחת במנוע — שכבה-זו מציגה בלבד",
+      "אמת-שרשרת בלבד; אישורי-חתימה מוחזקים-מנוע, מוגבלים-דוקטרינה, לעולם לא נרשמים",
     ],
   };
-  cache = { at: Date.now(), data };
+  cache = { at: Date.now(), data, good: true };
   return NextResponse.json(data);
 }

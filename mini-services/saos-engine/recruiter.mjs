@@ -10,6 +10,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { recruitRoles } from "./lib.mjs";
+import { webIntelEvidence } from "./webintel.mjs";
+import { contentEvidence } from "./content.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const STATE = path.join(DIR, "state");
@@ -61,6 +63,13 @@ export function gatherEvidence() {
   if (selftest?.pass != null && selftest.fail === 0) {
     evidence.selftest = `state/selftest-last-run.json: ${selftest.pass}/${selftest.pass + (selftest.fail ?? 0)} PASS at ${selftest.at}`;
   }
+  /* T-22 · the standing teams: external recon + content drafts are evidence
+   * like any other state artifact — fresh (<26h) = active, stale = demoted. */
+  const webIntel = webIntelEvidence();
+  if (webIntel) evidence.webIntel = webIntel;
+  const content = contentEvidence();
+  if (content && !evidence.promo) evidence.promo = content;
+  else if (content) evidence.contentOps = content;
   evidence.recruiter = "this roster file — the recruiter ran and wrote it";
   return evidence;
 }

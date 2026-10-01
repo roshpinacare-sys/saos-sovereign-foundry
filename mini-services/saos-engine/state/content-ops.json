@@ -1,0 +1,67 @@
+{
+  "draftedAt": "2026-10-01T22:20:24.431Z",
+  "verdict": "DRAFTS-QUEUED",
+  "draftsQueued": 3,
+  "exposureBlocked": 0,
+  "queue": [
+    {
+      "title": "Understanding Blockchain Curation Rewards",
+      "body": "Blockchain networks like Steem reward content creators and curators through a unique economic model. Curation rewards play a vital role in maintaining content quality and encouraging meaningful engagement. On Steem, curators stake their tokens to vote on posts, and successful predictions about valuable content can earn them rewards. The daily curation activity across the network demonstrates how this mechanism functions in practice. Understanding how curation works helps both new and experienced users participate more effectively. When you curate content thoughtfully, you're not just supporting creators—you're also contributing to the platform's overall health. The curation reward system creates a symbiotic relationship between creators and curators, ensuring that quality content rises to the top. As you explore the platform, consider how your own curation choices impact the ecosystem and what makes content valuable to you.",
+      "tags": [
+        "blockchain-curation",
+        "reward-mechanisms",
+        "content-quality",
+        "steem-basics",
+        "community-engagement"
+      ],
+      "angle": "educational explainer",
+      "seoNote": "Focuses on explaining curation rewards in simple terms with clear, actionable insights for new users.",
+      "groundedOn": [
+        "curationEstUsdPerDay"
+      ],
+      "id": "d1790893224431-0",
+      "status": "drafted",
+      "draftedAt": "2026-10-01T22:20:24.431Z"
+    },
+    {
+      "title": "What Makes Content Truly Valuable on Blockchain?",
+      "body": "In a decentralized content ecosystem, defining value becomes an interesting challenge. Is value measured in engagement metrics, community impact, or long-term relevance? As blockchain platforms continue to evolve, we're seeing new ways of assessing content worth beyond traditional metrics. Some creators focus on building communities, others on sharing specialized knowledge, and many aim to spark meaningful discussions. What do you consider valuable content on platforms like Steem? How do you decide which posts to support through your curation? The diversity of content approaches suggests there may be no single answer—value might be subjective and context-dependent. As the platform grows, we might develop more nuanced ways to recognize different forms of contribution. What content stands out to you, and why do you think it resonates with the community?",
+      "tags": [
+        "content-value",
+        "community-standards",
+        "block-content",
+        "discussion-topic",
+        "steem-culture"
+      ],
+      "angle": "open question",
+      "seoNote": "Poses a thought-provoking question to encourage community discussion about content valuation.",
+      "groundedOn": [],
+      "id": "d1790893224431-1",
+      "status": "drafted",
+      "draftedAt": "2026-10-01T22:20:24.431Z"
+    },
+    {
+      "title": "Streamlining Your Blockchain Content Workflow",
+      "body": "Creating and sharing content on blockchain platforms can be more efficient with a systematic approach. Many successful curators and creators develop consistent workflows that help them manage their time effectively. A simple routine might include: researching trending topics, drafting content during peak productivity hours, scheduling posts for optimal visibility, and engaging with comments promptly. Tools like note-taking apps and content calendars can help organize your process. The daily activity on platforms like Steem shows that regular participation builds stronger community connections. Consider setting aside specific times for different tasks—perhaps mornings for writing and evenings for engagement. Tracking what works best for your audience helps refine your approach over time. Remember that consistency often matters more than perfection when building your presence. What elements of your content workflow work well for you, and what would you like to improve?",
+      "tags": [
+        "content-creation",
+        "workflow-tips",
+        "time-management",
+        "blockchain-productivity",
+        "curator-tools"
+      ],
+      "angle": "tooling-or-workflow tip",
+      "seoNote": "Provides practical workflow advice to help users optimize their content creation process.",
+      "groundedOn": [
+        "venueFillsPerDay",
+        "hyperOpsPerDay"
+      ],
+      "id": "d1790893224431-2",
+      "status": "drafted",
+      "draftedAt": "2026-10-01T22:20:24.431Z"
+    }
+  ],
+  "law": "טיוטה נכתבת רק מקרקעין-מדודות + ממצאים-ממוקדים; חשיפה = נחסמת בטהרת-הנוסח; שידור רק אחרי אימות-חתימה (דוקטרינת-שער)",
+  "bridgeError": null,
+  "ms": 6870
+}

@@ -14,6 +14,9 @@ import { learningState } from "./learning.mjs";
 import { discoveryState } from "./discovery.mjs";
 import { fleetState } from "./fleet.mjs";
 import { startHyperGrid, hyperState } from "./hypergrid.mjs";
+import { webintelState } from "./webintel.mjs";
+import { contentState } from "./content.mjs";
+import { rcTankState } from "./rctank.mjs";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -44,11 +47,27 @@ async function handle(req) {
     const execLog = (() => { try { return fs.readFileSync(path.join(STATE, "exec-log.jsonl"), "utf8").trim().split("\n").filter(Boolean).slice(-8).map((l) => { try { return JSON.parse(l); } catch { return { unparsed: l.slice(0, 80) }; } }); } catch { return []; } })();
     let exec = null;
     try { exec = await execStatus(); } catch (e) { exec = { ok: false, reason: String(e?.message ?? e).slice(0, 80) }; }
+    /* T-22 ONE-BODY LAW: the live chain layer is computed HERE — the Next
+     * proxy became a thin renderer; domain logic exists exactly once. */
+    const [oo, acc] = await Promise.all([openOrders(ACCOUNT).catch(() => ({ ok: false, orders: [] })), accountState(ACCOUNT).catch(() => ({ ok: false }))]);
+    const observe = readJson(path.join(STATE, "observe.json"));
+    const offer = readJson(path.join(STATE, "offer.json"));
+    const parityRef = offer?.marks?.paritySbdPerSteem ?? null;
+    const pnl = observe?.pnl ?? null;
+    const profit = pnl ? {
+      ...pnl,
+      parityRef,
+      unrealizedAtParitySbd:
+        (pnl.positionSteem ?? 0) > 1e-9 && parityRef
+          ? Math.round((pnl.positionSteem * parityRef - (pnl.positionCostSbd ?? 0)) * 1e6) / 1e6
+          : null,
+      method: "יסוד-עלות-ממוצע על fill_order חי (A-10, lib.pnlFromFills — מימוש אחד בגוף) · מכירה-בלי-יסוד = unbased, לא רווח",
+    } : null;
     return json({
       ok: true, at: new Date().toISOString(), account: ACCOUNT,
-      observe: readJson(path.join(STATE, "observe.json")),
+      observe,
       state: readJson(path.join(STATE, "state.json")),
-      offer: readJson(path.join(STATE, "offer.json")),
+      offer,
       convertPlan: readJson(path.join(STATE, "convert-plan.json")),
       daily: readJson(path.join(STATE, "daily-report.json")),
       intel: intelState(),
@@ -65,9 +84,24 @@ async function handle(req) {
       fleet: fleetState(),
       /* T-19b HYPER-GRID: the volume layer — live meter + day counter */
       hyper: hyperState(),
+      /* T-22 ONE-BODY live layer — computed by the ENGINE (single source) */
+      live: {
+        orders: oo.orders ?? [],
+        balances: acc.ok ? { steem: acc.steem ?? null, sbd: acc.sbd ?? null, vests: acc.vests ?? null } : null,
+        rcPct: acc.ok ? acc.rcPct ?? null : null,
+        chainReadOk: acc.ok || oo.ok,
+      },
+      profit,
+      /* T-22 standing teams + the measured scaling curve */
+      webintel: webintelState(),
+      content: contentState(),
+      rcTank: rcTankState(),
+      /* T-21 evidence files the cockpit renders (single source: the engine) */
+      roles: readJson(path.join(STATE, "fleet-roles.json")),
+      economics: readJson(path.join(STATE, "economics.json")),
       execLog,
       events: readLines(path.join(STATE, "events.jsonl"), 20),
-      notes: ["sovereign engine · state lives inside my-project · master credential engine-held, doctrine-capped, never logged", "T-14: continuous-learning layer live — lessons from recorded history, hard-clamped tunings, growth-option discovery"],
+      notes: ["sovereign engine · state lives inside my-project · master credential engine-held, doctrine-capped, never logged", "T-14: continuous-learning layer live — lessons from recorded history, hard-clamped tunings, growth-option discovery", "T-22: one-body law — every domain fact on this page is computed exactly once (here)"],
     });
   }
   if (p === "/hyper") {

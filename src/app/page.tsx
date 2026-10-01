@@ -22,6 +22,8 @@ import { useAdoptCredential } from '@/components/saos/useAdoptCredential'
 import { WalletConsoleCard } from '@/components/saos/WalletConsoleCard'
 import { FleetCard } from '@/components/saos/FleetCard'
 import { RolesCard } from '@/components/saos/RolesCard'
+import { TeamsCard } from '@/components/saos/TeamsCard'
+import { RcTankCard } from '@/components/saos/RcTankCard'
 import { EconomicsRailsCard } from '@/components/saos/EconomicsRailsCard'
 import type { Status, Sovereign } from '@/components/saos/types'
 
@@ -553,6 +555,9 @@ export default function Home() {
                 {/* T-21d · גיוס-תפקידים — אופציונלי, נטען רק כשהמנוע מדווח */}
                 <RolesCard roles={s.roles} />
 
+                {/* T-22f · הצוותים-העומדים — מודיעין-רשת + טיוטות-תוכן; אופציונלי, נטען רק כשהמנוע מדווח */}
+                <TeamsCard webintel={s.webintel} content={s.content} />
+
                 {/* חיילים · צי-גרידים (T-12) */}
                 <SectionCard
                   icon={Users}
@@ -685,6 +690,9 @@ export default function Home() {
 
                 {/* T-21d · כלכלה · כל-המסילות — אופציונלי, נטען רק כשהמנוע מדווח */}
                 <EconomicsRailsCard economics={s.economics} />
+
+                {/* T-22f · מיכל-ה-RC — העקומה המדודה; אופציונלי, נטען רק כשהמנוע מדווח */}
+                <RcTankCard rcTank={s.rcTank} />
               </>
             ))}
 

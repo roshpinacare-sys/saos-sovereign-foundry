@@ -8,17 +8,17 @@
       "confidence": "blocked",
       "note": "no fill window yet — measured once real fills accumulate",
       "meta": {
-        "realizedSbdTotal": -0.027468,
-        "fillsToday": 51
+        "realizedSbdTotal": -0.76543,
+        "fillsToday": 54
       }
     },
     {
       "id": "curation",
       "label": "קיורציה · מסילת-דלק",
       "measuredUsdPerDay": null,
-      "estUsdPerDay": 0.611949,
+      "estUsdPerDay": 0.617862,
       "confidence": "estimated",
-      "note": "~9.69 STEEM/יום — ESTIMATED (payout clock ~7d, first verification T-18c)"
+      "note": "~9.7 STEEM/יום — ESTIMATED (payout clock ~7d, first verification T-18c)"
     },
     {
       "id": "fuel",
@@ -32,9 +32,9 @@
       "id": "convert-arb",
       "label": "ארביטרז'-המרה · SBD print path",
       "measuredUsdPerDay": null,
-      "estUsdPerDay": 0,
-      "confidence": "blocked",
-      "note": "HOLD honest (6477bps edge, dust-or-capped) — the rail is armed-in-doctrine, not burning"
+      "estUsdPerDay": 3.878247,
+      "confidence": "estimated",
+      "note": "edge 6335bps on 10 SBD"
     },
     {
       "id": "promo",
@@ -57,17 +57,17 @@
     }
   ],
   "totalMeasuredUsdPerDay": 0,
-  "totalEstUsdPerDay": 0.611949,
+  "totalEstUsdPerDay": 4.496109,
   "measuredCount": 1,
-  "estimatedCount": 2,
-  "blockedCount": 3,
+  "estimatedCount": 3,
+  "blockedCount": 2,
   "law": "סכום-מדוד וסכום-מוערך לעולם לא מתמזגים — שתי שורות-אמת נפרדות",
-  "parity": 0.1041010516138093,
-  "asof": "2026-10-01T21:44:40.211Z",
+  "parity": 0.10410105276068886,
+  "asof": "2026-10-01T22:34:40.210Z",
   "context": {
-    "venueFillsPerDay": 63,
-    "venueVolSteem24h": 1808.422,
-    "ourFillsObservable": 51,
+    "venueFillsPerDay": 66,
+    "venueVolSteem24h": 2320.212,
+    "ourFillsObservable": 54,
     "scalingLaw": "ops/day ∝ RC ∝ SP — ההון-החכם מכפיל את התקרה, לא את הקוד"
   },
   "pid": 1213

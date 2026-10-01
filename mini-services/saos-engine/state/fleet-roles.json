@@ -1,7 +1,7 @@
 {
   "verdict": "FULL-STRENGTH",
-  "active": 8,
-  "total": 8,
+  "active": 9,
+  "total": 9,
   "ladderNote": "תפקיד נרשם רק כשהראיה שלו קיימת במדינת-המנוע — מדוד, לא מובטח; תפקיד-מת מתדרג ל-planned בכל מחזור",
   "roster": [
     {
@@ -13,7 +13,7 @@
       "cadence": "cycle",
       "truthContract": "numbers only from market_history_api reads, labeled measured",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/market.json: 63 trades/24h measured (vol 1808.422 STEEM)",
+      "evidence": "state/market.json: 66 trades/24h measured (vol 2320.212 STEEM)",
       "priorStatus": "active"
     },
     {
@@ -37,7 +37,7 @@
       "cadence": "cycle+tail",
       "truthContract": "countDayFillsFromHistory / countDayOrderOpsFromHistory on real rows",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/observe.json: 51 chain-truth fills counted (last 2026-10-01T21:18:27.000Z)",
+      "evidence": "state/observe.json: 54 chain-truth fills counted (last 2026-10-01T22:18:36.000Z)",
       "priorStatus": "active"
     },
     {
@@ -49,7 +49,7 @@
       "cadence": "cycle",
       "truthContract": "edge in bps from measured market vs implied, HOLD verdict honest",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/convert-plan.json: CONVERT-HOLD (edge 6477bps)",
+      "evidence": "state/convert-plan.json: CONVERT-PLAN (edge 6335bps)",
       "priorStatus": "active"
     },
     {
@@ -80,12 +80,12 @@
       "id": "integrity-auditor",
       "role": "מבקר-שלמות",
       "lane": "truth",
-      "capability": "offline deterministic selftest core (237 vectors) — the honesty contract itself",
+      "capability": "offline deterministic selftest core (the honesty contract itself, run daily by the machine)",
       "status": "active",
-      "cadence": "on change",
+      "cadence": "daily (T-22 standing)",
       "truthContract": "PASS required before any deploy; failures block",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/selftest-last-run.json: 266/266 PASS at 2026-10-01T21:37:38.634Z",
+      "evidence": "state/selftest-last-run.json: 282/282 PASS at 2026-10-01T22:23:08.183Z",
       "priorStatus": "active"
     },
     {
@@ -99,8 +99,20 @@
       "recruitedAt": "2026-10-01T21:39:37.902Z",
       "evidence": "this roster file — the recruiter ran and wrote it",
       "priorStatus": "active"
+    },
+    {
+      "id": "web-intel",
+      "role": "מודיעין-רשת",
+      "lane": "growth",
+      "capability": "external eyes — rotating web scans of the STEEM/SBD ecosystem, competitors and market news, feeding the strategist and the analyst",
+      "status": "active",
+      "cadence": "6h",
+      "truthContract": "findings carry url+date from real search results; no finding without a source",
+      "recruitedAt": "2026-10-01T22:23:08.223Z",
+      "evidence": "state/webintel.json: 20 sourced findings, age 0h — external recon live",
+      "priorStatus": "active"
     }
   ],
-  "at": "2026-10-01T21:44:40.211Z",
+  "at": "2026-10-01T22:34:40.210Z",
   "pid": 1213
 }

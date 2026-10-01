@@ -25,7 +25,9 @@ export function RailRow({
 }) {
   return (
     <div className={cn('flex min-w-0 items-baseline justify-between gap-3', className)}>
-      <span className="shrink-0 text-[11px] leading-relaxed text-slate-500">{label}</span>
+      {/* min-w-0 (not shrink-0): a long label must be allowed to wrap on 375px —
+          shrink-0 let the T-9 convert-law row push 11px past the mobile viewport (T-22f fix). */}
+      <span className="min-w-0 text-[11px] leading-relaxed text-slate-500">{label}</span>
       <span
         dir={ltr ? 'ltr' : undefined}
         className={cn(
