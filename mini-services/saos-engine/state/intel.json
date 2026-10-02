@@ -1,25 +1,25 @@
 {
-  "at": "2026-10-01T22:54:40.260Z",
+  "at": "2026-10-02T00:31:15.336Z",
   "decisions": [
     {
       "kind": "book-depth",
       "decision": "hold-shape",
-      "reason": "spread 70bps → dragK 1.035",
+      "reason": "spread 86bps → dragK 1.043",
       "action": {
-        "spreadBpsRec": 70,
-        "bestAsk": 0.10071507704703395,
+        "spreadBpsRec": 86,
+        "bestAsk": 0.10087763542822556,
         "bestBid": 0.100014
       },
-      "at": "2026-10-01T22:54:40.260Z"
+      "at": "2026-10-02T00:31:15.336Z"
     },
     {
       "kind": "parity-drift",
-      "decision": "arb-window",
-      "reason": "internal feed deviates -506bps from external parity",
+      "decision": "monitor",
+      "reason": "internal feed deviates -454bps from external parity",
       "action": {
-        "bps": -506
+        "bps": -454
       },
-      "at": "2026-10-01T22:54:40.260Z"
+      "at": "2026-10-02T00:31:15.336Z"
     },
     {
       "kind": "soldiers",
@@ -28,33 +28,33 @@
       "action": {
         "deployed": true
       },
-      "at": "2026-10-01T22:54:40.260Z"
+      "at": "2026-10-02T00:31:15.336Z"
     },
     {
       "kind": "rc-health",
       "decision": "healthy",
-      "reason": "RC at 100%",
+      "reason": "RC at 98.7%",
       "action": {
-        "rcPct": 100
+        "rcPct": 98.7
       },
-      "at": "2026-10-01T22:54:40.260Z"
+      "at": "2026-10-02T00:31:15.336Z"
     },
     {
       "kind": "curation",
       "decision": "curator-armed",
-      "reason": "rail armed, verdict VP-FLOOR today (VP 0%) — gates hold until candidates pass",
+      "reason": "rail armed, verdict DAY-CAP today (VP ?%) — gates hold until candidates pass",
       "action": {
-        "votesToday": 0,
-        "vpEff": 0,
-        "verdict": "VP-FLOOR"
+        "votesToday": 10,
+        "vpEff": null,
+        "verdict": "DAY-CAP"
       },
-      "at": "2026-10-01T22:54:40.260Z"
+      "at": "2026-10-02T00:31:15.336Z"
     }
   ],
-  "spreadBpsRec": 70,
+  "spreadBpsRec": 86,
   "book": {
-    "bestAsk": 0.10071507704703395,
+    "bestAsk": 0.10087763542822556,
     "bestBid": 0.100014,
-    "spreadBps": 70
+    "spreadBps": 86
   }
 }

@@ -10,7 +10,7 @@
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { aggregateRails } from "./lib.mjs";
+import { aggregateRails, x2Spectrum } from "./lib.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const STATE = path.join(DIR, "state");
@@ -37,6 +37,16 @@ export function runEconomics(now = new Date().toISOString()) {
   const parity = observe?.parity?.parity ?? null;
   const sbdUsd = observe?.parity?.sbdUsd ?? null;
   const steemUsd = observe?.parity?.steemUsd ?? null;
+  /* T-23 · the payouts instrument: settled chain rewards flip the curation
+   * rail from estimated to measured (the rollup converts vests chain-side;
+   * we price the $ here with the same single pricer) */
+  const payouts = readJson(path.join(STATE, "payouts.json"), null);
+  const curationMeasuredSteemPerDay = payouts?.rollup?.confidence === "measured"
+    && payouts.rollup.windowDays
+    ? payouts.rollup.curationVests / payouts.rollup.windowDays
+    : null;
+  const curationMeasuredUsdPerDay = curationMeasuredSteemPerDay != null && (steemUsd ?? 0) > 0
+    ? Math.round(curationMeasuredSteemPerDay * steemUsd * 1e6) / 1e6 : null;
 
   /* realized trading: measured by pnlFromFills over the observable fill
    * window; per-day normalization waits for fill-timestamp windows (honest) */
@@ -49,6 +59,7 @@ export function runEconomics(now = new Date().toISOString()) {
     realizedWindowDays: null,
     sbdUsd, steemUsd, parity,
     curationEstSteemPerDay: curationEst,
+    curationMeasuredUsdPerDay,
     convertEdgeBps: convert?.edgeBps ?? null,
     convertAmountSbd: convert?.amountSbd ?? null,
     convertVerdict: convert?.verdict ?? null,
@@ -69,6 +80,15 @@ export function runEconomics(now = new Date().toISOString()) {
       ourFillsObservable: observe?.fills ?? null,
       scalingLaw: "ops/day ∝ RC ∝ SP — ההון-החכם מכפיל את התקרה, לא את הקוד",
     },
+    /* T-23 · the payout clock + the X-2 capital spectrum (T-18f): the honest
+     * scaling table from today's measured/estimated economics to $1000/day */
+    payoutClock: payouts?.payout ?? null,
+    pendingRewards: payouts?.pending ?? null,
+    x2: x2Spectrum({
+      currentUsdPerDay: out.totalMeasuredUsdPerDay > 0 ? out.totalMeasuredUsdPerDay : out.totalEstUsdPerDay,
+      targetUsdPerDay: 1000,
+      currentSp: observe?.inventory?.spOwn ?? null,
+    }),
     pid: process.pid,
   };
   writeJson(ECON_FILE, doc);

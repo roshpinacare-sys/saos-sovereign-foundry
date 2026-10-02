@@ -34,6 +34,8 @@ import { runEconomics } from "./economics.mjs";
 import { runWebIntel } from "./webintel.mjs";
 import { runContent } from "./content.mjs";
 import { runRcTank, rcTankState } from "./rctank.mjs";
+import { runPayouts, payoutsState } from "./payouts.mjs";
+import { runWeave, weaveState } from "./weave.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const STATE = path.join(DIR, "state");
@@ -481,6 +483,32 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
     if (cached?.day === today) return { verdict: cached.verdict ?? "CADENCE-GATED", maxRc: cached.maxRc ?? null, opsPerDayEquilibrium: cached.opsPerDayEquilibrium ?? null, growthPct: cached.growthPct ?? null, day: today };
     const out = await runRcTank({ now, account: ACCOUNT });
     return { verdict: out.verdict, maxRc: out.maxRc ?? null, opsPerDayEquilibrium: out.opsPerDayEquilibrium ?? null, growthPct: out.growthPct ?? null, day: out.day ?? today };
+  });
+
+  /* T-23 · PAYOUTS TEAM: המכשיר שהופך המערך-הכלכלי ממדומה לאמיתי — pending
+   * rewards + the payout CLOCK (T-18c) + settled reward rollup + VP probe
+   * (T-18e). Read-only, credential-free. Day-gated (one chain scan/day). */
+  report.steps.payouts = await stepWrap("payouts", async () => {
+    const today = now.slice(0, 10);
+    const cached = payoutsState();
+    if (cached?.day === today && cached?.verdict?.startsWith("MEASURED")) {
+      return { verdict: cached.verdict, day: today, pendingVests: cached.pending?.vests ?? null, daysRemaining: cached.payout?.daysRemaining ?? null, rollupConfidence: cached.rollup?.confidence ?? null };
+    }
+    const out = await runPayouts({ now, account: ACCOUNT });
+    return { verdict: out.verdict, day: out.day, pendingVests: out.pending?.vests ?? null, daysRemaining: out.payout?.daysRemaining ?? null, rollupConfidence: out.rollup?.confidence ?? null, firstVoteDay: out.scan?.firstVoteDay ?? null };
+  });
+
+  /* T-23 · WEAVE HANDSHAKE: the one-body contract with the external second
+   * signer — both writers observed from chain truth, the shared day-cap,
+   * lanes and collision laws PUBLISHED (T-19f v1). Read-only. Day-gated. */
+  report.steps.weave = await stepWrap("weave", async () => {
+    const today = now.slice(0, 10);
+    const cached = weaveState();
+    if (cached?.day === today && cached?.protocol === "saos.weave.core.v1") {
+      return { verdict: "PUBLISHED", day: today, theirVotesToday: cached.theirs?.votesToday ?? 0, ourVotesToday: cached.ours?.votesToday ?? 0, revision: cached.handshake?.revision ?? null };
+    }
+    const out = await runWeave({ now, account: ACCOUNT });
+    return { verdict: "PUBLISHED", day: out.day, theirVotesToday: out.theirs?.votesToday ?? 0, ourVotesToday: out.ours?.votesToday ?? 0, revision: out.handshake?.revision ?? 1 };
   });
 
   /* T-22 · STANDING SELFTEST: the machine audits its own laws daily —

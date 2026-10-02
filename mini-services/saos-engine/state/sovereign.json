@@ -1,28 +1,28 @@
 {
-  "bootedAt": "2026-10-01T20:04:40.191Z",
-  "pid": 1094,
+  "bootedAt": "2026-10-01T23:11:15.317Z",
+  "pid": 1074,
   "armed": true,
   "paused": false,
   "watchdog": {
-    "checks": 877,
-    "downs": 11,
-    "heals": 23,
-    "healVerified": 22,
+    "checks": 961,
+    "downs": 12,
+    "heals": 24,
+    "healVerified": 23,
     "healFailed": 0,
-    "lastCheckAt": "2026-10-01T23:03:40.758Z",
+    "lastCheckAt": "2026-10-02T00:34:15.390Z",
     "engineUp": true,
-    "lastSpawnAt": "2026-10-01T20:04:40.211Z"
+    "lastSpawnAt": "2026-10-01T23:11:15.332Z"
   },
   "cycles": {
-    "autoRuns": 89,
-    "ok": 55,
+    "autoRuns": 98,
+    "ok": 59,
     "fail": 20,
-    "blocked": 14,
-    "lastAt": "2026-10-01T22:54:48.268Z",
-    "lastOk": false,
-    "lastHealth": "blocked",
-    "lastMs": 5344,
-    "nextAt": "2026-10-01T23:04:48.268Z"
+    "blocked": 19,
+    "lastAt": "2026-10-02T00:31:39.361Z",
+    "lastOk": true,
+    "lastHealth": "ok",
+    "lastMs": 21279,
+    "nextAt": "2026-10-02T00:41:39.361Z"
   },
   "selftest": {
     "runs": 0,
@@ -32,13 +32,19 @@
     "total": null
   },
   "cred": {
-    "present": false,
-    "firstDownAt": "2026-10-01T21:38:40.262Z",
-    "lastDownAt": "2026-10-01T23:03:40.761Z",
-    "alerts": 5,
-    "lastAlertAt": "2026-10-01T22:38:40.292Z"
+    "present": true,
+    "firstDownAt": null,
+    "lastDownAt": "2026-10-01T23:52:15.367Z",
+    "alerts": 6,
+    "lastAlertAt": "2026-10-01T23:39:15.356Z"
   },
   "control": [
+    {
+      "at": "2026-10-01T23:11:15.317Z",
+      "action": "boot",
+      "by": "instrumentation",
+      "note": "SovereignCore armed"
+    },
     {
       "at": "2026-10-01T20:04:40.191Z",
       "action": "boot",
@@ -145,12 +151,6 @@
     },
     {
       "at": "2026-09-29T17:45:21.709Z",
-      "action": "boot",
-      "by": "instrumentation",
-      "note": "SovereignCore armed"
-    },
-    {
-      "at": "2026-09-29T17:44:38.777Z",
       "action": "boot",
       "by": "instrumentation",
       "note": "SovereignCore armed"

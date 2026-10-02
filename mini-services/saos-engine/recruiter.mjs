@@ -12,6 +12,8 @@ import * as path from "node:path";
 import { recruitRoles } from "./lib.mjs";
 import { webIntelEvidence } from "./webintel.mjs";
 import { contentEvidence } from "./content.mjs";
+import { payoutsEvidence } from "./payouts.mjs";
+import { weaveEvidence } from "./weave.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const STATE = path.join(DIR, "state");
@@ -70,6 +72,11 @@ export function gatherEvidence() {
   const content = contentEvidence();
   if (content && !evidence.promo) evidence.promo = content;
   else if (content) evidence.contentOps = content;
+  /* T-23 · the two new stations: payout instrument + weave handshake */
+  const payouts = payoutsEvidence();
+  if (payouts) evidence.payouts = payouts;
+  const weave = weaveEvidence();
+  if (weave) evidence.weave = weave;
   evidence.recruiter = "this roster file — the recruiter ran and wrote it";
   return evidence;
 }

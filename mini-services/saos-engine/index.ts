@@ -17,6 +17,8 @@ import { startHyperGrid, hyperState } from "./hypergrid.mjs";
 import { webintelState } from "./webintel.mjs";
 import { contentState } from "./content.mjs";
 import { rcTankState } from "./rctank.mjs";
+import { payoutsState } from "./payouts.mjs";
+import { weaveState } from "./weave.mjs";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -96,6 +98,10 @@ async function handle(req) {
       webintel: webintelState(),
       content: contentState(),
       rcTank: rcTankState(),
+      /* T-23 · the payout instrument (estimated→measured converter) + the
+       * weave handshake with the second signer (the one-body contract) */
+      payouts: payoutsState(),
+      weave: weaveState(),
       /* T-21 evidence files the cockpit renders (single source: the engine) */
       roles: readJson(path.join(STATE, "fleet-roles.json")),
       economics: readJson(path.join(STATE, "economics.json")),
@@ -106,6 +112,12 @@ async function handle(req) {
   }
   if (p === "/hyper") {
     return json({ ok: true, at: new Date().toISOString(), account: ACCOUNT, ...hyperState() });
+  }
+  if (p === "/payouts") {
+    return json({ ok: true, at: new Date().toISOString(), account: ACCOUNT, payouts: payoutsState() });
+  }
+  if (p === "/weave") {
+    return json({ ok: true, at: new Date().toISOString(), account: ACCOUNT, weave: weaveState() });
   }
   if (p === "/cycle") {
     if (req.method !== "POST") return json({ ok: false, error: "POST required" }, 405);
@@ -172,7 +184,7 @@ async function handle(req) {
                      : "credential secured but not matching this account's authorities — install the proposedPubkeys on steemit.com, or paste the CURRENT password instead",
     });
   }
-  return json({ ok: false, error: "not-found", routes: ["/health", "/status", "/hyper", "/cycle", "/cycle-status", "/live", "/fills", "/exec-status", "/fleet", "/adopt-credential"] }, 404);
+  return json({ ok: false, error: "not-found", routes: ["/health", "/status", "/hyper", "/payouts", "/weave", "/cycle", "/cycle-status", "/live", "/fills", "/exec-status", "/fleet", "/adopt-credential"] }, 404);
 }
 
 // T-15 SINGLE-INSTANCE LAW (measured live: 3 duplicate engine processes were

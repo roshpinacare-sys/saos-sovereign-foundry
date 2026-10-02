@@ -1,7 +1,7 @@
 {
   "verdict": "FULL-STRENGTH",
-  "active": 9,
-  "total": 9,
+  "active": 11,
+  "total": 11,
   "ladderNote": "תפקיד נרשם רק כשהראיה שלו קיימת במדינת-המנוע — מדוד, לא מובטח; תפקיד-מת מתדרג ל-planned בכל מחזור",
   "roster": [
     {
@@ -13,7 +13,7 @@
       "cadence": "cycle",
       "truthContract": "numbers only from market_history_api reads, labeled measured",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/market.json: 68 trades/24h measured (vol 2490.762 STEEM)",
+      "evidence": "state/market.json: 71 trades/24h measured (vol 2538.538 STEEM)",
       "priorStatus": "active"
     },
     {
@@ -37,7 +37,7 @@
       "cadence": "cycle+tail",
       "truthContract": "countDayFillsFromHistory / countDayOrderOpsFromHistory on real rows",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/observe.json: 53 chain-truth fills counted (last 2026-10-01T22:48:39.000Z)",
+      "evidence": "state/observe.json: 25 chain-truth fills counted (last 2026-10-02T00:20:24.000Z)",
       "priorStatus": "active"
     },
     {
@@ -49,7 +49,7 @@
       "cadence": "cycle",
       "truthContract": "edge in bps from measured market vs implied, HOLD verdict honest",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/convert-plan.json: CONVERT-PLAN (edge 5518bps)",
+      "evidence": "state/convert-plan.json: CONVERT-PLAN (edge 5528bps)",
       "priorStatus": "active"
     },
     {
@@ -73,7 +73,7 @@
       "cadence": "cycle",
       "truthContract": "budgetCounted basis journaled on every verdict",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/curator.json: VP-FLOOR (budgetCounted ?, basis state)",
+      "evidence": "state/curator.json: DAY-CAP (budgetCounted 13, basis max(state, chain-truth))",
       "priorStatus": "active"
     },
     {
@@ -85,7 +85,7 @@
       "cadence": "daily (T-22 standing)",
       "truthContract": "PASS required before any deploy; failures block",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/selftest-last-run.json: 282/282 PASS at 2026-10-01T22:34:57.966Z",
+      "evidence": "state/selftest-last-run.json: 311/311 PASS at 2026-10-02T00:16:13.812Z",
       "priorStatus": "active"
     },
     {
@@ -109,10 +109,34 @@
       "cadence": "6h",
       "truthContract": "findings carry url+date from real search results; no finding without a source",
       "recruitedAt": "2026-10-01T22:23:08.223Z",
-      "evidence": "state/webintel.json: 20 sourced findings, age 1h — external recon live",
+      "evidence": "state/webintel.json: 20 sourced findings, age 2h — external recon live",
+      "priorStatus": "active"
+    },
+    {
+      "id": "payout-auditor",
+      "role": "מבקר-פאייאוטים",
+      "lane": "truth",
+      "capability": "the payout CLOCK + pending rewards + settled reward rollup — the instrument that flips the curation rail from estimated to measured (T-18c/T-23)",
+      "status": "active",
+      "cadence": "daily",
+      "truthContract": "pending balances and history rows from chain reads only; the clock, never a guess, gates the estimated→measured flip",
+      "recruitedAt": "2026-10-02T00:11:15.336Z",
+      "evidence": "state/payouts.json: MEASURED at 2026-10-02T00:16:13.839Z — pending(vests 0), payout clock 2d remaining — המכשיר-להפיכת-הקיורציה-למדוד חי",
+      "priorStatus": "active"
+    },
+    {
+      "id": "weave-ambassador",
+      "role": "שגריר-ה-weave",
+      "lane": "doctrine",
+      "capability": "the one-body contract with the external second signer — shared day-cap, vote/order lanes, collision + weight laws, published machine-readably (T-19f/T-23)",
+      "status": "active",
+      "cadence": "daily",
+      "truthContract": "their votes counted from chain history minus our journal, never from our own logs",
+      "recruitedAt": "2026-10-02T00:11:15.336Z",
+      "evidence": "state/weave.json: saos.weave.core.v1 published, age 0h — second-writer votes today 3 — החוזה-האחד פומבי",
       "priorStatus": "active"
     }
   ],
-  "at": "2026-10-01T22:54:40.260Z",
-  "pid": 1213
+  "at": "2026-10-02T00:31:15.336Z",
+  "pid": 1323
 }

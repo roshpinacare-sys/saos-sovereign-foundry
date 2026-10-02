@@ -36,6 +36,7 @@ type SovereignState = {
   watchdog: {
     checks: number; downs: number; heals: number; healVerified: number; healFailed: number;
     lastCheckAt: string | null; engineUp: boolean; lastSpawnAt: string | null;
+    lastUpAt: string | null; blips: number;
   };
   cycles: {
     autoRuns: number; ok: number; fail: number; blocked: number;
@@ -56,6 +57,7 @@ type Core = {
   timers: { wd?: ReturnType<typeof setInterval>; cycle?: ReturnType<typeof setInterval>; st?: ReturnType<typeof setInterval> };
   cycleBusy: boolean;
   testBusy: boolean;
+  wdBusy: boolean;
 };
 
 const g = globalThis as unknown as { __saosSovereign?: Core };
@@ -168,15 +170,51 @@ async function healEngine(core: Core, reason: string): Promise<void> {
 }
 
 async function watchdogTick(core: Core): Promise<void> {
+  /* T-23 · TICK SINGLE-FLIGHT: an async tick that overlaps the heal of the
+   * previous one double-counts downs and re-enters healEngine — measured as
+   * part of the blind-window investigation. A running tick blocks the next. */
+  if (core.wdBusy) return;
+  core.wdBusy = true;
+  try {
+    await watchdogTickInner(core);
+  } finally {
+    core.wdBusy = false;
+  }
+}
+
+async function watchdogTickInner(core: Core): Promise<void> {
   core.state.watchdog.checks++;
   core.state.watchdog.lastCheckAt = nowIso();
   const h = await engineHealth();
   const wasUp = core.state.watchdog.engineUp;
-  core.state.watchdog.engineUp = h.up;
+  if (h.up) {
+    /* the freshness anchor — the honest "we saw it alive at" timestamp the
+     * blind window is measured against */
+    core.state.watchdog.lastUpAt = nowIso();
+    core.state.watchdog.engineUp = true;
+  }
   if (!h.up) {
-    core.state.watchdog.downs++;
-    appendEvent(core, wasUp ? "watchdog-down" : "watchdog-down-again", {});
-    if (!core.state.paused) await healEngine(core, "watchdog");
+    /* T-23 · THE BLIND WINDOW BECOMES A MEASURED ARTIFACT (T-18 finding:
+     * engine kill detected ~3.2min late, root-cause pending). Two laws:
+     * (1) TWO-STRIKE — a 5s re-check separates a transient blip from a real
+     * down without waiting a full 60s tick for the confirmation;
+     * (2) downForMs — every down event carries how long since the last
+     * proven-alive moment, so "detection latency" is always journaled, never
+     * hidden. */
+    await new Promise((r) => setTimeout(r, 5000));
+    const h2 = await engineHealth();
+    const downForMs = core.state.watchdog.lastUpAt ? Math.max(0, Date.now() - Date.parse(core.state.watchdog.lastUpAt)) : null;
+    if (h2.up) {
+      core.state.watchdog.blips++;
+      core.state.watchdog.lastUpAt = nowIso();
+      core.state.watchdog.engineUp = true;
+      appendEvent(core, "watchdog-blip", { downForMs, note: "transient — second pulse proved alive" });
+    } else {
+      core.state.watchdog.downs++;
+      core.state.watchdog.engineUp = false;
+      appendEvent(core, wasUp ? "watchdog-down" : "watchdog-down-again", { downForMs, confirmMs: 5000 });
+      if (!core.state.paused) await healEngine(core, "watchdog");
+    }
   } else if (!wasUp) {
     appendEvent(core, "watchdog-up", {});
   }
@@ -407,6 +445,7 @@ export function ensureSovereign(by = "auto"): Core {
         checks: prev?.watchdog?.checks ?? 0, downs: prev?.watchdog?.downs ?? 0,
         heals: prev?.watchdog?.heals ?? 0, healVerified: prev?.watchdog?.healVerified ?? 0, healFailed: prev?.watchdog?.healFailed ?? 0,
         lastCheckAt: null, engineUp: false, lastSpawnAt: null,
+        lastUpAt: prev?.watchdog?.lastUpAt ?? null, blips: prev?.watchdog?.blips ?? 0,
       },
       cycles: {
         autoRuns: prev?.cycles?.autoRuns ?? 0, ok: prev?.cycles?.ok ?? 0, fail: prev?.cycles?.fail ?? 0,
@@ -429,6 +468,7 @@ export function ensureSovereign(by = "auto"): Core {
     timers: {},
     cycleBusy: false,
     testBusy: false,
+    wdBusy: false,
   };
   g.__saosSovereign = core;
   control(core, "boot", by, "SovereignCore armed");

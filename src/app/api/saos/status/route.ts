@@ -221,11 +221,16 @@ export async function GET() {
           estimatedCount: econRaw.estimatedCount ?? null,
           blockedCount: econRaw.blockedCount ?? null,
           law: econRaw.law ?? null,
+          payoutClock: econRaw.payoutClock ?? null,
+          pendingRewards: econRaw.pendingRewards ?? null,
+          x2: econRaw.x2 ?? null,
         }
       : null,
     webintel: s.webintel ?? null,
     content: s.content ?? null,
     rcTank: s.rcTank ?? null,
+    payouts: s.payouts ?? null,
+    weave: s.weave ?? null,
     sources: { kind: "thin-proxy-one-body", engineHttp: ENGINE_HTTP, doctrineAccount: s.account ?? null },
     notes: [
       "חוק-הגוף-האחד (T-22): כל עובדת-דומיין מחושבת פעם-אחת במנוע — שכבה-זו מציגה בלבד",

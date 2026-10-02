@@ -671,6 +671,8 @@ export function recruitRoles({ evidence = {}, now = null, prior = {} } = {}) {
     { id: "integrity-auditor", role: "מבקר-שלמות", lane: "truth", capability: "offline deterministic selftest core (the honesty contract itself, run daily by the machine)", key: "selftest", cadence: "daily (T-22 standing)", truthContract: "PASS required before any deploy; failures block" },
     { id: "fleet-recruiter", role: "מגייס-הצבא", lane: "doctrine", capability: "this very ladder — turns running capabilities into accountable stations", key: "recruiter", cadence: "cycle", truthContract: "a role exists only with named evidence in state" },
     { id: "web-intel", role: "מודיעין-רשת", lane: "growth", capability: "external eyes — rotating web scans of the STEEM/SBD ecosystem, competitors and market news, feeding the strategist and the analyst", key: "webIntel", cadence: "6h", truthContract: "findings carry url+date from real search results; no finding without a source" },
+    { id: "payout-auditor", role: "מבקר-פאייאוטים", lane: "truth", capability: "the payout CLOCK + pending rewards + settled reward rollup — the instrument that flips the curation rail from estimated to measured (T-18c/T-23)", key: "payouts", cadence: "daily", truthContract: "pending balances and history rows from chain reads only; the clock, never a guess, gates the estimated→measured flip" },
+    { id: "weave-ambassador", role: "שגריר-ה-weave", lane: "doctrine", capability: "the one-body contract with the external second signer — shared day-cap, vote/order lanes, collision + weight laws, published machine-readably (T-19f/T-23)", key: "weave", cadence: "daily", truthContract: "their votes counted from chain history minus our journal, never from our own logs" },
   ];
   const priorById = {};
   for (const r of (Array.isArray(prior?.roster) ? prior.roster : [])) {
@@ -705,7 +707,7 @@ export function recruitRoles({ evidence = {}, now = null, prior = {} } = {}) {
  * One honest rollup of EVERY value rail the machine runs, each labeled
  * measured | estimated | blocked with its own note. Never sums across
  * confidence classes into one lie — totals are per-class. Pure. */
-export function aggregateRails({ realizedSbdTotal = null, realizedWindowDays = null, sbdUsd = null, curationEstSteemPerDay = null, steemUsd = null, convertEdgeBps = null, convertAmountSbd = null, convertVerdict = null, promoPostsPerDay = null, promoEstUsdPerPost = null, fuelUsdPerDay = null, hyperOpsPerDay = null, parity = null, fillsToday = null, marketFillsPerDay = null } = {}) {
+export function aggregateRails({ realizedSbdTotal = null, realizedWindowDays = null, sbdUsd = null, curationEstSteemPerDay = null, curationMeasuredUsdPerDay = null, steemUsd = null, convertEdgeBps = null, convertAmountSbd = null, convertVerdict = null, promoPostsPerDay = null, promoEstUsdPerPost = null, fuelUsdPerDay = null, hyperOpsPerDay = null, parity = null, fillsToday = null, marketFillsPerDay = null } = {}) {
   /* null/empty → null (Number(null)===0 is the classic lie: missing evidence
    * must never classify as a measured ZERO) */
   const r6 = (v) => (v == null || v === "" || !Number.isFinite(Number(v)) ? null : Number(v));
@@ -725,14 +727,18 @@ export function aggregateRails({ realizedSbdTotal = null, realizedWindowDays = n
     meta: { realizedSbdTotal: realizedSbd, fillsToday: r6(fillsToday) ?? 0 },
   });
 
-  // 2 · curation fuel (ESTIMATED from public reward-fund math)
+  // 2 · curation fuel (ESTIMATED from public reward-fund math; MEASURED the
+  // moment the chain pays — the T-23 payouts instrument supplies it)
   const curSteem = r6(curationEstSteemPerDay);
   const curUsd = curSteem != null && r6(steemUsd) != null ? Math.round(curSteem * steemUsd * 1e6) / 1e6 : null;
+  const curMeasured = r6(curationMeasuredUsdPerDay);
   rails.push({
     id: "curation", label: "קיורציה · מסילת-דלק",
-    measuredUsdPerDay: null, estUsdPerDay: curUsd,
-    confidence: curUsd != null ? "estimated" : "blocked",
-    note: curUsd != null ? `~${Math.round(curSteem * 100) / 100} STEEM/יום — ESTIMATED (payout clock ~7d, first verification T-18c)` : "no discovery estimate yet",
+    measuredUsdPerDay: curMeasured, estUsdPerDay: curMeasured != null ? null : curUsd,
+    confidence: curMeasured != null ? "measured" : curUsd != null ? "estimated" : "blocked",
+    note: curMeasured != null
+      ? `MEASURED ${curMeasured}$/יום from settled chain rewards — התווית התהפכה מ-estimated, שעון-הפאייאוט צדק`
+      : curUsd != null ? `~${Math.round(curSteem * 100) / 100} STEEM/יום — ESTIMATED (payout clock ~7d, first verification T-18c)` : "no discovery estimate yet",
   });
 
   // 3 · fuel rollup from observe (author+curation ops est)
@@ -832,4 +838,162 @@ export function webIntelFresh(file, nowMs = Date.now(), maxAgeMs = 26 * 3600_000
   const findings = [...flat, ...inScans].filter((f) => f && f.url && f.title);
   if (ageMs < 0 || ageMs > maxAgeMs || findings.length === 0) return null;
   return { ageMs, findings: findings.length };
+}
+
+/* ═══════════════════════════ T-23 · המדידה-הכלכלית-האמיתית ═══════════════════════════
+ * The operator's directive: "מערך-כלכלי מדומה → להפוך לערך אמיתי צעד-צעד".
+ * These pure cores are the conversion instruments: the payout CLOCK (T-18c),
+ * the reward-history rollup (estimated → measured the moment the chain
+ * pays), the VP equilibrium probe (T-18e), the X-2 capital spectrum (T-18f)
+ * and the weave arbitration (T-19f — the one-body contract with the second
+ * signer). All pure, all vector-tested, all honest. */
+
+/* T-23 · PAYOUT CLOCK: curation rewards settle ~7d after vote. The machine's
+ * first doctrine votes were 2026-09-30 — the clock below is the countdown to
+ * the FIRST REAL measurement of the curation rail (until then the rail
+ * stays ESTIMATED, and the clock is the honest reason why). Pure. */
+export function payoutWindow({ firstVoteDay, now, payoutDays = 7 } = {}) {
+  if (!firstVoteDay || !now) return null;
+  const first = Date.parse(`${String(firstVoteDay).slice(0, 10)}T00:00:00Z`);
+  const t = Date.parse(now);
+  if (!Number.isFinite(first) || !Number.isFinite(t)) return null;
+  const payoutMs = first + payoutDays * 86400_000;
+  const msRemaining = payoutMs - t;
+  return {
+    payoutDay: new Date(payoutMs).toISOString().slice(0, 10),
+    msRemaining: Math.max(0, msRemaining),
+    hoursRemaining: Math.max(0, Math.round((msRemaining / 3600_000) * 10) / 10),
+    daysRemaining: Math.max(0, Math.ceil(msRemaining / 86400_000)),
+    phase: msRemaining > 0 ? "pre-payout" : "paid-window",
+    law: "פאייאוט-קיורציה מתיישב ~7 ימים אחרי-ההצבעה — השעון מדוד, לא מונח",
+  };
+}
+
+/* T-23 · REWARD-HISTORY ROLLUP: get_account_history reward ops → the
+ * measured historical rewards. While opsCount = 0 the rollup honestly says
+ * nothing-paid-yet (blocked) — the moment the chain pays, this flips to
+ * measured $/day with the window labeled. Junk-tolerant, never invents.
+ * rows = [[idx, {op, timestamp}]] as returned by the history API. */
+export function rewardHistoryRollup({ rows = [], steemUsd = null, sbdUsd = null, vestsToSteem = null } = {}) {
+  const num = (s) => { const n = Number(String(s ?? "").split(" ")[0]); return Number.isFinite(n) ? n : 0; };
+  let curationVests = 0, authorSbd = 0, authorSteem = 0, authorVests = 0, claims = 0, opsCount = 0;
+  let oldestTs = null, newestTs = null;
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const e = Array.isArray(row) ? row[1] : null;
+    const op = e?.op;
+    if (!op) continue;
+    const type = opTypeName(op);
+    const v = (Array.isArray(op) ? op[1] : op?.value) ?? {};
+    if (type === "curation_reward") { curationVests += num(v.reward); opsCount++; }
+    else if (type === "author_reward") { authorSbd += num(v.sbd_payout); authorSteem += num(v.steem_payout); authorVests += num(v.vesting_payout); opsCount++; }
+    else if (type === "claim_reward_balance") { claims++; opsCount++; }
+    if (e?.timestamp) {
+      const ts = Date.parse(String(e.timestamp).includes("T") ? e.timestamp : `${e.timestamp}Z`);
+      if (Number.isFinite(ts)) { oldestTs = oldestTs == null ? ts : Math.min(oldestTs, ts); newestTs = newestTs == null ? ts : Math.max(newestTs, ts); }
+    }
+  }
+  const windowDays = oldestTs != null && newestTs != null && newestTs >= oldestTs
+    ? Math.max(1, Math.ceil((newestTs - oldestTs) / 86400_000)) : null;
+  const curationSteem = vestsToSteem != null && vestsToSteem > 0 ? curationVests * vestsToSteem : null;
+  const curationUsd = curationSteem != null && num(steemUsd) > 0 ? curationSteem * Number(steemUsd) : null;
+  const curationUsdPerDay = curationUsd != null && windowDays != null ? Math.round((curationUsd / windowDays) * 1e6) / 1e6 : null;
+  const authorSbdUsd = num(sbdUsd) > 0 ? Math.round(authorSbd * Number(sbdUsd) * 1e6) / 1e6 : null;
+  const authorUsdPerDay = authorSbdUsd != null && windowDays != null ? Math.round((authorSbdUsd / windowDays) * 1e6) / 1e6 : null;
+  return {
+    opsCount, claims,
+    curationVests: Math.round(curationVests * 1e6) / 1e6,
+    authorSbd: Math.round(authorSbd * 1e6) / 1e6,
+    authorSteem: Math.round(authorSteem * 1e6) / 1e6,
+    authorVests: Math.round(authorVests * 1e6) / 1e6,
+    windowDays, oldestTs: oldestTs != null ? new Date(oldestTs).toISOString() : null,
+    newestTs: newestTs != null ? new Date(newestTs).toISOString() : null,
+    curationUsdPerDay, authorUsdPerDay,
+    confidence: opsCount === 0 ? "blocked" : (curationUsdPerDay != null || authorUsdPerDay != null) ? "measured" : "estimated",
+    note: opsCount === 0
+      ? "no settled reward ops in the scanned window yet — the payout clock decides when this flips to measured"
+      : "settled chain rewards — window-labeled",
+  };
+}
+
+/* T-23 · VP EQUILIBRIUM (T-18e): current voting power from the manabar.
+ * VP regenerates at a known curve; the honest question is whether the
+ * doctrine's day-cap leaves VP rotting (spoilage) or riding the curve.
+ * Pure math over the manabar snapshot. */
+export function vpNow({ currentMana, maxMana, vests, now, regenSecs = 5 * 86400 }) {
+  const cm = Number(currentMana), mm = Number(maxMana), v = Number(String(vests ?? "").split(" ")[0]);
+  if (!Number.isFinite(cm) || !Number.isFinite(mm) || mm <= 0) return null;
+  const pct = Math.round((cm / mm) * 1e3) / 10;
+  const regenPerSec = mm / regenSecs;
+  const hrsToFull = Math.max(0, Math.round(((mm - cm) / regenPerSec / 3600) * 10) / 10);
+  return { pct, hrsToFull, regenPerSec: Math.round(regenPerSec), vests: Number.isFinite(v) ? v : null, basis: `voting_manabar at ${now ?? "?"}` };
+}
+
+/* T-23 · X-2 CAPITAL SPECTRUM (T-18f): the honest scaling table from
+ * today's MEASURED economics to the $1000/day target. The machine's law is
+ * known (curation ∝ SP share, ops/day ∝ RC ∝ SP) — the card shows what
+ * capital buys, not a promise. Pure. */
+export function x2Spectrum({ currentUsdPerDay = null, targetUsdPerDay = 1000, currentSp = null } = {}) {
+  const base = Number(currentUsdPerDay);
+  const sp = Number(currentSp);
+  if (!Number.isFinite(base) || base <= 0 || !Number.isFinite(sp) || sp <= 0) return null;
+  const factor = Math.ceil((targetUsdPerDay / base) * 10) / 10;
+  const mults = [1, 10, 40, 100, Math.ceil(factor)];
+  const rows = mults.map((m) => ({
+    mult: m,
+    sp: Math.round(sp * m),
+    usdPerDay: Math.round(base * m * 100) / 100,
+    reachesTarget: base * m >= targetUsdPerDay,
+  }));
+  return {
+    currentUsdPerDay: Math.round(base * 1e4) / 1e4,
+    targetUsdPerDay, currentSp: Math.round(sp), factor,
+    rows,
+    law: "הקיורציה גדלה ∝ חלק-ה-SP מבריכת-התגמולים; תקרת-העסקאות ∝ RC ∝ SP — ההון מכפיל את המדידה, הקוד נשאר",
+  };
+}
+
+/* T-23 · WEAVE ARBITRATION (T-19f v1): the one-body contract with the
+ * external second signer ("saos.weave.core.v1"). Both writers act on the
+ * SAME account; the chain truth is the shared ledger, so the day-cap counts
+ * BOTH writers (the T-18 max(state, chain-truth) law). The handshake makes
+ * the lanes explicit: votes share the cap, orders are partitioned by
+ * order-id ranges, and the second signer is REQUESTED to publish its own
+ * partition. Pure. */
+export function weaveArbitration({ ourVotesToday = 0, theirVotesToday = 0, sharedDayCap = 18, ourOrderCount = 0, theirOrderCount = 0 } = {}) {
+  const ours = Number(ourVotesToday) || 0;
+  const theirs = Number(theirVotesToday) || 0;
+  const cap = Number(sharedDayCap) || 0;
+  const combined = ours + theirs;
+  return {
+    combined, sharedDayCap: cap,
+    capRemaining: Math.max(0, cap - combined),
+    capBasis: "chain-truth-shared — התקרה סופרת את שני-הכותבים יחד (max(state, chain-truth))",
+    voteLanes: { ours, theirs },
+    orderLanes: { ours: Number(ourOrderCount) || 0, theirs: Number(theirOrderCount) || 0 },
+    partitionLaw: "order-id partition: מחזור ∈ [0, 2.1e9) · היפר ∈ [2.1e9, 4.29e9) · החותם-השני מתבקש לפרסם את הטווח שלו (handshake v1)",
+    collisionLaw: "already-voted = dedup תקציבי-כן (T-17) — הצבעה אף-פעם לא חוזרת, רק נספרת פעם-אחת",
+    weightLaw: "משקלים משתנים לפי-הדוקטרינה (spoilage) — שני-כותבים באותו-משקל היו מכפילים חלק-בריכה אחד פעמיים",
+  };
+}
+
+/* T-23 · WEAVE FRESHNESS: the handshake is alive when its observation doc
+ * is fresh (<maxAgeMs) AND carries a protocol id. Shape-tolerant, junk → null. */
+export function weaveFresh(file, nowMs = Date.now(), maxAgeMs = 26 * 3600_000) {
+  if (!file || typeof file !== "object") return null;
+  if (file.protocol !== "saos.weave.core.v1") return null;
+  const at = file.observedAt ? Date.parse(file.observedAt) : NaN;
+  if (!Number.isFinite(at)) return null;
+  const ageMs = nowMs - at;
+  if (ageMs < 0 || ageMs > maxAgeMs) return null;
+  return { ageMs, theirVotesToday: file.theirs?.votesToday ?? null };
+}
+
+/* T-23 · OP-TYPE NAME (chain shape law, measured live): history APIs disagree
+ * — account_history_api returns "vote_operation" while condenser returns
+ * bare "vote". Every consumer of history rows normalizes through HERE, or
+ * the two shapes silently produce false zeros (the exact bug class T-22
+ * caught in webIntelFresh). Pure. */
+export function opTypeName(op) {
+  const t = Array.isArray(op) ? op[0] : (op?.type ?? op ?? "");
+  return String(t).replace(/_operation$/, "");
 }

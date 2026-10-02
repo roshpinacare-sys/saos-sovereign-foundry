@@ -1,16 +1,100 @@
 {
   "enabled": true,
-  "at": "2026-10-01T21:24:40.209Z",
-  "day": "2026-10-01",
-  "votesTodayCount": 0,
+  "at": "2026-10-02T00:31:15.336Z",
+  "day": "2026-10-02",
+  "votesTodayCount": 10,
   "maxPerDay": 10,
   "tuningsApplied": [],
-  "verdict": "VP-FLOOR",
-  "vpEff": 0,
-  "minVpEffPct": 60,
-  "votesToday": [],
-  "authorsToday": {},
-  "totalVotes": 29,
+  "verdict": "DAY-CAP",
+  "dayCapReached": true,
+  "chainDayCount": 13,
+  "budgetCounted": 13,
+  "budgetBasis": "max(state, chain-truth)",
+  "votesToday": [
+    {
+      "author": "tworld",
+      "permlink": "news-global-en-1790895716",
+      "weight": 4876,
+      "at": "2026-10-02T00:01:15.335Z",
+      "txid": "d6163fd30d9537a0f96e0310505fba50038e23a5"
+    },
+    {
+      "author": "simonjay",
+      "permlink": "daily-steem-price-update-1-10-2026",
+      "weight": 4850,
+      "at": "2026-10-02T00:01:15.335Z",
+      "txid": "a25d7af2fe24155c6ff7a5e7b211f74b1e407e2b"
+    },
+    {
+      "author": "tgod2111",
+      "permlink": "centerh2the-diary-game-or-1st-october-2026-or-independence-day-playing-game-going-to-the-military-and-taking-bread-sugarcane",
+      "weight": 4776,
+      "at": "2026-10-02T00:01:15.335Z",
+      "txid": "3c803b90733687a256bec04d8659ba613962be61"
+    },
+    {
+      "author": "steemludo.stats",
+      "permlink": "steemludo-support-program-90-beneficiary-set-for-active-players-02102026-2w6spo",
+      "weight": 4758,
+      "at": "2026-10-02T00:01:15.335Z",
+      "txid": "aa876f22b9d0eb4252814f879cff15972af7bfbf"
+    },
+    {
+      "author": "oswaldocuarta",
+      "permlink": "el-valor-del-esfuerzo-mirar-atras-y-reconocer-mi-propio-camino",
+      "weight": 4753,
+      "at": "2026-10-02T00:01:15.335Z",
+      "txid": "7f11df1f096765298bc6617f2b27a169c8ad9948"
+    },
+    {
+      "author": "kouba01",
+      "permlink": "season-34-week-6-challenge-or-how-does-your-garden-grow",
+      "weight": 4736,
+      "at": "2026-10-02T00:01:15.335Z",
+      "txid": "1b8b0c0005cb151397752f6cf094f00e51f37f4f"
+    },
+    {
+      "author": "steemburnup",
+      "permlink": "burn-pool-1790892220475",
+      "weight": 4729,
+      "at": "2026-10-02T00:01:15.335Z",
+      "txid": "4b5b5124292f4b60e089a00715bc1f1701c0e4ae"
+    },
+    {
+      "author": "jay.light",
+      "permlink": "daily-ethereum-price-report-1-10-2026",
+      "weight": 4624,
+      "at": "2026-10-02T00:01:15.335Z",
+      "txid": "d72eb97bde684a9c127f28c3473d6a65325a77c9"
+    },
+    {
+      "author": "greek-god",
+      "permlink": "how-i-have-made-80-000-steem-100-profit-within-57-days-for-you-20261001t210643",
+      "weight": 4585,
+      "at": "2026-10-02T00:01:15.335Z",
+      "txid": "a5bf2a12be5bd9fafe4f3e8c3d807b76a532558a"
+    },
+    {
+      "author": "info-steem",
+      "permlink": "20261001t210502987z",
+      "weight": 4581,
+      "at": "2026-10-02T00:01:15.335Z",
+      "txid": "8958b9bea8ec2bb87db9951c1db3a6b3d1e723a7"
+    }
+  ],
+  "authorsToday": {
+    "tworld": 1,
+    "simonjay": 1,
+    "tgod2111": 1,
+    "steemludo.stats": 1,
+    "oswaldocuarta": 1,
+    "kouba01": 1,
+    "steemburnup": 1,
+    "jay.light": 1,
+    "greek-god": 1,
+    "info-steem": 1
+  },
+  "totalVotes": 39,
   "history": [
     {
       "at": "2026-09-29T19:42:16.117Z",
@@ -116,6 +200,83 @@
       "verdict": "VOTED",
       "n": 9,
       "txid": "9258fdb43bb015057299e47fdd0fa0fda1e2d2e9"
+    },
+    {
+      "at": "2026-10-02T00:01:15.335Z",
+      "day": "2026-10-02",
+      "verdict": "VOTED",
+      "n": 1,
+      "txid": "d6163fd30d9537a0f96e0310505fba50038e23a5"
+    },
+    {
+      "at": "2026-10-02T00:01:15.335Z",
+      "day": "2026-10-02",
+      "verdict": "VOTED",
+      "n": 1,
+      "txid": "a25d7af2fe24155c6ff7a5e7b211f74b1e407e2b"
+    },
+    {
+      "at": "2026-10-02T00:01:15.335Z",
+      "day": "2026-10-02",
+      "verdict": "VOTED",
+      "n": 1,
+      "txid": "3c803b90733687a256bec04d8659ba613962be61"
+    },
+    {
+      "at": "2026-10-02T00:01:15.335Z",
+      "day": "2026-10-02",
+      "verdict": "VOTED",
+      "n": 1,
+      "txid": "aa876f22b9d0eb4252814f879cff15972af7bfbf"
+    },
+    {
+      "at": "2026-10-02T00:01:15.335Z",
+      "day": "2026-10-02",
+      "verdict": "VOTED",
+      "n": 1,
+      "txid": "7f11df1f096765298bc6617f2b27a169c8ad9948"
+    },
+    {
+      "at": "2026-10-02T00:01:15.335Z",
+      "day": "2026-10-02",
+      "verdict": "VOTED",
+      "n": 1,
+      "txid": "1b8b0c0005cb151397752f6cf094f00e51f37f4f"
+    },
+    {
+      "at": "2026-10-02T00:01:15.335Z",
+      "day": "2026-10-02",
+      "verdict": "VOTED",
+      "n": 1,
+      "txid": "4b5b5124292f4b60e089a00715bc1f1701c0e4ae"
+    },
+    {
+      "at": "2026-10-02T00:01:15.335Z",
+      "day": "2026-10-02",
+      "verdict": "VOTED",
+      "n": 1,
+      "txid": "d72eb97bde684a9c127f28c3473d6a65325a77c9"
+    },
+    {
+      "at": "2026-10-02T00:01:15.335Z",
+      "day": "2026-10-02",
+      "verdict": "VOTED",
+      "n": 1,
+      "txid": "a5bf2a12be5bd9fafe4f3e8c3d807b76a532558a"
+    },
+    {
+      "at": "2026-10-02T00:01:15.335Z",
+      "day": "2026-10-02",
+      "verdict": "VOTED",
+      "n": 1,
+      "txid": "8958b9bea8ec2bb87db9951c1db3a6b3d1e723a7"
+    },
+    {
+      "at": "2026-10-02T00:01:15.335Z",
+      "day": "2026-10-02",
+      "verdict": "VOTED",
+      "n": 10,
+      "txid": "d6163fd30d9537a0f96e0310505fba50038e23a5"
     }
   ]
 }

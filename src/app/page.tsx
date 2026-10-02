@@ -25,6 +25,9 @@ import { RolesCard } from '@/components/saos/RolesCard'
 import { TeamsCard } from '@/components/saos/TeamsCard'
 import { RcTankCard } from '@/components/saos/RcTankCard'
 import { EconomicsRailsCard } from '@/components/saos/EconomicsRailsCard'
+import { PayoutsCard } from '@/components/saos/PayoutsCard'
+import { WeaveCard } from '@/components/saos/WeaveCard'
+import { X2Card } from '@/components/saos/X2Card'
 import type { Status, Sovereign } from '@/components/saos/types'
 
 /* T-21d · the cockpit is now a composition: data plumbing (this file, verbatim behavior)
@@ -558,6 +561,9 @@ export default function Home() {
                 {/* T-22f · הצוותים-העומדים — מודיעין-רשת + טיוטות-תוכן; אופציונלי, נטען רק כשהמנוע מדווח */}
                 <TeamsCard webintel={s.webintel} content={s.content} />
 
+                {/* T-23f · אריגה · חוזה-הגוף-האחד עם-החותם-השני; אופציונלי, נטען רק כשהמנוע מדווח */}
+                <WeaveCard weave={s.weave} />
+
                 {/* חיילים · צי-גרידים (T-12) */}
                 <SectionCard
                   icon={Users}
@@ -644,7 +650,7 @@ export default function Home() {
                       value={
                         <span className="flex flex-wrap items-center gap-2">
                           <StatusBadge tone={s?.rails?.autonomy?.ok ? 'emerald' : 'slate'}>{s?.rails?.autonomy?.ok ? 'CYCLE-OK' : s?.rails?.autonomy ? 'DEGRADED' : 'טרם-רץ'}</StatusBadge>
-                          {s?.rails?.autonomy?.steps && <span className="text-[11px] font-normal text-slate-500">{Object.entries(s.rails.autonomy.steps).map(([k, v]) => `${k}:${v}`).join(' · ')}</span>}
+                          {s?.rails?.autonomy?.steps && <span className="min-w-0 flex-1 text-[11px] font-normal leading-relaxed text-slate-500">{Object.entries(s.rails.autonomy.steps).map(([k, v]) => `${k}:${v}`).join(' · ')}</span>}
                         </span>
                       }
                     />
@@ -693,6 +699,10 @@ export default function Home() {
 
                 {/* T-22f · מיכל-ה-RC — העקומה המדודה; אופציונלי, נטען רק כשהמנוע מדווח */}
                 <RcTankCard rcTank={s.rcTank} />
+
+                {/* T-23f · שעון-הפאייאוט + ספקטרום-ההון X-2; אופציונליים, נטענים רק כשהמנוע מדווח */}
+                <PayoutsCard payouts={s.payouts} />
+                <X2Card x2={s.economics?.x2} />
               </>
             ))}
 

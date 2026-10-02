@@ -129,6 +129,17 @@ export type Status = {
     rails?: { id?: string; label?: string; measuredUsdPerDay?: number | null; estUsdPerDay?: number | null; confidence?: 'measured' | 'estimated' | 'blocked'; note?: string }[]
     totalMeasuredUsdPerDay?: number | null
     totalEstUsdPerDay?: number | null
+    /* T-23 · passthrough fields (engine-computed) — X2Card wires x2; the others are mirrors of status.payouts */
+    payoutClock?: { payoutDay?: string | null; msRemaining?: number | null; hoursRemaining?: number | null; daysRemaining?: number | null; phase?: string | null; law?: string | null } | null
+    pendingRewards?: { steem?: number; sbd?: number; vests?: number; any?: boolean } | null
+    x2?: {
+      currentUsdPerDay?: number | null
+      targetUsdPerDay?: number | null
+      currentSp?: number | null
+      factor?: number | null
+      rows?: { mult?: number; sp?: number; usdPerDay?: number; reachesTarget?: boolean }[]
+      law?: string | null
+    } | null
   } | null
   /* T-22f · the standing teams (T-22) — engine-computed (one-body law), cockpit only renders.
    * Loose but honest: nullable exactly where the engine emits null. */
@@ -189,6 +200,67 @@ export type Status = {
     growthPct?: number | null
     history?: { day?: string; maxRc?: number | null; opsPerDay?: number | null }[]
     scalingLaw?: string | null
+  } | null
+  /* T-23f · the payout clock + rewards scan (engine-computed, one-body law) — cockpit only renders.
+   * Loose but honest: nullable exactly where the engine emits null. */
+  payouts?: {
+    day?: string | null
+    at?: string | null
+    account?: string | null
+    verdict?: string | null
+    pending?: { steem?: number; sbd?: number; vests?: number; any?: boolean } | null
+    vp?: { pct?: number | null; hrsToFull?: number | null; regenPerSec?: number | null; vests?: number | null; basis?: string | null } | null
+    payout?: { payoutDay?: string | null; msRemaining?: number | null; hoursRemaining?: number | null; daysRemaining?: number | null; phase?: string | null; law?: string | null } | null
+    rollup?: {
+      opsCount?: number | null
+      claims?: number | null
+      curationVests?: number | null
+      authorSbd?: number | null
+      authorSteem?: number | null
+      authorVests?: number | null
+      windowDays?: number | null
+      oldestTs?: string | null
+      newestTs?: string | null
+      curationUsdPerDay?: number | null
+      authorUsdPerDay?: number | null
+      confidence?: 'measured' | 'estimated' | 'blocked' | string | null
+      note?: string | null
+    } | null
+    scan?: {
+      rewardOps?: number | null
+      rewardApi?: string | null
+      voteOps?: number | null
+      votesScanned?: number | null
+      firstVoteDay?: string | null
+      unpaidTranches?: number | null
+      unpaidCutoff?: string | null
+      node?: string | null
+    } | null
+    history?: unknown[]
+    law?: string | null
+  } | null
+  /* T-23f · the second-signer weave contract (engine-computed) — cockpit only renders. */
+  weave?: {
+    protocol?: string | null
+    observedAt?: string | null
+    account?: string | null
+    day?: string | null
+    ours?: { votesToday?: number | null; ordersLive?: number | null; fillsObserved?: number | null; journal?: string | null } | null
+    theirs?: { votesToday?: number | null; lastVoteAt?: string | null; intervalMinEst?: number | null; ordersLive?: number | null; fillsObserved?: number | null; fingerprint?: string | null } | null
+    arbitration?: {
+      combined?: number | null
+      sharedDayCap?: number | null
+      capRemaining?: number | null
+      capBasis?: string | null
+      voteLanes?: { ours?: number | null; theirs?: number | null } | null
+      orderLanes?: { ours?: number | null; theirs?: number | null } | null
+      partitionLaw?: string | null
+      collisionLaw?: string | null
+      weightLaw?: string | null
+    } | null
+    handshake?: { status?: string | null; revision?: number | null; publishAt?: string | null; ourOffer?: string | null; request?: string | null } | null
+    scan?: { rowsRead?: number | null; api?: string | null; node?: string | null } | null
+    law?: string | null
   } | null
 }
 

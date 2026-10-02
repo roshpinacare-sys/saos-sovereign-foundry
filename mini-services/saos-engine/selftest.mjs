@@ -7,6 +7,7 @@ import {
   MIN_LEVEL, ASK_FLOOR_BPS,
   doctrineAccount, credentialGate, rcAnomaly, recruitRoles, aggregateRails,
   normalizeWebIntel, webIntelFresh,
+  payoutWindow, rewardHistoryRollup, vpNow, x2Spectrum, weaveArbitration, weaveFresh, opTypeName,
 } from "./lib.mjs";
 import { sanitizeDraft } from "./content.mjs";
 import { tick, fold } from "./grid.mjs";
@@ -606,9 +607,9 @@ ok("rcAnomaly no-evidence-blocks", rcAnomaly(6.1e12, 0) === true);
 ok("rcAnomaly growth-never-anomaly", rcAnomaly(6.1e12, 6.1e13) === false);
 
 /* ═════ T-21 · RECRUITER: a role exists only with named evidence ═════ */
-const full = recruitRoles({ evidence: { marketPulse: "m", rcEconomics: "r", fillAudit: "f", convert: "c", promo: "p", curation: "cu", selftest: "s", recruiter: "x", webIntel: "w" }, now: "2026-10-01T22:00:00Z", prior: {} });
+const full = recruitRoles({ evidence: { marketPulse: "m", rcEconomics: "r", fillAudit: "f", convert: "c", promo: "p", curation: "cu", selftest: "s", recruiter: "x", webIntel: "w", payouts: "py", weave: "wv" }, now: "2026-10-01T22:00:00Z", prior: {} });
 eq("recruit full-verdict", full.verdict, "FULL-STRENGTH");
-eq("recruit full-count", full.active, 9);
+eq("recruit full-count", full.active, 11);
 ok("recruit rows-carry-truth-contract", full.roster.every((r) => typeof r.truthContract === "string" && r.truthContract.length > 8));
 ok("recruit rows-carry-evidence", full.roster.every((r) => r.status !== "active" || (r.evidence ?? "").length > 0));
 const partial = recruitRoles({ evidence: { recruiter: "x", curation: "cu" }, now: "2026-10-01T22:00:00Z", prior: {} });
@@ -664,6 +665,74 @@ ok("econ measured-never-inflated-by-est", econRails.totalMeasuredUsdPerDay === M
 const econNoData = aggregateRails({});
 ok("econ empty-all-blocked", econNoData.blockedCount === econNoData.rails.length && econNoData.totalMeasuredUsdPerDay === 0 && econNoData.totalEstUsdPerDay === 0);
 ok("econ junk-tolerated", aggregateRails({ realizedSbdTotal: "x", curationEstSteemPerDay: NaN }).rails.find((r) => r.id === "market-making").measuredUsdPerDay === null);
+
+/* op shape law: the false-zero bug class, locked (measured live 2026-10-02:
+ * account_history_api returns "vote_operation", condenser returns "vote") */
+eq("opTypeName ah-shape", opTypeName({ type: "vote_operation", value: {} }), "vote");
+eq("opTypeName condenser-shape", opTypeName(["curation_reward", {}]), "curation_reward");
+eq("opTypeName junk", opTypeName(null), "");
+eq("opTypeName no-suffix", opTypeName({ type: "transfer", value: {} }), "transfer");
+
+/* ═════ T-23 · המדידה-הכלכלית-האמיתית + הגוף-האחד-החיצוני ═════ */
+
+/* payout window: the T-18c clock */
+const pw = payoutWindow({ firstVoteDay: "2026-09-30", now: "2026-10-01T00:00:00Z" });
+ok("payout pre-phase-6d", pw.phase === "pre-payout" && pw.payoutDay === "2026-10-07" && pw.daysRemaining === 6);
+ok("payout paid-phase", payoutWindow({ firstVoteDay: "2026-09-30", now: "2026-10-08T00:00:00Z" }).phase === "paid-window");
+const pwPaid = payoutWindow({ firstVoteDay: "2026-09-30", now: "2026-10-08T00:00:00Z" });
+ok("payout paid-non-negative", pwPaid.msRemaining === 0 && pwPaid.daysRemaining === 0);
+ok("payout null-inputs", payoutWindow({ firstVoteDay: null, now: "2026-10-01" }) === null && payoutWindow({ firstVoteDay: "junk", now: "junk" }) === null);
+
+/* reward history rollup: empty = honest blocked; rows = measured */
+const rollupEmpty = rewardHistoryRollup({ rows: [] });
+ok("rollup empty-blocked", rollupEmpty.opsCount === 0 && rollupEmpty.confidence === "blocked" && rollupEmpty.curationUsdPerDay === null);
+const rewardRows = [
+  [1, { op: ["curation_reward", { reward: "100.000000 VESTS" }], timestamp: "2026-10-07T12:00:00" }],
+  [2, { op: ["curation_reward", { reward: "50.000000 VESTS" }], timestamp: "2026-10-08T12:00:00" }],
+  [3, { op: ["author_reward", { sbd_payout: "2.000 SBD", steem_payout: "0.000 STEEM", vesting_payout: "10.000000 VESTS" }], timestamp: "2026-10-08T13:00:00" }],
+  [4, { op: ["claim_reward_balance", { reward_steem: "1.000 STEEM" }], timestamp: "2026-10-08T14:00:00" }],
+  [5, { op: ["transfer", { amount: "9.999 STEEM" }], timestamp: "2026-10-08T15:00:00" }], // non-reward row — ignored
+  ["junk", null],
+];
+const rollup = rewardHistoryRollup({ rows: rewardRows, vestsToSteem: 0.5, steemUsd: 0.065, sbdUsd: 0.64 });
+ok("rollup sums-measured", rollup.opsCount === 4 && rollup.curationVests === 150 && rollup.authorSbd === 2 && rollup.claims === 1);
+ok("rollup vests-converted", rollup.curationUsdPerDay != null && rollup.windowDays >= 2 && rollup.confidence === "measured");
+ok("rollup junk-tolerant", rewardHistoryRollup({ rows: "junk" }).opsCount === 0 && rewardHistoryRollup({ rows: [null, [1, {}]] }).opsCount === 0);
+
+/* VP probe (T-18e) */
+const vp = vpNow({ currentMana: 75000000000, maxMana: 100000000000, vests: "1000 VESTS", now: "2026-10-02T00:00:00Z" });
+ok("vp pct+hrs", vp.pct === 75 && vp.hrsToFull === 30);
+ok("vp junk-null", vpNow({ currentMana: "x", maxMana: 0 }) === null);
+
+/* X-2 spectrum (T-18f): the capital path to the target */
+const x2 = x2Spectrum({ currentUsdPerDay: 4.18, targetUsdPerDay: 1000, currentSp: 4034 });
+ok("x2 factor", x2.factor === 239.3);
+ok("x2 rows-reach", x2.rows.at(-1).reachesTarget === true && x2.rows[0].mult === 1 && x2.rows[0].usdPerDay === 4.18);
+ok("x2 sp-scales", x2.rows[1].sp === 40340);
+ok("x2 null-guards", x2Spectrum({ currentUsdPerDay: 0, currentSp: 100 }) === null && x2Spectrum({ currentUsdPerDay: 5, currentSp: null }) === null && x2Spectrum({ currentUsdPerDay: "x", currentSp: 1 }) === null);
+
+/* weave arbitration + freshness (T-19f v1) */
+const arb = weaveArbitration({ ourVotesToday: 10, theirVotesToday: 5, sharedDayCap: 18, ourOrderCount: 8, theirOrderCount: 3 });
+ok("weave combined+remaining", arb.combined === 15 && arb.capRemaining === 3);
+ok("weave cap-floored", weaveArbitration({ ourVotesToday: 20, theirVotesToday: 5, sharedDayCap: 18 }).capRemaining === 0);
+ok("weave junk-votes", weaveArbitration({ ourVotesToday: "x", theirVotesToday: null }).voteLanes.ours === 0);
+const wfFile = { protocol: "saos.weave.core.v1", observedAt: "2026-10-02T00:00:00Z", theirs: { votesToday: 4 } };
+ok("weave fresh-ok", weaveFresh(wfFile, Date.parse("2026-10-02T06:00:00Z"))?.theirVotesToday === 4);
+ok("weave stale-null", weaveFresh(wfFile, Date.parse("2026-10-04T00:00:00Z")) === null);
+ok("weave protocol-gate", weaveFresh({ protocol: "other.v1", observedAt: "2026-10-02T00:00:00Z" }, Date.parse("2026-10-02T01:00:00Z")) === null);
+
+/* measured curation wins over estimated in the rails (the estimated→measured flip) */
+const econMeasured = aggregateRails({ curationEstSteemPerDay: 9.68, curationMeasuredUsdPerDay: 0.73, steemUsd: 0.065 });
+const curRail = econMeasured.rails.find((r) => r.id === "curation");
+ok("econ curation-measured-wins", curRail.confidence === "measured" && curRail.measuredUsdPerDay === 0.73 && curRail.estUsdPerDay === null);
+
+/* the roster grew with evidence-bound stations (9 → 11) */
+const roster23 = recruitRoles({ evidence: { payouts: "fresh", weave: "fresh", recruiter: "self" }, now: "2026-10-02T00:00:00Z" });
+ok("roster 11-total", roster23.total === 11);
+ok("roster payout-auditor-active", roster23.roster.find((r) => r.id === "payout-auditor")?.status === "active");
+ok("roster weave-ambassador-active", roster23.roster.find((r) => r.id === "weave-ambassador")?.status === "active");
+const roster23NoEvidence = recruitRoles({ evidence: { recruiter: "self" }, now: "2026-10-02T00:00:00Z" });
+ok("roster new-stations-planned-without-evidence", roster23NoEvidence.roster.filter((r) => ["payout-auditor", "weave-ambassador"].includes(r.id)).every((r) => r.status === "planned"));
 
 console.log(`\nSELFTEST ${pass}/${pass + fail} ${fail === 0 ? "PASS" : "FAIL"}`);
 /* T-21 · last-run marker: the recruiter's evidence for the integrity-auditor

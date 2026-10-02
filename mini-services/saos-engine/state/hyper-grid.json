@@ -1,7 +1,7 @@
 {
-  "lastTickAt": "2026-10-01T22:22:57.227Z",
-  "ticks": 1794,
-  "nextId": 2100000054,
+  "lastTickAt": "2026-10-02T00:16:03.387Z",
+  "ticks": 2912,
+  "nextId": 2100000379,
   "conf": {
     "enabled": true,
     "tickMs": 3000,
@@ -18,23 +18,23 @@
     "chainTailSec": 60,
     "maxOpsPerTx": 24
   },
-  "lastVerdict": "CREDENTIAL-MISSING",
-  "lastVerdictAt": "2026-10-01T22:22:57.227Z",
-  "rcPct": 100,
-  "opsToday": 0,
-  "lastTxid": "a8a4875a3976aaf60ee2d7fdbfa79bfda6bc5948",
+  "lastVerdict": "BROADCAST",
+  "lastVerdictAt": "2026-10-02T00:16:03.387Z",
+  "rcPct": 98.7,
+  "opsToday": 322,
+  "lastTxid": "87183ebd98c661da5ed3286d337e2211fbb09e32",
   "governor": {
-    "pairs": 0,
-    "ops": 0,
-    "carry": 0.07730116556442024,
-    "reason": "accumulating",
-    "headroom": 3,
-    "burnPerDay": 7352605698,
-    "rcPct": 100
+    "pairs": 2,
+    "ops": 4,
+    "carry": 0.3059666542559114,
+    "reason": "governor-ok",
+    "headroom": 2.948,
+    "burnPerDay": 3619388048342,
+    "rcPct": 98.7
   },
-  "liveHyper": 0,
-  "planned": 0,
-  "label": "requote-front",
+  "liveHyper": 4,
+  "planned": 18,
+  "label": "front-create",
   "economics": {
     "regenPerDay": 1227743571351,
     "pairCost": 76527929,
@@ -42,9 +42,10 @@
     "opsPerDay": 32086,
     "reason": "measured-equilibrium"
   },
-  "day": "2026-10-01",
-  "lastError": "CREDENTIAL-MISSING: .secrets/headcorner.key not found (sandbox cold-reset wipes gitignored secrets). Revival (self-servi",
-  "carryGovernor": 0.07730116556442024,
+  "day": "2026-10-02",
+  "lastError": null,
+  "carryGovernor": 0.3059666542559114,
   "running": true,
-  "blocker": null
+  "blocker": null,
+  "lastMaxRc": 6138717856759
 }

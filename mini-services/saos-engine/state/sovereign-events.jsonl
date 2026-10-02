@@ -253,3 +253,19 @@
 {"at":"2026-10-01T22:38:40.292Z","kind":"cred-missing","verdict":"SIGNING-DEAD","agentsAffected":["curate","execute","soldiers","promo"],"revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}
 {"at":"2026-10-01T22:44:48.244Z","kind":"cycle-blocked(auto)","ms":5118,"engineMeasured":true,"steps":16,"verdict":null,"blockedSteps":["curate","execute","soldiers"],"error":null}
 {"at":"2026-10-01T22:54:48.268Z","kind":"cycle-blocked(auto)","ms":5344,"engineMeasured":true,"steps":16,"verdict":null,"blockedSteps":["curate","execute","soldiers"],"error":null}
+{"at":"2026-10-01T23:11:15.317Z","kind":"boot","pid":1074,"resumed":false,"carriedOver":{"checks":877,"cyclesOk":55,"heals":23}}
+{"at":"2026-10-01T23:11:15.328Z","kind":"watchdog-down-again"}
+{"at":"2026-10-01T23:11:15.329Z","kind":"heal-attempt","reason":"watchdog"}
+{"at":"2026-10-01T23:11:15.332Z","kind":"heal-spawn","reason":"watchdog","pid":1171}
+{"at":"2026-10-01T23:11:23.350Z","kind":"heal-verified","up":true}
+{"at":"2026-10-01T23:12:08.344Z","kind":"cycle-blocked(auto)","ms":5136,"engineMeasured":true,"steps":16,"verdict":null,"blockedSteps":["curate","execute","soldiers"],"error":null}
+{"at":"2026-10-01T23:21:23.336Z","kind":"cycle-blocked(auto)","ms":4307,"engineMeasured":true,"steps":16,"verdict":null,"blockedSteps":["curate","execute","soldiers"],"error":null}
+{"at":"2026-10-01T23:31:23.337Z","kind":"cycle-blocked(auto)","ms":6297,"engineMeasured":true,"steps":16,"verdict":null,"blockedSteps":["curate","execute","soldiers"],"error":null}
+{"at":"2026-10-01T23:39:15.356Z","kind":"cred-missing","verdict":"SIGNING-DEAD","agentsAffected":["curate","execute","soldiers","promo"],"revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}
+{"at":"2026-10-01T23:41:23.340Z","kind":"cycle-blocked(auto)","ms":4322,"engineMeasured":true,"steps":16,"verdict":null,"blockedSteps":["curate","execute","soldiers"],"error":null}
+{"at":"2026-10-01T23:51:23.340Z","kind":"cycle-blocked(auto)","ms":5052,"engineMeasured":true,"steps":16,"verdict":null,"blockedSteps":["curate","execute","soldiers"],"error":null}
+{"at":"2026-10-01T23:53:15.368Z","kind":"cred-restored"}
+{"at":"2026-10-02T00:02:19.383Z","kind":"cycle-ok(auto)","ms":63834,"engineMeasured":true,"steps":16,"verdict":null,"blockedSteps":[],"error":null}
+{"at":"2026-10-02T00:11:39.357Z","kind":"cycle-ok(auto)","ms":22143,"engineMeasured":true,"steps":18,"verdict":null,"blockedSteps":[],"error":null}
+{"at":"2026-10-02T00:21:31.350Z","kind":"cycle-ok(auto)","ms":15258,"engineMeasured":true,"steps":18,"verdict":null,"blockedSteps":[],"error":null}
+{"at":"2026-10-02T00:31:39.361Z","kind":"cycle-ok(auto)","ms":21279,"engineMeasured":true,"steps":18,"verdict":null,"blockedSteps":[],"error":null}
