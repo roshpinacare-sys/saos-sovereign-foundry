@@ -1,19 +1,19 @@
 {
   "running": false,
-  "startedAt": "2026-10-02T00:31:15.336Z",
-  "finishedAt": "2026-10-02T00:31:36.615Z",
-  "ms": 21279,
-  "health": "ok",
-  "ok": true,
+  "startedAt": "2026-10-04T18:09:24.550Z",
+  "finishedAt": "2026-10-04T18:09:29.825Z",
+  "ms": 5275,
+  "health": "blocked",
+  "ok": false,
   "steps": {
     "observe": true,
     "intel": true,
     "tick": true,
     "peg": true,
     "convert": true,
-    "curate": true,
-    "execute": true,
-    "soldiers": true,
+    "curate": false,
+    "execute": false,
+    "soldiers": false,
     "learn": true,
     "webintel": true,
     "content": true,
@@ -25,7 +25,15 @@
     "recruit": true,
     "report": true
   },
-  "blockedSteps": [],
-  "failedSteps": [],
+  "blockedSteps": [
+    "curate",
+    "execute",
+    "soldiers"
+  ],
+  "failedSteps": [
+    "curate",
+    "execute",
+    "soldiers"
+  ],
   "error": null
 }

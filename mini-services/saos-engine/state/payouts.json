@@ -1,6 +1,6 @@
 {
-  "day": "2026-10-02",
-  "at": "2026-10-02T00:16:13.839Z",
+  "day": "2026-10-04",
+  "at": "2026-10-04T17:50:09.555Z",
   "account": "headcorner",
   "verdict": "MEASURED",
   "pending": {
@@ -10,45 +10,51 @@
     "any": false
   },
   "vp": {
-    "pct": 63.7,
-    "hrsToFull": 43.6,
-    "regenPerSec": 16490721,
-    "vests": 7123991.568646,
-    "basis": "voting_manabar at 2026-10-02T00:16:13.839Z"
+    "pct": 0.1,
+    "hrsToFull": 119.9,
+    "regenPerSec": 14737860,
+    "vests": 6366755.644113,
+    "basis": "voting_manabar at 2026-10-04T17:50:09.555Z"
   },
   "payout": {
     "payoutDay": "2026-10-04",
-    "msRemaining": 171826161,
-    "hoursRemaining": 47.7,
-    "daysRemaining": 2,
-    "phase": "pre-payout",
+    "msRemaining": 0,
+    "hoursRemaining": 0,
+    "daysRemaining": 0,
+    "phase": "paid-window",
     "law": "פאייאוט-קיורציה מתיישב ~7 ימים אחרי-ההצבעה — השעון מדוד, לא מונח"
   },
   "rollup": {
-    "opsCount": 58,
-    "claims": 8,
+    "opsCount": 31,
+    "claims": 7,
     "curationVests": 0,
     "authorSbd": 0,
     "authorSteem": 0,
     "authorVests": 0,
-    "windowDays": 12,
-    "oldestTs": "2026-09-09T23:19:09.000Z",
-    "newestTs": "2026-09-21T16:44:33.000Z",
+    "windowDays": 24,
+    "oldestTs": "2026-09-11T13:45:27.000Z",
+    "newestTs": "2026-10-04T17:38:33.000Z",
     "curationUsdPerDay": null,
     "authorUsdPerDay": null,
     "confidence": "estimated",
     "note": "settled chain rewards — window-labeled"
   },
   "scan": {
-    "rewardOps": 58,
+    "rewardOps": 31,
     "rewardApi": "ah_api",
-    "voteOps": 209,
-    "votesScanned": 209,
-    "firstVoteDay": "2026-09-09",
-    "unpaidTranches": 181,
-    "unpaidCutoff": "2026-09-25T00:16:13.839Z",
+    "voteOps": 447,
+    "votesScanned": 447,
+    "firstVoteDay": "2026-09-12",
+    "unpaidTranches": 427,
+    "unpaidCutoff": "2026-09-27T17:50:09.555Z",
     "node": "https://steemapi.boylikegirl.club"
   },
   "law": "מסילת-הקיורציה נשארת מוערכת עד-שהשרשרת משלמת — השעון עוקב אחרי הטרנס-הבלתי-משולם-הבא, לא אחרי הצבעות-עבר שכבר התיישבו",
-  "history": []
+  "history": [
+    {
+      "day": "2026-10-02",
+      "pendingVests": 0,
+      "phase": "pre-payout"
+    }
+  ]
 }

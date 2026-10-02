@@ -1,7 +1,7 @@
 {
-  "draftedAt": "2026-10-01T22:20:24.431Z",
-  "verdict": "DRAFTS-QUEUED",
-  "draftsQueued": 3,
+  "draftedAt": "2026-10-04T17:50:09.555Z",
+  "verdict": "BRIDGE-DOWN",
+  "draftsQueued": 0,
   "exposureBlocked": 0,
   "queue": [
     {
@@ -62,6 +62,6 @@
     }
   ],
   "law": "טיוטה נכתבת רק מקרקעין-מדודות + ממצאים-ממוקדים; חשיפה = נחסמת בטהרת-הנוסח; שידור רק אחרי אימות-חתימה (דוקטרינת-שער)",
-  "bridgeError": null,
-  "ms": 6870
+  "bridgeError": "bridge 502",
+  "ms": 228
 }

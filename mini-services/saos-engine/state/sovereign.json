@@ -1,28 +1,30 @@
 {
-  "bootedAt": "2026-10-01T23:11:15.317Z",
-  "pid": 1074,
+  "bootedAt": "2026-10-04T17:49:24.538Z",
+  "pid": 1073,
   "armed": true,
   "paused": false,
   "watchdog": {
-    "checks": 961,
-    "downs": 12,
-    "heals": 24,
-    "healVerified": 23,
+    "checks": 1080,
+    "downs": 14,
+    "heals": 26,
+    "healVerified": 25,
     "healFailed": 0,
-    "lastCheckAt": "2026-10-02T00:34:15.390Z",
+    "lastCheckAt": "2026-10-04T18:15:24.568Z",
     "engineUp": true,
-    "lastSpawnAt": "2026-10-01T23:11:15.332Z"
+    "lastSpawnAt": "2026-10-04T17:49:29.575Z",
+    "lastUpAt": "2026-10-04T18:15:24.572Z",
+    "blips": 0
   },
   "cycles": {
-    "autoRuns": 98,
-    "ok": 59,
+    "autoRuns": 110,
+    "ok": 65,
     "fail": 20,
-    "blocked": 19,
-    "lastAt": "2026-10-02T00:31:39.361Z",
-    "lastOk": true,
-    "lastHealth": "ok",
-    "lastMs": 21279,
-    "nextAt": "2026-10-02T00:41:39.361Z"
+    "blocked": 25,
+    "lastAt": "2026-10-04T18:09:32.558Z",
+    "lastOk": false,
+    "lastHealth": "blocked",
+    "lastMs": 5275,
+    "nextAt": "2026-10-04T18:19:32.558Z"
   },
   "selftest": {
     "runs": 0,
@@ -32,13 +34,25 @@
     "total": null
   },
   "cred": {
-    "present": true,
-    "firstDownAt": null,
-    "lastDownAt": "2026-10-01T23:52:15.367Z",
-    "alerts": 6,
-    "lastAlertAt": "2026-10-01T23:39:15.356Z"
+    "present": false,
+    "firstDownAt": "2026-10-02T17:14:38.531Z",
+    "lastDownAt": "2026-10-04T18:15:24.572Z",
+    "alerts": 8,
+    "lastAlertAt": "2026-10-04T17:49:33.590Z"
   },
   "control": [
+    {
+      "at": "2026-10-04T17:49:24.538Z",
+      "action": "boot",
+      "by": "instrumentation",
+      "note": "SovereignCore armed"
+    },
+    {
+      "at": "2026-10-02T17:14:29.332Z",
+      "action": "boot",
+      "by": "instrumentation",
+      "note": "SovereignCore armed"
+    },
     {
       "at": "2026-10-01T23:11:15.317Z",
       "action": "boot",
@@ -139,18 +153,6 @@
     },
     {
       "at": "2026-09-29T17:57:23.611Z",
-      "action": "boot",
-      "by": "instrumentation",
-      "note": "SovereignCore armed"
-    },
-    {
-      "at": "2026-09-29T17:53:16.337Z",
-      "action": "boot",
-      "by": "instrumentation",
-      "note": "SovereignCore armed"
-    },
-    {
-      "at": "2026-09-29T17:45:21.709Z",
       "action": "boot",
       "by": "instrumentation",
       "note": "SovereignCore armed"

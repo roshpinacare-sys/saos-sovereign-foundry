@@ -1,226 +1,52 @@
 {
-  "fetchedAt": "2026-10-01T22:20:48.349Z",
-  "verdict": "INTEL-OK",
-  "totalFindings": 20,
+  "fetchedAt": "2026-10-04T17:50:09.555Z",
+  "verdict": "BRIDGE-DOWN",
+  "totalFindings": 0,
   "droppedJunk": 0,
-  "failedScans": 0,
+  "failedScans": 4,
   "scans": [
     {
       "id": "steem-price",
       "note": "price sentiment for the market rails",
-      "findings": [
-        {
-          "url": "https://coinmarketcap.com/currencies/steem",
-          "title": "Steem price today, STEEM to USD live price, marketcap and chart",
-          "snippet": "The live Steem price today is $0.063144 USD with a 24-hour trading volume of $3,625,872 USD. We update our STEEM to USD price in real-time.",
-          "host": "coinmarketcap.com",
-          "date": null,
-          "query": "STEEM coin price news today",
-          "fetchedAt": "2026-10-01T22:20:48.349Z"
-        },
-        {
-          "url": "https://www.coingecko.com/en/coins/steem",
-          "title": "STEEM/USD Live Price Chart, Market Cap & News Today",
-          "snippet": "The price of Steem (STEEM) is $0.0631 today with a 24-hour trading volume of $3,750,897. This represents a -1.77% price decline in the last ...",
-          "host": "www.coingecko.com",
-          "date": null,
-          "query": "STEEM coin price news today",
-          "fetchedAt": "2026-10-01T22:20:48.349Z"
-        },
-        {
-          "url": "https://finance.yahoo.com/quote/STEEM-USD",
-          "title": "Steem USD - Yahoo Finance",
-          "snippet": "The last known price of Steem is 0.06345729 USD and is up 4.00 over the last 24 hours. It is currently trading on 111 active market(s) with ...",
-          "host": "finance.yahoo.com",
-          "date": null,
-          "query": "STEEM coin price news today",
-          "fetchedAt": "2026-10-01T22:20:48.349Z"
-        },
-        {
-          "url": "https://www.kraken.com/prices/steem",
-          "title": "STEEM price chart & live trends - Kraken",
-          "snippet": "Steem price today. Steem price today is $0.065. In the last 24 hours Steem's price moved +1.98%. The current STEEM to USD conversion rate is $0.065 per STEEM.",
-          "host": "www.kraken.com",
-          "date": null,
-          "query": "STEEM coin price news today",
-          "fetchedAt": "2026-10-01T22:20:48.349Z"
-        },
-        {
-          "url": "https://crypto.com/en/price/steem",
-          "title": "STEEM Live Price, Charts, News - Crypto.com International",
-          "snippet": "Steem's price today is $0.03497, with a 24-hour trading volume of $4.44M. STEEM is -0.32% in the last 24 hours. It is currently -17.42% from its 7-day all- ...",
-          "host": "crypto.com",
-          "date": null,
-          "query": "STEEM coin price news today",
-          "fetchedAt": "2026-10-01T22:20:48.349Z"
-        }
-      ],
-      "count": 5,
-      "dropped": 0
+      "findings": [],
+      "count": 0,
+      "error": "bridge 502"
     },
     {
       "id": "steem-chain",
       "note": "chain developments affecting ops",
-      "findings": [
-        {
-          "url": "https://coinmarketcap.com/cmc-ai/steem/latest-updates",
-          "title": "Latest Steem (STEEM) News Update - CoinMarketCap",
-          "snippet": "STEEM Surges 62% as Top Gainer (9 September 2026) Activity on the Steem blockchain is currently driven by social engagement programs rather than technical ...",
-          "host": "coinmarketcap.com",
-          "date": null,
-          "query": "Steem blockchain development update",
-          "fetchedAt": "2026-10-01T22:20:48.349Z"
-        },
-        {
-          "url": "https://steem.com/developers",
-          "title": "Developers - Powering Communities and Opportunities - Steem",
-          "snippet": "Steem is a social blockchain that grows communities. Keep updated through our social platform. It's been battle tested by over 1 million people on more than ...",
-          "host": "steem.com",
-          "date": null,
-          "query": "Steem blockchain development update",
-          "fetchedAt": "2026-10-01T22:20:48.349Z"
-        },
-        {
-          "url": "https://steemit.com/created/updates",
-          "title": "#updates / New — Steemit",
-          "snippet": "Steemit Blockchain Statistics Update 2026-09-01 ·.38. Pending payout amount: $0.38; Breakdown: 0.00 SBD, 4.36 STEEM, 4.36 SP ; Cryptocurrency Prices & Steemit ... Missing:  development  | Show results with:",
-          "host": "steemit.com",
-          "date": null,
-          "query": "Steem blockchain development update",
-          "fetchedAt": "2026-10-01T22:20:48.349Z"
-        },
-        {
-          "url": "https://github.com/steemit/steem",
-          "title": "GitHub - steemit/steem: The blockchain for Smart Media Tokens",
-          "snippet": "Steem aims to be the preferred blockchain for dApp development with Smart Media Tokens at its core. With SMTs, everyone can leverage the power of Steem.",
-          "host": "github.com",
-          "date": null,
-          "query": "Steem blockchain development update",
-          "fetchedAt": "2026-10-01T22:20:48.349Z"
-        },
-        {
-          "url": "https://developers.steem.io/quickstart",
-          "title": "Quickstart - Steem Developer",
-          "snippet": "Steem blockchain software is written in C++ and in order to modify the source code you need some understanding of the C++ programming language.",
-          "host": "developers.steem.io",
-          "date": null,
-          "query": "Steem blockchain development update",
-          "fetchedAt": "2026-10-01T22:20:48.349Z"
-        }
-      ],
-      "count": 5,
-      "dropped": 0
+      "findings": [],
+      "count": 0,
+      "error": "bridge 502"
     },
     {
       "id": "sbd-market",
       "note": "the SBD print-path rail's external truth",
-      "findings": [
-        {
-          "url": "https://finance.yahoo.com/quote/SBD-USD",
-          "title": "Steem Dollars USD Price (SBD-USD) - Yahoo Finance",
-          "snippet": "The last known price of Steem Dollars is 0.49030971 USD and is up 0.05 over the last 24 hours. It is currently trading on 8 active market(s) with $23,005.90 ...",
-          "host": "finance.yahoo.com",
-          "date": null,
-          "query": "Steem Dollar SBD market news",
-          "fetchedAt": "2026-10-01T22:20:48.349Z"
-        },
-        {
-          "url": "https://coinmarketcap.com/currencies/steem-dollars",
-          "title": "Steem Dollars price SBD #1184 - CoinMarketCap",
-          "snippet": "The live Steem Dollars price today is $0.6312 USD with a 24-hour trading volume of $1665852.73 USD. We update our SBD to USD price in real-time.",
-          "host": "coinmarketcap.com",
-          "date": null,
-          "query": "Steem Dollar SBD market news",
-          "fetchedAt": "2026-10-01T22:20:48.349Z"
-        },
-        {
-          "url": "https://ca.finance.yahoo.com/quote/SBD-USD/news",
-          "title": "Steem Dollars USD (SBD-USD) Latest Stock News & Headlines",
-          "snippet": "Get the latest Steem Dollars USD (SBD-USD) stock news and headlines ・ +21.00% Summary News ・ +0.086545 (+21.00%) As of 5:06:04 a.m. UTC.",
-          "host": "ca.finance.yahoo.com",
-          "date": null,
-          "query": "Steem Dollar SBD market news",
-          "fetchedAt": "2026-10-01T22:20:48.349Z"
-        },
-        {
-          "url": "https://crypto.com/us/price/steem-dollars",
-          "title": "Steem Dollars (SBD) Price Today - Crypto.com",
-          "snippet": "Steem Dollars (SBD) price today is $0.60. Steem Dollars's price today is $0.5997, with a 24-hour trading volume of $1.04M. SBD is +1.51% in the last 24 hours. ...",
-          "host": "crypto.com",
-          "date": null,
-          "query": "Steem Dollar SBD market news",
-          "fetchedAt": "2026-10-01T22:20:48.349Z"
-        },
-        {
-          "url": "https://www.coingecko.com/en/coins/steem-dollars",
-          "title": "Steem Dollars Price Chart (SBD) - CoinGecko",
-          "snippet": "Price of Steem Dollars (SBD) today is $0.6004 with a 24-hour trading volume of $1646466. Track Steem Dollars's live price, market cap, news, and more on",
-          "host": "www.coingecko.com",
-          "date": null,
-          "query": "Steem Dollar SBD market news",
-          "fetchedAt": "2026-10-01T22:20:48.349Z"
-        }
-      ],
-      "count": 5,
-      "dropped": 0
+      "findings": [],
+      "count": 0,
+      "error": "bridge 502"
     },
     {
       "id": "competitors",
       "note": "competitive landscape for the sovereign bloc",
-      "findings": [
-        {
-          "url": "https://pluang.com/en/compare/hive-idr-vs-steem-idr",
-          "title": "Compare Hive (HIVE) vs Steem (STEEM) Price & Performance",
-          "snippet": "The key difference: Hive is the larger of the two by market cap, and Hive's circulating supply is 568M HIVE versus 552,3M STEEM for Steem. Which is the better ...",
-          "host": "pluang.com",
-          "date": null,
-          "query": "Hive blockchain vs Steem 2026",
-          "fetchedAt": "2026-10-01T22:20:48.349Z"
-        },
-        {
-          "url": "https://coinexams.com/compare/steem-vs-hive",
-          "title": "Steem vs Hive utility comparison - CoinExams",
-          "snippet": "Steem is generally better than Hive in terms of utility and would probably maintain its edge well into the future. Yet, STEEM is used relatively ...",
-          "host": "coinexams.com",
-          "date": null,
-          "query": "Hive blockchain vs Steem 2026",
-          "fetchedAt": "2026-10-01T22:20:48.349Z"
-        },
-        {
-          "url": "https://godex.io/versus/steem-vs-hive",
-          "title": "STEEM vs HIVE Comparison | Compare Steem versus Hive",
-          "snippet": "Steem vs Hive: An Overview. STEEM and HIVE have their own properties, application fields and acquiring ways. STEEM vs HIVE comparison will help to specify ...",
-          "host": "godex.io",
-          "date": null,
-          "query": "Hive blockchain vs Steem 2026",
-          "fetchedAt": "2026-10-01T22:20:48.349Z"
-        },
-        {
-          "url": "https://www.hbs.edu/faculty/Pages/item.aspx?num=67547",
-          "title": "Steem Versus Hive: Testing Blockchain Governance",
-          "snippet": "Ghosh, Shikhar, and Shweta Bagai. \"Steem Versus Hive: Testing Blockchain Governance.\" Harvard Business School Teaching Note 825-172, June 2025.",
-          "host": "www.hbs.edu",
-          "date": null,
-          "query": "Hive blockchain vs Steem 2026",
-          "fetchedAt": "2026-10-01T22:20:48.349Z"
-        },
-        {
-          "url": "https://hive.quora.com/What-is-the-difference-between-Steem-and-Hive",
-          "title": "What is the difference between Steem and Hive? - Quora",
-          "snippet": "The main difference of the two is that, Steem was launch way back 2016 while Hive was recently launch this year, March 20, 2020 via Steem ...",
-          "host": "hive.quora.com",
-          "date": null,
-          "query": "Hive blockchain vs Steem 2026",
-          "fetchedAt": "2026-10-01T22:20:48.349Z"
-        }
-      ],
-      "count": 5,
-      "dropped": 0
+      "findings": [],
+      "count": 0,
+      "error": "bridge 502"
     }
   ],
-  "ms": 5234,
+  "ms": 966,
   "law": "כל ממצא נושא מקור (url+תאריך) — ממצא בלי-מקור אינו ממצא",
   "history": [
+    {
+      "fetchedAt": "2026-10-04T17:50:09.555Z",
+      "totalFindings": 0,
+      "verdict": "BRIDGE-DOWN"
+    },
+    {
+      "fetchedAt": "2026-10-02T17:15:14.348Z",
+      "totalFindings": 0,
+      "verdict": "BRIDGE-DOWN"
+    },
     {
       "fetchedAt": "2026-10-01T22:20:48.349Z",
       "totalFindings": 20,
