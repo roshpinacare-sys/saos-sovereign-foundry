@@ -62,8 +62,10 @@ jobs:
       - name: Start dev server in background
         run: |
           bun run dev &
+          # Port law (Task 10): the gate runs on :3100 (dev/start scripts + api-check +
+          # concurrency-check all target 3100) — the health poll must speak the same port.
           for i in $(seq 1 60); do
-            if curl -sf http://localhost:3000/api/saos/status >/dev/null; then
+            if curl -sf http://localhost:3100/api/saos/status >/dev/null; then
               echo "server up after ~$((i * 2))s"; exit 0
             fi
             sleep 2
