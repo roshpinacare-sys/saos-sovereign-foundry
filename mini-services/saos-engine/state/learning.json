@@ -1,22 +1,22 @@
 {
-  "at": "2026-10-04T20:14:43.000Z",
+  "at": "2026-10-04T20:34:43.000Z",
   "enabled": true,
-  "runsTotal": 128,
+  "runsTotal": 130,
   "verdict": "LEARNED",
   "metrics": {
     "cycles": {
-      "window": 106,
-      "oks": 57,
+      "window": 108,
+      "oks": 59,
       "fails": 20,
       "blocked": 29,
-      "okRate": 53.8,
-      "blockedRate": 27.4,
+      "okRate": 54.6,
+      "blockedRate": 26.9,
       "failReasons": {
         "conn": 2,
         "none": 16,
         "unknown": 2
       },
-      "msP50": 11245,
+      "msP50": 11294,
       "msP90": 18411
     },
     "curator": {
@@ -27,27 +27,27 @@
         "BROADCAST-FAIL": 3,
         "VOTED": 23
       },
-      "vpEff": 0.1,
+      "vpEff": 0.2,
       "meanAgeMinutes": null,
       "tagsVoted": {},
       "dayCapsInRow": 0,
       "maxPerDay": 10
     },
     "exec": {
-      "window": 11,
-      "fails": 11,
+      "window": 12,
+      "fails": 12,
       "lastError": "missing required posting authority:Missing Posting Authority headcorner"
     },
     "watchdog": {
-      "checks": 1121,
+      "checks": 1141,
       "downs": 15,
       "heals": 27,
       "healVerified": 26,
       "healFailed": 0,
-      "lastCheckAt": "2026-10-04T20:14:43.035Z",
+      "lastCheckAt": "2026-10-04T20:34:43.052Z",
       "engineUp": true,
       "lastSpawnAt": "2026-10-04T19:34:48.013Z",
-      "lastUpAt": "2026-10-04T20:14:43.037Z",
+      "lastUpAt": "2026-10-04T20:34:43.054Z",
       "blips": 0
     }
   },
@@ -55,14 +55,14 @@
     {
       "id": "cycle-conn-fails",
       "severity": "high",
-      "evidence": "cycles 57/106 ok · conn-fails 2 (connection-level)",
+      "evidence": "cycles 59/108 ok · conn-fails 2 (connection-level)",
       "lesson": "connection-level cycle kills waste 10-minute sovereignty slots",
       "action": "FIXED T-14: engine idleTimeout 255 + sovereign one-shot conn-retry with heal-gate"
     },
     {
       "id": "signing-cred-blocked",
       "severity": "high",
-      "evidence": "cycle-blocked ×29/106 — ONLY credential-gated steps failing (blockedSteps journaled per event); every non-signing step green",
+      "evidence": "cycle-blocked ×29/108 — ONLY credential-gated steps failing (blockedSteps journaled per event); every non-signing step green",
       "lesson": "signing rails lawfully parked — the machine is NOT sick, but VP regen above the 100% cap burns unused and every vote/order/op the doctrine would place is foregone",
       "action": "OPERATOR REVIVAL (T-16 self-service): paste the credential in the cockpit banner → engine adopts (0600) + chain-verifies instantly; or drop upload/headcorner.txt"
     },
@@ -76,7 +76,7 @@
     {
       "id": "broadcast-fails",
       "severity": "high",
-      "evidence": "11/11 broadcasts failed · last: missing required posting authority:Missing Posting Authority headcorner",
+      "evidence": "12/12 broadcasts failed · last: missing required posting authority:Missing Posting Authority headcorner",
       "lesson": "broadcast failures burn RC and delay rails",
       "action": "fail-closed stop already holds; vote-interval retry added T-14"
     }
@@ -84,10 +84,10 @@
   "tunings": {},
   "tuningsApplied": [],
   "lessonsTotal": {
-    "cycle-conn-fails": 128,
-    "unclassified-fail-legacy": 79,
-    "signing-cred-blocked": 47,
-    "broadcast-fails": 22
+    "cycle-conn-fails": 130,
+    "unclassified-fail-legacy": 81,
+    "signing-cred-blocked": 49,
+    "broadcast-fails": 24
   },
   "honesty": "learning reads recorded history only · tunings hard-clamped (LEARN_CLAMP) · doctrine laws untouchable"
 }

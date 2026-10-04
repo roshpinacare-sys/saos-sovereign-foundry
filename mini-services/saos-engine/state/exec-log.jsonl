@@ -622,3 +622,4 @@
 {"at":"2026-10-04T19:34:50.300Z","tag":"cred-missing","verdict":"SIGNING-DEAD","keyFile":"/home/z/my-project/.secrets/headcorner.key","revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}
 {"at":"2026-10-04T20:13:51.857Z","tag":"credential-adopted","fingerprint":"c056922c"}
 {"at":"2026-10-04T20:14:52.605Z","tag":"cycle-execute","account":"headcorner","ok":false,"txid":"eb6b7da5d5ca24be641aaf1b63746b505c56f25d","ops":["claim_reward_balance"],"node":null,"error":"missing required posting authority:Missing Posting Authority headcorner","fingerprint":"c056922c"}
+{"at":"2026-10-04T20:24:51.578Z","tag":"cycle-execute","account":"headcorner","ok":false,"txid":"78d23e71a0efbcf184d065cb2ad10cd901a9506d","ops":["claim_reward_balance"],"node":null,"error":"missing required posting authority:Missing Posting Authority headcorner","fingerprint":"c056922c"}

@@ -1,6 +1,6 @@
 {
-  "at": "2026-10-04T20:14:43.000Z",
-  "lastFullScanAt": "2026-10-04T20:14:43.000Z",
+  "at": "2026-10-04T20:34:43.000Z",
+  "lastFullScanAt": "2026-10-04T20:34:43.000Z",
   "verdict": "OPTIONS-FOUND",
   "tagBoard": [
     {
@@ -9,7 +9,7 @@
     },
     {
       "tag": "kr",
-      "payoutsSbd": 3015.072
+      "payoutsSbd": 3014.884
     },
     {
       "tag": "hive-150122",
@@ -21,11 +21,11 @@
     },
     {
       "tag": "hive-196917",
-      "payoutsSbd": 1326.605
+      "payoutsSbd": 1322.342
     },
     {
       "tag": "steem",
-      "payoutsSbd": 1194.052
+      "payoutsSbd": 1194.061
     },
     {
       "tag": "hive-180932",
@@ -41,7 +41,7 @@
     },
     {
       "tag": "hive-188619",
-      "payoutsSbd": 857.033
+      "payoutsSbd": 836.547
     },
     {
       "tag": "atomy",
@@ -49,16 +49,16 @@
     },
     {
       "tag": "life",
-      "payoutsSbd": 820.861
+      "payoutsSbd": 805.387
     }
   ],
   "curationEst": {
-    "dailyPoolSteem": 928292.161,
-    "voteVestsShare": 0.000009280358822134133,
-    "estimatedSteemPerDay": 8.6149,
+    "dailyPoolSteem": 928563.388,
+    "voteVestsShare": 0.000009283334315097587,
+    "estimatedSteemPerDay": 8.6202,
     "note": "linear approx over reward-fund window — ESTIMATED class, never claimed as measured"
   },
-  "vpEff": 0.1,
+  "vpEff": 0.2,
   "opportunities": [
     {
       "id": "spread-wide",
@@ -82,8 +82,8 @@
       "id": "curation-share",
       "kind": "curation-yield",
       "potentialClass": "estimated",
-      "evidence": "reward-fund pool 928292.161 STEEM/window · our vests share 0.0009% → ~8.6149 STEEM/day",
-      "potential": 8.6149,
+      "evidence": "reward-fund pool 928563.388 STEEM/window · our vests share 0.0009% → ~8.6202 STEEM/day",
+      "potential": 8.6202,
       "gate": "measured truth only lands via curation_reward ops (measureAll) — estimator never claims payout",
       "effort": "rail live since T-13"
     },

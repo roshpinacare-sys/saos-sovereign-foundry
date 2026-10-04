@@ -4,27 +4,27 @@
   "armed": true,
   "paused": false,
   "watchdog": {
-    "checks": 1123,
+    "checks": 1149,
     "downs": 15,
     "heals": 27,
     "healVerified": 26,
     "healFailed": 0,
-    "lastCheckAt": "2026-10-04T20:16:43.043Z",
+    "lastCheckAt": "2026-10-04T20:42:43.055Z",
     "engineUp": true,
     "lastSpawnAt": "2026-10-04T19:34:48.013Z",
-    "lastUpAt": "2026-10-04T20:16:43.046Z",
+    "lastUpAt": "2026-10-04T20:42:43.059Z",
     "blips": 0
   },
   "cycles": {
-    "autoRuns": 115,
-    "ok": 66,
+    "autoRuns": 117,
+    "ok": 68,
     "fail": 20,
     "blocked": 29,
-    "lastAt": "2026-10-04T20:15:03.017Z",
+    "lastAt": "2026-10-04T20:34:55.009Z",
     "lastOk": true,
     "lastHealth": "ok",
-    "lastMs": 16318,
-    "nextAt": "2026-10-04T20:25:03.017Z"
+    "lastMs": 10350,
+    "nextAt": "2026-10-04T20:44:55.009Z"
   },
   "selftest": {
     "runs": 0,

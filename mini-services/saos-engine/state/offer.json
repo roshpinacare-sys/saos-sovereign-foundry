@@ -22,9 +22,9 @@
   "book": {
     "bestAsk": 0.10423688011555128,
     "bestBid": 0.1001001001001001,
-    "askDepthSteem": 466.769,
-    "bidDepthSbd": 2952.053,
-    "at": "2026-10-04T20:14:43.000Z"
+    "askDepthSteem": 437.929,
+    "bidDepthSbd": 2946.56,
+    "at": "2026-10-04T20:34:43.000Z"
   },
   "market": {
     "at": "2026-10-04T20:14:47.250Z",
@@ -73,5 +73,5 @@
     "bidBudget": 0,
     "deployCap": 0.6
   },
-  "publishedAt": "2026-10-04T20:14:43.000Z"
+  "publishedAt": "2026-10-04T20:34:43.000Z"
 }

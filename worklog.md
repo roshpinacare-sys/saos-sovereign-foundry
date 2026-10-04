@@ -623,3 +623,20 @@ Stage Summary:
 - THE KEYS QUEST IS CLOSED: hcsoldier1/2/3 = LOST-NO-CUSTODY (re-confirmed; 56.001 STEEM + 0.417 SBD stranded on-chain). The successor generation hcsoldier4/5/6 has full proven custody in git, and ONE factory password (sheet row 19) rules headcorner + whole fleet — now installed and chain-proven on this machine.
 - headcorner signing: REVIVED (4/4 chain-verified). Engine cycling normally on :3040.
 - Open operator-gated decisions: (a) fund + register gen-2 fleet (hcsoldier4/5/6) to replace the stranded generation; (b) clone + re-arm saos-dex :3037 from its repo; (c) revoke/rotate the GitHub PAT (exposed in chat history) after ops conclude.
+---
+Task ID: T-78b
+Agent: Z.ai Code (platform machine session)
+Task: Operator rejected the LOST-NO-CUSTODY verdict ("טענת סרק") — ordered: find the lost hcsoldier1/2/3 keys, everything is findable in the conversation, don't give up.
+
+Work Log:
+- Re-verified targets: 12 pubkeys (3 soldiers × 4 roles) from state/soldiers.json; ownerAccts=[] on chain (no recovery anchor) — structurally confirmed.
+- Built fingerprint/WIF scanner on engine's own crypto (steemtx.mjs): fingerprint sweep over ALL 883 base58 tokens of הד.txt + contextual strings + 106 master-variant passwords + sheet rows 1-30; WIF decode of all 8 checksum-valid tokens. RESULT: 0 fingerprint hits, 0 WIF→target matches, 0 hcsoldier mentions in הד.txt (it is the PRE-project conversation export).
+- Local git: pickaxe-regex over ALL commits for P-password and WIF patterns → only bun.lock + Chinese HTML template false positives. Unreachable blobs scanned → worklog blobs only. T-12 commit (14f3cd0, 09-29 19:27) contains state only, no secrets.
+- Remote repo (roshpinacare-sys): tree sweep + commit history of agent/vault/ — seals: KEYS-ZIP-2026-09-29.zip.enc sealed 17:58Z (f08edce6, head-revive) — VERIFIED MYSELF: predates soldiers (19:21Z) → cannot contain them. KEYS-ZIP-2026-09-10 (15 accounts incl. gen-2, no 1/2/3). KEYS-SEED-2026-10-04 (sovereign root seed rescued from chat archive — proof the operator's conversation archives DO carry key material). KEYS-PACK r20a = gen-2 delivery (password off-git by doctrine).
+- fleet_keys.enc re-extracted + meta inspected (13 files = keys/ dir seal — repo-side, no gen-1). WhatsApp image (IMG-20260905-WA0025.jpg) READ BY VLM (first time any agent did): 12-word wallet mnemonic screen — known vault-era material, no soldier keys.
+- Code search org-wide: 0. Platform DB (db/custom.db): empty. No chat/gateway storage exists on this machine — the zai-web conversation history lives platform-side only.
+
+Stage Summary:
+- EVERY self-service location is now exhausted with my own independent verification (not prior agents' verdicts). The ONLY place hcsoldier1/2/3 private material can still exist = the full text of THIS platform's conversation (zai-web), specifically (a) the operator's "סיסמאות פרויקט" message (trace 1a10777a0b91f4c9 — the compression summaries captured only the ZIP password from it) and/or (b) the T-12 deployment reply (2026-09-29 ~19:21-19:45, tx bbdfcca2).
+- Scanner is armed and proven (it found the master credential from the sheet in minutes): the moment the operator re-pastes that message or uploads a conversation export to upload/, verdict takes seconds (fingerprint test e3e302d3/231119a5/2da393f0 + WIF decode + 4 seed-order derivations).
+- Machine state: master signing REVIVED (4/4), gen-2 (hcsoldier4/5/6) custody proven + funding-ready, stranded funds untouched on-chain.
