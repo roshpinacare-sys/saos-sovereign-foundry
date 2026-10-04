@@ -1,6 +1,6 @@
 {
-  "lastTickAt": "2026-10-04T20:02:47.823Z",
-  "ticks": 4541,
+  "lastTickAt": "2026-10-04T20:17:32.964Z",
+  "ticks": 4836,
   "nextId": 2100000379,
   "conf": {
     "enabled": true,
@@ -18,22 +18,22 @@
     "chainTailSec": 60,
     "maxOpsPerTx": 24
   },
-  "lastVerdict": "CREDENTIAL-MISSING",
-  "lastVerdictAt": "2026-10-04T20:02:47.823Z",
-  "rcPct": 98.7,
-  "opsToday": 322,
+  "lastVerdict": "GOVERNOR-ACCUMULATING",
+  "lastVerdictAt": "2026-10-04T20:17:32.964Z",
+  "rcPct": 100,
+  "opsToday": 0,
   "lastTxid": "87183ebd98c661da5ed3286d337e2211fbb09e32",
   "governor": {
-    "pairs": 2,
-    "ops": 4,
-    "carry": 0.3059666542559114,
-    "reason": "governor-ok",
-    "headroom": 2.948,
-    "burnPerDay": 3619388048342,
-    "rcPct": 98.7
+    "pairs": 0,
+    "ops": 0,
+    "carry": 0.7629295022079998,
+    "reason": "accumulating",
+    "headroom": 3,
+    "burnPerDay": 934405105251,
+    "rcPct": 100
   },
-  "liveHyper": 4,
-  "planned": 18,
+  "liveHyper": 0,
+  "planned": 0,
   "label": "front-create",
   "economics": {
     "regenPerDay": 1227743571351,
@@ -44,8 +44,8 @@
   },
   "day": "2026-10-04",
   "lastError": "CREDENTIAL-MISSING: .secrets/headcorner.key not found (sandbox cold-reset wipes gitignored secrets). Revival (self-servi",
-  "carryGovernor": 0.3059666542559114,
+  "carryGovernor": 0.7629295022079998,
   "running": true,
   "blocker": null,
-  "lastMaxRc": 6138717856759
+  "lastMaxRc": 1557341842088
 }

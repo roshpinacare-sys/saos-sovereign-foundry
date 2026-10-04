@@ -1,6 +1,6 @@
 {
-  "at": "2026-10-04T19:54:42.998Z",
-  "lastFullScanAt": "2026-10-04T19:54:42.998Z",
+  "at": "2026-10-04T20:14:43.000Z",
+  "lastFullScanAt": "2026-10-04T20:14:43.000Z",
   "verdict": "OPTIONS-FOUND",
   "tagBoard": [
     {
@@ -13,7 +13,7 @@
     },
     {
       "tag": "hive-150122",
-      "payoutsSbd": 1934.775
+      "payoutsSbd": 1934.987
     },
     {
       "tag": "hive-166405",
@@ -21,11 +21,11 @@
     },
     {
       "tag": "hive-196917",
-      "payoutsSbd": 1326.459
+      "payoutsSbd": 1326.605
     },
     {
       "tag": "steem",
-      "payoutsSbd": 1194.044
+      "payoutsSbd": 1194.052
     },
     {
       "tag": "hive-180932",
@@ -33,7 +33,7 @@
     },
     {
       "tag": "hive-144064",
-      "payoutsSbd": 979.224
+      "payoutsSbd": 970.554
     },
     {
       "tag": "hive-183397",
@@ -41,7 +41,7 @@
     },
     {
       "tag": "hive-188619",
-      "payoutsSbd": 856.673
+      "payoutsSbd": 857.033
     },
     {
       "tag": "atomy",
@@ -49,13 +49,13 @@
     },
     {
       "tag": "life",
-      "payoutsSbd": 817.45
+      "payoutsSbd": 820.861
     }
   ],
   "curationEst": {
-    "dailyPoolSteem": 927685.57,
-    "voteVestsShare": 0.00000927395154064171,
-    "estimatedSteemPerDay": 8.6033,
+    "dailyPoolSteem": 928292.161,
+    "voteVestsShare": 0.000009280358822134133,
+    "estimatedSteemPerDay": 8.6149,
     "note": "linear approx over reward-fund window — ESTIMATED class, never claimed as measured"
   },
   "vpEff": 0.1,
@@ -82,8 +82,8 @@
       "id": "curation-share",
       "kind": "curation-yield",
       "potentialClass": "estimated",
-      "evidence": "reward-fund pool 927685.57 STEEM/window · our vests share 0.0009% → ~8.6033 STEEM/day",
-      "potential": 8.6033,
+      "evidence": "reward-fund pool 928292.161 STEEM/window · our vests share 0.0009% → ~8.6149 STEEM/day",
+      "potential": 8.6149,
       "gate": "measured truth only lands via curation_reward ops (measureAll) — estimator never claims payout",
       "effort": "rail live since T-13"
     },

@@ -303,3 +303,6 @@
 {"at":"2026-10-04T19:35:36.013Z","kind":"cycle-blocked(auto)","ms":6436,"engineMeasured":true,"steps":18,"verdict":null,"blockedSteps":["curate","execute","soldiers"],"error":null}
 {"at":"2026-10-04T19:44:51.009Z","kind":"cycle-blocked(auto)","ms":4166,"engineMeasured":true,"steps":18,"verdict":null,"blockedSteps":["curate","execute","soldiers"],"error":null}
 {"at":"2026-10-04T19:54:51.005Z","kind":"cycle-blocked(auto)","ms":4688,"engineMeasured":true,"steps":18,"verdict":null,"blockedSteps":["curate","execute","soldiers"],"error":null}
+{"at":"2026-10-04T20:04:51.011Z","kind":"cycle-blocked(auto)","ms":4191,"engineMeasured":true,"steps":18,"verdict":null,"blockedSteps":["curate","execute","soldiers"],"error":null}
+{"at":"2026-10-04T20:14:43.037Z","kind":"cred-restored"}
+{"at":"2026-10-04T20:15:03.017Z","kind":"cycle-ok(auto)","ms":16318,"engineMeasured":true,"steps":18,"verdict":null,"blockedSteps":[],"error":null}
