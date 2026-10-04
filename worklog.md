@@ -572,3 +572,29 @@ Stage Summary:
 - The watchdog can no longer be silently blind: every down carries its own latency measurement; transient blips are separated from real downs in 5s, not 60s.
 - Key facts for next rounds: curation rail flip-watch on 2026-10-04 (claims may need the credential — signing is ALIVE); weave breach 13/10 needs arbitration resolution (either raise the shared cap by doctrine or coordinate lanes — the second signer's partition is still unpublished); theirs interval 1.2min contradicts T-18's 15-min clockwork note (behavior changed — re-fingerprint); T-19c RC-tank scaling (delegation/SP growth) remains the 100,000× lever; ORG-REPO push still operator-gated on the GitHub PAT.
 - Artifacts: payouts.mjs · weave.mjs · lib.{payoutWindow,rewardHistoryRollup,vpNow,x2Spectrum,weaveArbitration,weaveFresh,opTypeName} · daily.mjs 18-step cycle · economics payouts+x2 wiring · index.ts /payouts+/weave routes + /status fields · status route passthrough · sovereign.ts two-strike+downForMs+single-flight · recruiter 11 stations · selftest 311 · state/{payouts,weave}.json · cockpit PayoutsCard/WeaveCard/X2Card + types + RailRow fix · evidence t23f-*.png · committed.
+
+---
+Task ID: T-78
+Agent: AGENT-A (Z.ai Code · main orchestrator)
+Task: Operator order — "verify git is at the latest commit (environment fell); we're still hunting the soldiers' lost keys; check the uploaded conversation log (הד.txt) — maybe the keys are written there."
+
+Work Log:
+- GIT VERIFIED: local repo intact at 0fc3a3b (T-23 lineage), no remote configured → nothing to pull; worktree diffs = engine runtime state only + signer.mjs (this round's safety fix). The GitHub lineage (roshpinacare-sys, 8 private repos incl. saos-dex) is unreachable: the PAT (upload/Roshcaregt.txt) was destroyed with the fallen sandbox, is MASKED everywhere in the log (ghp_36…), and is absent from local git history (rev-list scan clean).
+- TRANSCRIPT MINED (7715 lines, upload/הד.txt): hcsoldier appears 0 times. The log documents the PLATFORM lineage's key saga: vault fleet_keys.enc (170,905B) + fleet_keys.meta.json (passphrase inside) still on GitHub steem@main + Project-files ZIP; SAOS-ROT1 derivation = HMAC-SHA256 from a 64-hex master seed, label SAOS-ROT1/<account>/<chain>/<role>; plaintext (lines 4584-4600): 4 STEEM + 4 HIVE headcorner WIFs (chain-verified live on 2026-09-09) + the 64-hex seed; old-army account names enumerated (cashmachine, haran, israelnews, lsa, macrame, siq, tov, wic, wog, woq — NOT hcsoldier); vault also holds 12 EVM/TRON/SOL wallets, sovereign 48-hex seed, 2 TRON mnemonics, all tokens incl. the GITHUB PAT.
+- ZERO-EXPOSURE PROBES (written to tool-results/, run, DELETED; secrets never printed):
+  (1) 8 transcript WIFs decoded → derived pubkeys vs LIVE STEEM authorities: 0 match — all transcript keys are DEAD (headcorner was rotated again in the T-12 era; current chain auth fps: owner 1309db2d / active 936a42b3 / posting 2715aa8e / memo b633da50).
+  (2) master seed × 3 variants × 4 SEED_ORDERS vs chain: 0 match; fingerprint(seed)=d871eb32 ≠ working credential c056922c.
+  (3) 70 credential candidates (P-passwords, long tokens, headcorner-followers) vs fingerprints c056922c/163be485 AND vs live-chain derivation: 0 hits — the engine's working credential is NOT in the transcript.
+  (4) HIVE cross-check: transcript HIVE WIFs vs api.hive.blog authorities: 0 match (Hive also rotated post-Sep-9; Hive balances negligible 0.034 HIVE).
+  (5) hcsoldier1/2/3 deployed pubkeys == live chain authorities: TRUE ×3 (re-confirms T-77; trapped 56.001 STEEM + 0.417 SBD).
+- CODE-PROOF of soldier-key loss class: soldiers.mjs newSoldierSecret() = "P"+base58(crypto.getRandomValues(38B)) — soldier passwords were NEVER derived from the master; they lived only in .secrets/soldiers.json (wiped 2026-09-30 T-15, wiped again by the env fall). No derivation path from the transcript's seed exists.
+- CREDENTIAL STATE (honest): .secrets/ ABSENT after env fall → signing DEAD (curate/execute/soldiers/promo blocked, armedButNoCredential=true). The revival string = the operator's cockpit paste of 2026-09-30 16:49 (fp c056922c, re-adopted 2026-10-01 23:53 — the credential that voted 10× with txids on 2026-10-02). Only the operator holds it (cockpit-paste source, engine logs fingerprint only by design).
+- SAFETY BUG FOUND+FIXED (signer.mjs syncCredential): the upload/headcorner.txt adoption path ran fs.rmSync on the ENTIRE upload/ directory — it would have incinerated הד.txt + KEYS_BACKUP_* on adoption. Fix: remove ONLY the key file (comment documents T-78). Engine hot-reloaded healthy (:3040 ok, :3000 200).
+- ENVIRONMENT: engine :3040 UP (parity 0.1116, band-ok), Next :3000 UP, headcorner liquid 3.652 STEEM + 0.015 SBD (~6.37M VESTS); saos-dex lineage absent locally (recoverable from roshpinacare-sys/saos-dex once a PAT exists).
+
+Stage Summary:
+- The conversation log does NOT contain the hcsoldier keys (0 mentions; random-by-code) — the trapped 56.001 STEEM + 0.417 SBD stays locked unless the operator holds an external copy of .secrets/soldiers.json or the three P-passwords.
+- The transcript's entire key inventory (8 WIFs + seed) is DEAD on both chains — verified live vs RPC, zero exposure.
+- ONE operator move revives the engine's signing: re-paste the 30.09/01.10 wallet-console credential (fp c056922c). After revival: T-76 redeploy math reopens (1 soldier needs ~9 STEEM liquid — current 3.652 → small top-up or wait).
+- The GitHub vault remains the asset chest (9 army accounts possibly live on HIVE, 12 multi-chain wallets, the PAT itself) — needs the operator to re-supply the token; then fleet_keys.enc + meta can be fetched and verified read-only.
+- Artifacts: signer.mjs T-78 safety fix · probes ephemeral (deleted) · worklog (this entry) · zero secrets printed/stored anywhere.

@@ -1,22 +1,22 @@
 {
-  "at": "2026-10-04T18:09:24.550Z",
+  "at": "2026-10-04T19:54:42.998Z",
   "enabled": true,
-  "runsTotal": 123,
+  "runsTotal": 126,
   "verdict": "LEARNED",
   "metrics": {
     "cycles": {
-      "window": 103,
-      "oks": 59,
+      "window": 105,
+      "oks": 58,
       "fails": 20,
-      "blocked": 24,
-      "okRate": 57.3,
-      "blockedRate": 23.3,
+      "blocked": 27,
+      "okRate": 55.2,
+      "blockedRate": 25.7,
       "failReasons": {
         "conn": 2,
         "none": 16,
         "unknown": 2
       },
-      "msP50": 11294,
+      "msP50": 11245,
       "msP90": 18411
     },
     "curator": {
@@ -39,15 +39,15 @@
       "lastError": "missing required active authority:Missing Active Authority headcorner"
     },
     "watchdog": {
-      "checks": 1074,
-      "downs": 14,
-      "heals": 26,
-      "healVerified": 25,
+      "checks": 1101,
+      "downs": 15,
+      "heals": 27,
+      "healVerified": 26,
       "healFailed": 0,
-      "lastCheckAt": "2026-10-04T18:09:24.562Z",
+      "lastCheckAt": "2026-10-04T19:54:43.021Z",
       "engineUp": true,
-      "lastSpawnAt": "2026-10-04T17:49:29.575Z",
-      "lastUpAt": "2026-10-04T18:09:24.565Z",
+      "lastSpawnAt": "2026-10-04T19:34:48.013Z",
+      "lastUpAt": "2026-10-04T19:54:43.022Z",
       "blips": 0
     }
   },
@@ -55,14 +55,14 @@
     {
       "id": "cycle-conn-fails",
       "severity": "high",
-      "evidence": "cycles 59/103 ok · conn-fails 2 (connection-level)",
+      "evidence": "cycles 58/105 ok · conn-fails 2 (connection-level)",
       "lesson": "connection-level cycle kills waste 10-minute sovereignty slots",
       "action": "FIXED T-14: engine idleTimeout 255 + sovereign one-shot conn-retry with heal-gate"
     },
     {
       "id": "signing-cred-blocked",
       "severity": "high",
-      "evidence": "cycle-blocked ×24/103 — ONLY credential-gated steps failing (blockedSteps journaled per event); every non-signing step green",
+      "evidence": "cycle-blocked ×27/105 — ONLY credential-gated steps failing (blockedSteps journaled per event); every non-signing step green",
       "lesson": "signing rails lawfully parked — the machine is NOT sick, but VP regen above the 100% cap burns unused and every vote/order/op the doctrine would place is foregone",
       "action": "OPERATOR REVIVAL (T-16 self-service): paste the credential in the cockpit banner → engine adopts (0600) + chain-verifies instantly; or drop upload/headcorner.txt"
     },
@@ -84,10 +84,10 @@
   "tunings": {},
   "tuningsApplied": [],
   "lessonsTotal": {
-    "cycle-conn-fails": 123,
-    "unclassified-fail-legacy": 74,
-    "signing-cred-blocked": 42,
-    "broadcast-fails": 17
+    "cycle-conn-fails": 126,
+    "unclassified-fail-legacy": 77,
+    "signing-cred-blocked": 45,
+    "broadcast-fails": 20
   },
   "honesty": "learning reads recorded history only · tunings hard-clamped (LEARN_CLAMP) · doctrine laws untouchable"
 }

@@ -1,16 +1,25 @@
 {
-  "at": "2026-10-04T18:09:24.550Z",
+  "at": "2026-10-04T19:54:42.998Z",
   "decisions": [
     {
       "kind": "book-depth",
       "decision": "hold-shape",
-      "reason": "spread 400bps → dragK 1.2",
+      "reason": "spread 405bps → dragK 1.2025000000000001",
       "action": {
-        "spreadBpsRec": 400,
-        "bestAsk": 0.10418695228821812,
+        "spreadBpsRec": 405,
+        "bestAsk": 0.10423688011555128,
         "bestBid": 0.1001001001001001
       },
-      "at": "2026-10-04T18:09:24.550Z"
+      "at": "2026-10-04T19:54:42.998Z"
+    },
+    {
+      "kind": "parity-drift",
+      "decision": "arb-window",
+      "reason": "internal feed deviates 735bps from external parity",
+      "action": {
+        "bps": 735
+      },
+      "at": "2026-10-04T19:54:42.998Z"
     },
     {
       "kind": "soldiers",
@@ -19,29 +28,29 @@
       "action": {
         "deployed": true
       },
-      "at": "2026-10-04T18:09:24.550Z"
+      "at": "2026-10-04T19:54:42.998Z"
     },
     {
       "kind": "rewards",
       "decision": "claim",
-      "reason": "unclaimed: 0 STEEM + 0 SBD + 6.454537 VESTS — free fuel, claim now",
+      "reason": "unclaimed: 0 STEEM + 0 SBD + 12.909063 VESTS — free fuel, claim now",
       "action": {
         "ok": true,
         "steem": 0,
         "sbd": 0,
-        "vests": 6.454537,
+        "vests": 12.909063,
         "any": true
       },
-      "at": "2026-10-04T18:09:24.550Z"
+      "at": "2026-10-04T19:54:42.998Z"
     },
     {
       "kind": "rc-health",
       "decision": "healthy",
-      "reason": "RC at 100%",
+      "reason": "RC at 99.9%",
       "action": {
-        "rcPct": 100
+        "rcPct": 99.9
       },
-      "at": "2026-10-04T18:09:24.550Z"
+      "at": "2026-10-04T19:54:42.998Z"
     },
     {
       "kind": "curation",
@@ -52,13 +61,13 @@
         "vpEff": null,
         "verdict": "DAY-CAP"
       },
-      "at": "2026-10-04T18:09:24.550Z"
+      "at": "2026-10-04T19:54:42.998Z"
     }
   ],
-  "spreadBpsRec": 400,
+  "spreadBpsRec": 405,
   "book": {
-    "bestAsk": 0.10418695228821812,
+    "bestAsk": 0.10423688011555128,
     "bestBid": 0.1001001001001001,
-    "spreadBps": 400
+    "spreadBps": 405
   }
 }

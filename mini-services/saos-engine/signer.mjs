@@ -46,8 +46,7 @@ export function syncCredential() {
       fs.mkdirSync(SECRETS, { recursive: true });
       fs.copyFileSync(UPLOAD_KEY, KEY_FILE);
       fs.chmodSync(KEY_FILE, 0o600);
-      fs.rmSync(UPLOAD_KEY, { force: true });
-      try { fs.rmSync(path.dirname(UPLOAD_KEY), { recursive: true, force: true }); } catch { /* dir may hold other files */ }
+      fs.rmSync(UPLOAD_KEY, { force: true }); // T-78 SAFETY FIX: the key file ONLY — upload/ holds operator evidence (הד.txt, KEYS_BACKUP); the old whole-dir rmSync would have incinerated it on adoption
       appendLine(LOG_FILE, { at: new Date().toISOString(), tag: "credential-adopted", fingerprint: fingerprint(fs.readFileSync(KEY_FILE, "utf8").trim().split(/[\s:=]+/).filter(Boolean).slice(1).join(" ")) });
       // credential changed → invalidate every cached identity (memory only)
       for (const k of Object.keys(mem.identities)) delete mem.identities[k];
