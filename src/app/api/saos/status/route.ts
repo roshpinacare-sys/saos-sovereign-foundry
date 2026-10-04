@@ -34,9 +34,12 @@ export async function GET() {
   }
   const { up, data: s } = await engineStatus();
   if (!up || !s) {
-    /* honest degradation: last-good stale-marked, or a hard down answer */
+    /* honest degradation: last-good stale-marked, engine marked DOWN (we just
+     * measured it down — the cached body's old engine.up=true must never
+     * survive as a lie), or a hard down answer */
     if (cache?.good) {
-      const stale = { ...(cache.data as Record<string, unknown>), stale: true, asof: new Date().toISOString() };
+      const prev = (cache.data as Record<string, unknown>).engine as Record<string, unknown> | null;
+      const stale = { ...(cache.data as Record<string, unknown>), stale: true, engine: { ...(prev ?? {}), up: false, note: "המנוע כבוי כרגע — נתוני-האחרון-הטוב מוצגים stale" }, asof: new Date().toISOString() };
       return NextResponse.json(stale);
     }
     return NextResponse.json({
@@ -160,7 +163,12 @@ export async function GET() {
     ? {
         deployed: !!soldiersRaw.deployed,
         at: soldiersRaw.at ?? null,
-        accounts: (soldiersRaw.accounts ?? []).map((a: any) => ({ name: a.name, fingerprint: a.fingerprint })),
+        /* T-80: per-account custody + the freeze verdict pass through — the
+         * cockpit must show keyless soldiers as FROZEN, never as deployed */
+        accounts: (soldiersRaw.accounts ?? []).map((a: any) => ({ name: a.name, fingerprint: a.fingerprint, custody: a.custody ?? null })),
+        frozen: soldiersRaw.frozen ?? (soldiersRaw.accounts ?? []).every((a: any) => a.custody !== "verified"),
+        verdict: soldiersRaw.verdict ?? null,
+        t80: soldiersRaw.t80 ?? null,
         fundingTxid: soldiersRaw.fundingTxid ?? null,
         fundedEach: soldiersRaw.fundedEach ?? null,
       }

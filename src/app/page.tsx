@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import {
   Activity, Anchor, Banknote, BatteryCharging, Brain, BrainCircuit, CircleCheck, Cpu, GitBranch, HeartPulse, KeyRound, Lightbulb, PauseCircle,
-  Play, PlayCircle, Radio, RefreshCw, Route, Scale, ShieldCheck, Sigma, Target, TrendingUp, Users, Wrench, Zap
+  Play, PlayCircle, Radio, RefreshCw, Route, Scale, ShieldAlert, ShieldCheck, Sigma, Target, TrendingUp, Users, Wrench, Zap
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -227,6 +227,30 @@ export default function Home() {
         {err && (
           <Card className="mb-4 border-rose-500/30 bg-rose-500/10 py-0 backdrop-blur-sm" role="alert">
             <CardContent className="p-4 text-sm text-rose-300">{err}</CardContent>
+          </Card>
+        )}
+
+        {/* T-80 · באנר-הקפאה-ריבונית — דבר-מפעיל 2026-10-04: המערכת עובדת אוטומטית בלי-חשיבה → עצירה, ביקורת, שער-חשיבה.
+            מוצג תמיד כשהמנוע כבוי או הריבונות מושהית — המפעיל חייב לראות את מצב-העצירה בראש-העמוד, לא דף-ריק. */}
+        {(sov?.state?.paused || !engineUp) && (
+          <Card className="mb-4 border-amber-500/40 bg-amber-500/10 py-0 backdrop-blur-sm" role="status">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-amber-500/40 bg-amber-500/20">
+                  <ShieldAlert className="h-5 w-5 text-amber-400" aria-hidden />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-amber-300">
+                    {sov?.state?.paused ? 'הקפאה-ריבונית (T-80) · הריבונות מושהית בפקודת-המפעיל' : 'T-80 · המנוע כבוי — האוטונומיה קפואה'}
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-amber-200/80">
+                    נעצר ונבדק בעקבות דבר-המפעיל (04.10): האצלות-אוטומטיות, מימון-חיילים חסרי-מפתח ושימוש-בהם בגריד — הופסקו ונחסמו מבנית.
+                    שער-חשיבה (Think Gate) פעיל על כל שידור: אפוטרופסות-מוכחת קודם, העברות-כספים והאצלות אסורות כברירת-מחדל, כל החלטה מתועדת ביומן.
+                    המנוע יופעל מחדש רק בהוראת-מפעיל (כפתור-ההפעלה בכרטיס-הריבונות).
+                  </p>
+                </div>
+              </div>
+            </CardContent>
           </Card>
         )}
 
@@ -564,13 +588,18 @@ export default function Home() {
                 {/* T-23f · אריגה · חוזה-הגוף-האחד עם-החותם-השני; אופציונלי, נטען רק כשהמנוע מדווח */}
                 <WeaveCard weave={s.weave} />
 
-                {/* חיילים · צי-גרידים (T-12) */}
+                {/* חיילים · צי-גרידים (T-12) · T-80 הקפאת-אפוטרופסות */}
                 <SectionCard
                   icon={Users}
                   tone="orange"
                   title={<>חיילים · צי-גרידים <span dir="ltr" className="text-slate-500">(T-12)</span></>}
-                  actions={<StatusBadge tone={s?.soldiers?.deployed ? 'emerald' : 'slate'}>{s?.soldiers?.deployed ? `פרוס · ${s.soldiers.accounts?.length ?? 0} חיילים` : 'ממתין-לפריסה'}</StatusBadge>}
+                  actions={<StatusBadge tone={s?.soldiers?.frozen ? 'amber' : s?.soldiers?.deployed ? 'emerald' : 'slate'}>{s?.soldiers?.frozen ? 'מוקפא · אין-אפוטרופסות' : s?.soldiers?.deployed ? `פרוס · ${s.soldiers.accounts?.length ?? 0} חיילים` : 'ממתין-לפריסה'}</StatusBadge>}
                 >
+                  {s?.soldiers?.frozen && (
+                    <p className="mb-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-[11px] leading-relaxed text-amber-300">
+                      {s?.soldiers?.t80 ?? 'T-80: חיילים חסרי-מפתח מוקפאים — אפס מימון, אפס גריד, אפס חתימה'}
+                    </p>
+                  )}
                   {s?.soldiers?.fundedEach && (
                     <p className="text-[11px] text-slate-500">{s.soldiers.fundedEach.steem} STEEM + {s.soldiers.fundedEach.sbd} SBD לחייל</p>
                   )}
@@ -579,7 +608,9 @@ export default function Home() {
                       {s.soldiers.accounts.map((a, i) => (
                         <div key={i} className="flex items-center justify-between text-xs">
                           <span className="font-bold text-slate-200">{a.name}</span>
-                          <span className="font-mono text-[10px] text-slate-500">fp {a.fingerprint}</span>
+                          <span className={`font-mono text-[10px] ${a.custody === 'verified' ? 'text-emerald-400' : 'text-amber-500'}`}>
+                            {a.custody === 'verified' ? `fp ${a.fingerprint}` : 'אין-מפתח · קפוא'}
+                          </span>
                         </div>
                       ))}
                     </div>

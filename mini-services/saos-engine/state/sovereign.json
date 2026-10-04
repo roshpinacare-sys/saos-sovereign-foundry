@@ -2,29 +2,29 @@
   "bootedAt": "2026-10-04T19:34:42.985Z",
   "pid": 1073,
   "armed": true,
-  "paused": false,
+  "paused": true,
   "watchdog": {
-    "checks": 1187,
-    "downs": 15,
-    "heals": 27,
-    "healVerified": 26,
+    "checks": 1286,
+    "downs": 88,
+    "heals": 28,
+    "healVerified": 27,
     "healFailed": 0,
-    "lastCheckAt": "2026-10-04T21:20:43.069Z",
-    "engineUp": true,
-    "lastSpawnAt": "2026-10-04T19:34:48.013Z",
-    "lastUpAt": "2026-10-04T21:20:43.072Z",
+    "lastCheckAt": "2026-10-04T22:59:43.164Z",
+    "engineUp": false,
+    "lastSpawnAt": "2026-10-04T21:44:43.030Z",
+    "lastUpAt": "2026-10-04T21:46:43.093Z",
     "blips": 0
   },
   "cycles": {
-    "autoRuns": 121,
-    "ok": 72,
+    "autoRuns": 124,
+    "ok": 75,
     "fail": 20,
     "blocked": 29,
-    "lastAt": "2026-10-04T21:14:55.010Z",
+    "lastAt": "2026-10-04T21:44:59.052Z",
     "lastOk": true,
     "lastHealth": "ok",
-    "lastMs": 10524,
-    "nextAt": "2026-10-04T21:24:55.010Z"
+    "lastMs": 9915,
+    "nextAt": "2026-10-04T21:54:59.052Z"
   },
   "selftest": {
     "runs": 0,
@@ -41,6 +41,11 @@
     "lastAlertAt": "2026-10-04T19:34:52.028Z"
   },
   "control": [
+    {
+      "at": "2026-10-04T21:45:39.352Z",
+      "action": "pause",
+      "by": "operator-cockpit"
+    },
     {
       "at": "2026-10-04T19:34:42.985Z",
       "action": "boot",
@@ -150,11 +155,6 @@
     {
       "at": "2026-09-29T17:57:49.713Z",
       "action": "resume",
-      "by": "operator-cockpit"
-    },
-    {
-      "at": "2026-09-29T17:57:49.434Z",
-      "action": "pause",
       "by": "operator-cockpit"
     }
   ]

@@ -23,7 +23,7 @@ import {
 } from "./measure.mjs";
 import { tick as gridTick, fold, activeGrids } from "./grid.mjs";
 import { runIntel } from "./intel.mjs";
-import { executeOps, executeAs, armedConf, execPaused, masterAccount, loadCredential } from "./signer.mjs";
+import { executeOps, executeAs, armedConf, execPaused, masterAccount, loadCredential, custodyOf } from "./signer.mjs";
 import { deploySoldiers, runSoldierGrids, soldiersState } from "./soldiers.mjs";
 import { postDailyReport } from "./promo.mjs";
 import { runCurator } from "./curator.mjs";
@@ -401,22 +401,36 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
     return { verdict: res.verdict, txid: res.txid ?? null, ops: ops.length, opNames: res.opNames ?? ops.map(([n]) => n), node: res.node ?? null, error: res.error ?? null, promo, opsToday: opsDay.opsToday + ops.length, opsDayCap, cancels: staleIds.length, created: createdIds.length, hyperLayer: hyperEnabled ? "hypergrid-owns-flow" : "cycle-flow-tranche" };
   });
 
-  /* 7 · soldiers: deploy once, top-up as liquidity returns, grid every cycle.
-   * T-16 CRED GATE FIRST (same measured rot as execute — 4.7s of doomed
-   * accountState reads per cycle while blocked). */
+  /* 7 · soldiers: T-80 FROZEN-BY-DEFAULT (operator stop-order 2026-10-04 —
+   * "עדיין מאצילה לחיילים, שלחה להם כסף, עושה בהם שימוש בגריד בלי מפתח").
+   * Laws now enforced structurally:
+   *   - config gate: conf.soldiers.enabled must be TRUE (it is now false)
+   *   - custody gate: a soldier WITHOUT a chain-verified credential gets
+   *     ZERO network reads, ZERO ops, ZERO funds — instant typed freeze
+   *   - the top-up rail can only ever fire for custody-VERIFIED soldiers,
+   *     and even then the signer's T-80 think-gate independently forbids
+   *     outbound transfers unless policy.allowTransfersOut is true. */
   report.steps.soldiers = await stepWrap("soldiers", async () => {
     const conf = armedConf();
     if (!conf.armed || execPaused()) return { verdict: "DISARMED-OR-PAUSED" };
-    if (!conf.soldiers?.enabled) return { verdict: "DISABLED" };
+    if (!conf.soldiers?.enabled) return { verdict: "DISABLED-T80-OPERATOR-STOP" };
     loadCredential(); // typed CREDENTIAL-MISSING here — before ANY network read
     const st = soldiersState();
+    // T-80 CUSTODY LEDGER: partition soldiers by proven custody BEFORE any read
+    const frozen = (st.deployed ? st.accounts : []).filter((r) => custodyOf(r.name) !== "verified");
+    const live = (st.deployed ? st.accounts : []).filter((r) => custodyOf(r.name) === "verified");
+    if (frozen.length) {
+      appendLine(path.join(STATE, "events.jsonl"), { type: "soldiers.custody-frozen", at: now, accounts: frozen.map((r) => r.name), verdict: "NO-CUSTODY-FROZEN", law: "T-80: keyless accounts are never funded, never grid-run, never signed for" });
+    }
+    if (!live.length) return { verdict: "NO-CUSTODY-FROZEN", frozen: frozen.map((r) => r.name), topups: [], grids: [] };
     let deploy = null, topups = [];
     if (!st.deployed) deploy = await deploySoldiers();
-    // top-up rail: soldiers funded with dust (master float was committed to
-    // asks at deploy time) get topped up when the master's liquid rebuilds
+    // top-up rail: custody-VERIFIED soldiers only — the measured leak (auto
+    // top-ups into keyless accounts while their STEEM sat locked in orders)
+    // is structurally dead: no-custody soldiers never reach this loop.
     const acc = await accountState(ACCOUNT);
     const masterLiquid = Math.max(0, acc.ok ? acc.steem ?? 0 : 0);
-    for (const rec of (st.deployed ? st.accounts : [])) {
+    for (const rec of live) {
       if (topups.length >= 1) break; // max 1 top-up/cycle (doctrine cap)
       const sAcc = await accountState(rec.name);
       if ((sAcc.steem ?? 0) < 1 && masterLiquid - topups.length * 12 > 40) {

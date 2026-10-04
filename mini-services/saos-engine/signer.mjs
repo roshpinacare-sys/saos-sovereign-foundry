@@ -33,6 +33,75 @@ const appendLine = (p, v) => { fs.mkdirSync(path.dirname(p), { recursive: true }
 const writeJson = (p, v) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, JSON.stringify(v, null, 2)); };
 const SOLDIERS_SECRET = path.join(SECRETS, "soldiers.json");
 const UPLOAD_KEY = path.join(DIR, "..", "..", "upload", "headcorner.txt");
+const THINK_LOG = path.join(STATE, "think-log.jsonl");
+
+/* ── T-80 · THE THINK GATE (operator order 2026-10-04, verbatim law):
+ * "חייב לעצור ולבחון מה הסוכנים עושים ושיחשבו תמיד לפני שהם עושים דברים
+ * כי הכל רץ אוטומטית בלי שכל ואינטילגנציה".
+ * Every broadcast — no exceptions, no bypass — passes a mandatory REASONING
+ * gate BEFORE any signing material is touched:
+ *   1. CUSTODY: the signing account must have PROVEN custody (a verified
+ *      credential that reproduces chain authorities). Keyless accounts are
+ *      never signed for, never funded, never grid-run — instant typed refusal.
+ *   2. FUNDS POLICY: outbound transfers (money leaving our accounts) are
+ *      FORBIDDEN by default — policy.allowTransfersOut=false; an explicit
+ *      allowlist is the only bypass. The measured leak (30 STEEM auto-topped
+ *      into keyless hcsoldier1/2/3 on 09-30) dies here structurally.
+ *   3. DELEGATION POLICY: delegate_vesting_shares is FORBIDDEN by default —
+ *      policy.allowDelegation=false. The measured exposure (48,393 VESTS ×
+ *      10 old-army accounts 09-29 + ~30k VESTS to keyless soldiers 10-04,
+ *      both broadcast outside any gate) dies here structurally.
+ * Every verdict — ALLOW and REFUSED alike — is journaled to think-log.jsonl
+ * with the reasons, so "what did the agents think" is always answerable. */
+export function custodyOf(name) {
+  if (name === masterAccount()) return mem.identities[name]?.verified?.ok ? "master-verified" : "master-unverified";
+  const id = mem.identities[name];
+  if (id?.verified?.ok) return "verified";
+  try {
+    const s = readJson(SOLDIERS_SECRET, null);
+    if ((s?.accounts ?? []).some((a) => a.name === name)) return "keyed-unverified";
+  } catch { /* secrets unreadable = no custody evidence */ }
+  return "no-custody";
+}
+
+export function thinkGate(account, ops, { source = "execute" } = {}) {
+  const conf = armedConf();
+  const pol = {
+    allowTransfersOut: conf.policy?.allowTransfersOut === true,
+    allowDelegation: conf.policy?.allowDelegation === true,
+    transferAllowlist: Array.isArray(conf.policy?.transferAllowlist) ? conf.policy.transferAllowlist : [],
+  };
+  const custody = custodyOf(account);
+  const reasons = [];
+  const shown = ops.map(([n, o]) => ({ op: n, to: o?.to ?? o?.delegatee ?? null, amount: o?.amount ?? o?.vesting_shares ?? null }));
+  // 1 · custody first — a keyless account can never be a signing subject
+  if (custody === "no-custody") {
+    reasons.push(`custody:${account}=none — no credential on this machine; signing, funding and grid use are frozen (T-80)`);
+    return journalThink({ account, source, verdict: "REFUSED", reasons, shown });
+  }
+  if (custody === "keyed-unverified") {
+    reasons.push(`custody:${account}=keyed-but-unverified — credential present but never chain-proven this run; refusing until verifyRoles passes`);
+    return journalThink({ account, source, verdict: "REFUSED", reasons, shown });
+  }
+  // 2 · outbound funds policy
+  for (const [opName, op] of ops) {
+    if (opName === "transfer" && op?.to && op.to !== account) {
+      const allowed = pol.allowTransfersOut || pol.transferAllowlist.includes(op.to);
+      if (!allowed) reasons.push(`transfer→${op.to} (${op.amount ?? "?"}): outbound funds FORBIDDEN by standing policy (allowTransfersOut=false, not in allowlist)`);
+    }
+    // 3 · delegation policy
+    if (opName === "delegate_vesting_shares" && !pol.allowDelegation) {
+      reasons.push(`delegate_vesting_shares→${op?.delegatee ?? "?"} (${op?.vesting_shares ?? "?"}): delegation FORBIDDEN by standing policy (allowDelegation=false)`);
+    }
+  }
+  const verdict = reasons.length ? "REFUSED" : "ALLOW";
+  return journalThink({ account, source, verdict, reasons, shown, custody });
+}
+
+function journalThink(entry) {
+  try { appendLine(THINK_LOG, { at: new Date().toISOString(), ...entry }); } catch { /* journal best-effort */ }
+  return { verdict: entry.verdict, reasons: entry.reasons, custody: entry.custody ?? null };
+}
 
 /**
  * T-12 sovereign self-service: if the operator drops a credential file into
@@ -214,7 +283,12 @@ export function defaultArmedConf() {
     maxBidSbdPerCycle: 20,
     bidReserveSbd: 0.5,
     minRcPct: 20,
-    soldiers: { enabled: true, count: 3, prefix: "hcsoldier", steemEach: 10, sbdEach: 2, minLevel: 0.2 },
+    /* T-80 defaults are SAFE-BY-DEFAULT: outbound funds and delegation are
+     * forbidden, soldier deployment is operator-gated (T-76 law). The
+     * operator's exec-armed.json can only LOOSEN these explicitly. */
+    policy: { allowTransfersOut: false, allowDelegation: false, transferAllowlist: [] },
+    operator: { allowSoldierDeploy: false },
+    soldiers: { enabled: false, count: 3, prefix: "hcsoldier", steemEach: 10, sbdEach: 2, minLevel: 0.2 },
     promo: { armed: true, perDay: 1, tags: ["steem", "defi", "marketmaking", "saos"] },
     // T-13: the measured fuel rail — VP put to work (posting key only, vote op
     // can never move funds). The operator ordered it implemented and running.
@@ -441,6 +515,14 @@ export async function executeAs(account, ops, { tag = "cycle", role = "active", 
   if (execPaused()) return { ok: false, verdict: "OPERATOR-PAUSED", reason: "kill-switch" };
   if (!ops.length) return { ok: true, verdict: "NO-OPS", ops: 0 };
   if (ops.length > conf.maxOpsPerCycle) ops = ops.slice(0, conf.maxOpsPerCycle);
+
+  /* T-80 · THE THINK GATE — mandatory reasoning BEFORE any key material is
+   * touched (cheapest guard first: pure local policy, zero network). A refusal
+   * here is final for this call; the caller sees the typed verdict + reasons. */
+  const think = thinkGate(account, ops, { source: tag });
+  if (think.verdict === "REFUSED") {
+    return { ok: false, verdict: "THINK-GATE-REFUSED", reasons: think.reasons, custody: think.custody, ops: 0 };
+  }
 
   const ver = await verifyRoles(account);
   if (!ver.ok) return { ok: false, verdict: "KEY-UNVERIFIED", reason: ver.reason ?? "no-match" };

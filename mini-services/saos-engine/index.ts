@@ -195,6 +195,24 @@ async function handle(req) {
 // linger forever like the old 8×1.5s loop that leaked zombies).
 let bound = false;
 let duplicateExit = false;
+// T-80 STRENGTHENED SINGLE-INSTANCE LAW (the measured triple-instance event,
+// 2026-10-04: three `bun --hot index.ts` processes alive at once — Bun.serve
+// does NOT throw EADDRINUSE synchronously on this runtime, so the old bind-
+// catch guard never fired and 3 copies raced each other's orders, burning RC
+// and journaling "unknown key" failures). Now: BEFORE binding, probe the
+// port's health — a live engine answers → I am the duplicate → clean exit.
+// The bind-catch path stays as the second line of defense.
+for (let probe = 0; probe < 3 && !duplicateExit; probe++) {
+  try {
+    const r = await fetch(`http://127.0.0.1:${PORT}/health`, { signal: AbortSignal.timeout(2500) });
+    if (r.ok) {
+      console.log(`port ${PORT} held by a healthy engine (pre-bind probe) — duplicate-exit (single-instance law)`);
+      duplicateExit = true;
+      break;
+    }
+  } catch { /* nothing healthy on the port → proceed to bind */ }
+  break;
+}
 for (let attempt = 1; attempt <= 3 && !bound && !duplicateExit; attempt++) {
   try {
     Bun.serve({

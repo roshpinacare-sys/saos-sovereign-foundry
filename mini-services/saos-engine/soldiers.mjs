@@ -21,7 +21,7 @@ import * as path from "node:path";
 import { rpcCall, accountState, openOrders } from "./measure.mjs";
 import { SEED_ORDERS, wifFor, derivePub, b58encode, fingerprint } from "./steemtx.mjs";
 import { planLadder, inventorySkew, classifyStale } from "./lib.mjs";
-import { executeAs, armedConf, execPaused, masterAccount, loadCredential, defaultArmedConf, verifyRoles } from "./signer.mjs";
+import { executeAs, armedConf, execPaused, masterAccount, loadCredential, defaultArmedConf, verifyRoles, custodyOf } from "./signer.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const STATE = path.join(DIR, "state");
@@ -54,13 +54,22 @@ function newSoldierSecret(name) {
   return { name, password, keys, fingerprint: fingerprint(password) };
 }
 
-/** full deployment: claim → create → fund, ONE atomic tx (fail-closed) */
+/** full deployment: claim → create → fund, ONE atomic tx (fail-closed).
+ * T-80: DEPLOYMENT IS OPERATOR-GATED (T-76 law made structural) — creating
+ * new accounts and moving funds to them can only ever happen with an explicit
+ * operator.allowSoldierDeploy=true in the standing order. The measured bug
+ * class (autonomous fleet expansion — accounts born and funded with nobody
+ * holding their keys a day later) is dead at the source. */
 export async function deploySoldiers() {
   const conf = soldierConf();
   const master = masterAccount();
   const st = readJson(SOLDIERS_STATE, { deployed: false, accounts: [], fundingTxid: null });
   if (st.deployed) return { ok: true, verdict: "ALREADY-DEPLOYED", accounts: st.accounts.map((a) => a.name) };
   if (execPaused()) return { ok: false, verdict: "OPERATOR-PAUSED" };
+  const armedFull = armedConf();
+  if (armedFull.operator?.allowSoldierDeploy !== true) {
+    return { ok: false, verdict: "DEPLOY-OPERATOR-GATED", reason: "T-80: fleet deployment requires operator.allowSoldierDeploy=true in the standing order" };
+  }
   // pre-check: no credential writes, no ops, unless the master key is PROVEN
   const ver = await verifyRoles(master);
   if (!ver.ok) return { ok: false, verdict: ver.verdict ?? "KEY-UNVERIFIED", reason: ver.reason ?? null, guidance: ver.guidance ?? null };
@@ -139,6 +148,14 @@ export async function runSoldierGrids({ parity, spreadBps = 0, now, bestBid = nu
   const out = [];
   for (const rec of st.accounts) {
     const name = rec.name;
+    /* T-80 · CUSTODY FAST-GATE: a soldier without a chain-verified credential
+     * gets ZERO network reads and ZERO ops — the measured rot (doomed
+     * accountState + openOrders reads per cycle per keyless soldier, forever)
+     * dies here. The signer's think-gate independently refuses signing. */
+    if (custodyOf(name) !== "verified") {
+      out.push({ name, verdict: "NO-CUSTODY-FROZEN", frozen: true });
+      continue;
+    }
     try {
       const [acc, oo] = await Promise.all([accountState(name), openOrders(name)]);
       if (!acc.ok || !oo.ok) { out.push({ name, verdict: "READ-FAIL" }); continue; }
@@ -181,5 +198,14 @@ export async function runSoldierGrids({ parity, spreadBps = 0, now, bestBid = nu
 export function soldiersState() { return readJson(SOLDIERS_STATE, { deployed: false, accounts: [] }); }
 export function soldiersPublic() {
   const st = soldiersState();
-  return { deployed: !!st.deployed, at: st.at ?? null, accounts: (st.accounts ?? []).map((a) => ({ name: a.name, fingerprint: a.fingerprint })), fundingTxid: st.fundingTxid ?? null, fundedEach: st.fundedEach ?? null };
+  const accounts = (st.accounts ?? []).map((a) => ({ name: a.name, fingerprint: a.fingerprint, custody: custodyOf(a.name) }));
+  const allFrozen = accounts.length > 0 && accounts.every((a) => a.custody !== "verified");
+  return {
+    deployed: !!st.deployed, at: st.at ?? null,
+    accounts,
+    frozen: allFrozen,
+    verdict: allFrozen ? "NO-CUSTODY-FROZEN" : null,
+    t80: allFrozen ? "T-80 (דבר-מפעיל 04.10): חיילים חסרי-מפתח מוקפאים — אפס מימון, אפס גריד, אפס חתימה" : null,
+    fundingTxid: st.fundingTxid ?? null, fundedEach: st.fundedEach ?? null,
+  };
 }
