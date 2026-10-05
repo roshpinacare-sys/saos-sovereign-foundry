@@ -878,3 +878,38 @@ Stage Summary:
 - New measured facts: second signer (Zip sandbox, off-machine) shares master credential and acts outside think-gate (claims our rewards, cancelled/replaced our 04:01 asks 12:56, revoked hcsoldier1/2/3 delegations 09:46, posts comments, weave checkpoints ~18min); control plane /api/saos/* unauthenticated; selftest has ZERO signer.mjs vectors; SovereignCore selftest scheduler never fired (runs=0); grid governor reactive not adaptive (32,086→7,536 ops/day with RC fall); predictions exist but are never scored (curation $0.55/day ESTIMATED vs $0.00 measured unreconciled for 24 days).
 - Next-order capability (PROPOSAL ONLY — nothing fixed this round, per round charter): close failure→diagnosis→behavior-change loop; candidate first proof = one-line claim fix (sign claim_reward_balance with role:"posting" instead of "active"). Then: unify-or-lane-bound the second signer (one writer or on-chain lease per credential), auth gate on /api/saos/*, success-measuring health, prediction scoring (est-vs-measured reconciliation).
 - Full Hebrew operator report: cognition-round/ROUND-REPORT-HE.md.
+---
+Task ID: L-1a
+Agent: Safety & Authority Adversarial Reviewer
+Task: try to break T-84 learning actuator safety claims
+Work Log:
+- Read all 5 changed files end-to-end (adaptations.mjs, signer.mjs executeAs/partitionByAdaptedRole, learning.mjs learn step, daily.mjs layers/bookkeeping, selftest t84 vectors) + traced every executeAs caller (curator:304, army:143, promo:53-56, daily:392/447, hypergrid:332, soldiers:115/189) — single broadcast choke point confirmed.
+- Live health: :3040 /health + /exec-status ok (armed, VERIFIED, 4/4 roles matched incl. owner), cycle-run.json fresh (15:15:32Z, health ok, layers all true), engine.pid 11694 matches live process (brief said ~6127 — noted, healthy now), bun selftest.mjs → 343/343 PASS.
+- Built offline /tmp lab (module copy w/ isolated state dir): E1 tamper→fail-closed; E2 delete→baseRole; E3 valid-seal garbage (string/[null]→throw contained; toRole:owner→"owner" resolves — planner-only guard gap; garbage dates→baseRole); E4 outcome-path neutralizes sealed poison; E6 owner-demand→DECLINED; E7 supersede-to-owner→RETIRED; E5 fabricated rows→adapt-transfer-posting proposed but chain+think-gate bound it to ≤3 failed broadcasts; E9 CONFIRMED landmine: VERIFIED adaptation + lost key = immortal ROLE-KEY-ABSENT skip with zero journaling.
+- Self-falsification pass (directive 18): attacked own verdict via think-gate bypass, partial-broadcast power, unbounded retry, sealed-poison, wrong-role success paths — no evidence found; verdict not yet falsified.
+- Wrote full report: /home/z/my-project/cognition-round/l1a-safety-review.md (lab script: cognition-round/l1a-lab.mjs).
+Stage Summary:
+- VERDICT: SAFE-WITH-FINDINGS — C1-C8 all CONFIRMED (C2/C4 with caveats); no authority-escalation path; no blockers.
+- F1 MAJOR: VERIFIED adaptations have no retire path (noteAdaptationOutcome retires ACTIVE only, adaptations.mjs:274; no exec-log row for ROLE-KEY-ABSENT partitions, signer.mjs:658-663) → key rotation after VERIFY = permanent silent op starvation. Fix: retire VERIFIED on ROLE-KEY-ABSENT + journal the verdict.
+- F2 MINOR: resolveAdaptedRoleFrom does no allowedTargetRoles/kind/type validation (valid-sealed toRole:"owner" drives owner-key signing since id.wifs holds owner, signer.mjs:512) — unreachable via current writers; harden the choke point anyway.
+- F3 MINOR: unguarded writeAdaptFile inside executeAs partition loop (signer.mjs:661 → adaptations.mjs:278) — write failure throws mid-partition; contained but messy.
+- F4-F11 notes: unsealed exec-log as evidence source (fabrication bounded ≤3 fails); BROADCAST-PARTIAL bookkeeping skip benign (orders expire 86400s/hypergrid self-heals from chain truth); account-global adaptations; KIND_WHITELIST dead constant; per-op file reads; ops[0] attribution; 60-row window starvation.
+- C8: organism healthy post-T-84 deploy (343/343, marker green incl. adaptive:true); live adaptation not yet fired (no claim op staged since 15:01 proposal).
+---
+Task ID: L-1d
+Agent: Durability & Noise Auditor
+Task: directive-19 matrix on T-84 actuator (copies only)
+Work Log:
+- Read engine dir read-only: adaptations.mjs (pure core + IO layer), signer.mjs consumption (executeAs → partitionByAdaptedRole → resolveAdaptedRole per op, ROLE-KEY-ABSENT → noteAdaptationOutcome), learning.mjs evaluateAdaptations wiring, daily.mjs layers writer, index.ts /status surface, selftest.mjs T-84 vectors.
+- Built /home/z/my-project/cognition-round/l1d-lab/lab.mjs (bun; imports ONLY pure fns from adaptations.mjs; zero fs writes, zero network, clocks explicit) — 21 vectors across noise-immunity, durability, reverse-lesson/boundedness; raw output in lab-output.txt.
+- Noise: 20 unique errors→0 adaptations; 1 identical→0; 2 identical 1-min apart→ACTIVE proposal (designed sensitivity, confidence 0.5); identical timeouts×10→0; window {30h+fresh} proposes vs {40h+fresh} silent; newest-transient+older-authority→exactly 1 proposal; garbage at:"banana" fail-closed to no-proposal.
+- Durability: byte-flip→integrity false; VALID seal over toRole:"owner"→resolver STILL baseRole (F2 holds incl. VERIFIED); missing integrity/schema/null→false; 8 type-poison cases→no throw, baseRole; expiresAt:"banana"→ACTIVE inert, no throw.
+- Reverse: supersede posting→active on chain-named authority (state stays ACTIVE, event adaptation.superseded) then VERIFIED with predictionScore.error=none; attempts-exhausted exactly at 3; TTL 49h→RETIRED ttl-unverified then fresh evidence re-proposes; DECLINED→ACTIVE promotion when held-key ok row appears (resolver=posting); re-eval idempotent (no spam).
+- Theatre census by grep (engine + src/): adaptations.json LOAD-BEARING (signer consults per-op); events adaptation.* rows KNOWN-UNREAD-YET (learning.mjs:248 dead read); learning.json adaptations → layers.adaptive in-engine, dropped by cockpit thin-proxy; exec-log role field writer+reader armed but 0 live rows yet; cycle-run layers DECORATIVE (no branch reads it); think-log unread — pre-existing.
+- Live integrity @15:44Z: sha256(JSON.stringify(payload))=9b50c0b6…34e9d == integrity field → MATCH; verifyStateIntegrity=true; resolveAdaptedRole('claim_reward_balance','active')='posting'; limit_order_create passthrough 'active'.
+- Self-falsification: probed seal determinism, valid-seal escalation, multi-group/repeat spam, NaN/type poison, live tamper — no contradicting evidence → not yet falsified.
+Stage Summary:
+- VERDICT: DURABLE + NOISE-IMMUNE — 21/21 lab vectors PASS; live store sealed & intact; learned role 'posting' resolves live; owner unreachable even behind a validly-sealed store.
+- Boundary findings (not violations): exec-log.jsonl evidence stream is UNSEALED (seal protects conclusions, not inputs); resolver allows toRole∈{posting,active} regardless of baseRole direction; VERIFIED ignores TTL by design; meta heartbeat re-seals store every learn step; id reuse across adaptation generations (cosmetic).
+- Key unknown: behavioral half unproven live — 0 role-bearing exec-log rows so far; first adapted claim_reward_balance broadcast is the real-world test.
+- Report: /home/z/my-project/cognition-round/l1d-durability-noise.md (lab: cognition-round/l1d-lab/lab.mjs, lab-output.txt)

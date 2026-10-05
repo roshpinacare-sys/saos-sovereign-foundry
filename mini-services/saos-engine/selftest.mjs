@@ -12,6 +12,8 @@ import {
 import { sanitizeDraft } from "./content.mjs";
 import { tick, fold } from "./grid.mjs";
 import { classifyAgent } from "./fleet.mjs";
+import { classifyFailure, planAdaptations, resolveAdaptedRoleFrom, verifyStateIntegrity } from "./adaptations.mjs";
+import { partitionByAdaptedRole } from "./signer.mjs";
 
 let pass = 0, fail = 0;
 const eq = (name, a, b) => {
@@ -760,6 +762,75 @@ ok("roster new-stations-planned-without-evidence", roster23NoEvidence.roster.fil
   const capPlan = planAccountVotes({ posts: [], account: "woq", policy: AP, nowMs: 0, chainDayCount: 3 });
   eq("t83 per-account chain-truth day-cap", capPlan.verdict, "DAY-CAP");
   eq("t83 effective vests (own + received − delegated)", effectiveVests({ vesting_shares: "2608.868412 VESTS", received_vesting_shares: "48393.301791 VESTS", delegated_vesting_shares: "0.000000 VESTS" }), 51002.170203);
+}
+
+/* T-84 · the first learning actuator — pure-core vectors derived from the
+ * MEASURED material (19 identical claim failures, fingerprint c056922c). */
+{
+  const NOW = "2026-10-05T15:00:00.000Z";
+  eq("t84 classify: chain-names-the-authority", classifyFailure("missing required posting authority:Missing Posting Authority headcorner"), { type: "authority-role", deterministic: true, requiredRole: "posting" });
+  eq("t84 classify: transient", classifyFailure("fetch failed: connect ETIMEDOUT"), { type: "transient", deterministic: false });
+  eq("t84 classify: empty", classifyFailure(""), { type: "none", deterministic: false });
+
+  /* propose: 2 identical deterministic failures (noise gate) + held-key proof */
+  const failRow = (at) => ({ at, ok: false, txid: "f" + at.slice(18, 20), ops: ["claim_reward_balance"], error: "missing required posting authority:Missing Posting Authority headcorner" });
+  const okVote = { at: "2026-10-05T11:28:00.000Z", ok: true, txid: "vote1", role: "posting", ops: ["vote"] };
+  const p1 = planAdaptations(null, [failRow("2026-10-05T13:00:00.000Z"), failRow("2026-10-05T13:05:00.000Z"), okVote], NOW);
+  eq("t84 propose-on-evidence", p1.summary.active, ["adapt-claim_reward_balance-posting"]);
+  eq("t84 proposed state+role", [p1.nextState.payload.adaptations[0].state, p1.nextState.payload.adaptations[0].toRole], ["ACTIVE", "posting"]);
+  ok("t84 authority impact declared none", String(p1.nextState.payload.adaptations[0].authorityImpact).includes("none"));
+
+  /* noise gate: ONE identical failure ⇒ no proposal (never adapt to noise) */
+  const p2 = planAdaptations(null, [failRow("2026-10-05T13:05:00.000Z"), okVote], NOW);
+  eq("t84 noise-gate holds", p2.summary.active, []);
+
+  /* varying errors (different signatures) ⇒ no proposal */
+  const p3 = planAdaptations(null, [failRow("2026-10-05T13:00:00.000Z"), { at: "2026-10-05T13:05:00.000Z", ok: false, ops: ["claim_reward_balance"], error: "connect timeout" }, okVote], NOW);
+  eq("t84 no-adapt-to-noise", p3.summary.active, []);
+
+  /* bounded abstention: deterministic failure but required key not demonstrably held */
+  const p4 = planAdaptations(null, [failRow("2026-10-05T13:00:00.000Z"), failRow("2026-10-05T13:05:00.000Z")], NOW);
+  eq("t84 declined-reasoned", p4.summary.declined, ["adapt-claim_reward_balance-posting"]);
+
+  /* legacy evidence bridge: ok row WITHOUT role field but with a code-proven
+   * posting-path tag (army-curate) counts as held-key proof (self-correcting) */
+  const legacyVote = { at: "2026-10-05T11:28:00.000Z", ok: true, txid: "vote1", tag: "army-curate", ops: ["vote"] };
+  const p4b = planAdaptations(null, [failRow("2026-10-05T13:00:00.000Z"), failRow("2026-10-05T13:05:00.000Z"), legacyVote], NOW);
+  eq("t84 tag-provenance-evidence", p4b.summary.active, ["adapt-claim_reward_balance-posting"]);
+
+  /* verification: adaptation fires, outcome measured, prediction scored */
+  const s1 = p1.nextState;
+  const okClaim = { at: "2026-10-05T15:10:00.000Z", ok: true, txid: "claimtx1", role: "posting", ops: ["claim_reward_balance"] };
+  const p5 = planAdaptations(s1, [okClaim], "2026-10-05T15:11:00.000Z");
+  eq("t84 verified-on-outcome", p5.summary.verified, ["adapt-claim_reward_balance-posting"]);
+  eq("t84 prediction scored", p5.nextState.payload.adaptations.find((a) => a.state === "VERIFIED")?.verified?.predictionScore?.error, "none");
+
+  /* reverse lesson: repeated failure under the learned role ⇒ bounded retire */
+  const failUnder = (at) => ({ at, ok: false, txid: "x" + at.slice(18, 20), role: "posting", ops: ["claim_reward_balance"], error: "missing required posting authority:Missing Posting Authority headcorner" });
+  const p6 = planAdaptations(s1, [failUnder("2026-10-05T15:10:00.000Z"), failUnder("2026-10-05T15:20:00.000Z"), failUnder("2026-10-05T15:30:00.000Z")], "2026-10-05T15:31:00.000Z");
+  eq("t84 attempts-exhausted-retire", p6.summary.retired, ["adapt-claim_reward_balance-posting"]);
+
+  /* role resolution: active/verified ⇒ learned role; expired ⇒ base; none ⇒ base */
+  eq("t84 resolve ACTIVE", resolveAdaptedRoleFrom(p1.nextState.payload, "claim_reward_balance", "active", NOW), "posting");
+  eq("t84 resolve unknown-op", resolveAdaptedRoleFrom(p1.nextState.payload, "vote", "active", NOW), "active");
+  eq("t84 resolve expired-ACTIVE", resolveAdaptedRoleFrom(p1.nextState.payload, "claim_reward_balance", "active", "2026-10-07T15:01:00.000Z"), "active");
+  eq("t84 resolve VERIFIED-no-ttl", resolveAdaptedRoleFrom(p5.nextState.payload, "claim_reward_balance", "active", "2026-10-20T00:00:00.000Z"), "posting");
+
+  /* fail-closed: tampered state never resolves */
+  ok("t84 tamper-detection", verifyStateIntegrity({ schema: "saos.adaptations.v1", integrity: "deadbeef", payload: p1.nextState.payload }) === false);
+  eq("t84 corrupt-state-fail-closed", resolveAdaptedRoleFrom(null, "claim_reward_balance", "active", NOW), "active");
+  /* F2 hardening: even a VALIDLY-SEALED store can never resolve outside the
+   * allowed role set — owner escalation is unreachable at resolve time */
+  eq("t84 owner-never-resolves", resolveAdaptedRoleFrom({ adaptations: [{ id: "x", op: "claim_reward_balance", kind: "signing-role", state: "ACTIVE", toRole: "owner", expiresAt: "2099-01-01T00:00:00.000Z" }] }, "claim_reward_balance", "active", NOW), "active");
+  eq("t84 wrong-kind-never-resolves", resolveAdaptedRoleFrom({ adaptations: [{ id: "x", op: "claim_reward_balance", kind: "policy-edit", state: "ACTIVE", toRole: "posting", expiresAt: "2099-01-01T00:00:00.000Z" }] }, "claim_reward_balance", "active", NOW), "active");
+  eq("t84 malformed-payload-fail-closed", resolveAdaptedRoleFrom({ adaptations: "garbage" }, "claim_reward_balance", "active", NOW), "active");
+
+  /* partitioning: legacy path = one partition; learned claim ⇒ split, order kept */
+  const opsMix = [["limit_order_create", { a: 1 }], ["claim_reward_balance", { a: 2 }], ["limit_order_create", { a: 3 }]];
+  eq("t84 partition legacy", partitionByAdaptedRole(opsMix, "active").map((p) => p.role), ["active"]);
+  const parts2 = partitionByAdaptedRole(opsMix, "active", (op) => (op === "claim_reward_balance" ? "posting" : "active"));
+  eq("t84 partition learned-split", parts2.map((p) => p.role), ["active", "posting", "active"]);
+  eq("t84 partition order-preserved", parts2.flatMap((p) => p.ops.map(([n]) => n)), ["limit_order_create", "claim_reward_balance", "limit_order_create"]);
 }
 
 console.log(`\nSELFTEST ${pass}/${pass + fail} ${fail === 0 ? "PASS" : "FAIL"}`);

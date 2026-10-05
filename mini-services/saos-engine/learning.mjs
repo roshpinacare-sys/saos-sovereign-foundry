@@ -18,6 +18,7 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { evaluateAdaptations } from "./adaptations.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const STATE = path.join(DIR, "state");
@@ -254,6 +255,16 @@ export async function runLearning({ now = new Date().toISOString(), persist = tr
   const exec = analyzeExec(execLines);
   const lessons = deriveLessons({ cycles, curator: cur, exec });
 
+  /* T-84 · THE FIRST LEARNING ACTUATOR — measured broadcast failures are
+   * classified (transient/persistent/authority/config), evidence-gated
+   * adaptations are proposed/verified/retired and PERSISTED as behavioral
+   * state that the executor consults (signer.mjs resolveAdaptedRole).
+   * Authority boundary: signing-role selection among held keys ONLY — policy,
+   * caps, floors, custody and the think-gate are untouchable by design. */
+  let adaptations = null;
+  try { adaptations = await evaluateAdaptations({ now, execLines }); }
+  catch (e) { adaptations = { changed: false, summary: null, evalError: String(e?.message ?? e).slice(0, 120) }; }
+
   // discovered tags come from discovery.json ONLY (measured ranking, no invention)
   const disc = readJson(path.join(STATE, "discovery.json"), null);
   const discoveredTags = (disc?.tagBoard ?? []).slice(0, 3).map((t) => t.tag).filter(Boolean);
@@ -274,6 +285,7 @@ export async function runLearning({ now = new Date().toISOString(), persist = tr
     verdict: lessons.length ? "LEARNED" : "NO-NEW-LESSONS",
     metrics: { cycles, curator: cur, exec, watchdog: sov?.watchdog ?? null },
     lessons,
+    adaptations: adaptations?.summary ?? null,
     tunings,
     tuningsApplied: applied,
     lessonsTotal,
@@ -284,6 +296,9 @@ export async function runLearning({ now = new Date().toISOString(), persist = tr
     fs.appendFileSync(path.join(STATE, "events.jsonl"), JSON.stringify({
       type: "learn.done", at: now, verdict: out.verdict,
       lessons: lessons.map((l) => l.id), tunings: applied.map((a) => `${a.key}:${a.from}->${a.to ?? a.added}`),
+      adaptations: adaptations?.changed
+        ? Object.entries(adaptations.summary ?? {}).filter(([, v]) => Array.isArray(v) && v.length).map(([k, v]) => `${k}:${v.join(",")}`)
+        : [],
     }) + "\n");
   }
   return out;

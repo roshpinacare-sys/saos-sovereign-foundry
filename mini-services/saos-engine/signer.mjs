@@ -19,6 +19,7 @@ import * as path from "node:path";
 import { rpcCall, accountState } from "./measure.mjs";
 import { SEED_ORDERS, wifFor, derivePub, buildTx, fingerprint, pubkeyFormsFromWif } from "./steemtx.mjs";
 import { validateCredentialText, vpSpoilage, stickyNodeOrder, credentialGate, doctrineAccount } from "./lib.mjs";
+import { resolveAdaptedRole, noteAdaptationOutcome } from "./adaptations.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const SECRETS = path.join(DIR, "..", "..", ".secrets");
@@ -584,6 +585,21 @@ async function broadcastTx(json) {
  * network re-reads die (measured ~6s/vote of pure waste × up-to-18 votes).
  * Guards are NOT skipped — they are HOISTED: the caller presents the same
  * evidence executeAs would have fetched, freshness-capped below. */
+/* T-84 pure helper (selftest vectors in selftest.mjs): group ops into
+ * consecutive same-signing-role partitions, preserving order. With no
+ * adaptation the resolver returns baseRole for every op → ONE partition →
+ * legacy behavior. */
+export function partitionByAdaptedRole(ops, baseRole, resolver = null) {
+  const parts = [];
+  for (const op of ops) {
+    const r = resolver ? resolver(op[0], baseRole) : baseRole;
+    const last = parts[parts.length - 1];
+    if (last && last.role === r) last.ops.push(op);
+    else parts.push({ role: r, ops: [op] });
+  }
+  return parts;
+}
+
 export async function executeAs(account, ops, { tag = "cycle", role = "active", rcPct = null, dgpo = null, dgpoAt = 0 } = {}) {
   const conf = armedConf();
   if (!conf.armed) return { ok: false, verdict: "DISARMED", reason: "standing-order-off" };
@@ -626,16 +642,48 @@ export async function executeAs(account, ops, { tag = "cycle", role = "active", 
     if (!dgpoR.ok) return { ok: false, verdict: "NO-DGPO" };
     dgpoRes = dgpoR.result;
   }
-  const t = buildTx({ ops, dgpo: dgpoRes, wifs: [id.wifs[role]] });
+  /* T-84 · LEARNED SIGNING-ROLE PARTITION — the single place where recorded
+   * EXPERIENCE may alter signing behavior. The adaptation store (written ONLY
+   * by the learning evaluator from measured broadcast outcomes) can choose
+   * ONLY key-material already held: the wifs map below still gates every
+   * partition, and ROLE-KEY-ABSENT retires a bad lesson instantly (bounded).
+   * The think gate, verifyRoles and the RC floor above all ran on the FULL op
+   * set BEFORE any adaptation is consulted. With no adaptation present this
+   * is byte-for-byte the pre-T-84 single-transaction path. */
   const crypto = await import("node:crypto");
-  const txid = crypto.createHash("sha256").update(Buffer.from(t.serializedHex, "hex")).digest("hex").slice(0, 40);
-  const res = await broadcastTx(t.json);
-  appendLine(LOG_FILE, {
-    at: new Date().toISOString(), tag, account, ok: res.ok, txid,
-    ops: ops.map(([n]) => n), node: res.node ?? null, error: res.error ?? null,
-    fingerprint: ver.fingerprint,
-  });
-  return { ok: res.ok, verdict: res.ok ? "BROADCAST" : "BROADCAST-FAIL", txid, ops: ops.length, opNames: ops.map(([n]) => n), node: res.node ?? null, error: res.error ?? null };
+  const parts = partitionByAdaptedRole(ops, role, (opName) => resolveAdaptedRole(opName, role));
+  const partitions = [];
+  let primary = null;      // base-role partition keeps the legacy result shape
+  let adaptedPrimary = null;
+  for (const part of parts) {
+    const wif = id.wifs[part.role];
+    if (!wif) {
+      try { noteAdaptationOutcome(part.ops[0]?.[0] ?? null, { verdict: "ROLE-KEY-ABSENT" }); } catch { /* F3: state-write failure must never kill signing */ }
+      partitions.push({ role: part.role, ok: false, verdict: "ROLE-KEY-ABSENT", ops: part.ops.map(([n]) => n) });
+      continue;
+    }
+    const t = buildTx({ ops: part.ops, dgpo: dgpoRes, wifs: [wif] });
+    const txid = crypto.createHash("sha256").update(Buffer.from(t.serializedHex, "hex")).digest("hex").slice(0, 40);
+    const res = await broadcastTx(t.json);
+    appendLine(LOG_FILE, {
+      at: new Date().toISOString(), tag, account, ok: res.ok, txid, role: part.role,
+      ops: part.ops.map(([n]) => n), node: res.node ?? null, error: res.error ?? null,
+      fingerprint: ver.fingerprint,
+    });
+    partitions.push({ role: part.role, ok: res.ok, txid, ops: part.ops.map(([n]) => n) });
+    if (part.role === role) primary = { ok: res.ok, txid, node: res.node ?? null, error: res.error ?? null };
+    else adaptedPrimary = adaptedPrimary ?? { ok: res.ok, txid, node: res.node ?? null, error: res.error ?? null };
+  }
+  const allOk = partitions.every((p) => p.ok);
+  const anyOk = partitions.some((p) => p.ok);
+  const shape = primary ?? adaptedPrimary ?? { txid: null, node: null, error: partitions.find((p) => !p.ok)?.verdict ?? null };
+  return {
+    ok: allOk,
+    verdict: allOk ? "BROADCAST" : anyOk ? "BROADCAST-PARTIAL" : "BROADCAST-FAIL",
+    txid: shape.txid, ops: ops.length, opNames: ops.map(([n]) => n),
+    node: shape.node, error: shape.error,
+    partitions: partitions.length > 1 ? partitions : undefined,
+  };
 }
 
 export async function executeOps(ops, opts = {}) {

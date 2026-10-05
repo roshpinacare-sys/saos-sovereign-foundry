@@ -476,6 +476,7 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
       verdict: learning.verdict,
       lessons: learning.lessons.map((l) => l.id),
       tunings: learning.tuningsApplied,
+      adaptations: learning.adaptations, /* T-84: surfaced for the marker's adaptive layer */
       discoveryVerdict: discovery.verdict,
       topOpportunities: discovery.opportunities?.slice(0, 3).map((o) => `${o.id}(${o.potentialClass})`) ?? [],
     };
@@ -625,6 +626,25 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
       ms: Date.now() - cycleT0,
       health: report.health ?? "fail",
       ok: report.ok ?? false,
+      /* T-84 · layered self-report — health is NOT one boolean (measured: the
+       * 19× claim-broadcast failure stayed "green" for a day). Layers:
+       * alive = this process is running and writing;
+       * safe = every termination this cycle was a lawful typed verdict and
+       *        every broadcast passed the single gated choke point (structural
+       *        invariant of executeAs — labeled as such, not a measurement);
+       * operational = strict all-steps green (unchanged legacy semantics);
+       * effective = no failed broadcast this cycle (the green-lie killer);
+       * adaptive = learned adaptations exist as behavioral state. */
+      layers: {
+        alive: true,
+        safe: true,
+        operational: report.ok ?? false,
+        effective: !["BROADCAST-FAIL", "BROADCAST-PARTIAL"].includes(report.steps?.execute?.verdict ?? null)
+          && !["BROADCAST-FAIL", "BROADCAST-PARTIAL"].includes(report.steps?.curate?.verdict ?? null)
+          && !["BROADCAST-FAIL", "BROADCAST-PARTIAL"].includes(report.steps?.army?.verdict ?? null),
+        adaptive: ((report.steps?.learn?.adaptations?.active?.length ?? 0) + (report.steps?.learn?.adaptations?.verified?.length ?? 0)) > 0,
+        basis: "alive=process · safe=structural-invariant(typed verdicts+gated choke point) · operational=strict-all-green · effective=no-failed-broadcast · adaptive=learned-adaptations-present",
+      },
       steps: Object.fromEntries(Object.entries(report.steps ?? {}).map(([k, v]) => [k, v?.ok === true])),
       blockedSteps: report.failures?.blockedSteps ?? null,
       failedSteps: report.failures?.failedSteps ?? null,
