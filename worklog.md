@@ -913,3 +913,58 @@ Stage Summary:
 - Boundary findings (not violations): exec-log.jsonl evidence stream is UNSEALED (seal protects conclusions, not inputs); resolver allows toRole∈{posting,active} regardless of baseRole direction; VERIFIED ignores TTL by design; meta heartbeat re-seals store every learn step; id reuse across adaptation generations (cosmetic).
 - Key unknown: behavioral half unproven live — 0 role-bearing exec-log rows so far; first adapted claim_reward_balance broadcast is the real-world test.
 - Report: /home/z/my-project/cognition-round/l1d-durability-noise.md (lab: cognition-round/l1d-lab/lab.mjs, lab-output.txt)
+---
+Task ID: L-1b
+Agent: Causality & Theatre Auditor
+Task: verify the T-84 causal chain link-by-link in live artifacts
+Work Log:
+- Read-only walk of saos-engine: adaptations.json, learning.json, events.jsonl (2103+ lines), exec-log.jsonl (673 rows), think-log, cycle-run.json, daily-report.json; code: signer.mjs, adaptations.mjs, learning.mjs, daily.mjs, intel.mjs, selftest.mjs.
+- Recomputed sha256(JSON.stringify(payload)) of adaptations.json = e84abb0c…6a82e — matches integrity field (verified twice, across evalCount 5→6; seal tracks each rewrite).
+- Counted exactly 19 claim_reward_balance exec rows (ok:false, fingerprint c056922c, role-less), last 2026-10-05T13:05:28.500Z; all 3 evidence[] citations match real rows byte-for-byte.
+- Census: 169 learn.done, 0 ever with non-empty tunings, first non-empty adaptations at 15:01:50.115Z; exactly 1 adaptation.proposed, 0 verified/retired/declined/superseded; 3 contradiction.opened matching exec counts (6/19/5).
+- Reproduced the proposal deterministically: planAdaptations(null, execRows.slice(-60), "2026-10-05T15:01:50.115Z") returns the byte-identical adaptation; window measurably holds 19 claim-fails + 21 posting-oks (provenance curator.mjs:304 / army.mjs:143 / promo.mjs:56 = role:"posting").
+- Live-tested the consumption point: resolveAdaptedRoleFrom(sealedPayload,"claim_reward_balance") → "posting" (vote → "active", post-TTL → "active"); partitionByAdaptedRole → order-preserving 3-partition isolating the claim op under posting; guards (armed→pause→thinkGate→verifyRoles→RC-floor→DGPO) all precede partition at signer.mjs:654, buildTx at :665, role journaled at :669.
+- Verified one-cycle-lag from daily.mjs step order (execute :281 before learn :472) and idempotency across 6 evals (attempts 0, createdAt unchanged, single proposed event).
+- Traced firing precondition: intel.mjs:43-56/91-93 unclaimedRewards().any gate → daily.mjs:371-379 op push; current intel.json has no rewards decision → execute verdict NO-OPS; 0 exec rows carry role field (never fired).
+- Theatre census per signal (writer/reader/decision); cycle-run.json.layers confirmed decorative (readers: sovereign poll + hyper-grid single-flight only, none read layers); falsified both "loop is real is wrong" and "loop is theatre is wrong" hypotheses.
+- Wrote full report → cognition-round/l1b-causality.md.
+Stage Summary:
+- VERDICT: CAUSAL-CHAIN-ARMED-PENDING-FIRING. Links 1–4 CLOSED with hashes/timestamps; link 5 armed, never executed (attempts 0, 0 role-tagged rows).
+- Weakest link: firing — precondition (pending>0) is chain-controlled and the posting-key claim was never demonstrated on-chain (extrapolated from the chain's own error text).
+- Theatre verdict: mechanism real, not theatre; layers.adaptive/effective badges are decorative-but-counterbalanced (contradiction rails surface the dormant broken rail); loop would honestly TTL-retire at 2026-10-07T15:01:50.115Z if never triggered.
+- Firing spec one-liner: next claim attempt yields exec-log row {role:"posting", ok, txid, error:null, fingerprint:"c056922c"} → next learn flips VERIFIED (predictionScore actual:"ok", error:"none") + adaptation.verified event + rail:claim_reward_balance OPEN→RESOLVED + learning.json verified[].
+---
+Task ID: L-1c
+Agent: Chain-Truth & Evidence Auditor
+Task: slim chain-level verification of T-84 BEFORE state
+Work Log:
+- POSTed condenser_api.get_accounts ["headcorner"] to steemapi.boylikegirl.club; captured to /tmp/l1c/chain.json; extracted reward fields, posting/active pubkey PREFIXES only, delegated_vesting_shares.
+- Hit localhost:3040/ (not-found but listed routes incl. /exec-status, /status), then fetched /exec-status (authoritative) and /status; also hit localhost:3000/api/saos/signer (ok:false, mover-log unavailable, non-authoritative).
+- Leak scan regex 5[HJK][1-9A-HJ-NP-Za-km-z]{49} over all 5 captured responses: 0 matches — no blocker; only public STM… material handled, prefixes-only printed.
+- Cross-checked chain posting authority prefix vs exec-status roles.posting pubkey + matched:true; read adaptations.json (adapt-claim_reward_balance-posting: state ACTIVE, fromRole active→toRole posting, attempts 0/3, 3 evidence txids, fingerprint c056922c); counted exec-log baselines (19 claim rows, 19 posting-authority errors, last 2026-10-05T13:05:28.500Z).
+- Ran alternative-explanation discrimination (pure reasoning over the fresh data) and wrote AFTER-evidence spec; saved report to cognition-round/l1c-chain-truth.md.
+Stage Summary:
+- VERDICT: BEFORE-CONFIRMED — claim rail still unsigned-by-posting; adaptation ACTIVE (0 attempts since 15:01Z creation), no post-fix evidence yet.
+- Chain: all reward balances zero (0.000 STEEM / 0.000 SBD / 0.000000 VESTS); posting auth prefix STM8m3rBLd8C…, active STM5HhJD5WUX… (distinct); delegated_vesting_shares 4552866.947848 VESTS = exact expected.
+- Credential posting role chain-verified HELD: exec-status fingerprint c056922c, verdict VERIFIED, armed:true, roles.posting.matched:true (name+role+pw) and pubkey == chain posting key_auths; corroborated by 21 posting-auth vote ok's today.
+- Leak scan: CLEAN (0 WIF-shaped matches across chain/engine/signer/exec/status responses) — no blocker.
+- Discrimination: error cannot mean missing account authority (authority exists and is our key, proven by votes) ⇒ it means the claim trx was signed with the ACTIVE key while the op requires POSTING — exactly the learned lesson; wrong-account/foreign-credential ruled out (foreignCredential:false).
+- AFTER spec recorded: (1) exec-log new row ok:true for claim_reward_balance; (2) adaptations.json state→VERIFIED, attempts≥1; (3) get_accounts reward_vesting_balance back to 0.000000 VESTS with zero new posting-authority errors.
+---
+Task ID: R-0..R-4 (T-84 round orchestrator synthesis)
+Agent: Orchestrator (Z.ai Code — SAOS cockpit)
+Task: TURN THE EXISTING ORGANISM INTO A VERIFIED LEARNING SYSTEM — design, implement, adversarially verify, activate the first learning actuator; deliver A/B/C verdict.
+
+Work Log:
+- Re-anchored reality first (no report trusted): engine alive as watchdog child (PID 6127→11694, cockpit-owned lifecycle), 19 failures confirmed in exec-log, pending rewards measured ZERO live (claim rail lawfully NO-OPS since second actor's 13:07Z drain — explains the silent 13:05→now gap; NOT a day-cap).
+- Read every code path personally before editing: daily.mjs claim rail (mixed-op trx, one role), signer.mjs executeAs (guard order), learning.mjs (actuator gap: 157+ runs, tunings:[]), selftest pattern.
+- Intervention choice (independently derived, not "the proposed fix"): NOT a one-line role patch (that would be me fixing, organism unchanged) — but a REAL actuator: learned signing-role adaptations persisted as behavioral state the executor consults. First firing resolves the 19-failure class; generalizes to future authority-class failures.
+- Implemented: adaptations.mjs (classify/propose/verify/retire/supersede, integrity-sealed store, noiseGate≥2, attempts≤3, TTL 48h, allowedTargetRoles=[posting,active], TAG_ROLE_PROVENANCE for legacy rows with self-correcting design), signer.mjs partitionByAdaptedRole + role-journaled broadcasts, learning.mjs actuator wiring, daily.mjs layered self-report (alive/safe/operational/effective/adaptive), selftest 321→346 vectors.
+- Live: adaptation born 15:01Z from real material; survived 2 real restarts; cold-load intact; resolve verified live; markers adaptive:true; 3 self-model contradictions surfaced (rail:claim/limit_order_create/vote).
+- Five-agent verification: L-1a adversarial safety (SAFE-WITH-FINDINGS; 8/8 claims CONFIRMED; owner-escalation attack failed at three independent layers; F1 immortal-VERIFIED + F2 seal-trust + F3 unguarded-write → all hardened within the round); L-1b causality (CAUSAL-CHAIN-ARMED-PENDING-FIRING; proposal reproduced byte-identically from pure replay; NOT theatre; one-cycle-lag inherent); L-1d durability/noise (21/21; noise-immune; tamper fail-closed; DECLINED→ACTIVE promotion; theatre census: adaptations.json LOAD-BEARING, layers DECORATIVE-until-consumed — honest); L-1c chain-truth (BEFORE-CONFIRMED; credential posting pubkey == account posting authority; leak-scan clean; discrimination: the error means "signed active, requires posting" — proven, not assumed).
+- Git cognition-history: e75195f (model→evidence→hypothesis→change→observed→pending→safety-proof).
+
+Stage Summary:
+- VERDICT: B — PARTIAL COGNITIVE ACTIVATION. Closed in-organism: Experience→Evaluation→Inference→Adaptation→(consumption armed, verified hot-path). Still external/pending: (1) the firing — chain physics (next drip), evidence spec written, wrong lesson self-retires ≤3; (2) inference RULES are human-authored code (the system classifies/proposes within given rule-space; it does not yet invent inference kinds); (3) layers DECORATIVE until cockpit/watchdog consume; (4) think-log still unread (pre-existing).
+- SAFETY PROOF (operator law held): learning cannot imply privilege escalation — owner unreachable at proposal (adaptations.mjs:178), supersede (:124) AND resolve (:270); same credential, same policy, same gates; think-gate/verifyRoles/RC-floor all ran BEFORE partitioning; corrupt/tampered state = exact legacy behavior; bounded retire with journaling; no irreversible action taken for demo (firing awaits nature, not injection).
+- DONE-definition (directive 25) scorecard: real action ✓(19 failures are real) · compared-to-expectation ✓(predictionScore armed) · real learning signal ✓(adaptation born from measured rows) · behavioral state changed within authority ✓(persisted, sealed, consumed) · future decision attributable ✓(resolve=posting is the attributable change) · survived restart ✓(2 real restarts + cold-load) · fail-closed ✓(tamper/noise/corruption all fail-closed). The ONLY missing element for A: the observed firing + VERIFIED txid — chain-scheduled, not machine-missing.
