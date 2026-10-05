@@ -730,3 +730,21 @@ Stage Summary:
 - R210's operator-gated blocker (2) CLOSED: backup branch re-pulled, T-84/R208/R209-era artifacts + estate inventory re-anchored on this body. Both lineages (fallen sandbox T-84 and current R209/R210) now agree on the same learned rule and the same missing arrow (the firing).
 - Still OPEN, operator-gated: (1) headcorner master-password file (upload/headcorner.txt) or cockpit paste → signing revival — the ONLY path to the first posting-signed claim when the chain drips; (b) org-repo push (14 unhardened repos + PRs) now UNBLOCKED by the PAT — queued as next machine work; (c) standing hygiene: rotate/revoke the GitHub PAT after ops conclude.
 - Verdict R211: RECOVERY-CHANNEL-RESTORED — knowledge lineage made whole; machine remains ARMED + WAITING_FOR_REAL_WORLD_TRIGGER.
+
+---
+Task ID: R212
+Agent: Orchestrator (Z.ai Code — SAOS cockpit)
+Task: Operator order (angry, immediate): "I asked you earlier to push the latest commit; I still see a week-old commit in the view — fix it NOW." Also accused this sandbox of pushing the old sandbox's content in place of the new.
+
+Work Log:
+- FACTUAL CORRECTION established first: this sandbox did NOT push the T-84 snapshot — steem/saos-cockpit @ e4cdfd6 (16:27Z) was authored by saos@cockpit.local (the OTHER/fallen sandbox, second writer). R211 was pull-only (read-only restore into the live body). The operator's earlier push request was never fulfilled because the PAT was platform-redacted until pat.rar arrived this round — gap owned.
+- Reality anchors: local HEAD lineage is CURRENT (ca145b7 today 19:52Z; platform auto-commits), zero remotes configured, worktree dirty with live engine state (16 files). All 16 org repos' tips are TODAY — the only "old-sandbox view" is the saos-cockpit branch content (T-84 era snapshot).
+- Pre-push secret sweep: .secrets/, upload/, dev.log confirmed ignored; .env = DATABASE_URL only (50B, safe); tracked db/custom.db = cockpit operational data (as in the T-84 snapshot). No WIF/token/key material in the tree.
+- Execution: git add -A → commit a9156a9 (2026-10-05T20:04:14Z "R211 live state...") → fetch remote tip e4cdfd6 → merge --allow-unrelated-histories -s ours → 927c7a5 (parents a9156a9 + e4cdfd6; tree = current state, T-84 snapshot preserved in history) → push HEAD:refs/heads/saos-cockpit → exit 0.
+- CHAIN-TRUTH VERIFICATION (GitHub API, not local trust): tip = 927c7a5 @ 2026-10-05T20:04:23Z "R211 LIVE: current cockpit sandbox state on top of T-84 backup snapshot"; parents a9156a9 + e4cdfd6; top-level view = FULL current project (cognition-round/, recovery/, docs/, mini-services/, src/, worklog.md 159,036B incl. R211 entry).
+- Second-writer activity continues (steem/Zip/Defi pushes 19:44-19:46Z, R30-numbering messages, trace 1a10d6f… prefix) — observed, untouched; single-writer policy is an operator decision, surfaced in the reply.
+
+Stage Summary:
+- Operator's view FIXED: branch saos-cockpit now tips at TODAY's merge commit carrying the CURRENT sandbox state (latest commit + live worktree), with the T-84 snapshot preserved underneath in history — nothing destroyed, nothing overwritten.
+- The latest-commit request is fulfilled and chain-verified. Local lineage now has a live remote channel (pushed via token-in-substitution, token never echoed; remote URL in config left clean).
+- Standing facts: two writer lineages exist on the org (saos@cockpit.local T-84 sandbox + this R-numbering sandbox); operator informed.
