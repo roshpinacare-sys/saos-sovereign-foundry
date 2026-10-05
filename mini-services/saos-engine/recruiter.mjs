@@ -62,6 +62,12 @@ export function gatherEvidence() {
   if (curator?.verdict) {
     evidence.curation = `state/curator.json: ${curator.verdict} (budgetCounted ${curator.budgetCounted ?? "?"}, basis ${curator.budgetBasis ?? "state"})`;
   }
+  /* T-83: the army rail's evidence is its own state file with per-account verdicts */
+  const army = readJson(path.join(STATE, "army.json"), null);
+  if (army?.verdict) {
+    const voted = Object.values(army.accounts ?? {}).filter((r) => r?.verdict === "VOTED").length;
+    evidence.armyCuration = `state/army.json: ${army.verdict} (broadcasted ${army.broadcasted ?? 0}, accounts-voted ${voted}/${Object.keys(army.accounts ?? {}).length})`;
+  }
   if (selftest?.pass != null && selftest.fail === 0) {
     evidence.selftest = `state/selftest-last-run.json: ${selftest.pass}/${selftest.pass + (selftest.fail ?? 0)} PASS at ${selftest.at}`;
   }

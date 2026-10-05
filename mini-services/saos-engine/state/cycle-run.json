@@ -1,8 +1,8 @@
 {
   "running": false,
-  "startedAt": "2026-10-05T10:44:52.893Z",
-  "finishedAt": "2026-10-05T10:45:03.942Z",
-  "ms": 11048,
+  "startedAt": "2026-10-05T11:30:47.553Z",
+  "finishedAt": "2026-10-05T11:31:28.549Z",
+  "ms": 40996,
   "health": "ok",
   "ok": true,
   "steps": {
@@ -12,6 +12,7 @@
     "peg": true,
     "convert": true,
     "curate": true,
+    "army": true,
     "execute": true,
     "soldiers": true,
     "learn": true,

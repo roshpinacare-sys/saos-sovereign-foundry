@@ -1,24 +1,24 @@
 {
   "account": "headcorner",
   "parity": {
-    "steemUsd": 0.06257,
-    "sbdUsd": 0.6010590071111137,
-    "parity": 0.10409959631206908,
+    "steemUsd": 0.06285,
+    "sbdUsd": 0.6037487503426244,
+    "parity": 0.10409959435002215,
     "source": "internal-feed-fallback+derived-sbd",
     "lowConfidence": true
   },
-  "feed": 0.10409959631206908,
+  "feed": 0.10409959435002215,
   "band": {
     "ok": true,
     "reason": "band-ok",
     "bps": 0
   },
-  "steemUsd": 0.06257,
-  "sbdUsd": 0.6010590071111137,
+  "steemUsd": 0.06285,
+  "sbdUsd": 0.6037487503426244,
   "inventory": {
     "steem": 1.531,
     "sbd": 0.015,
-    "spOwn": 1124.5200331762583,
+    "spOwn": 1124.5224789346707,
     "rcPct": 100
   },
   "ordersOk": true,
@@ -71,7 +71,7 @@
     "authorVestsPerDay": 0,
     "curationOps": 0,
     "authorOps": 0,
-    "windowSpanDays": 1.5,
+    "windowSpanDays": 1.53,
     "windowOps": 1001,
     "measured": true,
     "fuelUsdPerDay": 0,
@@ -80,5 +80,5 @@
     "node": "https://steemapi.boylikegirl.club",
     "windowNote": "no reward ops inside the measured window — rails dormant, not a parse failure (deep-scan documented separately)"
   },
-  "at": "2026-10-05T10:44:52.893Z"
+  "at": "2026-10-05T11:30:47.553Z"
 }

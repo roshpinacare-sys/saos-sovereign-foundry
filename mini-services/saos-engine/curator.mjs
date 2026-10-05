@@ -137,7 +137,7 @@ export function normalizePost(raw, tag, voter, nowMs) {
 }
 
 /* fetch fresh candidate stream across the tag whitelist (fail-closed) */
-async function fetchCandidates(policy, voter, nowMs) {
+export async function fetchCandidates(policy, voter, nowMs) {
   const posts = [];
   let nodeOk = false;
   for (const tag of policy.tags) {

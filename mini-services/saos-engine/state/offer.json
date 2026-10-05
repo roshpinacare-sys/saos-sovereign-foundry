@@ -24,10 +24,10 @@
     "bestBid": 0.10239606799098915,
     "askDepthSteem": 453.759,
     "bidDepthSbd": 2947.01,
-    "at": "2026-10-05T10:44:52.893Z"
+    "at": "2026-10-05T11:30:47.553Z"
   },
   "market": {
-    "at": "2026-10-05T10:34:53.190Z",
+    "at": "2026-10-05T11:04:53.822Z",
     "windowHours": 24,
     "class": "measured",
     "trades": 11,
@@ -73,5 +73,5 @@
     "bidBudget": 0,
     "deployCap": 0.6
   },
-  "publishedAt": "2026-10-05T10:44:52.893Z"
+  "publishedAt": "2026-10-05T11:30:47.553Z"
 }

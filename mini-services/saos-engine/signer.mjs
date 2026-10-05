@@ -17,7 +17,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { rpcCall, accountState } from "./measure.mjs";
-import { SEED_ORDERS, wifFor, derivePub, buildTx, fingerprint } from "./steemtx.mjs";
+import { SEED_ORDERS, wifFor, derivePub, buildTx, fingerprint, pubkeyFormsFromWif } from "./steemtx.mjs";
 import { validateCredentialText, vpSpoilage, stickyNodeOrder, credentialGate, doctrineAccount } from "./lib.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
@@ -32,6 +32,7 @@ const readJson = (p, d = null) => { try { return JSON.parse(fs.readFileSync(p, "
 const appendLine = (p, v) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.appendFileSync(p, JSON.stringify(v) + "\n"); };
 const writeJson = (p, v) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, JSON.stringify(v, null, 2)); };
 const SOLDIERS_SECRET = path.join(SECRETS, "soldiers.json");
+const VAULT_FILE = path.join(SECRETS, "army-vault-recovered.json");
 const UPLOAD_KEY = path.join(DIR, "..", "..", "upload", "headcorner.txt");
 const THINK_LOG = path.join(STATE, "think-log.jsonl");
 
@@ -61,6 +62,12 @@ export function custodyOf(name) {
     const s = readJson(SOLDIERS_SECRET, null);
     if ((s?.accounts ?? []).some((a) => a.name === name)) return "keyed-unverified";
   } catch { /* secrets unreadable = no custody evidence */ }
+  /* T-83: the recovered fleet vault counts as custody-present (chain-proof
+   * still required by the gate below — vault keys must earn verification). */
+  try {
+    const v = readJson(VAULT_FILE, null);
+    if ((v?.accounts?.[name]?.steemWifs ?? []).length) return "keyed-unverified";
+  } catch { /* vault unreadable = no custody evidence */ }
   return "no-custody";
 }
 
@@ -344,8 +351,29 @@ export function loadCredential(account = null) {
   if (account && account !== masterAccount()) {
     const s = readJson(SOLDIERS_SECRET, null);
     const rec = (s?.accounts ?? []).find((a) => a.name === account);
-    if (!rec) throw new Error(`no-credential: ${account}`);
-    acct = rec.name; password = rec.password;
+    if (rec) {
+      acct = rec.name; password = rec.password;
+    } else {
+      /* T-83 · VAULT DIRECT-WIF FALLBACK — the recovered fleet vault stores
+       * per-account WIFs (mode master-derive at build time, WIFs only on
+       * disk — the source passwords are NOT in this machine). Derivation
+       * from a password is impossible here, so these identities are held as
+       * DIRECT WIFs: no seed composition, no SEED_ORDERS guessing — the
+       * chain itself decides which role each key holds (verifyRoles).
+       * Measured negative control: army WIFs do NOT derive from the master
+       * password under any SEED_ORDER (tested 2026-10-05, all 3 candidates × 4 roles). */
+      const v = readJson(VAULT_FILE, null);
+      const wifs = v?.accounts?.[account]?.steemWifs ?? null;
+      if (!Array.isArray(wifs) || !wifs.length) throw new Error(`no-credential: ${account}`);
+      const id = identity(account);
+      id.password = null;
+      id.wifMode = "direct";
+      id.wifList = wifs;
+      id.wifs = {};
+      id.matchedOrder = "direct-wif";
+      id.verified = null; // force a fresh chain proof on next verifyRoles
+      return { account, hasPassword: false, wifMode: "direct" };
+    }
   } else {
     let raw;
     try {
@@ -424,6 +452,33 @@ export async function verifyRoles(account = null) {
     posting: (acc.posting?.key_auths ?? []).map((k) => k[0]),
     memo: acc.memo_key ? [acc.memo_key] : [],
   };
+  /* T-83 · DIRECT-WIF verification branch — the chain's own authorities
+   * decide which role each vault WIF holds (method proven by T-81's 56/56
+   * sweep: wifDecodeAny → secp256k1 → live authorities). The vault's
+   * stored order is never trusted; partial matches fail CLOSED. */
+  if (id.wifMode === "direct") {
+    const roles = {};
+    const list = id.wifList ?? [];
+    let matched = 0;
+    for (const wif of list) {
+      let forms;
+      try { forms = pubkeyFormsFromWif(wif); } catch { continue; }
+      const role = ["owner", "active", "posting", "memo"].find((r) =>
+        (chain[r] ?? []).includes(forms.compressed) || (chain[r] ?? []).includes(forms.uncompressed));
+      if (!role) continue;
+      roles[role] = { pubkey: forms.compressed, matched: true };
+      id.wifs[role] = wif; // memory only — never returned, never logged
+      matched++;
+    }
+    id.verified = {
+      ok: list.length > 0 && matched === list.length,
+      account: acct,
+      matchedOrder: "direct-wif",
+      roles: Object.fromEntries(Object.entries(roles).map(([k, v]) => [k, { pubkey: v.pubkey, matched: v.matched }])),
+      fingerprint: fingerprint(list.join("|")),
+    };
+    return id.verified;
+  }
   let matchedOrder = null;
   for (const [name, compose] of Object.entries(SEED_ORDERS)) {
     const pk = derivePub(compose(acct, "active", id.password));

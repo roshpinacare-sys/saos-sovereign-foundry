@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-05T10:44:52.893Z",
+  "at": "2026-10-05T11:30:47.553Z",
   "decisions": [
     {
       "kind": "book-depth",
@@ -10,7 +10,7 @@
         "bestAsk": 0.10263396911898275,
         "bestBid": 0.10239606799098915
       },
-      "at": "2026-10-05T10:44:52.893Z"
+      "at": "2026-10-05T11:30:47.553Z"
     },
     {
       "kind": "soldiers",
@@ -19,20 +19,20 @@
       "action": {
         "deployed": true
       },
-      "at": "2026-10-05T10:44:52.893Z"
+      "at": "2026-10-05T11:30:47.553Z"
     },
     {
       "kind": "rewards",
       "decision": "claim",
-      "reason": "unclaimed: 0 STEEM + 0 SBD + 62.929012 VESTS — free fuel, claim now",
+      "reason": "unclaimed: 0 STEEM + 0 SBD + 67.769681 VESTS — free fuel, claim now",
       "action": {
         "ok": true,
         "steem": 0,
         "sbd": 0,
-        "vests": 62.929012,
+        "vests": 67.769681,
         "any": true
       },
-      "at": "2026-10-05T10:44:52.893Z"
+      "at": "2026-10-05T11:30:47.553Z"
     },
     {
       "kind": "rc-health",
@@ -41,7 +41,7 @@
       "action": {
         "rcPct": 100
       },
-      "at": "2026-10-05T10:44:52.893Z"
+      "at": "2026-10-05T11:30:47.553Z"
     },
     {
       "kind": "curation",
@@ -52,7 +52,7 @@
         "vpEff": 2.3,
         "verdict": "VP-FLOOR"
       },
-      "at": "2026-10-05T10:44:52.893Z"
+      "at": "2026-10-05T11:30:47.553Z"
     }
   ],
   "spreadBpsRec": 23,

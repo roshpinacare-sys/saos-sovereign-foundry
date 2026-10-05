@@ -27,6 +27,7 @@ import { executeOps, executeAs, armedConf, execPaused, masterAccount, loadCreden
 import { deploySoldiers, runSoldierGrids, soldiersState } from "./soldiers.mjs";
 import { postDailyReport } from "./promo.mjs";
 import { runCurator } from "./curator.mjs";
+import { runArmy } from "./army.mjs";
 import { runLearning } from "./learning.mjs";
 import { runDiscovery } from "./discovery.mjs";
 import { runRecruiter } from "./recruiter.mjs";
@@ -92,6 +93,14 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
   const curateP = stepWrap("curate", async () => {
     const out = await runCurator({ now });
     return { verdict: out.verdict, votes: out.voted?.length ?? 0, txid: out.txid ?? null, vpEff: out.vpEff ?? null, votesToday: out.votesTodayCount ?? 0, error: out.error ?? null };
+  });
+
+  /* 5c · army (T-83): the 10-account delegated army's curation rail —
+   * independent of the master curator (own custody proofs, own day-caps,
+   * own state) and of the front chain. Fail-isolated. */
+  const armyP = stepWrap("army", async () => {
+    const out = await runArmy({ now });
+    return { verdict: out.verdict, broadcasted: out.broadcasted ?? 0, totalVotes: out.totalVotes ?? 0, accounts: Object.fromEntries(Object.entries(out.accounts ?? {}).map(([n, r]) => [n, r.verdict])) };
   });
 
   /* 1 · observe: parity + inventory + fills + rails fuel */
@@ -262,6 +271,7 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
 
   /* join the parallel curate branch here (it never gates the front chain) */
   report.steps.curate = await curateP;
+  report.steps.army = await armyP;
 
   /* 6 · execute (SIGNING — the X-1 rail, engine-held, doctrine-capped).
    * T-16 CRED GATE FIRST: when the credential is missing this step used to

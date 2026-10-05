@@ -1,4 +1,4 @@
-# TODO — T-82 done · SOVEREIGNTY RESUMED (operator order) + delegation capability MEASURED into the engine + army equalized (woq 8.86 SP) · machine ALIVE and thinking
+# TODO — T-83 done · ARMY RAIL REBUILT (10 accounts voted again, 18 txs day-one) + UNIT-LAW TRUTH RESTORED (1 SP = 1,613.04 VESTS, the 5,460 law retired) + direct-WIF custody live · SOVEREIGNTY RESUMED (operator order) + delegation capability MEASURED into the engine + army equalized (woq 8.86 SP) · machine ALIVE and thinking
 
 - [x] **T-82 STANDING LAW (operator, verbatim)**: "הסיסמה היחידה שצריכה להיות זה המפתח הראשי שלי של headcorner" — ONE credential, the headcorner master key. NO password rotation, ever (rotation TODO struck; the other sandbox sharing the key is the operator's own machine — he accepts it).
 - [x] **T-82 RESUME**: sovereignty resumed via cockpit API (paused:false @ 10:33); watchdog spawned engine; first cycle health=ok ALL 17 steps; think-gate journaling ALLOW verdicts; selftest 311/311.

@@ -173,6 +173,8 @@ eq("vote negative weight size", binDown.length, 21);
 
 /* ── 15 · T-13 curator: pure planner vectors (deterministic, offline) ── */
 import { filterCandidates, weightForAge, vpEffPct, dayKeyOf, curatorPolicy } from "./curator.mjs";
+import { wifDecodeAny, pubkeyFormsFromWif, b58encode } from "./steemtx.mjs";
+import { ARMY_ROSTER, armyPolicy, planAccountVotes, effectiveVests } from "./army.mjs";
 
 const CP = curatorPolicy();
 const NOW = Date.parse("2026-09-29T19:00:00Z");
@@ -607,9 +609,9 @@ ok("rcAnomaly no-evidence-blocks", rcAnomaly(6.1e12, 0) === true);
 ok("rcAnomaly growth-never-anomaly", rcAnomaly(6.1e12, 6.1e13) === false);
 
 /* ═════ T-21 · RECRUITER: a role exists only with named evidence ═════ */
-const full = recruitRoles({ evidence: { marketPulse: "m", rcEconomics: "r", fillAudit: "f", convert: "c", promo: "p", curation: "cu", selftest: "s", recruiter: "x", webIntel: "w", payouts: "py", weave: "wv" }, now: "2026-10-01T22:00:00Z", prior: {} });
+const full = recruitRoles({ evidence: { marketPulse: "m", rcEconomics: "r", fillAudit: "f", convert: "c", promo: "p", curation: "cu", selftest: "s", recruiter: "x", webIntel: "w", payouts: "py", weave: "wv", armyCuration: "a" }, now: "2026-10-01T22:00:00Z", prior: {} });
 eq("recruit full-verdict", full.verdict, "FULL-STRENGTH");
-eq("recruit full-count", full.active, 11);
+eq("recruit full-count", full.active, 12); // T-83: 11 → 12 stations (army-curator recruited with evidence)
 ok("recruit rows-carry-truth-contract", full.roster.every((r) => typeof r.truthContract === "string" && r.truthContract.length > 8));
 ok("recruit rows-carry-evidence", full.roster.every((r) => r.status !== "active" || (r.evidence ?? "").length > 0));
 const partial = recruitRoles({ evidence: { recruiter: "x", curation: "cu" }, now: "2026-10-01T22:00:00Z", prior: {} });
@@ -726,13 +728,39 @@ const econMeasured = aggregateRails({ curationEstSteemPerDay: 9.68, curationMeas
 const curRail = econMeasured.rails.find((r) => r.id === "curation");
 ok("econ curation-measured-wins", curRail.confidence === "measured" && curRail.measuredUsdPerDay === 0.73 && curRail.estUsdPerDay === null);
 
-/* the roster grew with evidence-bound stations (9 → 11) */
+/* the roster grew with evidence-bound stations (9 → 11 → 12, T-83) */
 const roster23 = recruitRoles({ evidence: { payouts: "fresh", weave: "fresh", recruiter: "self" }, now: "2026-10-02T00:00:00Z" });
-ok("roster 11-total", roster23.total === 11);
+ok("roster 12-total", roster23.total === 12);
+ok("roster army-curator-planned-without-evidence", roster23.roster.find((r) => r.id === "army-curator")?.status === "planned");
 ok("roster payout-auditor-active", roster23.roster.find((r) => r.id === "payout-auditor")?.status === "active");
 ok("roster weave-ambassador-active", roster23.roster.find((r) => r.id === "weave-ambassador")?.status === "active");
 const roster23NoEvidence = recruitRoles({ evidence: { recruiter: "self" }, now: "2026-10-02T00:00:00Z" });
 ok("roster new-stations-planned-without-evidence", roster23NoEvidence.roster.filter((r) => ["payout-auditor", "weave-ambassador"].includes(r.id)).every((r) => r.status === "planned"));
+
+/* ── T-83 · army rail vectors (direct-WIF custody + per-account planner) ── */
+{
+  const seed32 = Buffer.from("saos-t83-wif-vector-0000000000000000", "utf8").subarray(0, 32);
+  const wifC = wifEncode(seed32); // compressed (38B)
+  const dec = wifDecodeAny(wifC);
+  eq("t83 wifDecodeAny compressed roundtrip", Buffer.from(dec.priv).toString("hex"), Buffer.from(seed32).toString("hex"));
+  eq("t83 wifDecodeAny compressed flag", dec.compressed, true);
+  // uncompressed WIF: 0x80 || key32 || chk4 (no flag byte) — the vault's measured shape
+  const body = Buffer.concat([Buffer.from([0x80]), Buffer.from(seed32)]);
+  const { sha256 } = await import("@noble/hashes/sha256");
+  const d2 = sha256(Buffer.from(sha256(body)));
+  const wifU = b58encode(Buffer.concat([body, Buffer.from(d2.slice(0, 4))]));
+  const decU = wifDecodeAny(wifU);
+  eq("t83 wifDecodeAny uncompressed roundtrip", Buffer.from(decU.priv).toString("hex"), Buffer.from(seed32).toString("hex"));
+  eq("t83 wifDecodeAny uncompressed flag", decU.compressed, false);
+  const forms = pubkeyFormsFromWif(wifU);
+  eq("t83 uncompressed WIF matches via COMPRESSED authority form", forms.compressed, pubkeyFromSeed(seed32));
+  ok("t83 roster is the 10 active-army delegation targets", ARMY_ROSTER.length === 10 && !ARMY_ROSTER.some((n) => n.startsWith("hcsoldier")) && ARMY_ROSTER.includes("woq"));
+  const AP = armyPolicy();
+  ok("t83 army excludes self + fleet + keyless", ["headcorner", "hcsoldier1", "woq"].every((n) => AP.excludeAccounts.includes(n)) && AP.maxPerDay === 3 && AP.minVpEffPct === 80);
+  const capPlan = planAccountVotes({ posts: [], account: "woq", policy: AP, nowMs: 0, chainDayCount: 3 });
+  eq("t83 per-account chain-truth day-cap", capPlan.verdict, "DAY-CAP");
+  eq("t83 effective vests (own + received − delegated)", effectiveVests({ vesting_shares: "2608.868412 VESTS", received_vesting_shares: "48393.301791 VESTS", delegated_vesting_shares: "0.000000 VESTS" }), 51002.170203);
+}
 
 console.log(`\nSELFTEST ${pass}/${pass + fail} ${fail === 0 ? "PASS" : "FAIL"}`);
 /* T-21 · last-run marker: the recruiter's evidence for the integrity-auditor

@@ -56,6 +56,48 @@ export function wifDecode(wif) {
   return body.slice(1, 33);
 }
 
+/* T-83 · wifDecodeAny — the vault fleet (army-vault-recovered.json) holds
+ * BOTH WIF shapes (T-79/T-81 measured: "wifDecodeAny(uncompressed+compressed)
+ * → secp256k1 → live authorities", 56/56 chain-matched). The strict
+ * wifDecode above stays for the master credential; fleet identities use this:
+ *   compressed WIF   : 0x80 ‖ key32 ‖ 0x01 ‖ chk4  (38 bytes)
+ *   uncompressed WIF : 0x80 ‖ key32 ‖ chk4           (37 bytes)
+ */
+export function wifDecodeAny(wif) {
+  const d = b58decode(wif);
+  if (d.length === 38) {
+    const priv = wifDecode(wif); // full compressed validation reuses the strict path
+    return { priv, compressed: true };
+  }
+  if (d.length === 37) {
+    const body = d.slice(0, 33), chk = d.slice(33);
+    if (!sha256d(body).slice(0, 4).equals(chk)) throw new Error("wif-checksum");
+    if (body[0] !== 0x80) throw new Error("wif-format");
+    return { priv: body.slice(1, 33), compressed: false };
+  }
+  throw new Error("wif-length");
+}
+
+/* T-83 · pubkeys from a WIF of either shape — the authority-matching half of
+ * custody. MEASURED 2026-10-05: the vault's WIFs are UNCOMPRESSED (37-byte)
+ * while the chain's authorities are stored COMPRESSED — same secp256k1 key,
+ * different encoding. The matcher therefore receives BOTH forms and the
+ * chain decides; the WIF's own shape is never trusted to predict it. */
+export function pubkeyFormsFromWif(wif) {
+  const { priv } = wifDecodeAny(wif);
+  const enc = (pub) => {
+    const chk = Buffer.from(ripemd160(Buffer.from(pub))).slice(0, 4);
+    return "STM" + b58encode(Buffer.concat([Buffer.from(pub), chk]));
+  };
+  return {
+    compressed: enc(secp.getPublicKey(Buffer.from(priv), true)),
+    uncompressed: enc(secp.getPublicKey(Buffer.from(priv), false)),
+  };
+}
+export function pubkeyFromWif(wif) {
+  return pubkeyFormsFromWif(wif).compressed;
+}
+
 /* ── public key: "STM" + base58(33B compressed || ripemd160(33B)[:4]) ──
  * NOTE: steem pubkey checksum = ripemd160 over the key DIRECTLY (single hash),
  * unlike bitcoin addresses (hash160 = ripemd160(sha256())) — this asymmetry
@@ -200,7 +242,10 @@ export const STEEM_CHAIN_ID = Buffer.alloc(32); // mainnet chain id = 32 zero by
 
 /* ── signing ────────────────────────────────────────────────────────────── */
 export function signDigest(digest32, wif) {
-  const priv = Buffer.from(wifDecode(wif));
+  // T-83: the fleet vault holds UNCOMPRESSED WIFs (measured) — the signer
+  // accepts both shapes; the signature itself is shape-agnostic (the chain
+  // recovers the authority pubkey from the DER signature).
+  const priv = Buffer.from(wifDecodeAny(wif).priv);
   const sig = secp.sign(Buffer.from(digest32), priv); // deterministic RFC6979, low-s
   const rec = sig.recovery ?? 0;
   const r = Buffer.from(sig.r.toString(16).padStart(64, "0"), "hex");

@@ -60,6 +60,7 @@ export function fleetState({ now = new Date().toISOString(), credential = null, 
   const offer = readJson(path.join(STATE, "offer.json"), null);
   const intel = readJson(path.join(STATE, "intel.json"), null);
   const curator = readJson(path.join(STATE, "curator.json"), null);
+  const army = readJson(path.join(STATE, "army.json"), null);
   const learning = readJson(path.join(STATE, "learning.json"), null);
   const discovery = readJson(path.join(STATE, "discovery.json"), null);
   const convertPlan = readJson(path.join(STATE, "convert-plan.json"), null);
@@ -122,6 +123,9 @@ export function fleetState({ now = new Date().toISOString(), credential = null, 
   /* 7 · curator — the fuel rail (VP → votes) */
   const curBlocked = credMissing && armed;
   const curIdleVerdicts = ["DAY-CAP", "VP-FLOOR", "NO-CANDIDATES", "OPERATOR-PAUSED", "DISABLED"];
+  agents.push(mk("army-curator", "army curation rail · 10 delegated accounts put to work (posting-key only, T-83)",
+      { lastRunAt: army?.at ?? null, nowMs, freshnessMin: 30,
+        lastVerdict: army?.verdict ?? null, idleReasons: ["ARMY-IDLE", "OPERATOR-PAUSED", "DISABLED", "VP-FLOOR"] }));
   agents.push(mk("curator", "curation rail · VP put to work (posting-key only)",
     classifyAgent({
       lastRunAt: curator?.at ?? null, nowMs, freshnessMin: FRESH.curator,

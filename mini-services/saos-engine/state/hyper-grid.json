@@ -1,6 +1,6 @@
 {
-  "lastTickAt": "2026-10-05T10:50:54.971Z",
-  "ticks": 8051,
+  "lastTickAt": "2026-10-05T11:32:48.055Z",
+  "ticks": 8796,
   "nextId": 2100000379,
   "conf": {
     "enabled": true,
@@ -19,14 +19,14 @@
     "maxOpsPerTx": 24
   },
   "lastVerdict": "GOVERNOR-ACCUMULATING",
-  "lastVerdictAt": "2026-10-05T10:50:54.971Z",
+  "lastVerdictAt": "2026-10-05T11:32:48.055Z",
   "rcPct": 100,
   "opsToday": 0,
   "lastTxid": "87183ebd98c661da5ed3286d337e2211fbb09e32",
   "governor": {
     "pairs": 0,
     "ops": 0,
-    "carry": 0.47327461183994074,
+    "carry": 0.7437750934162899,
     "reason": "accumulating",
     "headroom": 3,
     "burnPerDay": 865175307465,
@@ -44,7 +44,7 @@
   },
   "day": "2026-10-05",
   "lastError": "CREDENTIAL-MISSING: .secrets/headcorner.key not found (sandbox cold-reset wipes gitignored secrets). Revival (self-servi",
-  "carryGovernor": 0.47327461183994074,
+  "carryGovernor": 0.7437750934162899,
   "running": true,
   "blocker": null,
   "lastMaxRc": 1441958845778
