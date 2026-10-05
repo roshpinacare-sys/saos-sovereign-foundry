@@ -1,9 +1,9 @@
 {
   "enabled": true,
-  "at": "2026-10-05T11:30:47.553Z",
+  "at": "2026-10-05T13:54:48.875Z",
   "day": "2026-10-05",
   "maxPerDay": 3,
-  "verdict": "ARMY-ACTIVE",
+  "verdict": "ARMY-IDLE",
   "policy": {
     "maxPerDay": 3,
     "minVpEffPct": 80
@@ -252,9 +252,9 @@
       },
       "totalVotes": 5,
       "history": [],
-      "vpEff": 97.1,
-      "chainDayCount": 1,
-      "verdict": "VOTED",
+      "vpEff": 95.2,
+      "chainDayCount": 5,
+      "verdict": "DAY-CAP",
       "error": "wif-length"
     },
     "wog": {
@@ -275,5 +275,5 @@
     }
   },
   "totalVotes": 20,
-  "broadcasted": 2
+  "broadcasted": 0
 }

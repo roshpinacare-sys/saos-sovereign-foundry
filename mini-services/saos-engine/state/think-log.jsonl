@@ -47,3 +47,14 @@
 {"at":"2026-10-05T11:31:12.806Z","account":"wic","source":"army-curate","verdict":"ALLOW","reasons":[],"shown":[{"op":"vote","to":null,"amount":null}],"custody":"verified"}
 {"at":"2026-10-05T11:31:14.314Z","account":"wic","source":"army-curate","verdict":"ALLOW","reasons":[],"shown":[{"op":"vote","to":null,"amount":null}],"custody":"verified"}
 {"at":"2026-10-05T11:31:20.928Z","account":"headcorner","source":"cycle-execute","verdict":"ALLOW","reasons":[],"shown":[{"op":"claim_reward_balance","to":null,"amount":null}],"custody":"master-verified"}
+{"at":"2026-10-05T11:35:10.641Z","account":"headcorner","source":"cycle-execute","verdict":"ALLOW","reasons":[],"shown":[{"op":"claim_reward_balance","to":null,"amount":null}],"custody":"master-verified"}
+{"at":"2026-10-05T11:45:11.779Z","account":"headcorner","source":"cycle-execute","verdict":"ALLOW","reasons":[],"shown":[{"op":"claim_reward_balance","to":null,"amount":null}],"custody":"master-verified"}
+{"at":"2026-10-05T11:55:16.618Z","account":"headcorner","source":"cycle-execute","verdict":"ALLOW","reasons":[],"shown":[{"op":"claim_reward_balance","to":null,"amount":null}],"custody":"master-verified"}
+{"at":"2026-10-05T12:05:14.881Z","account":"headcorner","source":"cycle-execute","verdict":"ALLOW","reasons":[],"shown":[{"op":"claim_reward_balance","to":null,"amount":null}],"custody":"master-verified"}
+{"at":"2026-10-05T12:15:20.479Z","account":"headcorner","source":"cycle-execute","verdict":"ALLOW","reasons":[],"shown":[{"op":"claim_reward_balance","to":null,"amount":null}],"custody":"master-verified"}
+{"at":"2026-10-05T12:25:25.115Z","account":"headcorner","source":"cycle-execute","verdict":"ALLOW","reasons":[],"shown":[{"op":"claim_reward_balance","to":null,"amount":null}],"custody":"master-verified"}
+{"at":"2026-10-05T12:35:15.140Z","account":"headcorner","source":"cycle-execute","verdict":"ALLOW","reasons":[],"shown":[{"op":"claim_reward_balance","to":null,"amount":null}],"custody":"master-verified"}
+{"at":"2026-10-05T12:45:15.387Z","account":"headcorner","source":"cycle-execute","verdict":"ALLOW","reasons":[],"shown":[{"op":"claim_reward_balance","to":null,"amount":null}],"custody":"master-verified"}
+{"at":"2026-10-05T12:55:18.926Z","account":"headcorner","source":"cycle-execute","verdict":"ALLOW","reasons":[],"shown":[{"op":"claim_reward_balance","to":null,"amount":null}],"custody":"master-verified"}
+{"at":"2026-10-05T12:56:42.798Z","account":"headcorner","source":"hyper-grid","verdict":"ALLOW","reasons":[],"shown":[{"op":"limit_order_create","to":null,"amount":null},{"op":"limit_order_create","to":null,"amount":null}],"custody":"master-verified"}
+{"at":"2026-10-05T13:05:23.537Z","account":"headcorner","source":"cycle-execute","verdict":"ALLOW","reasons":[],"shown":[{"op":"claim_reward_balance","to":null,"amount":null}],"custody":"master-verified"}
