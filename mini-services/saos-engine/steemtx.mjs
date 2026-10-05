@@ -129,7 +129,7 @@ class Writer {
 }
 
 /* ── operation serializers (field order = chain registry order) ─────────── */
-export const OP_IDS = { vote: 0, comment: 1, transfer: 2, limit_order_create: 5, limit_order_cancel: 6, convert: 8, account_create: 9, claim_account: 22, create_claimed_account: 23, claim_reward_balance: 33 };
+export const OP_IDS = { vote: 0, comment: 1, transfer: 2, limit_order_create: 5, limit_order_cancel: 6, convert: 8, account_create: 9, claim_account: 22, create_claimed_account: 23, claim_reward_balance: 33, delegate_vesting_shares: 40 };
 
 function serOp(name, v, w) {
   switch (name) {
@@ -169,6 +169,14 @@ function serOp(name, v, w) {
       break;
     case "claim_reward_balance":
       w.str(v.account).asset(v.reward_steem).asset(v.reward_sbd).asset(v.reward_vests);
+      break;
+    case "delegate_vesting_shares":
+      // T-82: op-id + field order MEASURED from the chain's own serializer
+      // (condenser_api.get_transaction_hex byte-decode: id=40, delegator,
+      // delegatee, vesting_shares prec-6). JSON key contract also MEASURED:
+      // this chain maps "delegator"→field1; "account"/"from" → EMPTY (assert
+      // "Account name  is invalid"). Binary layout is positional.
+      w.str(v.delegator ?? v.account).str(v.delegatee).asset(v.vesting_shares);
       break;
     default:
       throw new Error(`op-not-serializable: ${name}`);

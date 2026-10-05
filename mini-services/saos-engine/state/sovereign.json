@@ -2,29 +2,29 @@
   "bootedAt": "2026-10-05T09:04:48.847Z",
   "pid": 1072,
   "armed": true,
-  "paused": true,
+  "paused": false,
   "watchdog": {
-    "checks": 1352,
-    "downs": 97,
-    "heals": 28,
-    "healVerified": 27,
+    "checks": 1389,
+    "downs": 122,
+    "heals": 31,
+    "healVerified": 30,
     "healFailed": 0,
-    "lastCheckAt": "2026-10-05T10:09:48.917Z",
-    "engineUp": false,
-    "lastSpawnAt": null,
-    "lastUpAt": "2026-10-05T10:02:48.914Z",
+    "lastCheckAt": "2026-10-05T10:46:48.946Z",
+    "engineUp": true,
+    "lastSpawnAt": "2026-10-05T10:44:48.886Z",
+    "lastUpAt": "2026-10-05T10:46:48.949Z",
     "blips": 0
   },
   "cycles": {
-    "autoRuns": 124,
-    "ok": 75,
+    "autoRuns": 126,
+    "ok": 77,
     "fail": 20,
     "blocked": 29,
-    "lastAt": "2026-10-04T21:44:59.052Z",
+    "lastAt": "2026-10-05T10:45:04.908Z",
     "lastOk": true,
     "lastHealth": "ok",
-    "lastMs": 9915,
-    "nextAt": null
+    "lastMs": 11048,
+    "nextAt": "2026-10-05T10:55:04.908Z"
   },
   "selftest": {
     "runs": 0,
@@ -41,6 +41,11 @@
     "lastAlertAt": "2026-10-05T09:04:53.860Z"
   },
   "control": [
+    {
+      "at": "2026-10-05T10:33:11.706Z",
+      "action": "resume",
+      "by": "operator-cockpit"
+    },
     {
       "at": "2026-10-05T09:04:48.847Z",
       "action": "boot",
@@ -148,12 +153,6 @@
     },
     {
       "at": "2026-09-29T17:59:44.631Z",
-      "action": "boot",
-      "by": "instrumentation",
-      "note": "SovereignCore armed"
-    },
-    {
-      "at": "2026-09-29T17:58:32.298Z",
       "action": "boot",
       "by": "instrumentation",
       "note": "SovereignCore armed"

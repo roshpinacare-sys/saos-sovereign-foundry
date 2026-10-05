@@ -1,9 +1,69 @@
 {
-  "draftedAt": "2026-10-04T17:50:09.555Z",
-  "verdict": "BRIDGE-DOWN",
-  "draftsQueued": 0,
+  "draftedAt": "2026-10-05T10:34:48.867Z",
+  "verdict": "DRAFTS-QUEUED",
+  "draftsQueued": 3,
   "exposureBlocked": 0,
   "queue": [
+    {
+      "title": "Understanding Steem's Consensus Mechanism: Delegated Proof of Stake",
+      "body": "Steem operates on a unique consensus model called Delegated Proof of Stake (DPoS), which differs significantly from Bitcoin's Proof of Work. In DPoS, token holders vote for delegates who validate transactions and produce blocks. This system allows for faster transaction processing and lower energy consumption compared to traditional PoW systems. The top witnesses are responsible for maintaining the blockchain's integrity, with their positions determined by community voting. Understanding this mechanism is crucial for grasping how Steem achieves its high throughput of approximately 32,000 hyper-operations per day. The efficiency of DPoS contributes to Steem's low transaction fees and quick confirmation times, making it suitable for content-heavy applications like social media platforms.",
+      "tags": [
+        "steem-blockchain",
+        "blockchain-basics",
+        "consensus-mechanism",
+        "dpos-explained",
+        "crypto-education"
+      ],
+      "angle": "educational explainer",
+      "seoNote": "First paragraph explains Steem's consensus model and its benefits, using verifiable data about transaction throughput.",
+      "groundedOn": [
+        "steem-blockchain-overview",
+        "blockchain-council-steem-explanation"
+      ],
+      "id": "d1791196488867-0",
+      "status": "drafted",
+      "draftedAt": "2026-10-05T10:34:48.867Z"
+    },
+    {
+      "title": "How Do You Evaluate Content Value on Steem?",
+      "body": "Steem's reward system relies on community curation, where users determine the value of content through upvotes. This creates an interesting dynamic where content creators must engage with their audience to receive meaningful rewards. The platform's daily curation activity generates approximately $0.55 in estimated value, suggesting a modest but active market for quality content. As a Steem user, how do you approach content evaluation? Do you prioritize educational value, entertainment, or community engagement? What metrics do you find most useful when deciding whether to upvote content? This discussion aims to explore different perspectives on content valuation and how we might collectively improve the curation process on the platform.",
+      "tags": [
+        "steem-curation",
+        "content-value",
+        "community-engagement",
+        "reward-system",
+        "discussion-topic"
+      ],
+      "angle": "open question",
+      "seoNote": "First paragraph introduces the topic of content valuation on Steem and includes a question to engage readers.",
+      "groundedOn": [
+        "curation-estimation-data",
+        "steem-blockchain-statistics"
+      ],
+      "id": "d1791196488867-1",
+      "status": "drafted",
+      "draftedAt": "2026-10-05T10:34:48.867Z"
+    },
+    {
+      "title": "Streamlining Your Steem Workflow: Tools for Efficient Content Creation",
+      "body": "Creating and curating content on Steem can be more efficient with the right tools. Many community members use browser extensions and third-party applications to simplify posting, tracking rewards, and managing their accounts. For instance, tools like Steempeak and Busy.org offer enhanced interfaces for composing posts and analyzing engagement metrics. These platforms can help you monitor your content performance, track rewards in both STEEM and SBD, and identify trending topics. By integrating these tools into your workflow, you can save time and focus on creating high-quality content. What tools have you found most helpful for your Steem activities, and how have they improved your experience on the platform?",
+      "tags": [
+        "steem-tools",
+        "content-creation",
+        "workflow-tips",
+        "community-resources",
+        "productivity"
+      ],
+      "angle": "tooling-or-workflow tip",
+      "seoNote": "First paragraph introduces practical tools for Steem users and their benefits.",
+      "groundedOn": [
+        "steem-blockchain-overview",
+        "general-knowledge-of-steem-tools"
+      ],
+      "id": "d1791196488867-2",
+      "status": "drafted",
+      "draftedAt": "2026-10-05T10:34:48.867Z"
+    },
     {
       "title": "Understanding Blockchain Curation Rewards",
       "body": "Blockchain networks like Steem reward content creators and curators through a unique economic model. Curation rewards play a vital role in maintaining content quality and encouraging meaningful engagement. On Steem, curators stake their tokens to vote on posts, and successful predictions about valuable content can earn them rewards. The daily curation activity across the network demonstrates how this mechanism functions in practice. Understanding how curation works helps both new and experienced users participate more effectively. When you curate content thoughtfully, you're not just supporting creators—you're also contributing to the platform's overall health. The curation reward system creates a symbiotic relationship between creators and curators, ensuring that quality content rises to the top. As you explore the platform, consider how your own curation choices impact the ecosystem and what makes content valuable to you.",
@@ -62,6 +122,6 @@
     }
   ],
   "law": "טיוטה נכתבת רק מקרקעין-מדודות + ממצאים-ממוקדים; חשיפה = נחסמת בטהרת-הנוסח; שידור רק אחרי אימות-חתימה (דוקטרינת-שער)",
-  "bridgeError": "bridge 502",
-  "ms": 228
+  "bridgeError": null,
+  "ms": 10688
 }

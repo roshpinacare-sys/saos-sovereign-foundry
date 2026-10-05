@@ -1,51 +1,51 @@
 {
   "account": "headcorner",
   "parity": {
-    "steemUsd": 0.06348,
-    "sbdUsd": 0.609800563163363,
-    "parity": 0.10409960868303425,
+    "steemUsd": 0.06257,
+    "sbdUsd": 0.6010590071111137,
+    "parity": 0.10409959631206908,
     "source": "internal-feed-fallback+derived-sbd",
     "lowConfidence": true
   },
-  "feed": 0.10409960868303425,
+  "feed": 0.10409959631206908,
   "band": {
     "ok": true,
     "reason": "band-ok",
     "bps": 0
   },
-  "steemUsd": 0.06348,
-  "sbdUsd": 0.609800563163363,
+  "steemUsd": 0.06257,
+  "sbdUsd": 0.6010590071111137,
   "inventory": {
-    "steem": 3.286,
+    "steem": 1.531,
     "sbd": 0.015,
-    "spOwn": 1148.3241112742664,
-    "rcPct": 99.9
+    "spOwn": 1124.5200331762583,
+    "rcPct": 100
   },
   "ordersOk": true,
   "orders": [
     {
-      "orderid": 2026100401,
+      "orderid": 2026100501,
       "side": "ask",
-      "base": "2.502 STEEM",
-      "quote": "0.280 SBD",
-      "unit": 0.11191,
-      "created": "2026-10-04T21:32:48"
+      "base": "3.087 STEEM",
+      "quote": "0.344 SBD",
+      "unit": 0.111435,
+      "created": "2026-10-05T04:01:39"
     },
     {
-      "orderid": 2026100402,
+      "orderid": 2026100502,
       "side": "ask",
-      "base": "2.502 STEEM",
-      "quote": "0.282 SBD",
-      "unit": 0.11271,
-      "created": "2026-10-04T21:32:54"
+      "base": "3.087 STEEM",
+      "quote": "0.345 SBD",
+      "unit": 0.111759,
+      "created": "2026-10-05T04:01:42"
     },
     {
-      "orderid": 2026100403,
+      "orderid": 2026100503,
       "side": "ask",
-      "base": "2.502 STEEM",
-      "quote": "0.285 SBD",
-      "unit": 0.113909,
-      "created": "2026-10-04T21:32:57"
+      "base": "3.087 STEEM",
+      "quote": "0.347 SBD",
+      "unit": 0.112407,
+      "created": "2026-10-05T04:01:45"
     }
   ],
   "fills": 46,
@@ -71,7 +71,7 @@
     "authorVestsPerDay": 0,
     "curationOps": 0,
     "authorOps": 0,
-    "windowSpanDays": 0.95,
+    "windowSpanDays": 1.5,
     "windowOps": 1001,
     "measured": true,
     "fuelUsdPerDay": 0,
@@ -80,5 +80,5 @@
     "node": "https://steemapi.boylikegirl.club",
     "windowNote": "no reward ops inside the measured window — rails dormant, not a parse failure (deep-scan documented separately)"
   },
-  "at": "2026-10-04T21:44:47.036Z"
+  "at": "2026-10-05T10:44:52.893Z"
 }
