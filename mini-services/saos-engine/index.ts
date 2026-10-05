@@ -11,6 +11,8 @@ import { soldiersPublic } from "./soldiers.mjs";
 import { intelState } from "./intel.mjs";
 import { curatorState } from "./curator.mjs";
 import { learningState } from "./learning.mjs";
+import { adaptationBoot, publicAdaptation } from "./adaptation.mjs";
+adaptationBoot(); // R210 §XVI: restart counter — adaptation store proves persistence across boots
 import { discoveryState } from "./discovery.mjs";
 import { fleetState } from "./fleet.mjs";
 import { startHyperGrid, hyperState } from "./hypergrid.mjs";
@@ -83,6 +85,7 @@ async function handle(req) {
        * spoilagePublic — measured days/votes + ESTIMATED steem, never
        * claimed as measured money) */
       spoilage: spoilagePublic(),
+      adaptation: publicAdaptation(), // R210: learned-rule state, verdicts only
       fleet: fleetState(),
       /* T-19b HYPER-GRID: the volume layer — live meter + day counter */
       hyper: hyperState(),

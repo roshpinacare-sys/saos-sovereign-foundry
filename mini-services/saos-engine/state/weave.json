@@ -1,34 +1,34 @@
 {
   "protocol": "saos.weave.core.v1",
-  "observedAt": "2026-10-04T17:50:09.555Z",
+  "observedAt": "2026-10-05T19:02:36.831Z",
   "account": "headcorner",
-  "day": "2026-10-04",
+  "day": "2026-10-05",
   "ours": {
-    "votesToday": 10,
+    "votesToday": 0,
     "ordersLive": 0,
     "fillsObserved": 0,
     "journal": "state/curator.json + state/our-orders.json"
   },
   "theirs": {
-    "votesToday": 2,
-    "lastVoteAt": "2026-10-04T02:57:48.000Z",
-    "intervalMinEst": 1.8,
-    "ordersLive": 302,
-    "fillsObserved": 37,
+    "votesToday": 0,
+    "lastVoteAt": null,
+    "intervalMinEst": null,
+    "ordersLive": 33,
+    "fillsObserved": 0,
     "fingerprint": "saos.weave.core.v1 — חותם-חיצוני בעל-אישורי-גישה-זהים (T-17/T-18 measured)"
   },
   "arbitration": {
-    "combined": 12,
+    "combined": 0,
     "sharedDayCap": 10,
-    "capRemaining": 0,
+    "capRemaining": 10,
     "capBasis": "chain-truth-shared — התקרה סופרת את שני-הכותבים יחד (max(state, chain-truth))",
     "voteLanes": {
-      "ours": 10,
-      "theirs": 2
+      "ours": 0,
+      "theirs": 0
     },
     "orderLanes": {
       "ours": 0,
-      "theirs": 302
+      "theirs": 33
     },
     "partitionLaw": "order-id partition: מחזור ∈ [0, 2.1e9) · היפר ∈ [2.1e9, 4.29e9) · החותם-השני מתבקש לפרסם את הטווח שלו (handshake v1)",
     "collisionLaw": "already-voted = dedup תקציבי-כן (T-17) — הצבעה אף-פעם לא חוזרת, רק נספרת פעם-אחת",
@@ -37,7 +37,7 @@
   "handshake": {
     "status": "PUBLISHED",
     "revision": 1,
-    "publishAt": "2026-10-04T17:50:09.555Z",
+    "publishAt": "2026-10-05T19:02:36.831Z",
     "ourOffer": "המסלולים שלנו מפורסמים: תקרת-יום משותפת (chain-truth), הצבעות-דוקטרינה בלילה, מחזור-פקודות [0,2.1e9), היפר [2.1e9,4.29e9)",
     "request": "החותם-השני מתבקש לפרסם את טווח-ה-orderid שלו ואת חוק-המשקל שלו — ההתנגשות מונעת ב-contract, לא במזל"
   },

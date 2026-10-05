@@ -1,18 +1,18 @@
 {
   "running": false,
-  "startedAt": "2026-10-04T21:44:47.036Z",
-  "finishedAt": "2026-10-04T21:44:56.951Z",
-  "ms": 9915,
-  "health": "ok",
-  "ok": true,
+  "startedAt": "2026-10-05T19:17:33.682Z",
+  "finishedAt": "2026-10-05T19:17:40.750Z",
+  "ms": 7068,
+  "health": "blocked",
+  "ok": false,
   "steps": {
     "observe": true,
     "intel": true,
     "tick": true,
     "peg": true,
     "convert": true,
-    "curate": true,
-    "execute": true,
+    "curate": false,
+    "execute": false,
     "soldiers": true,
     "learn": true,
     "webintel": true,
@@ -25,7 +25,13 @@
     "recruit": true,
     "report": true
   },
-  "blockedSteps": [],
-  "failedSteps": [],
+  "blockedSteps": [
+    "curate",
+    "execute"
+  ],
+  "failedSteps": [
+    "curate",
+    "execute"
+  ],
   "error": null
 }

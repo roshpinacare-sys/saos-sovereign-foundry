@@ -788,6 +788,32 @@ export default function Home() {
                     </StatusBadge>
                   }
                 >
+                  {/* R210 · הכלל-הנלמד החי (אדפטציה מאומתת מול-השרשרת) */}
+                  {!!s?.adaptation && (
+                    <div className="mb-3 rounded-lg border border-emerald-900/50 bg-emerald-950/20 p-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <StatusBadge tone={s.adaptation.status === 'VERIFIED' ? 'emerald' : s.adaptation.status === 'SUPERSEDED' ? 'rose' : 'amber'}>
+                          {s.adaptation.status === 'VERIFIED' ? 'כלל-נלמד · נתמך-בראיות'
+                            : s.adaptation.status === 'SUPERSEDED' ? 'נפסל · המתנה-בטוחה (fail-closed)'
+                            : s.adaptation.status ?? '—'}
+                        </StatusBadge>
+                        <span className="text-[11px] text-slate-400" dir="ltr">{s.adaptation.adaptationId}</span>
+                      </div>
+                      <div className="mt-1.5 text-[11px] leading-relaxed text-slate-300">
+                        <b>הכלל:</b> <code className="rounded bg-slate-900 px-1" dir="ltr">claim_reward_balance → role={String(s.adaptation.rule?.roleTo ?? '—')}</code>
+                        {' '}· <b>תיקון-גוף:</b> <code className="rounded bg-slate-900 px-1" dir="ltr">op-id {String(s.adaptation.bodyFix?.opIdFrom ?? '?')}→{String(s.adaptation.bodyFix?.opIdTo ?? '?')}</code> (נשפט-מול-השרשרת)
+                      </div>
+                      <div className="mt-1 text-[11px] text-slate-500">
+                        ביטחון <b className="tnum text-slate-300">{s.adaptation.confidence ?? '—'}</b>
+                        {' '}· צריכה-בנתיב-החתימה: <b className="tnum text-slate-300">{s.adaptation.consumptionCount ?? 0}</b>
+                        {' '}· הישרדות-אתחולים: <b className="tnum text-slate-300">{s.adaptation.bootCount ?? 0}</b>
+                        {' '}· ממתין-לטריגר-טבעי (pending=0 → אין-ניסוי, אמת-אפיסטמית)
+                      </div>
+                      <div className="mt-1 text-[10px] leading-relaxed text-slate-600" dir="rtl">
+                        מפריך: {s.adaptation.falsifier ?? '—'}
+                      </div>
+                    </div>
+                  )}
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
                     {s?.learning?.cycleMetrics?.okRate != null && (
                       <span>מחזורים-תקינים <b className="tnum text-slate-300">{s.learning.cycleMetrics.okRate}%</b> מ-{s.learning.cycleMetrics.window ?? 0} אחרונים</span>

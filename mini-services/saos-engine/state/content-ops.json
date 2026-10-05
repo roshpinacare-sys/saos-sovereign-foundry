@@ -1,9 +1,67 @@
 {
-  "draftedAt": "2026-10-04T17:50:09.555Z",
-  "verdict": "BRIDGE-DOWN",
-  "draftsQueued": 0,
+  "draftedAt": "2026-10-05T19:02:36.831Z",
+  "verdict": "DRAFTS-QUEUED",
+  "draftsQueued": 3,
   "exposureBlocked": 0,
   "queue": [
+    {
+      "title": "Understanding Steem's Dual-Token System: STEEM vs SBD",
+      "body": "Steem operates on a unique dual-token model that distinguishes it from many other blockchain platforms. The native STEEM token serves as the base currency for the network, while Steem Dollars (SBD) provide a stable-value medium for transactions and rewards. This dual-token system was designed to offer both volatility exposure and price stability to users. STEEM tokens are used for powering up, which increases your influence on the platform through stake weight. SBD, on the other hand, is pegged to the US dollar and can be converted back to STEEM at a roughly 1:1 ratio. Understanding how these tokens interact is fundamental to navigating the Steem ecosystem effectively. The system creates a dynamic where content creators can earn in either token depending on market conditions, while curators can benefit from both appreciation and curation rewards. This structure has been a defining feature of Steem since its inception, creating a distinct economic model within the blockchain space.",
+      "tags": [
+        "steem-explained",
+        "dual-token-system",
+        "sbd-vs-steem",
+        "blockchain-basics",
+        "steem-economics"
+      ],
+      "angle": "educational explainer",
+      "seoNote": "First paragraph explains the dual-token concept independently. Tags focus on core Steem concepts. Title is concrete and searchable.",
+      "groundedOn": [
+        "What is STEEM and How does it work?"
+      ],
+      "id": "d1791226956831-0",
+      "status": "drafted",
+      "draftedAt": "2026-10-05T19:02:36.831Z"
+    },
+    {
+      "title": "How Effective Is Steem's Curation Reward System?",
+      "body": "Curation forms the backbone of Steem's content discovery and quality control mechanism. When you upvote content, you're not just showing appreciation - you're participating in a curation process that rewards both the content creator and yourself. The system calculates curation rewards based on the timing of your vote and the total value of the post's payout. This creates an incentive for curators to discover quality content early, before it gains widespread attention. The daily curation activity on Steem generates significant value for the ecosystem, with thousands of operations occurring each day. But how effective is this system in practice? Does it truly reward quality content discovery, or does it favor established accounts? For newcomers to Steem, understanding how to effectively curate content can be as important as creating it. What are your experiences with Steem's curation system? Have you found it rewarding, both financially and intellectually?",
+      "tags": [
+        "steem-curation",
+        "content-discovery",
+        "reward-mechanics",
+        "community-engagement",
+        "newcomer-guide"
+      ],
+      "angle": "open question",
+      "seoNote": "First paragraph introduces curation independently. Tags cover curation and community aspects. Title invites discussion.",
+      "groundedOn": [
+        "hyperOpsPerDay",
+        "curationEstUsdPerDay"
+      ],
+      "id": "d1791226956831-1",
+      "status": "drafted",
+      "draftedAt": "2026-10-05T19:02:36.831Z"
+    },
+    {
+      "title": "Optimizing Your Steem Workflow: Tools for Content Creators",
+      "body": "For content creators on Steem, having an efficient workflow can make a significant difference in both productivity and engagement. While the basic process involves posting and curating, several tools can streamline your experience. Many creators use third-party applications that offer enhanced formatting options, scheduling capabilities, and analytics that go beyond what's available through the native interface. These tools can help you track your post performance, identify trending topics, and manage multiple accounts more effectively. Additionally, browser extensions exist that can simplify the voting process and provide quick access to account statistics. Building a personalized toolkit that fits your specific needs - whether you're focusing on long-form articles, short posts, or multimedia content - can help you maximize your impact on the platform. What tools have you found most valuable for your Steem workflow? Are there any hidden gems that newcomers might not know about?",
+      "tags": [
+        "steem-tools",
+        "workflow-tips",
+        "content-creation",
+        "productivity",
+        "third-party-apps"
+      ],
+      "angle": "tooling-or-workflow tip",
+      "seoNote": "First paragraph introduces workflow optimization independently. Tags focus on practical tools and productivity. Title is solution-oriented.",
+      "groundedOn": [
+        "venueFillsPerDay"
+      ],
+      "id": "d1791226956831-2",
+      "status": "drafted",
+      "draftedAt": "2026-10-05T19:02:36.831Z"
+    },
     {
       "title": "Understanding Blockchain Curation Rewards",
       "body": "Blockchain networks like Steem reward content creators and curators through a unique economic model. Curation rewards play a vital role in maintaining content quality and encouraging meaningful engagement. On Steem, curators stake their tokens to vote on posts, and successful predictions about valuable content can earn them rewards. The daily curation activity across the network demonstrates how this mechanism functions in practice. Understanding how curation works helps both new and experienced users participate more effectively. When you curate content thoughtfully, you're not just supporting creators—you're also contributing to the platform's overall health. The curation reward system creates a symbiotic relationship between creators and curators, ensuring that quality content rises to the top. As you explore the platform, consider how your own curation choices impact the ecosystem and what makes content valuable to you.",
@@ -62,6 +120,6 @@
     }
   ],
   "law": "טיוטה נכתבת רק מקרקעין-מדודות + ממצאים-ממוקדים; חשיפה = נחסמת בטהרת-הנוסח; שידור רק אחרי אימות-חתימה (דוקטרינת-שער)",
-  "bridgeError": "bridge 502",
-  "ms": 228
+  "bridgeError": null,
+  "ms": 10060
 }

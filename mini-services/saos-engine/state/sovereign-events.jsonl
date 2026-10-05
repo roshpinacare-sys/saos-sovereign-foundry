@@ -392,3 +392,37 @@
 {"at":"2026-10-04T22:57:48.166Z","kind":"watchdog-down-again","downForMs":4265073,"confirmMs":5000}
 {"at":"2026-10-04T22:58:48.169Z","kind":"watchdog-down-again","downForMs":4325076,"confirmMs":5000}
 {"at":"2026-10-04T22:59:48.170Z","kind":"watchdog-down-again","downForMs":4385077,"confirmMs":5000}
+{"at":"2026-10-05T18:17:33.670Z","kind":"boot","pid":1073,"resumed":true,"carriedOver":{"checks":1286,"cyclesOk":75,"heals":28}}
+{"at":"2026-10-05T18:17:38.685Z","kind":"watchdog-down-again","downForMs":73855592,"confirmMs":5000}
+{"at":"2026-10-05T18:17:38.686Z","kind":"cred-missing","verdict":"SIGNING-DEAD","agentsAffected":["curate","execute","soldiers","promo"],"revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}
+{"at":"2026-10-05T18:18:33.689Z","kind":"watchdog-up"}
+{"at":"2026-10-05T18:55:38.706Z","kind":"watchdog-down","downForMs":65006,"confirmMs":5000}
+{"at":"2026-10-05T18:56:38.702Z","kind":"watchdog-down-again","downForMs":125002,"confirmMs":5000}
+{"at":"2026-10-05T18:57:38.707Z","kind":"watchdog-blip","downForMs":185006,"note":"transient — second pulse proved alive"}
+{"at":"2026-10-05T18:58:38.706Z","kind":"watchdog-down","downForMs":60000,"confirmMs":5000}
+{"at":"2026-10-05T18:59:38.706Z","kind":"watchdog-down-again","downForMs":120000,"confirmMs":5000}
+{"at":"2026-10-05T19:00:38.707Z","kind":"watchdog-down-again","downForMs":180001,"confirmMs":5000}
+{"at":"2026-10-05T19:01:33.706Z","kind":"watchdog-up"}
+{"at":"2026-10-05T19:04:38.709Z","kind":"watchdog-down","downForMs":65003,"confirmMs":5000}
+{"at":"2026-10-05T19:05:38.710Z","kind":"watchdog-down-again","downForMs":125004,"confirmMs":5000}
+{"at":"2026-10-05T19:06:33.708Z","kind":"watchdog-up"}
+{"at":"2026-10-05T19:07:28.445Z","kind":"resume","by":"operator-cockpit"}
+{"at":"2026-10-05T19:07:41.695Z","kind":"cycle-blocked(auto)","ms":4493,"engineMeasured":true,"steps":18,"verdict":null,"blockedSteps":["curate","execute"],"error":null}
+{"at":"2026-10-05T19:17:41.689Z","kind":"cycle-blocked(auto)","ms":7068,"engineMeasured":true,"steps":18,"verdict":null,"blockedSteps":["curate","execute"],"error":null}
+{"at":"2026-10-05T19:18:33.713Z","kind":"cred-missing","verdict":"SIGNING-DEAD","agentsAffected":["curate","execute","soldiers","promo"],"revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}
+{"at":"2026-10-05T19:19:38.715Z","kind":"watchdog-down","downForMs":65002,"confirmMs":5000}
+{"at":"2026-10-05T19:19:38.716Z","kind":"heal-attempt","reason":"watchdog"}
+{"at":"2026-10-05T19:19:38.736Z","kind":"heal-spawn","reason":"watchdog","pid":12826}
+{"at":"2026-10-05T19:19:42.742Z","kind":"heal-verified","up":true}
+{"at":"2026-10-05T19:20:38.715Z","kind":"watchdog-down","downForMs":125002,"confirmMs":5000}
+{"at":"2026-10-05T19:20:38.716Z","kind":"heal-attempt","reason":"watchdog"}
+{"at":"2026-10-05T19:20:38.738Z","kind":"heal-spawn","reason":"watchdog","pid":12966}
+{"at":"2026-10-05T19:20:42.743Z","kind":"heal-verified","up":true}
+{"at":"2026-10-05T19:21:38.715Z","kind":"watchdog-down","downForMs":185002,"confirmMs":5000}
+{"at":"2026-10-05T19:21:38.715Z","kind":"heal-attempt","reason":"watchdog"}
+{"at":"2026-10-05T19:21:38.736Z","kind":"heal-spawn","reason":"watchdog","pid":13111}
+{"at":"2026-10-05T19:21:42.741Z","kind":"heal-verified","up":true}
+{"at":"2026-10-05T19:22:38.716Z","kind":"watchdog-down","downForMs":245003,"confirmMs":5000}
+{"at":"2026-10-05T19:22:38.716Z","kind":"heal-attempt","reason":"watchdog"}
+{"at":"2026-10-05T19:22:38.735Z","kind":"heal-spawn","reason":"watchdog","pid":13216}
+{"at":"2026-10-05T19:22:42.744Z","kind":"heal-verified","up":true}

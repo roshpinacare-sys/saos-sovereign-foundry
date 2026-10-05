@@ -17,7 +17,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { rpcCall, accountState } from "./measure.mjs";
-import { SEED_ORDERS, wifFor, derivePub, buildTx, fingerprint } from "./steemtx.mjs";
+import { SEED_ORDERS, wifFor, derivePub, buildTx, fingerprint, OP_IDS } from "./steemtx.mjs";
+import { resolveClaimRole } from "./adaptation.mjs";
 import { validateCredentialText, vpSpoilage, stickyNodeOrder, credentialGate, doctrineAccount } from "./lib.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
@@ -509,7 +510,7 @@ async function broadcastTx(json) {
  * network re-reads die (measured ~6s/vote of pure waste × up-to-18 votes).
  * Guards are NOT skipped — they are HOISTED: the caller presents the same
  * evidence executeAs would have fetched, freshness-capped below. */
-export async function executeAs(account, ops, { tag = "cycle", role = "active", rcPct = null, dgpo = null, dgpoAt = 0 } = {}) {
+export async function executeAs(account, ops, { tag = "cycle", role = "active", rcPct = null, dgpo = null, dgpoAt = 0, predictionId = null } = {}) {
   const conf = armedConf();
   if (!conf.armed) return { ok: false, verdict: "DISARMED", reason: "standing-order-off" };
   if (execPaused()) return { ok: false, verdict: "OPERATOR-PAUSED", reason: "kill-switch" };
@@ -524,20 +525,50 @@ export async function executeAs(account, ops, { tag = "cycle", role = "active", 
     return { ok: false, verdict: "THINK-GATE-REFUSED", reasons: think.reasons, custody: think.custody, ops: 0 };
   }
 
+  /* R210 §IV · THE RESOLVER CONSUMPTION POINT — the learned rule is consumed
+   * HERE, in the signer hot path, before any key material is touched. The
+   * rule can only ever select the POSTING role (already held by the
+   * credential) — learning never creates authority (§XI absolute boundary).
+   * A superseded/refuted rule fail-closes claim ops entirely (§XIII). */
+  let adaptationMeta = null;
+  const hasClaim = ops.some(([n]) => n === "claim_reward_balance");
+  if (hasClaim) {
+    const rr = resolveClaimRole(); // hot-path consumption — counted
+    if (rr.failClosed) {
+      appendLine(LOG_FILE, { at: new Date().toISOString(), tag, account, ok: false, verdict: "CLAIM-FAIL-CLOSED", ops: ops.map(([n]) => n), reason: rr.reason, adaptationId: rr.adaptationId, status: rr.status, roleSource: rr.roleSource, ruleVersion: rr.ruleVersion, predictionId });
+      return { ok: false, verdict: "CLAIM-FAIL-CLOSED", reason: rr.reason, ops: 0 };
+    }
+    if (role !== rr.role) {
+      journalThink({ account, source: tag, verdict: "ADAPTATION-ROLE-OVERRIDE", reasons: [`claim_reward_balance role ${role} → ${rr.role} via ${rr.roleSource} (within already-authorized space — no new authority)`], shown: [] });
+      role = rr.role;
+    }
+    adaptationMeta = { roleSource: rr.roleSource, adaptationId: rr.adaptationId, ruleVersion: rr.ruleVersion, status: rr.status };
+  }
+
   const ver = await verifyRoles(account);
-  if (!ver.ok) return { ok: false, verdict: "KEY-UNVERIFIED", reason: ver.reason ?? "no-match" };
+  if (!ver.ok) {
+    if (adaptationMeta) appendLine(LOG_FILE, { at: new Date().toISOString(), tag, account, ok: false, verdict: "KEY-UNVERIFIED", ops: ops.map(([n]) => n), reason: ver.reason ?? "no-match", adaptation: adaptationMeta, predictionId });
+    return { ok: false, verdict: "KEY-UNVERIFIED", reason: ver.reason ?? "no-match" };
+  }
   const id = identity(account);
-  if (!id.wifs[role]) return { ok: false, verdict: "ROLE-KEY-ABSENT", role, matched: ver.roles?.[role]?.matched ?? null };
+  if (!id.wifs[role]) {
+    if (adaptationMeta) appendLine(LOG_FILE, { at: new Date().toISOString(), tag, account, ok: false, verdict: "ROLE-KEY-ABSENT", ops: ops.map(([n]) => n), role, adaptation: adaptationMeta, predictionId });
+    return { ok: false, verdict: "ROLE-KEY-ABSENT", role, matched: ver.roles?.[role]?.matched ?? null };
+  }
 
   // RC floor — chain resource health before any op (master only; soldiers ride
   // small). Caller-supplied rcPct (measured THIS run) counts as the same
   // evidence a fresh accountState would return — the floor itself is untouched.
   if (account === masterAccount()) {
     if (rcPct != null) {
-      if (rcPct < conf.minRcPct) return { ok: false, verdict: "RC-FLOOR", rcPct, reason: `rc below ${conf.minRcPct}%` };
+      if (rcPct < conf.minRcPct) {
+        if (adaptationMeta) appendLine(LOG_FILE, { at: new Date().toISOString(), tag, account, ok: false, verdict: "RC-FLOOR", rcPct, adaptation: adaptationMeta, predictionId });
+        return { ok: false, verdict: "RC-FLOOR", rcPct, reason: `rc below ${conf.minRcPct}%` };
+      }
     } else {
       const acc = await accountState(account);
       if (acc.ok && acc.rcPct != null && acc.rcPct < conf.minRcPct) {
+        if (adaptationMeta) appendLine(LOG_FILE, { at: new Date().toISOString(), tag, account, ok: false, verdict: "RC-FLOOR", rcPct: acc.rcPct, adaptation: adaptationMeta, predictionId });
         return { ok: false, verdict: "RC-FLOOR", rcPct: acc.rcPct, reason: `rc below ${conf.minRcPct}%` };
       }
     }
@@ -555,12 +586,17 @@ export async function executeAs(account, ops, { tag = "cycle", role = "active", 
   const crypto = await import("node:crypto");
   const txid = crypto.createHash("sha256").update(Buffer.from(t.serializedHex, "hex")).digest("hex").slice(0, 40);
   const res = await broadcastTx(t.json);
+  const execAt = new Date().toISOString();
   appendLine(LOG_FILE, {
-    at: new Date().toISOString(), tag, account, ok: res.ok, txid,
+    at: execAt, tag, account, ok: res.ok, txid,
     ops: ops.map(([n]) => n), node: res.node ?? null, error: res.error ?? null,
     fingerprint: ver.fingerprint,
+    role, // R210 §XV: the ACTUAL role used travels with every execution row
+    serialization: { claimOpId: ops.some(([n]) => n === "claim_reward_balance") ? OP_IDS.claim_reward_balance : null },
+    adaptation: adaptationMeta, // roleSource/adaptationId/ruleVersion on every row
+    predictionId,
   });
-  return { ok: res.ok, verdict: res.ok ? "BROADCAST" : "BROADCAST-FAIL", txid, ops: ops.length, opNames: ops.map(([n]) => n), node: res.node ?? null, error: res.error ?? null };
+  return { ok: res.ok, verdict: res.ok ? "BROADCAST" : "BROADCAST-FAIL", txid, ops: ops.length, opNames: ops.map(([n]) => n), node: res.node ?? null, error: res.error ?? null, role, adaptation: adaptationMeta, execAt, serialization: { claimOpId: hasClaim ? OP_IDS.claim_reward_balance : null } };
 }
 
 export async function executeOps(ops, opts = {}) {

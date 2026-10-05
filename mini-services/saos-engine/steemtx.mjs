@@ -109,8 +109,22 @@ class Writer {
     if (!m) throw new Error(`asset-format: ${amountStr}`);
     const whole = m[1]; const sym = m[2];
     const dot = whole.indexOf(".");
-    const prec = dot < 0 ? 0 : whole.length - dot - 1;
-    const scaled = BigInt(whole.replace(".", ""));
+    let prec = dot < 0 ? 0 : whole.length - dot - 1;
+    /* R210 hardening (adversarial finding B-6): chain-canonical precision is a
+     * per-symbol law — STEEM=3, SBD=3, VESTS=6. A caller emitting "0.0 STEEM"
+     * (prec 1) would produce non-canonical bytes → fail-closed here. */
+    const CANON = { STEEM: 3, SBD: 3, VESTS: 6, TSTD: 6 };
+    if (sym in CANON && prec !== CANON[sym]) {
+      // rescale rather than reject: pad/truncate the literal to canon precision
+      const [i, f = ""] = whole.split(".");
+      const f2 = (f + "0".repeat(CANON[sym])).slice(0, CANON[sym]);
+      if (BigInt(`${i}${f2}`) !== BigInt(whole.replace(".", ""))) throw new Error(`asset-precision-canon: ${amountStr} (want ${CANON[sym]} decimals)`);
+      prec = CANON[sym];
+      var scaledStr = `${i}${f2}`;
+    } else {
+      var scaledStr = whole.replace(".", "");
+    }
+    const scaled = BigInt(scaledStr);
     this.u64(scaled); this.u8(prec);
     const s = Buffer.from(sym, "ascii");
     this.bytes(Buffer.concat([s, Buffer.alloc(7 - s.length)]));
@@ -129,7 +143,12 @@ class Writer {
 }
 
 /* ── operation serializers (field order = chain registry order) ─────────── */
-export const OP_IDS = { vote: 0, comment: 1, transfer: 2, limit_order_create: 5, limit_order_cancel: 6, convert: 8, account_create: 9, claim_account: 22, create_claimed_account: 23, claim_reward_balance: 33 };
+export const OP_IDS = { vote: 0, comment: 1, transfer: 2, limit_order_create: 5, limit_order_cancel: 6, convert: 8, account_create: 9, claim_account: 22, create_claimed_account: 23, claim_reward_balance: 39 };
+/* R209 body-fix (restored + chain-re-judged 2026-10-05): claim_reward_balance
+ * was 33 here — 19 live broadcasts came back "Missing Posting Authority".
+ * CHAIN TRUTH (condenser_api.get_transaction_hex, OBSERVED): claim=39,
+ * delegate_vesting_shares=40, vote=0 (control). Single serialization source:
+ * this table + serializeOps below. No other byte-builder may exist. */
 
 function serOp(name, v, w) {
   switch (name) {
@@ -181,9 +200,15 @@ export function serializeTx({ ref_block_num, ref_block_prefix, expiration, opera
   w.u16(ref_block_num).u32(ref_block_prefix).i32(expiration);
   w.varint(operations.length);
   for (const [name, v] of operations) {
+    /* R210 hardening (B-5): a name missing from OP_IDS must fail with a TYPED
+     * error, never a raw BigInt TypeError — and never a silent default id. */
+    if (!Object.prototype.hasOwnProperty.call(OP_IDS, name)) throw new Error(`op-not-serializable: ${name}`);
     w.varint(OP_IDS[name]);
     serOp(name, v, w);
   }
+  /* R210 hardening (B-8): a non-empty extensions array would corrupt the byte
+     * stream (only its length varint is written) — fail-closed. */
+  if (extensions.length) throw new Error("tx-extensions-unsupported");
   w.varint(extensions.length);
   return w.out();
 }

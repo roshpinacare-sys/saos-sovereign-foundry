@@ -1,6 +1,6 @@
 {
-  "day": "2026-10-04",
-  "at": "2026-10-04T17:50:09.555Z",
+  "day": "2026-10-05",
+  "at": "2026-10-05T19:02:36.831Z",
   "account": "headcorner",
   "verdict": "MEASURED",
   "pending": {
@@ -10,47 +10,52 @@
     "any": false
   },
   "vp": {
-    "pct": 0.1,
-    "hrsToFull": 119.9,
-    "regenPerSec": 14737860,
-    "vests": 6366755.644113,
-    "basis": "voting_manabar at 2026-10-04T17:50:09.555Z"
+    "pct": 2.7,
+    "hrsToFull": 116.7,
+    "regenPerSec": 14738047,
+    "vests": 6366836.322857,
+    "basis": "voting_manabar at 2026-10-05T19:02:36.831Z"
   },
   "payout": {
-    "payoutDay": "2026-10-04",
-    "msRemaining": 0,
-    "hoursRemaining": 0,
-    "daysRemaining": 0,
-    "phase": "paid-window",
+    "payoutDay": "2026-10-06",
+    "msRemaining": 17843169,
+    "hoursRemaining": 5,
+    "daysRemaining": 1,
+    "phase": "pre-payout",
     "law": "פאייאוט-קיורציה מתיישב ~7 ימים אחרי-ההצבעה — השעון מדוד, לא מונח"
   },
   "rollup": {
-    "opsCount": 31,
-    "claims": 7,
+    "opsCount": 42,
+    "claims": 9,
     "curationVests": 0,
     "authorSbd": 0,
     "authorSteem": 0,
     "authorVests": 0,
     "windowDays": 24,
-    "oldestTs": "2026-09-11T13:45:27.000Z",
-    "newestTs": "2026-10-04T17:38:33.000Z",
+    "oldestTs": "2026-09-11T15:59:21.000Z",
+    "newestTs": "2026-10-05T13:07:21.000Z",
     "curationUsdPerDay": null,
     "authorUsdPerDay": null,
     "confidence": "estimated",
     "note": "settled chain rewards — window-labeled"
   },
   "scan": {
-    "rewardOps": 31,
+    "rewardOps": 42,
     "rewardApi": "ah_api",
-    "voteOps": 447,
-    "votesScanned": 447,
+    "voteOps": 448,
+    "votesScanned": 448,
     "firstVoteDay": "2026-09-12",
-    "unpaidTranches": 427,
-    "unpaidCutoff": "2026-09-27T17:50:09.555Z",
+    "unpaidTranches": 413,
+    "unpaidCutoff": "2026-09-28T19:02:36.831Z",
     "node": "https://steemapi.boylikegirl.club"
   },
   "law": "מסילת-הקיורציה נשארת מוערכת עד-שהשרשרת משלמת — השעון עוקב אחרי הטרנס-הבלתי-משולם-הבא, לא אחרי הצבעות-עבר שכבר התיישבו",
   "history": [
+    {
+      "day": "2026-10-04",
+      "pendingVests": 0,
+      "phase": "paid-window"
+    },
     {
       "day": "2026-10-02",
       "pendingVests": 0,

@@ -1,30 +1,30 @@
 {
-  "bootedAt": "2026-10-04T19:34:42.985Z",
+  "bootedAt": "2026-10-05T18:17:33.670Z",
   "pid": 1073,
   "armed": true,
-  "paused": true,
+  "paused": false,
   "watchdog": {
-    "checks": 1286,
-    "downs": 88,
-    "heals": 28,
-    "healVerified": 27,
+    "checks": 1356,
+    "downs": 100,
+    "heals": 32,
+    "healVerified": 31,
     "healFailed": 0,
-    "lastCheckAt": "2026-10-04T22:59:43.164Z",
-    "engineUp": false,
-    "lastSpawnAt": "2026-10-04T21:44:43.030Z",
-    "lastUpAt": "2026-10-04T21:46:43.093Z",
-    "blips": 0
+    "lastCheckAt": "2026-10-05T19:26:33.713Z",
+    "engineUp": true,
+    "lastSpawnAt": "2026-10-05T19:22:38.735Z",
+    "lastUpAt": "2026-10-05T19:26:33.716Z",
+    "blips": 1
   },
   "cycles": {
-    "autoRuns": 124,
+    "autoRuns": 126,
     "ok": 75,
     "fail": 20,
-    "blocked": 29,
-    "lastAt": "2026-10-04T21:44:59.052Z",
-    "lastOk": true,
-    "lastHealth": "ok",
-    "lastMs": 9915,
-    "nextAt": "2026-10-04T21:54:59.052Z"
+    "blocked": 31,
+    "lastAt": "2026-10-05T19:17:41.689Z",
+    "lastOk": false,
+    "lastHealth": "blocked",
+    "lastMs": 7068,
+    "nextAt": "2026-10-05T19:27:41.689Z"
   },
   "selftest": {
     "runs": 0,
@@ -34,13 +34,24 @@
     "total": null
   },
   "cred": {
-    "present": true,
-    "firstDownAt": null,
-    "lastDownAt": "2026-10-04T20:13:43.037Z",
-    "alerts": 9,
-    "lastAlertAt": "2026-10-04T19:34:52.028Z"
+    "present": false,
+    "firstDownAt": "2026-10-05T18:17:38.685Z",
+    "lastDownAt": "2026-10-05T19:26:33.716Z",
+    "alerts": 11,
+    "lastAlertAt": "2026-10-05T19:18:33.713Z"
   },
   "control": [
+    {
+      "at": "2026-10-05T19:07:28.445Z",
+      "action": "resume",
+      "by": "operator-cockpit"
+    },
+    {
+      "at": "2026-10-05T18:17:33.670Z",
+      "action": "boot",
+      "by": "instrumentation",
+      "note": "SovereignCore armed"
+    },
     {
       "at": "2026-10-04T21:45:39.352Z",
       "action": "pause",
@@ -145,17 +156,6 @@
       "action": "boot",
       "by": "instrumentation",
       "note": "SovereignCore armed"
-    },
-    {
-      "at": "2026-09-29T17:58:32.298Z",
-      "action": "boot",
-      "by": "instrumentation",
-      "note": "SovereignCore armed"
-    },
-    {
-      "at": "2026-09-29T17:57:49.713Z",
-      "action": "resume",
-      "by": "operator-cockpit"
     }
   ]
 }

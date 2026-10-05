@@ -24,6 +24,7 @@ import {
 import { tick as gridTick, fold, activeGrids } from "./grid.mjs";
 import { runIntel } from "./intel.mjs";
 import { executeOps, executeAs, armedConf, execPaused, masterAccount, loadCredential, custodyOf } from "./signer.mjs";
+import { writePrediction, evaluateAndJournal, updateBelief, triggerWatch, resolveClaimRole, journalClaimRefusal, claimChainTruth, reconcileOrphans } from "./adaptation.mjs";
 import { deploySoldiers, runSoldierGrids, soldiersState } from "./soldiers.mjs";
 import { postDailyReport } from "./promo.mjs";
 import { runCurator } from "./curator.mjs";
@@ -307,7 +308,38 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
     const prevFlowIds = (ours.orderids ?? []).filter((o) => typeof o === "object" && o.tranche === "flow").map((o) => o.id);
     const flowRequoteIds = hyperEnabled ? [] : prevFlowIds.filter((id) => !staleIds.includes(id));
 
+    /* (c-NEW · R210 §VI/§IX) the claim op is built FIRST in the batch —
+     * the maxOpsPerCycle slice truncates the TAIL, so a late-pushed claim
+     * could be silently dropped after its prediction was written
+     * (adversarial finding A-9). Front-loading makes that impossible.
+     * NATURAL TRIGGER MONITOR + PRE-ACTION PREDICTION live here too. */
     const ops = [];
+    const rewDec = intelOut?.decisions?.find((d) => d.kind === "rewards" && d.decision === "claim");
+    const pend = rewDec?.action ? { steem: rewDec.action.steem ?? 0, sbd: rewDec.action.sbd ?? 0, vests: rewDec.action.vests ?? 0 } : { steem: 0, sbd: 0, vests: 0 };
+    triggerWatch(rewDec?.action?.any === true, pend);
+    let claimPred = null;
+    if (rewDec?.action?.any) {
+      const rr = resolveClaimRole({ countConsumption: false }); // plan-side only — hot path counts consumption
+      if (rr.failClosed) {
+        journalClaimRefusal(rr.reason, { trigger: pend });
+      } else {
+        claimPred = writePrediction({
+          action: "claim_reward_balance",
+          adaptationId: rr.adaptationId, ruleVersion: rr.ruleVersion,
+          expectedRole: rr.role, roleSource: rr.roleSource, confidence: rr.confidence,
+          trigger: pend,
+          expectedOutcome: "broadcast accepted + CHAIN INCLUSION of claim_reward_balance signed by POSTING authority with canonical op-id 39",
+          falsifier: "valid pending reward + canonical serialization (op-id 39) + broadcast rejection citing posting authority",
+        });
+        ops.push(["claim_reward_balance", {
+          account: ACCOUNT,
+          reward_steem: `${(rewDec.action.steem ?? 0).toFixed(3)} STEEM`,
+          reward_sbd: `${(rewDec.action.sbd ?? 0).toFixed(3)} SBD`,
+          reward_vests: `${(rewDec.action.vests ?? 0).toFixed(6)} VESTS`,
+        }]);
+      }
+    }
+
     // (a) stale repricing — cancel ONLY our own law-violating orders (D-021, cap 5→12: measured stale pile of 13)
     for (const id of staleIds.slice(0, 12)) {
       ops.push(["limit_order_cancel", { owner: ACCOUNT, orderid: id }]);
@@ -357,29 +389,45 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
         pushLadder(offer.plan.flowBids, "bid");
       } // T-19b: hyper layer owns the mobile tranche when enabled
     }
-    // (c) claim pending rewards — free fuel, never left on the table
-    const rewDec = intelOut?.decisions?.find((d) => d.kind === "rewards" && d.decision === "claim");
-    if (rewDec?.action?.any) {
-      ops.push(["claim_reward_balance", {
-        account: ACCOUNT,
-        reward_steem: `${(rewDec.action.steem ?? 0).toFixed(3)} STEEM`,
-        reward_sbd: `${(rewDec.action.sbd ?? 0).toFixed(3)} SBD`,
-        reward_vests: `${(rewDec.action.vests ?? 0).toFixed(6)} VESTS`,
-      }]);
-    }
-    // (d) convert execution (3.5d face-$1 rail) when MEASURED edge arms it
+    // (c) claim block moved to (c-NEW) at the TOP of batch construction —
+    // the natural-trigger monitor + pre-action prediction now precede all
+    // order ops, so the cap slice can never drop a predicted claim (A-9).
+    const rewDecLegacy = null; void rewDecLegacy;
+    // (d) convert execution (3.5d face-$1 rail) when MEASURED edge arms it.
+    // R210 (A-10): claim needs posting authority, convert needs active — a
+    // mixed atomic tx is un-signable. When a claim is in this batch, convert
+    // is deferred to the next cycle (journaling the defer honestly).
     if (convAmtExec(report.steps.convert)) {
+      if (ops.some(([n]) => n === "claim_reward_balance")) {
+        report.steps.convertDeferredForClaim = true;
+      } else {
       const c = report.steps.convert;
       ops.push(["convert", { owner: ACCOUNT, amount: `${c.amountSbd.toFixed(3)} SBD`, requestid: (Math.floor(Date.now() / 1000) & 0x7fffffff) }]);
+      }
     }
     /* T-19: the ops DAY-CAP is a LAW — past it the machine journals honestly
      * instead of churning (RC is a shared budget: votes, orders, soldiers). */
     if (ops.length && opsDay.opsToday + ops.length > opsDayCap) {
       writeJson(OPS_FILE, { ...opsDay, lastRcPct: null });
+      if (claimPred) reconcileOrphans(); // honest UNRESOLVED for the orphaned prediction
       return { verdict: "OPS-DAY-CAP", opsToday: opsDay.opsToday, opsDayCap, staged: ops.length };
     }
-    if (!ops.length) return { verdict: "NO-OPS", ops: 0, opsToday: opsDay.opsToday, opsDayCap };
-    const res = await executeOps(ops, { tag: "cycle-execute" });
+    if (!ops.length) {
+      if (claimPred) reconcileOrphans();
+      return { verdict: "NO-OPS", ops: 0, opsToday: opsDay.opsToday, opsDayCap };
+    }
+    const res = await executeOps(ops, { tag: "cycle-execute", predictionId: claimPred?.predictionId ?? null });
+    /* R210 §VIII/§IX/X · the chain judges, not the local result.
+     * execRow carries the signer's OWN log-row evidence (at/role/serialization)
+     * so prediction-time < action-time is verifiable from immutable logs (C-1). */
+    if (claimPred) {
+      try {
+        const chain = res.ok ? await claimChainTruth(res.txid) : { included: false };
+        const execRow = { at: res.execAt ?? null, role: res.role ?? null, serialization: res.serialization ?? null, txid: res.txid ?? null };
+        const outcome = evaluateAndJournal({ prediction: claimPred, execRow, res, chain });
+        updateBelief({ classification: outcome.classification, evidence: { txid: res.txid ?? null, chain } });
+      } catch { /* honest best-effort — never invent an outcome */ }
+    }
     /* T-19 bookkeeping: track OUR created orderids (the second signer's
      * orders on this account must never be our cancel candidates) + meter
      * the ops throughput + RC trend — measured, not assumed. */

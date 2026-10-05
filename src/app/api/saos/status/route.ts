@@ -201,6 +201,7 @@ export async function GET() {
     curator: curatorPublic,
     intel: intelPublic,
     learning: learningPublic,
+    adaptation: s.adaptation ?? null, /* R210: learned-rule state (verdicts only) */
     discovery: discoveryPublic,
     fleet: s.fleet ?? null,
     credential: s.credential ?? null,

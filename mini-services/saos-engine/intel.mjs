@@ -19,6 +19,7 @@ import * as path from "node:path";
 import { rpcCall } from "./measure.mjs";
 import { soldiersState } from "./soldiers.mjs";
 import { dragK } from "./lib.mjs";
+import { triggerWatch } from "./adaptation.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const STATE = path.join(DIR, "state");
@@ -89,6 +90,11 @@ export async function runIntel({ obs, offer, convert, now }) {
   else push("soldiers", "grids-live", `${st.accounts.length} soldiers holding lanes alongside master`, { deployed: true });
 
   const rewards = await unclaimedRewards(obs?.account ?? "headcorner").catch(() => ({ ok: false }));
+  /* R210 §V: NATURAL TRIGGER MONITOR — chain-measured pending rewards are the
+   * ONLY lawful trigger. Monitored here (independent of custody state):
+   * pending=0 → honest ARMED+WAITING journal; pending>0 → trigger record.
+   * Never manufactured, never forced (R210 §IV/§XXII). */
+  triggerWatch(rewards.ok === true && rewards.any === true, rewards.ok ? { steem: rewards.steem ?? 0, sbd: rewards.sbd ?? 0, vests: rewards.vests ?? 0 } : { steem: 0, sbd: 0, vests: 0 });
   if (rewards.ok && rewards.any) {
     push("rewards", "claim", `unclaimed: ${rewards.steem} STEEM + ${rewards.sbd} SBD + ${rewards.vests} VESTS — free fuel, claim now`, rewards);
   }
