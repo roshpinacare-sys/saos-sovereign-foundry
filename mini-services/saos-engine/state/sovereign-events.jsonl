@@ -426,3 +426,6 @@
 {"at":"2026-10-05T19:22:38.716Z","kind":"heal-attempt","reason":"watchdog"}
 {"at":"2026-10-05T19:22:38.735Z","kind":"heal-spawn","reason":"watchdog","pid":13216}
 {"at":"2026-10-05T19:22:42.744Z","kind":"heal-verified","up":true}
+{"at":"2026-10-05T19:27:41.693Z","kind":"cycle-blocked(auto)","ms":5043,"engineMeasured":true,"steps":18,"verdict":null,"blockedSteps":["curate","execute"],"error":null}
+{"at":"2026-10-05T19:37:41.693Z","kind":"cycle-blocked(auto)","ms":5907,"engineMeasured":true,"steps":18,"verdict":null,"blockedSteps":["curate","execute"],"error":null}
+{"at":"2026-10-05T19:47:41.690Z","kind":"cycle-blocked(auto)","ms":4553,"engineMeasured":true,"steps":18,"verdict":null,"blockedSteps":["curate","execute"],"error":null}

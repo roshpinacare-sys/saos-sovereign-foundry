@@ -707,3 +707,26 @@ Stage Summary:
 - What is GENUINELY UNKNOWN: whether the posting-signed claim will be chain-accepted at the first real trigger (the loop's final arrow) — cannot be known without custody + pending rewards; both are outside the machine's lawful power.
 - OPERATOR-GATED (the two missing information flows): (1) drop the CURRENT headcorner master-password file as upload/headcorner.txt (or paste in cockpit) → engine self-adopts → signing alive; (2) the GitHub PAT for the saos-cockpit backup branch (uploaded pat.env arrived platform-redacted) → R208/R209-era artifacts + estate inventory can be re-pulled; optional: the chat-era password for KEYS_BACKUP_2026_09_09.tar.enc (vault.json army WIFs + SOVEREIGN ROOT + mnemonics).
 - Forensic tools kept as evidence (secret-free): keymine-r210.mjs, taropen-r210.mjs, deepmine-r210.mjs, serialproof-r210.mjs (standing golden-vector probe).
+
+---
+Task ID: R211
+Agent: Orchestrator (Z.ai Code — SAOS cockpit)
+Task: Operator delivered encrypted upload/pat.rar + password "934381" (chat) → recover the GitHub PAT, re-pull the saos-cockpit backup branch (R208/R209/T-84-era artifacts + estate inventory) — closing operator-gated blocker (2) of R210.
+
+Work Log:
+- unrar-free (installed) cannot handle encryption → installed node-unrar-js (pure WASM, RAR5 + password) in /tmp/rarx; extracted pat.env (93B) from the encrypted archive with the operator's password; format check WITHOUT raw print: fine-grained (github_pat_), 93 chars, no newlines — matches the known token signature.
+- API verification (Bearer, token never printed): /user → 200, login roshpinacare-sys; /user/repos → 16/16 repos listed. NOTED (§XI awareness): several repos pushed 19:44–19:46Z today, within the upload window — a second writer is active on the lineage; observed only, zero action taken.
+- Branch hunt across 16 repos → roshpinacare-sys/steem @ branch "saos-cockpit" (the named backup branch): HEAD e4cdfd685630, pushed 2026-10-05T16:27:51Z, "T-84 round close: verification quartet [L-1a/b/c/d] + honest B verdict + firing evidence spec". Shallow clone (depth 1); token kept out of echoed commands; .git/config sanitized after clone (0 token matches).
+- Tree (1,746 entries) audited; restored/archived WITHOUT touching live state:
+  (a) cognition-round/ (13 files: ROUND-REPORT-HE + c1a..c1e + l1a..l1d + lab) RESTORED to project root — was missing since the sandbox regression;
+  (b) recovery/branch-saos-cockpit-e4cdfd6/ created: branch-worklog.md (207KB, T-84-era, superset of local 155KB — preserved alongside, NOT merged), branch-TODO-T84.md, full state/ snapshot incl. adaptations.json (sealed learned-rule store, T-84 lineage) + army.json + evidence streams (events 325KB, exec-log 199KB, sovereign-events 52KB, think-log 12KB) + MANIFEST.txt.
+- Conflict check before any restore: live engine consumes adaptation.mjs → adaptation.json (SINGULAR, newer R209/R210 generation); backup's adaptations.json (PLURAL) is the T-84-era sealed store → ARCHIVED ONLY, never hot-injected under a live engine (T-76 discipline). Local TODO.md kept current; branch TODO preserved in recovery.
+- docs/ESTATE-INVENTORY.md: md5 IDENTICAL locally vs branch (9bfc9d79…) — already current, no action.
+- Backup worklog mined for knowledge: T-84 verdict B (partial cognitive activation), links 1–4 closed with hashes, link 5 "firing" chain-scheduled; firing evidence spec recorded; owner-escalation unreachable at proposal/supersede/resolve (same law as R210's local findings — lineages AGREE).
+- Live engine re-checked during round: :3040 ok:true (headcorner, band-ok, orders ok), /status exposes adaptation ADAPT-claim-role-posting-R209 {status VERIFIED, confidence 0.9, claim_reward_balance active→posting, bodyFix opId 33→39 steemtx.mjs single-source, supersededBy null}.
+- PAT hygiene: canonical copy stored at .secrets/github.pat (mode 600) for the now-UNBLOCKED org-repo push; /tmp duplicates removed; no raw token in any log/output (pattern-swept).
+
+Stage Summary:
+- R210's operator-gated blocker (2) CLOSED: backup branch re-pulled, T-84/R208/R209-era artifacts + estate inventory re-anchored on this body. Both lineages (fallen sandbox T-84 and current R209/R210) now agree on the same learned rule and the same missing arrow (the firing).
+- Still OPEN, operator-gated: (1) headcorner master-password file (upload/headcorner.txt) or cockpit paste → signing revival — the ONLY path to the first posting-signed claim when the chain drips; (b) org-repo push (14 unhardened repos + PRs) now UNBLOCKED by the PAT — queued as next machine work; (c) standing hygiene: rotate/revoke the GitHub PAT after ops conclude.
+- Verdict R211: RECOVERY-CHANNEL-RESTORED — knowledge lineage made whole; machine remains ARMED + WAITING_FOR_REAL_WORLD_TRIGGER.
