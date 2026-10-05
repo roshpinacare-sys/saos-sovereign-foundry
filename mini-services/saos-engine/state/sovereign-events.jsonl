@@ -404,3 +404,5 @@
 {"at":"2026-10-05T10:05:53.918Z","kind":"watchdog-down-again","downForMs":185004,"confirmMs":5000}
 {"at":"2026-10-05T10:06:53.923Z","kind":"watchdog-down-again","downForMs":245009,"confirmMs":5000}
 {"at":"2026-10-05T10:07:53.922Z","kind":"watchdog-down-again","downForMs":305008,"confirmMs":5000}
+{"at":"2026-10-05T10:08:53.923Z","kind":"watchdog-down-again","downForMs":365009,"confirmMs":5000}
+{"at":"2026-10-05T10:09:53.922Z","kind":"watchdog-down-again","downForMs":425008,"confirmMs":5000}
