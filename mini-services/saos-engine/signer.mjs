@@ -65,6 +65,12 @@ export function custodyOf(name) {
 }
 
 export function thinkGate(account, ops, { source = "execute" } = {}) {
+  // 0 · T-81 SOVEREIGNTY PAUSE — one operator stop-order freezes every broadcast
+  // (defense-in-depth: execPaused() is also checked by every tick loop; this
+  // closes the path for anything that reaches the gate directly)
+  if (execPaused()) {
+    return journalThink({ account, source, verdict: "REFUSED", reasons: ["SOVEREIGNTY-PAUSED (T-80 stop-order, T-81 unified pause): every broadcast is forbidden until the operator resumes sovereignty"], shown: ops.map(([n, o]) => ({ op: n, to: o?.to ?? o?.delegatee ?? null, amount: o?.amount ?? o?.vesting_shares ?? null })) });
+  }
   const conf = armedConf();
   const pol = {
     allowTransfersOut: conf.policy?.allowTransfersOut === true,
@@ -312,7 +318,21 @@ export function armedConf() {
   return { ...defaultArmedConf(), ...d };
 }
 
-export function execPaused() { return readJson(PAUSE_FILE, { paused: false })?.paused === true; }
+const SOVEREIGN_FILE = path.join(STATE, "sovereign.json");
+/**
+ * T-81 PAUSE UNIFICATION — the operator's stop-order must stop EVERYTHING.
+ * Root cause (measured live): T-80 paused sovereignty by writing sovereign.json
+ * (paused:true), but every executor checked ONLY exec-pause.json — which was
+ * never written. Result: the hyper-grid kept ticking (7,643 ticks) and the
+ * pre-crash instance broadcast real orders at 04:01 while "paused". From now
+ * on the pause is ONE truth: either file says paused → everything is paused.
+ */
+export function execPaused() {
+  const exec = readJson(PAUSE_FILE, { paused: false })?.paused === true;
+  const sovereign = readJson(SOVEREIGN_FILE, { paused: false })?.paused === true;
+  return exec || sovereign;
+}
+export function sovereigntyPaused() { return readJson(SOVEREIGN_FILE, { paused: false })?.paused === true; }
 
 function identity(account) {
   if (!mem.identities[account]) mem.identities[account] = { password: null, wifs: {}, matchedOrder: null, verified: null };

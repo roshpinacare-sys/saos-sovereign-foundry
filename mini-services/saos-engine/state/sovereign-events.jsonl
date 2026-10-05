@@ -396,3 +396,11 @@
 {"at":"2026-10-05T09:04:53.860Z","kind":"watchdog-down-again","downForMs":40690767,"confirmMs":5000}
 {"at":"2026-10-05T09:04:53.860Z","kind":"cred-missing","verdict":"SIGNING-DEAD","agentsAffected":["curate","execute","soldiers","promo"],"revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}
 {"at":"2026-10-05T09:05:48.867Z","kind":"watchdog-up"}
+{"at":"2026-10-05T09:41:48.892Z","kind":"cred-restored"}
+{"at":"2026-10-05T10:01:53.915Z","kind":"watchdog-down","downForMs":65002,"confirmMs":5000}
+{"at":"2026-10-05T10:02:48.914Z","kind":"watchdog-up"}
+{"at":"2026-10-05T10:03:53.916Z","kind":"watchdog-down","downForMs":65002,"confirmMs":5000}
+{"at":"2026-10-05T10:04:53.916Z","kind":"watchdog-down-again","downForMs":125002,"confirmMs":5000}
+{"at":"2026-10-05T10:05:53.918Z","kind":"watchdog-down-again","downForMs":185004,"confirmMs":5000}
+{"at":"2026-10-05T10:06:53.923Z","kind":"watchdog-down-again","downForMs":245009,"confirmMs":5000}
+{"at":"2026-10-05T10:07:53.922Z","kind":"watchdog-down-again","downForMs":305008,"confirmMs":5000}
