@@ -392,3 +392,7 @@
 {"at":"2026-10-04T22:57:48.166Z","kind":"watchdog-down-again","downForMs":4265073,"confirmMs":5000}
 {"at":"2026-10-04T22:58:48.169Z","kind":"watchdog-down-again","downForMs":4325076,"confirmMs":5000}
 {"at":"2026-10-04T22:59:48.170Z","kind":"watchdog-down-again","downForMs":4385077,"confirmMs":5000}
+{"at":"2026-10-05T09:04:48.847Z","kind":"boot","pid":1072,"resumed":true,"carriedOver":{"checks":1286,"cyclesOk":75,"heals":28}}
+{"at":"2026-10-05T09:04:53.860Z","kind":"watchdog-down-again","downForMs":40690767,"confirmMs":5000}
+{"at":"2026-10-05T09:04:53.860Z","kind":"cred-missing","verdict":"SIGNING-DEAD","agentsAffected":["curate","execute","soldiers","promo"],"revival":"drop upload/headcorner.txt → engine self-adopts (0600) on next cycle"}
+{"at":"2026-10-05T09:05:48.867Z","kind":"watchdog-up"}

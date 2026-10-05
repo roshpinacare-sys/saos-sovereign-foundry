@@ -1,18 +1,18 @@
 {
-  "bootedAt": "2026-10-04T19:34:42.985Z",
-  "pid": 1073,
+  "bootedAt": "2026-10-05T09:04:48.847Z",
+  "pid": 1072,
   "armed": true,
   "paused": true,
   "watchdog": {
-    "checks": 1286,
-    "downs": 88,
+    "checks": 1319,
+    "downs": 89,
     "heals": 28,
     "healVerified": 27,
     "healFailed": 0,
-    "lastCheckAt": "2026-10-04T22:59:43.164Z",
-    "engineUp": false,
-    "lastSpawnAt": "2026-10-04T21:44:43.030Z",
-    "lastUpAt": "2026-10-04T21:46:43.093Z",
+    "lastCheckAt": "2026-10-05T09:36:48.883Z",
+    "engineUp": true,
+    "lastSpawnAt": null,
+    "lastUpAt": "2026-10-05T09:36:48.885Z",
     "blips": 0
   },
   "cycles": {
@@ -24,7 +24,7 @@
     "lastOk": true,
     "lastHealth": "ok",
     "lastMs": 9915,
-    "nextAt": "2026-10-04T21:54:59.052Z"
+    "nextAt": null
   },
   "selftest": {
     "runs": 0,
@@ -34,13 +34,19 @@
     "total": null
   },
   "cred": {
-    "present": true,
-    "firstDownAt": null,
-    "lastDownAt": "2026-10-04T20:13:43.037Z",
-    "alerts": 9,
-    "lastAlertAt": "2026-10-04T19:34:52.028Z"
+    "present": false,
+    "firstDownAt": "2026-10-05T09:04:53.860Z",
+    "lastDownAt": "2026-10-05T09:36:48.885Z",
+    "alerts": 10,
+    "lastAlertAt": "2026-10-05T09:04:53.860Z"
   },
   "control": [
+    {
+      "at": "2026-10-05T09:04:48.847Z",
+      "action": "boot",
+      "by": "instrumentation",
+      "note": "SovereignCore armed"
+    },
     {
       "at": "2026-10-04T21:45:39.352Z",
       "action": "pause",
@@ -151,11 +157,6 @@
       "action": "boot",
       "by": "instrumentation",
       "note": "SovereignCore armed"
-    },
-    {
-      "at": "2026-09-29T17:57:49.713Z",
-      "action": "resume",
-      "by": "operator-cockpit"
     }
   ]
 }

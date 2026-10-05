@@ -1811,3 +1811,5 @@
 {"type":"offer.published","at":"2026-10-04T21:44:47.036Z","verdict":"OFFER-EMPTY","asks":0,"bids":0,"flowAsks":0,"flowBids":0,"bestAsk":0.10423688011555128,"bestBid":0.1001001001001001}
 {"type":"convert.planned","at":"2026-10-04T21:44:47.036Z","verdict":"CONVERT-HOLD","edgeBps":6399,"amountSbd":0}
 {"type":"learn.done","at":"2026-10-04T21:44:47.036Z","verdict":"LEARNED","lessons":["signing-cred-blocked","unclassified-fail-legacy","broadcast-fails"],"tunings":[]}
+{"type":"hyper.boot","at":"2026-10-05T09:04:55.874Z","pid":1344,"conf":{"enabled":true,"tickMs":3000,"levels":10,"spacingBps":15,"ttlSec":60,"orderTtlSec":3600,"askBudgetPct":0.12,"minRcPct":25,"setpointPct":50,"burst":3,"maxOpsPerTick":24,"opsDayCap":32000,"chainTailSec":60,"maxOpsPerTx":24}}
+{"type":"cred.missing","at":"2026-10-05T09:04:55.877Z","verdict":"SIGNING-DEAD","agentsAffected":["curate","execute","soldiers"],"revival":"upload/headcorner.txt"}
