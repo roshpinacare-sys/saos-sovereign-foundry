@@ -1,15 +1,15 @@
 {
-  "startedAt": "2026-10-05T19:47:33.684Z",
+  "startedAt": "2026-10-05T19:57:33.685Z",
   "account": "headcorner",
   "steps": {
     "observe": {
       "name": "observe",
       "ok": true,
-      "ms": 2294,
+      "ms": 2186,
       "account": "headcorner",
       "parity": {
-        "steemUsd": 0.06313,
-        "sbdUsd": 0.6064384849157922,
+        "steemUsd": 0.0632,
+        "sbdUsd": 0.6071109178944728,
         "parity": 0.10409959389164757,
         "source": "internal-feed-fallback+derived-sbd",
         "lowConfidence": true
@@ -20,12 +20,12 @@
         "reason": "band-ok",
         "bps": 0
       },
-      "steemUsd": 0.06313,
-      "sbdUsd": 0.6064384849157922,
+      "steemUsd": 0.0632,
+      "sbdUsd": 0.6071109178944728,
       "inventory": {
         "steem": 1.377,
         "sbd": 0.015,
-        "spOwn": 1124.5908878595717,
+        "spOwn": 1124.5914214777654,
         "rcPct": 99.9
       },
       "ordersOk": true,
@@ -108,7 +108,7 @@
     "intel": {
       "name": "intel",
       "ok": true,
-      "ms": 1531,
+      "ms": 1513,
       "verdict": "DECISIONS:4",
       "decisions": [
         "book-depth:hold-shape",
@@ -116,18 +116,18 @@
         "rc-health:healthy",
         "curation:curator-armed"
       ],
-      "spreadBpsRec": 63,
+      "spreadBpsRec": 52,
       "book": {
-        "bestAsk": 0.10084594835262689,
+        "bestAsk": 0.10073463935886019,
         "bestBid": 0.100217,
-        "spreadBps": 63
+        "spreadBps": 52
       }
     },
     "tick": {
       "name": "tick",
       "ok": true,
-      "ms": 1,
-      "runCount": 186,
+      "ms": 0,
+      "runCount": 187,
       "simFills": 21,
       "simFeesMu": 10500,
       "events": 3
@@ -135,7 +135,7 @@
     "peg": {
       "name": "peg",
       "ok": true,
-      "ms": 719,
+      "ms": 759,
       "verdict": "OFFER-EMPTY",
       "asks": 0,
       "bids": 0,
@@ -144,11 +144,11 @@
       "staleCount": 0,
       "skew": 0.243162,
       "book": {
-        "bestAsk": 0.10084594835262689,
+        "bestAsk": 0.10073463935886019,
         "bestBid": 0.100217,
-        "askDepthSteem": 461.768,
-        "bidDepthSbd": 2937.88,
-        "at": "2026-10-05T19:47:33.684Z"
+        "askDepthSteem": 411.766,
+        "bidDepthSbd": 2937.877,
+        "at": "2026-10-05T19:57:33.685Z"
       },
       "market": {
         "tradesPerDay": 50,
@@ -165,12 +165,12 @@
     "convert": {
       "name": "convert",
       "ok": true,
-      "ms": 0,
+      "ms": 1,
       "verdict": "CONVERT-HOLD",
       "amountSbd": 0,
-      "edgeBps": 6490,
-      "marketSbdUsd": 0.606438,
-      "impliedSbdUsd": 0.606438,
+      "edgeBps": 6471,
+      "marketSbdUsd": 0.607111,
+      "impliedSbdUsd": 0.607111,
       "marketSourceNote": "external-measured"
     },
     "curate": {
@@ -182,7 +182,7 @@
     "execute": {
       "name": "execute",
       "ok": false,
-      "ms": 1,
+      "ms": 0,
       "error": "CREDENTIAL-MISSING: .secrets/headcorner.key not found (sandbox cold-reset wipes gitignored secrets). Revival (self-service, zero restart): drop the account's CURRENT master-password file as upload/hea"
     },
     "soldiers": {
@@ -194,7 +194,7 @@
     "learn": {
       "name": "learn",
       "ok": true,
-      "ms": 3,
+      "ms": 914,
       "verdict": "LEARNED",
       "lessons": [
         "signing-cred-blocked",
@@ -202,7 +202,7 @@
         "broadcast-fails"
       ],
       "tunings": [],
-      "discoveryVerdict": "FRESH-CACHED",
+      "discoveryVerdict": "OPTIONS-FOUND",
       "topOpportunities": [
         "book-cold(measured)",
         "spread-normal(measured)",
@@ -269,9 +269,9 @@
     "economics": {
       "name": "economics",
       "ok": true,
-      "ms": 1,
+      "ms": 0,
       "totalMeasuredUsdPerDay": 0,
-      "totalEstUsdPerDay": 0.541144,
+      "totalEstUsdPerDay": 0.542168,
       "rails": 6,
       "measuredCount": 1,
       "estimatedCount": 2,
@@ -323,5 +323,5 @@
       "execute"
     ]
   },
-  "finishedAt": "2026-10-05T19:47:38.237Z"
+  "finishedAt": "2026-10-05T19:57:39.061Z"
 }
