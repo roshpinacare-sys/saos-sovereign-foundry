@@ -1,25 +1,16 @@
 {
-  "at": "2026-10-06T22:02:03.187Z",
+  "at": "2026-10-06T22:12:03.185Z",
   "decisions": [
     {
       "kind": "book-depth",
       "decision": "hold-shape",
-      "reason": "spread 209bps → dragK 1.1045",
+      "reason": "spread 198bps → dragK 1.099",
       "action": {
-        "spreadBpsRec": 209,
-        "bestAsk": 0.10233993314476729,
+        "spreadBpsRec": 198,
+        "bestAsk": 0.10222919291389196,
         "bestBid": 0.100227
       },
-      "at": "2026-10-06T22:02:03.187Z"
-    },
-    {
-      "kind": "parity-drift",
-      "decision": "monitor",
-      "reason": "internal feed deviates -139bps from external parity",
-      "action": {
-        "bps": -139
-      },
-      "at": "2026-10-06T22:02:03.187Z"
+      "at": "2026-10-06T22:12:03.185Z"
     },
     {
       "kind": "soldiers",
@@ -28,16 +19,16 @@
       "action": {
         "deployed": true
       },
-      "at": "2026-10-06T22:02:03.187Z"
+      "at": "2026-10-06T22:12:03.185Z"
     },
     {
       "kind": "rc-health",
       "decision": "healthy",
-      "reason": "RC at 33.7%",
+      "reason": "RC at 33.5%",
       "action": {
-        "rcPct": 33.7
+        "rcPct": 33.5
       },
-      "at": "2026-10-06T22:02:03.187Z"
+      "at": "2026-10-06T22:12:03.185Z"
     },
     {
       "kind": "curation",
@@ -48,13 +39,13 @@
         "vpEff": 5.1,
         "verdict": "VP-FLOOR"
       },
-      "at": "2026-10-06T22:02:03.187Z"
+      "at": "2026-10-06T22:12:03.185Z"
     }
   ],
-  "spreadBpsRec": 209,
+  "spreadBpsRec": 198,
   "book": {
-    "bestAsk": 0.10233993314476729,
+    "bestAsk": 0.10222919291389196,
     "bestBid": 0.100227,
-    "spreadBps": 209
+    "spreadBps": 198
   }
 }
