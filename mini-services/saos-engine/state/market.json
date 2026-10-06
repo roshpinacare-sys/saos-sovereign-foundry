@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-06T21:52:07.912Z",
+  "at": "2026-10-06T22:32:06.808Z",
   "windowHours": 24,
   "class": "measured",
   "trades": 568,
@@ -11,10 +11,10 @@
   "sizeP50": 1,
   "sizeP90": 1,
   "book": {
-    "bestAsk": 0.10244278734893289,
+    "bestAsk": 0.10192065410228061,
     "bestBid": 0.100227,
-    "spreadBps": 221.08,
-    "askDepthSteem": 1151.048,
-    "bidDepthSbd": 2881.087
+    "spreadBps": 168.98,
+    "askDepthSteem": 1157.9,
+    "bidDepthSbd": 2880.857
   }
 }

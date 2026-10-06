@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-06",
-  "at": "2026-10-06T22:22:03.187Z",
+  "at": "2026-10-06T22:32:03.188Z",
   "schedule": {
     "headcorner": {
       "post": 647,
@@ -124,12 +124,12 @@
         "name": "headcorner",
         "sp": 6.37,
         "vpEff": 17.5,
-        "rcPct": 33.2,
+        "rcPct": 33,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
         "rcGate": null,
-        "steem": 89.818,
+        "steem": 92.026,
         "lastVote": "2026-10-06T20:35:18"
       },
       {
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-06T22:22:10.346Z"
+    "at": "2026-10-06T22:32:09.707Z"
   },
   "engagement": {
     "ok": true,
@@ -325,7 +325,7 @@
         "author": "israelnews",
         "permlink": "how-effective-is-steem-s-curation-reward-system-20261006-0",
         "title": "How Effective Is Steem's Curation Reward System?",
-        "ageH": 0,
+        "ageH": 1,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -352,7 +352,7 @@
         "author": "cashmachine",
         "permlink": "understanding-steem-s-dual-token-system-steem-vs-sbd-20261006-0",
         "title": "Understanding Steem's Dual-Token System: STEEM vs SBD",
-        "ageH": 0,
+        "ageH": 1,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -605,7 +605,7 @@
         "author": "headcorner",
         "permlink": "the-weave-truth-report-the-network-that-verifies-itself-2026-muwi6iea",
         "title": "THE WEAVE · Truth Report — the network that verifies itself (2026-10-06)",
-        "ageH": 12,
+        "ageH": 13,
         "fleetVotes": [
           "macrame",
           "israelnews",
@@ -1025,76 +1025,76 @@
   },
   "nextWindows": [
     {
-      "acc": "hcsoldier2",
-      "kind": "vote2",
-      "at": "22:26",
-      "inMin": 4
-    },
-    {
       "acc": "tov",
       "kind": "engage",
       "at": "22:46",
-      "inMin": 24
+      "inMin": 14
     },
     {
       "acc": "siq",
       "kind": "vote2",
       "at": "23:06",
-      "inMin": 44
+      "inMin": 34
     },
     {
       "acc": "hcsoldier3",
       "kind": "engage",
       "at": "23:26",
-      "inMin": 64
+      "inMin": 54
     },
     {
       "acc": "hcsoldier3",
       "kind": "vote2",
       "at": "23:46",
-      "inMin": 84
+      "inMin": 74
     },
     {
       "acc": "hcsoldier1",
       "kind": "engage",
       "at": "00:09",
-      "inMin": 107
+      "inMin": 97
     },
     {
       "acc": "woq",
       "kind": "engage",
       "at": "00:50",
-      "inMin": 148
+      "inMin": 138
     },
     {
       "acc": "tov",
       "kind": "vote1",
       "at": "01:15",
-      "inMin": 173
+      "inMin": 163
     },
     {
       "acc": "lsa",
       "kind": "post",
       "at": "01:35",
-      "inMin": 193
+      "inMin": 183
     },
     {
       "acc": "wog",
       "kind": "engage",
       "at": "01:55",
-      "inMin": 213
+      "inMin": 203
     },
     {
       "acc": "hcsoldier2",
       "kind": "engage",
       "at": "02:15",
-      "inMin": 233
+      "inMin": 223
     },
     {
       "acc": "cashmachine",
       "kind": "vote1",
       "at": "02:35",
-      "inMin": 253
+      "inMin": 243
+    },
+    {
+      "acc": "lsa",
+      "kind": "vote1",
+      "at": "02:55",
+      "inMin": 263
     }
   ],
   "law": {
@@ -1102,14 +1102,14 @@
     "power": "הצבעות לפי מצב-הכוח: משקל מלא ב-VP≥80, הפחתה מתחת, מנוחה מ-30; רצפת RC 20%",
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)"
   },
-  "ms": 18957,
+  "ms": 18893,
   "lastPublish": {
     "day": "2026-10-06",
-    "at": "2026-10-06T22:22:30.197Z",
+    "at": "2026-10-06T22:32:29.298Z",
     "ok": true,
     "verdict": "BROADCAST",
-    "txid": "6bf5cd69c1c3bf4fbcc1c045a09572c87aec1de9",
+    "txid": "a9a05295418876acd12ad9c1780163bb86ce61fb",
     "error": null,
-    "bytes": 2133
+    "bytes": 2131
   }
 }

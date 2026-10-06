@@ -1,24 +1,24 @@
 {
   "account": "headcorner",
   "parity": {
-    "steemUsd": 0.06154,
-    "sbdUsd": 0.58804,
-    "parity": 0.10465274471124413,
+    "steemUsd": 0.06156,
+    "sbdUsd": 0.588026,
+    "parity": 0.10468924843459301,
     "source": "coingecko"
   },
-  "feed": 0.10409646522711861,
+  "feed": 0.10409646521935048,
   "band": {
     "ok": true,
     "reason": "band-ok",
-    "bps": 53
+    "bps": 57
   },
-  "steemUsd": 0.06154,
-  "sbdUsd": 0.58804,
+  "steemUsd": 0.06156,
+  "sbdUsd": 0.588026,
   "inventory": {
-    "steem": 89.818,
+    "steem": 92.026,
     "sbd": 0.015,
-    "spOwn": 899.8764720976541,
-    "rcPct": 33.2
+    "spOwn": 899.8768989477138,
+    "rcPct": 33
   },
   "ordersOk": true,
   "orders": [
@@ -63,28 +63,12 @@
       "created": "2026-10-06T20:27:57"
     },
     {
-      "orderid": 2100002625,
+      "orderid": 2100002640,
       "side": "ask",
       "base": "1.104 STEEM",
       "quote": "0.117 SBD",
       "unit": 0.105978,
-      "created": "2026-10-06T22:20:42"
-    },
-    {
-      "orderid": 2100002626,
-      "side": "ask",
-      "base": "1.104 STEEM",
-      "quote": "0.115 SBD",
-      "unit": 0.104167,
-      "created": "2026-10-06T22:21:36"
-    },
-    {
-      "orderid": 2100002627,
-      "side": "ask",
-      "base": "1.104 STEEM",
-      "quote": "0.116 SBD",
-      "unit": 0.105072,
-      "created": "2026-10-06T22:21:36"
+      "created": "2026-10-06T22:31:18"
     }
   ],
   "fills": 0,
@@ -110,7 +94,7 @@
     "authorVestsPerDay": 0,
     "curationOps": 0,
     "authorOps": 0,
-    "windowSpanDays": 0.11,
+    "windowSpanDays": 0.12,
     "windowOps": 1001,
     "measured": true,
     "fuelUsdPerDay": 0,
@@ -119,5 +103,5 @@
     "node": "https://steemapi.boylikegirl.club",
     "windowNote": "no reward ops inside the measured window — rails dormant, not a parse failure (deep-scan documented separately)"
   },
-  "at": "2026-10-06T22:22:03.187Z"
+  "at": "2026-10-06T22:32:03.188Z"
 }
