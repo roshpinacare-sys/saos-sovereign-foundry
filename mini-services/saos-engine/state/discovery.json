@@ -1,15 +1,15 @@
 {
-  "at": "2026-10-06T20:06:02.722Z",
-  "lastFullScanAt": "2026-10-06T19:56:02.720Z",
+  "at": "2026-10-06T20:16:02.723Z",
+  "lastFullScanAt": "2026-10-06T20:16:02.723Z",
   "verdict": "OPTIONS-FOUND",
   "tagBoard": [
     {
       "tag": "hive-129948",
-      "payoutsSbd": 6942.833
+      "payoutsSbd": 6942.723
     },
     {
       "tag": "kr",
-      "payoutsSbd": 2932.61
+      "payoutsSbd": 2932.614
     },
     {
       "tag": "hive-150122",
@@ -17,11 +17,11 @@
     },
     {
       "tag": "hive-166405",
-      "payoutsSbd": 1489.548
+      "payoutsSbd": 1488.973
     },
     {
       "tag": "hive-196917",
-      "payoutsSbd": 1405.119
+      "payoutsSbd": 1400.987
     },
     {
       "tag": "steem",
@@ -29,7 +29,7 @@
     },
     {
       "tag": "hive-180932",
-      "payoutsSbd": 984.565
+      "payoutsSbd": 985.371
     },
     {
       "tag": "hive-144064",
@@ -45,17 +45,17 @@
     },
     {
       "tag": "life",
-      "payoutsSbd": 824.364
+      "payoutsSbd": 827.773
     },
     {
       "tag": "hive-188619",
-      "payoutsSbd": 822.731
+      "payoutsSbd": 826.123
     }
   ],
   "curationEst": {
-    "dailyPoolSteem": 928620.993,
-    "voteVestsShare": 0.000009279720102145216,
-    "estimatedSteemPerDay": 8.6173,
+    "dailyPoolSteem": 928170.142,
+    "voteVestsShare": 0.000009275100231416202,
+    "estimatedSteemPerDay": 8.6089,
     "note": "linear approx over reward-fund window — ESTIMATED class, never claimed as measured"
   },
   "vpEff": 4.8,
@@ -64,7 +64,7 @@
       "id": "spread-wide",
       "kind": "book-spread",
       "potentialClass": "measured",
-      "evidence": "spread 368bps (bestAsk 0.10398560041141681 / bestBid 0.100227)",
+      "evidence": "spread 338bps (bestAsk 0.10367703779892003 / bestBid 0.100227)",
       "potential": "wide spread = richer maker margins for the ladder",
       "gate": "VF1 floor law: never sell below external value",
       "effort": "dragK already intel-fed"
@@ -73,7 +73,7 @@
       "id": "tags-realloc",
       "kind": "curation-tags",
       "potentialClass": "measured",
-      "evidence": "top trending tag \"hive-129948\" carries 6942.833 SBD total payouts (get_trending_tags)",
+      "evidence": "top trending tag \"hive-129948\" carries 6942.723 SBD total payouts (get_trending_tags)",
       "potential": "better vote placement inside the SAME 10-vote/day quota",
       "gate": "learning may add ≤1 tag, total ≤8 — daily caps & VP floor untouched",
       "effort": "already wired via learning tunings"
@@ -82,8 +82,8 @@
       "id": "curation-share",
       "kind": "curation-yield",
       "potentialClass": "estimated",
-      "evidence": "reward-fund pool 928620.993 STEEM/window · our vests share 0.0009% → ~8.6173 STEEM/day",
-      "potential": 8.6173,
+      "evidence": "reward-fund pool 928170.142 STEEM/window · our vests share 0.0009% → ~8.6089 STEEM/day",
+      "potential": 8.6089,
       "gate": "measured truth only lands via curation_reward ops (measureAll) — estimator never claims payout",
       "effort": "rail live since T-13"
     },
@@ -98,6 +98,5 @@
     }
   ],
   "learningConsumer": [],
-  "honesty": "ranked options, zero execution · classes: measured>estimated>potential · gates own the decisions",
-  "freshCached": true
+  "honesty": "ranked options, zero execution · classes: measured>estimated>potential · gates own the decisions"
 }
