@@ -1,12 +1,12 @@
 {
   "algo": "sha256-line-merkle+chain:v1",
-  "updatedAt": "2026-10-06T22:48:26.549Z",
+  "updatedAt": "2026-10-06T23:18:26.556Z",
   "genesisAt": "2026-10-06T00:17:02.857Z",
-  "batchIndex": 32,
-  "chainRoot": "bf0398513b49b3e903756c275aa5b851d080da098b92b60c04ff0bf2b30901ef",
+  "batchIndex": 33,
+  "chainRoot": "ac015801cb7f36c5d9d6f6a1018a51f7abcc96a9e909f420f1e76630366d483c",
   "chainBaseRoot": "6fa0badd58691b0d1f8538bb6ad6f9050410453a2c8e5d220ef2b4ddb41c4d3c",
   "baseOffset": 0,
-  "anchoredOffset": 5020,
+  "anchoredOffset": 5072,
   "batches": [
     {
       "i": 1,
@@ -263,6 +263,14 @@
       "root": "5748843c3484e0d361c2fb60a7d8626116b7d557e841712ee80da3137be1bd8d",
       "chainAfter": "bf0398513b49b3e903756c275aa5b851d080da098b92b60c04ff0bf2b30901ef",
       "at": "2026-10-06T22:48:26.549Z"
+    },
+    {
+      "i": 33,
+      "from": 5020,
+      "to": 5072,
+      "root": "b317017eff85c07e7a6496708562d69e245f14182e762f1d078d4708f61b210f",
+      "chainAfter": "ac015801cb7f36c5d9d6f6a1018a51f7abcc96a9e909f420f1e76630366d483c",
+      "at": "2026-10-06T23:18:26.556Z"
     }
   ]
 }

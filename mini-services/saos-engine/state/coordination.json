@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-06",
-  "at": "2026-10-06T23:12:03.191Z",
+  "at": "2026-10-06T23:22:03.194Z",
   "schedule": {
     "headcorner": {
       "post": 647,
@@ -124,7 +124,7 @@
         "name": "headcorner",
         "sp": 6.37,
         "vpEff": 17.5,
-        "rcPct": 32.1,
+        "rcPct": 31.9,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-06T23:12:09.305Z"
+    "at": "2026-10-06T23:22:22.242Z"
   },
   "engagement": {
     "ok": true,
@@ -298,7 +298,7 @@
         "author": "wog",
         "permlink": "what-makes-content-truly-valuable-on-blockchain-20261006-0",
         "title": "What Makes Content Truly Valuable on Blockchain?",
-        "ageH": 0,
+        "ageH": 1,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -602,7 +602,7 @@
         "author": "headcorner",
         "permlink": "understanding-steem-s-curation-rewards-20261006-0",
         "title": "Understanding Steem's Curation Rewards",
-        "ageH": 3,
+        "ageH": 4,
         "fleetVotes": [
           "cashmachine",
           "wic",
@@ -1025,73 +1025,73 @@
       "acc": "hcsoldier3",
       "kind": "engage",
       "at": "23:26",
-      "inMin": 14
+      "inMin": 4
     },
     {
       "acc": "hcsoldier3",
       "kind": "vote2",
       "at": "23:46",
-      "inMin": 34
+      "inMin": 24
     },
     {
       "acc": "hcsoldier1",
       "kind": "engage",
       "at": "00:09",
-      "inMin": 57
+      "inMin": 47
     },
     {
       "acc": "woq",
       "kind": "engage",
       "at": "00:50",
-      "inMin": 98
+      "inMin": 88
     },
     {
       "acc": "tov",
       "kind": "vote1",
       "at": "01:15",
-      "inMin": 123
+      "inMin": 113
     },
     {
       "acc": "lsa",
       "kind": "post",
       "at": "01:35",
-      "inMin": 143
+      "inMin": 133
     },
     {
       "acc": "wog",
       "kind": "engage",
       "at": "01:55",
-      "inMin": 163
+      "inMin": 153
     },
     {
       "acc": "hcsoldier2",
       "kind": "engage",
       "at": "02:15",
-      "inMin": 183
+      "inMin": 173
     },
     {
       "acc": "cashmachine",
       "kind": "vote1",
       "at": "02:35",
-      "inMin": 203
+      "inMin": 193
     },
     {
       "acc": "lsa",
       "kind": "vote1",
       "at": "02:55",
-      "inMin": 223
+      "inMin": 213
     },
     {
       "acc": "israelnews",
       "kind": "vote1",
       "at": "04:31",
-      "inMin": 319
+      "inMin": 309
     },
     {
       "acc": "tov",
       "kind": "post",
       "at": "04:51",
-      "inMin": 339
+      "inMin": 329
     }
   ],
   "law": {
@@ -1099,13 +1099,13 @@
     "power": "הצבעות לפי מצב-הכוח: משקל מלא ב-VP≥80, הפחתה מתחת, מנוחה מ-30; רצפת RC 20%",
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)"
   },
-  "ms": 18598,
+  "ms": 18929,
   "lastPublish": {
     "day": "2026-10-06",
-    "at": "2026-10-06T23:12:29.470Z",
+    "at": "2026-10-06T23:22:41.867Z",
     "ok": true,
     "verdict": "BROADCAST",
-    "txid": "9982341a6d63b01abbc6525c90ad938f1345bdfe",
+    "txid": "a915788938a7f94498108c2ce0bbe9bfa0d0f9f3",
     "error": null,
     "bytes": 2132
   }
