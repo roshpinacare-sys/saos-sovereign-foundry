@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-06",
-  "at": "2026-10-06T22:12:03.185Z",
+  "at": "2026-10-06T22:22:03.187Z",
   "schedule": {
     "headcorner": {
       "post": 647,
@@ -124,12 +124,12 @@
         "name": "headcorner",
         "sp": 6.37,
         "vpEff": 17.5,
-        "rcPct": 33.5,
+        "rcPct": 33.2,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
         "rcGate": null,
-        "steem": 99.461,
+        "steem": 89.818,
         "lastVote": "2026-10-06T20:35:18"
       },
       {
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-06T22:12:08.975Z"
+    "at": "2026-10-06T22:22:10.346Z"
   },
   "engagement": {
     "ok": true,
@@ -547,7 +547,7 @@
         "author": "headcorner",
         "permlink": "understanding-steem-s-curation-rewards-20261006-0",
         "title": "Understanding Steem's Curation Rewards",
-        "ageH": 2,
+        "ageH": 3,
         "fleetVotes": [
           "cashmachine",
           "wic",
@@ -1028,73 +1028,73 @@
       "acc": "hcsoldier2",
       "kind": "vote2",
       "at": "22:26",
-      "inMin": 14
+      "inMin": 4
     },
     {
       "acc": "tov",
       "kind": "engage",
       "at": "22:46",
-      "inMin": 34
+      "inMin": 24
     },
     {
       "acc": "siq",
       "kind": "vote2",
       "at": "23:06",
-      "inMin": 54
+      "inMin": 44
     },
     {
       "acc": "hcsoldier3",
       "kind": "engage",
       "at": "23:26",
-      "inMin": 74
+      "inMin": 64
     },
     {
       "acc": "hcsoldier3",
       "kind": "vote2",
       "at": "23:46",
-      "inMin": 94
+      "inMin": 84
     },
     {
       "acc": "hcsoldier1",
       "kind": "engage",
       "at": "00:09",
-      "inMin": 117
+      "inMin": 107
     },
     {
       "acc": "woq",
       "kind": "engage",
       "at": "00:50",
-      "inMin": 158
+      "inMin": 148
     },
     {
       "acc": "tov",
       "kind": "vote1",
       "at": "01:15",
-      "inMin": 183
+      "inMin": 173
     },
     {
       "acc": "lsa",
       "kind": "post",
       "at": "01:35",
-      "inMin": 203
+      "inMin": 193
     },
     {
       "acc": "wog",
       "kind": "engage",
       "at": "01:55",
-      "inMin": 223
+      "inMin": 213
     },
     {
       "acc": "hcsoldier2",
       "kind": "engage",
       "at": "02:15",
-      "inMin": 243
+      "inMin": 233
     },
     {
       "acc": "cashmachine",
       "kind": "vote1",
       "at": "02:35",
-      "inMin": 263
+      "inMin": 253
     }
   ],
   "law": {
@@ -1102,13 +1102,13 @@
     "power": "הצבעות לפי מצב-הכוח: משקל מלא ב-VP≥80, הפחתה מתחת, מנוחה מ-30; רצפת RC 20%",
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)"
   },
-  "ms": 18814,
+  "ms": 18957,
   "lastPublish": {
     "day": "2026-10-06",
-    "at": "2026-10-06T22:12:28.570Z",
+    "at": "2026-10-06T22:22:30.197Z",
     "ok": true,
     "verdict": "BROADCAST",
-    "txid": "c3e0cfe6a857d87149dbaeebae7767205a9be854",
+    "txid": "6bf5cd69c1c3bf4fbcc1c045a09572c87aec1de9",
     "error": null,
     "bytes": 2133
   }
