@@ -1,13 +1,13 @@
 {
   "day": "2026-10-06",
-  "opsToday": 4411,
+  "opsToday": 4429,
   "chainTail": {
-    "creates": 182,
-    "cancels": 182,
-    "total": 364
+    "creates": 187,
+    "cancels": 187,
+    "total": 374
   },
-  "chainTailAt": "2026-10-06T23:27:00.147Z",
+  "chainTailAt": "2026-10-06T23:37:00.164Z",
   "opsDayCap": 32000,
-  "lastTxid": "69d36330d4fd0248e2f5a6b83d390f67c4e21747",
-  "lastBroadcastAt": "2026-10-06T23:26:41.152Z"
+  "lastTxid": "8007d214cfd2ebc6fb821685d8066d9b3ebfe0b7",
+  "lastBroadcastAt": "2026-10-06T23:37:20.208Z"
 }

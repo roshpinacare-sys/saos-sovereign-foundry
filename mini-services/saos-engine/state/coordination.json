@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-06",
-  "at": "2026-10-06T23:22:03.194Z",
+  "at": "2026-10-06T23:32:03.196Z",
   "schedule": {
     "headcorner": {
       "post": 647,
@@ -124,7 +124,7 @@
         "name": "headcorner",
         "sp": 6.37,
         "vpEff": 17.5,
-        "rcPct": 31.9,
+        "rcPct": 31.7,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-06T23:22:22.242Z"
+    "at": "2026-10-06T23:32:10.376Z"
   },
   "engagement": {
     "ok": true,
@@ -379,7 +379,7 @@
         "author": "israelnews",
         "permlink": "how-effective-is-steem-s-curation-reward-system-20261006-0",
         "title": "How Effective Is Steem's Curation Reward System?",
-        "ageH": 1,
+        "ageH": 2,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -406,7 +406,7 @@
         "author": "cashmachine",
         "permlink": "understanding-steem-s-dual-token-system-steem-vs-sbd-20261006-0",
         "title": "Understanding Steem's Dual-Token System: STEEM vs SBD",
-        "ageH": 1,
+        "ageH": 2,
         "fleetVotes": [
           "haran"
         ],
@@ -1023,75 +1023,75 @@
   "nextWindows": [
     {
       "acc": "hcsoldier3",
-      "kind": "engage",
-      "at": "23:26",
-      "inMin": 4
-    },
-    {
-      "acc": "hcsoldier3",
       "kind": "vote2",
       "at": "23:46",
-      "inMin": 24
+      "inMin": 14
     },
     {
       "acc": "hcsoldier1",
       "kind": "engage",
       "at": "00:09",
-      "inMin": 47
+      "inMin": 37
     },
     {
       "acc": "woq",
       "kind": "engage",
       "at": "00:50",
-      "inMin": 88
+      "inMin": 78
     },
     {
       "acc": "tov",
       "kind": "vote1",
       "at": "01:15",
-      "inMin": 113
+      "inMin": 103
     },
     {
       "acc": "lsa",
       "kind": "post",
       "at": "01:35",
-      "inMin": 133
+      "inMin": 123
     },
     {
       "acc": "wog",
       "kind": "engage",
       "at": "01:55",
-      "inMin": 153
+      "inMin": 143
     },
     {
       "acc": "hcsoldier2",
       "kind": "engage",
       "at": "02:15",
-      "inMin": 173
+      "inMin": 163
     },
     {
       "acc": "cashmachine",
       "kind": "vote1",
       "at": "02:35",
-      "inMin": 193
+      "inMin": 183
     },
     {
       "acc": "lsa",
       "kind": "vote1",
       "at": "02:55",
-      "inMin": 213
+      "inMin": 203
     },
     {
       "acc": "israelnews",
       "kind": "vote1",
       "at": "04:31",
-      "inMin": 309
+      "inMin": 299
     },
     {
       "acc": "tov",
       "kind": "post",
       "at": "04:51",
-      "inMin": 329
+      "inMin": 319
+    },
+    {
+      "acc": "haran",
+      "kind": "post",
+      "at": "05:56",
+      "inMin": 384
     }
   ],
   "law": {
@@ -1099,13 +1099,13 @@
     "power": "הצבעות לפי מצב-הכוח: משקל מלא ב-VP≥80, הפחתה מתחת, מנוחה מ-30; רצפת RC 20%",
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)"
   },
-  "ms": 18929,
+  "ms": 18255,
   "lastPublish": {
     "day": "2026-10-06",
-    "at": "2026-10-06T23:22:41.867Z",
+    "at": "2026-10-06T23:32:29.477Z",
     "ok": true,
     "verdict": "BROADCAST",
-    "txid": "a915788938a7f94498108c2ce0bbe9bfa0d0f9f3",
+    "txid": "8ccc21847cb2f88b7126593aa811d8671aac9fff",
     "error": null,
     "bytes": 2132
   }
