@@ -1670,3 +1670,20 @@ Work Log:
 Stage Summary:
 - The four overwrite families from R228 now have structural countermeasures: (1) env-resets -> everything committed+pushed (custody via gate), (2) forked worklog -> unified canonical file, (3) same-prompt parallel agents -> lane registry + lane-unique branch name, (4) round-ID collisions -> ROUND-REGISTRY as single source of truth.
 - My git estate is now: foundry @ cockpit-zai ONLY. Next round opens at R230.
+---
+Task ID: R230
+Agent: Z.ai Code (main orchestrator)
+Task: OPERATOR ORDER "יש עוד?" — remaining-issues sweep → found+fixed THE PREVIEW KILLER (OOM root cause), custodian on-chain anchor retargeted
+
+Work Log:
+- Swept live code for old branch name post-rename: one REAL hit — mini-services/saos-custodian/index.ts published the hourly on-chain custody anchor (custom_json saos-git-custody-v1) with branch:"saos-cockpit" (a now-deleted branch name). FIXED to branch:"cockpit-zai", src:R230-custodian; committed+pushed (603ca598). Note: the boot-tree custodian holds old code in memory until next organ restart — next anchor may still carry the old label once (harmless: steem@saos-cockpit still exists for lineage).
+- Browser-verified the preview for the first time since R226 recovery → CAPTURED THE USER'S BUG LIVE: page body EMPTY, Next overlay "Runtime Error: An unexpected Turbopack error occurred (Next.js 16.1.3 stale)", GET / = 500 while all /api/* = 200.
+- ROOT-CAUSED via dev.log + /tmp/next-panic-*.log: Turbopack panic on src/app/globals.css [app-client] — "failed to receive message / reading packet length / unexpected end of file" inside PostCssTransformedAsset (worker IPC death). Restart alone did NOT heal (panic re-failed as "Failed to write app endpoint").
+- THE REAL ROOT CAUSE (measured via dmesg): OOM-KILLER. Sandbox = 4GB RAM, ZERO swap. dmesg: "Out of memory: Killed process (MainThread) total-vm:4526644kB anon-rss:2313520kB". The Turbopack IPC panics WERE workers OOM-killed mid-pipe. Fresh-cache full compiles + agent-browser chrome + 4 bun organs > 4GB → kernel shot the dev tree repeatedly (explains every "process death" mystery since R226; the reaper theory and the OOM are the same phenomenon).
+- FIX LADDER: (1) killed stale dev tree + cleared 1.2GB corrupted .next; (2) session-spawned guardians died to OOM (measured twice — setsid does NOT save from the kernel, only from the session reaper); (3) freed ~600MB by closing chrome; (4) MEMORY-LAW implanted in dev-guardian.mjs: every respawn now runs with NODE_OPTIONS='--max-old-space-size=1536' (Turbopack+workers capped, fits beside the organs); (5) the custodian's own DEV-HEAL hatch then revived the server FROM THE BOOT TREE (pid 22235 @ 20:37) — the immune-tree path worked exactly as R226 designed it.
+- VERIFIED LIVE: GET / = 200 in 37ms; browser: title "SAOS Sovereign Cockpit · תא-הפיקוד הריבוני", body renders full cockpit (מנוע-חי, פיקוד, ארנק וקונסול · headcorner, STEEM נזיל 24.728, אישורי-חי), ZERO page errors. Screenshot: /tmp/r230-cockpit-alive.png. Memory stable 1.9GB available.
+
+Stage Summary:
+- The operator's preview is FIXED at the root: the Turbopack "stale" error overlay was OOM death, not code. The memory-law now guards every guardian respawn.
+- R226's reaper theory is refined: two killers exist — (a) the session reaper (tool-session children die in minutes; boot tree immune) and (b) the kernel OOM (kills anything when 4GB is exhausted; dev-compile was the whale). setsid defeats (a) only; the 1536MB cap defeats (b); the custodian hatch delivers guardians into the immune tree.
+- Live organs confirmed: custodian ticking+pushing (boot tree), engine doing chain ops (hyper-grid txids), cockpit rendering with live data.

@@ -49,7 +49,11 @@ while (true) {
     respawns++;
     const out = fs.openSync(`${ROOT}/dev.log`, "a");
     const err = fs.openSync(`${ROOT}/dev-guardian.err.log`, "a");
-    const child = spawn("bash", ["-c", "cd /home/z/my-project && exec bun run dev"], { detached: true, stdio: ["ignore", out, err] });
+    // R230 OOM-law: the sandbox has 4GB RAM / no swap; a full Turbopack compile
+    // ballooned past the ceiling and the kernel OOM-killed the dev tree mid-IPC
+    // (measured: next-panic "unexpected end of file" = worker OOM-killed).
+    // Cap every Node/Turbopack worker heap so the compile fits beside the organs.
+    const child = spawn("bash", ["-c", "cd /home/z/my-project && export NODE_OPTIONS='--max-old-space-size=1536' && exec bun run dev"], { detached: true, stdio: ["ignore", out, err] });
     child.unref();
     log(`respawn #${respawns} pid=${child.pid} (health failed)`);
     fs.writeFileSync(`${ROOT}/.zscripts/dev.pid`, String(child.pid));

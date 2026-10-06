@@ -4767,3 +4767,16 @@
 {"type":"hyper.requote","at":"2026-10-06T20:35:29.244Z","label":"requote-front","ops":2,"cancels":2,"creates":0,"txid":"d6db5edf497a96e89ac5c91ad087e38545b1dabe","rcPct":37.1,"opsToday":4055,"equilibriumOpsPerDay":9654,"bestAsk":0.10347132939058884,"bestBid":0.100227}
 {"type":"hyper.requote","at":"2026-10-06T20:36:11.248Z","label":"requote-front","ops":2,"cancels":1,"creates":1,"txid":"96fababcdfc7aa0b644197ee134889f1b380bbcd","rcPct":37.1,"opsToday":4057,"equilibriumOpsPerDay":9654,"bestAsk":0.10347132939058884,"bestBid":0.100227}
 {"type":"hyper.requote","at":"2026-10-06T20:37:26.253Z","label":"requote-front","ops":2,"cancels":2,"creates":0,"txid":"91c1f54bbf6f36b2e006b037b666c484a4de2b43","rcPct":37.1,"opsToday":4059,"equilibriumOpsPerDay":9654,"bestAsk":0.10347132939058884,"bestBid":0.100227}
+{"type":"hyper.requote","at":"2026-10-06T20:38:05.256Z","label":"front-create","ops":2,"cancels":0,"creates":2,"txid":"fcd23a2ff264802cf342e994b33f6ee8ce669c88","rcPct":37,"opsToday":4061,"equilibriumOpsPerDay":9654,"bestAsk":0.10347132939058884,"bestBid":0.100227}
+{"type":"observe.done","at":"2026-10-06T20:38:20.307Z","fills":0,"parity":0.10451610269251443}
+{"type":"grid.tick","at":"2026-10-06T20:38:20.307Z","runCount":291,"refPrice":0.10451610269251443,"internalFeed":0.10409651310341915,"dragK":1.020153873390477,"inv":{"steem":24.728,"sbd":0.015}}
+{"type":"sweep.scan","at":"2026-10-06T20:38:20.307Z","grid":"sweep","dustSteem":0.7280000000000015}
+{"type":"anchor.quote","at":"2026-10-06T20:38:20.307Z","grid":"anchor-quote","bid":0.10430285767852754,"ask":0.10472934770650133}
+{"type":"offer.published","at":"2026-10-06T20:38:20.307Z","verdict":"OFFER-READY","asks":0,"bids":0,"flowAsks":2,"flowBids":0,"bestAsk":0.10347132939058884,"bestBid":0.100227}
+{"type":"convert.planned","at":"2026-10-06T20:38:20.307Z","verdict":"CONVERT-HOLD","edgeBps":7011,"amountSbd":0}
+{"type":"learn.done","at":"2026-10-06T20:38:20.307Z","verdict":"LEARNED","lessons":["signing-cred-blocked"],"tunings":[]}
+{"type":"discover.done","at":"2026-10-06T20:38:20.307Z","verdict":"OPTIONS-FOUND","tags":12,"opportunities":["spread-wide","tags-realloc","curation-share","fleet-growth"]}
+{"type":"hyper.requote","at":"2026-10-06T20:38:44.260Z","label":"requote-front","ops":2,"cancels":1,"creates":1,"txid":"fb49614e9a812db83bac81d88ac216b7822f5638","rcPct":37,"opsToday":4063,"equilibriumOpsPerDay":9654,"bestAsk":0.10337334437086093,"bestBid":0.100227}
+{"type":"hyper.requote","at":"2026-10-06T20:39:20.262Z","label":"requote-front","ops":2,"cancels":2,"creates":0,"txid":"857eb9295807176ad2173c8bb7536621fd793e3e","rcPct":37,"opsToday":4065,"equilibriumOpsPerDay":9654,"bestAsk":0.10337334437086093,"bestBid":0.100227}
+{"type":"hyper.requote","at":"2026-10-06T20:39:59.264Z","label":"requote-front","ops":2,"cancels":1,"creates":1,"txid":"95711768d8213e650fac6385a5500784afbbdac3","rcPct":37,"opsToday":4067,"equilibriumOpsPerDay":9654,"bestAsk":0.10336847518642324,"bestBid":0.100227}
+{"type":"hyper.requote","at":"2026-10-06T20:40:35.266Z","label":"requote-front","ops":2,"cancels":2,"creates":0,"txid":"b8add8750c0fc295bf8c9efac4fa59c926e80c84","rcPct":37,"opsToday":4069,"equilibriumOpsPerDay":9654,"bestAsk":0.10336847518642324,"bestBid":0.100227}
