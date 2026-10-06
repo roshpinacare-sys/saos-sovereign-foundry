@@ -1,15 +1,15 @@
 {
-  "startedAt": "2026-10-06T21:42:03.185Z",
+  "startedAt": "2026-10-06T21:52:03.183Z",
   "account": "headcorner",
   "steps": {
     "observe": {
       "name": "observe",
       "ok": true,
-      "ms": 1470,
+      "ms": 2571,
       "account": "headcorner",
       "parity": {
-        "steemUsd": 0.06172,
-        "sbdUsd": 0.5929115831679658,
+        "steemUsd": 0.06155,
+        "sbdUsd": 0.5912784825662394,
         "parity": 0.10409646522711861,
         "source": "internal-feed-fallback+derived-sbd",
         "lowConfidence": true
@@ -20,13 +20,13 @@
         "reason": "band-ok",
         "bps": 0
       },
-      "steemUsd": 0.06172,
-      "sbdUsd": 0.5929115831679658,
+      "steemUsd": 0.06155,
+      "sbdUsd": 0.5912784825662394,
       "inventory": {
-        "steem": 111.789,
+        "steem": 109.107,
         "sbd": 0.015,
-        "spOwn": 899.8747740975039,
-        "rcPct": 34.5
+        "spOwn": 899.8751997943237,
+        "rcPct": 34.1
       },
       "ordersOk": true,
       "orders": [
@@ -71,12 +71,28 @@
           "created": "2026-10-06T20:27:57"
         },
         {
-          "orderid": 2100002563,
+          "orderid": 2100002580,
           "side": "ask",
           "base": "1.341 STEEM",
           "quote": "0.141 SBD",
           "unit": 0.105145,
-          "created": "2026-10-06T21:41:30"
+          "created": "2026-10-06T21:50:54"
+        },
+        {
+          "orderid": 2100002581,
+          "side": "ask",
+          "base": "1.341 STEEM",
+          "quote": "0.140 SBD",
+          "unit": 0.1044,
+          "created": "2026-10-06T21:51:45"
+        },
+        {
+          "orderid": 2100002582,
+          "side": "ask",
+          "base": "1.341 STEEM",
+          "quote": "0.142 SBD",
+          "unit": 0.105891,
+          "created": "2026-10-06T21:51:45"
         }
       ],
       "fills": 0,
@@ -102,7 +118,7 @@
         "authorVestsPerDay": 0,
         "curationOps": 0,
         "authorOps": 0,
-        "windowSpanDays": 0.1,
+        "windowSpanDays": 0.11,
         "windowOps": 1001,
         "measured": true,
         "fuelUsdPerDay": 0,
@@ -116,7 +132,7 @@
     "intel": {
       "name": "intel",
       "ok": true,
-      "ms": 1424,
+      "ms": 1443,
       "verdict": "DECISIONS:4",
       "decisions": [
         "book-depth:hold-shape",
@@ -124,18 +140,18 @@
         "rc-health:healthy",
         "curation:curator-armed"
       ],
-      "spreadBpsRec": 239,
+      "spreadBpsRec": 219,
       "book": {
-        "bestAsk": 0.10264849575726408,
+        "bestAsk": 0.10244278734893289,
         "bestBid": 0.100227,
-        "spreadBps": 239
+        "spreadBps": 219
       }
     },
     "tick": {
       "name": "tick",
       "ok": true,
-      "ms": 1,
-      "runCount": 299,
+      "ms": 0,
+      "runCount": 300,
       "simFills": 21,
       "simFeesMu": 10500,
       "events": 3
@@ -143,27 +159,27 @@
     "peg": {
       "name": "peg",
       "ok": true,
-      "ms": 732,
+      "ms": 1471,
       "verdict": "OFFER-READY",
       "asks": 0,
       "bids": 0,
       "flowAsks": 4,
       "flowBids": 0,
       "staleCount": 0,
-      "skew": 0.299228,
+      "skew": 0.299209,
       "book": {
-        "bestAsk": 0.10264849575726408,
+        "bestAsk": 0.10244278734893289,
         "bestBid": 0.100227,
-        "askDepthSteem": 1133.4,
-        "bidDepthSbd": 2880.369,
-        "at": "2026-10-06T21:42:03.185Z"
+        "askDepthSteem": 1151.048,
+        "bidDepthSbd": 2881.087,
+        "at": "2026-10-06T21:52:03.183Z"
       },
       "market": {
         "tradesPerDay": 568,
-        "spreadBps": 272.39
+        "spreadBps": 221.08
       },
       "liquidity": {
-        "deployedAsks": 988.616,
+        "deployedAsks": 991.298,
         "deployedBids": 0,
         "askBudget": 0,
         "bidBudget": 0,
@@ -176,15 +192,15 @@
       "ms": 0,
       "verdict": "CONVERT-HOLD",
       "amountSbd": 0,
-      "edgeBps": 6866,
-      "marketSbdUsd": 0.592912,
-      "impliedSbdUsd": 0.592912,
+      "edgeBps": 6913,
+      "marketSbdUsd": 0.591278,
+      "impliedSbdUsd": 0.591278,
       "marketSourceNote": "external-measured"
     },
     "curate": {
       "name": "curate",
       "ok": true,
-      "ms": 709,
+      "ms": 717,
       "verdict": "VP-FLOOR",
       "votes": 0,
       "txid": null,
@@ -210,14 +226,14 @@
     "learn": {
       "name": "learn",
       "ok": true,
-      "ms": 1295,
+      "ms": 7,
       "verdict": "LEARNED",
       "lessons": [
         "signing-cred-blocked",
         "unclassified-fail-legacy"
       ],
       "tunings": [],
-      "discoveryVerdict": "OPTIONS-FOUND",
+      "discoveryVerdict": "FRESH-CACHED",
       "topOpportunities": [
         "spread-wide(measured)",
         "tags-realloc(measured)",
@@ -284,7 +300,7 @@
     "coordination": {
       "name": "coordination",
       "ok": true,
-      "ms": 19045,
+      "ms": 18798,
       "verdict": "SCHEDULED:ok·POWER:ok·ENG:ok",
       "accounts": 14,
       "engagement": {
@@ -297,10 +313,10 @@
         "ok": true,
         "published": {
           "day": "2026-10-06",
-          "at": "2026-10-06T21:42:30.097Z",
+          "at": "2026-10-06T21:52:30.390Z",
           "ok": true,
           "verdict": "BROADCAST",
-          "txid": "07272c82be9e779924b59c1d0058408b603d76c2",
+          "txid": "e0fd8ffe9e58790108e5b65b1882671b67f5aa86",
           "error": null,
           "bytes": 2131
         },
@@ -321,7 +337,7 @@
       "ok": true,
       "ms": 1,
       "totalMeasuredUsdPerDay": 0,
-      "totalEstUsdPerDay": 0.53015,
+      "totalEstUsdPerDay": 0.52869,
       "rails": 6,
       "measuredCount": 1,
       "estimatedCount": 2,
@@ -343,7 +359,7 @@
       "positionSteem": 0,
       "positionAvgCost": null,
       "unbasedSteem": 0,
-      "deployedSteem": 988.616,
+      "deployedSteem": 991.298,
       "fuelUsdPerDay": 0,
       "authorUsdPerDay": 0,
       "measuredTotalUsdPerDay": 0,
@@ -355,7 +371,7 @@
     "positionSteem": 0,
     "positionAvgCost": null,
     "unbasedSteem": 0,
-    "deployedSteem": 988.616,
+    "deployedSteem": 991.298,
     "fuelUsdPerDay": 0,
     "authorUsdPerDay": 0,
     "measuredTotalUsdPerDay": 0,
@@ -367,5 +383,5 @@
     "failedSteps": [],
     "blockedSteps": []
   },
-  "finishedAt": "2026-10-06T21:42:30.100Z"
+  "finishedAt": "2026-10-06T21:52:30.393Z"
 }

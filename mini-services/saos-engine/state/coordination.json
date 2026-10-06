@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-06",
-  "at": "2026-10-06T21:42:03.185Z",
+  "at": "2026-10-06T21:52:03.183Z",
   "schedule": {
     "headcorner": {
       "post": 647,
@@ -124,12 +124,12 @@
         "name": "headcorner",
         "sp": 6.37,
         "vpEff": 17.5,
-        "rcPct": 34.5,
+        "rcPct": 34.1,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
         "rcGate": null,
-        "steem": 111.789,
+        "steem": 109.107,
         "lastVote": "2026-10-06T20:35:18"
       },
       {
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-06T21:42:10.352Z"
+    "at": "2026-10-06T21:52:10.885Z"
   },
   "engagement": {
     "ok": true,
@@ -325,7 +325,7 @@
         "author": "siq",
         "permlink": "streamlining-your-steem-workflow-tools-for-efficiency-20261006-0",
         "title": "Streamlining Your Steem Workflow: Tools for Efficiency",
-        "ageH": 0,
+        "ageH": 1,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -352,7 +352,7 @@
         "author": "woq",
         "permlink": "how-do-you-evaluate-content-value-on-steem-20261006-0",
         "title": "How Do You Evaluate Content Value on Steem?",
-        "ageH": 1,
+        "ageH": 2,
         "fleetVotes": [
           "siq"
         ],
@@ -610,7 +610,7 @@
         "author": "tov",
         "permlink": "the-library-that-lends-drills-20261004",
         "title": "The library that lends drills",
-        "ageH": 48,
+        "ageH": 49,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -1032,73 +1032,73 @@
       "acc": "cashmachine",
       "kind": "post",
       "at": "21:53",
-      "inMin": 11
+      "inMin": 1
     },
     {
       "acc": "hcsoldier2",
       "kind": "vote2",
       "at": "22:26",
-      "inMin": 44
+      "inMin": 34
     },
     {
       "acc": "tov",
       "kind": "engage",
       "at": "22:46",
-      "inMin": 64
+      "inMin": 54
     },
     {
       "acc": "siq",
       "kind": "vote2",
       "at": "23:06",
-      "inMin": 84
+      "inMin": 74
     },
     {
       "acc": "hcsoldier3",
       "kind": "engage",
       "at": "23:26",
-      "inMin": 104
+      "inMin": 94
     },
     {
       "acc": "hcsoldier3",
       "kind": "vote2",
       "at": "23:46",
-      "inMin": 124
+      "inMin": 114
     },
     {
       "acc": "hcsoldier1",
       "kind": "engage",
       "at": "00:09",
-      "inMin": 147
+      "inMin": 137
     },
     {
       "acc": "woq",
       "kind": "engage",
       "at": "00:50",
-      "inMin": 188
+      "inMin": 178
     },
     {
       "acc": "tov",
       "kind": "vote1",
       "at": "01:15",
-      "inMin": 213
+      "inMin": 203
     },
     {
       "acc": "lsa",
       "kind": "post",
       "at": "01:35",
-      "inMin": 233
+      "inMin": 223
     },
     {
       "acc": "wog",
       "kind": "engage",
       "at": "01:55",
-      "inMin": 253
+      "inMin": 243
     },
     {
       "acc": "hcsoldier2",
       "kind": "engage",
       "at": "02:15",
-      "inMin": 273
+      "inMin": 263
     }
   ],
   "law": {
@@ -1106,13 +1106,13 @@
     "power": "הצבעות לפי מצב-הכוח: משקל מלא ב-VP≥80, הפחתה מתחת, מנוחה מ-30; רצפת RC 20%",
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)"
   },
-  "ms": 19045,
+  "ms": 18798,
   "lastPublish": {
     "day": "2026-10-06",
-    "at": "2026-10-06T21:42:30.097Z",
+    "at": "2026-10-06T21:52:30.390Z",
     "ok": true,
     "verdict": "BROADCAST",
-    "txid": "07272c82be9e779924b59c1d0058408b603d76c2",
+    "txid": "e0fd8ffe9e58790108e5b65b1882671b67f5aa86",
     "error": null,
     "bytes": 2131
   }
