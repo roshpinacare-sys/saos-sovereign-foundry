@@ -34,7 +34,7 @@
       "measuredUsdPerDay": null,
       "estUsdPerDay": 0,
       "confidence": "blocked",
-      "note": "HOLD honest (7014bps edge, dust-or-capped) — the rail is armed-in-doctrine, not burning"
+      "note": "HOLD honest (7012bps edge, dust-or-capped) — the rail is armed-in-doctrine, not burning"
     },
     {
       "id": "promo",
@@ -62,8 +62,8 @@
   "estimatedCount": 2,
   "blockedCount": 3,
   "law": "סכום-מדוד וסכום-מוערך לעולם לא מתמזגים — שתי שורות-אמת נפרדות",
-  "parity": 0.10489117859233145,
-  "asof": "2026-10-06T20:26:02.726Z",
+  "parity": 0.10487833092898555,
+  "asof": "2026-10-06T20:27:52.474Z",
   "context": {
     "venueFillsPerDay": 568,
     "venueVolSteem24h": 801.923,
