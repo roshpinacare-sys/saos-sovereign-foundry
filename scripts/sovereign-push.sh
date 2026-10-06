@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # SOVEREIGN PUSH GATE — the ONLY sanctioned push procedure for this body (W1).
 # Law: SOVEREIGN-WRITER-LAW.md — fast-forward ONLY; force is forbidden FOREVER.
-# Usage: scripts/sovereign-push.sh            # push HEAD -> origin/saos-cockpit
+# Usage: scripts/sovereign-push.sh            # push HEAD -> origin/cockpit-zai
+# R229: branch renamed saos-cockpit -> cockpit-zai (lane-unique name; the generic
+# name was the collision attractor across parallel agents — see worklog R228/R229).
 # Exit codes: 0 pushed/synced | 2 divergence (abort, by law) | 3 law-violation attempt
 # R220 clause 2.5: unsigned body-prefixed commits in the push range -> exit 3.
 set -euo pipefail
@@ -20,8 +22,8 @@ if ! curl -sf --max-time 5 http://127.0.0.1:3000/api/saos/status >/dev/null 2>&1
 fi
 set -e
 
-TARGET="saos-cockpit"
-# --- LAW CLAUSE 1: only saos-cockpit, never extra args (no --force can ever pass) ---
+TARGET="cockpit-zai"
+# --- LAW CLAUSE 1: only cockpit-zai, never extra args (no --force can ever pass) ---
 if [[ "$#" -gt 0 && "$1" != "$TARGET" ]]; then
   echo "LAW-VIOLATION: pushes are restricted to $TARGET (got: $*)"; exit 3
 fi

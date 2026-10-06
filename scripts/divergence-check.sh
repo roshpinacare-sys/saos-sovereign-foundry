@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # DIVERGENCE VISIBILITY CHECK — read-only. Closes audit break #3 (silent divergence).
-# Run manually or from any monitor: reports ahead/behind vs origin/saos-cockpit.
+# Run manually or from any monitor: reports ahead/behind vs origin/cockpit-zai (R229 rename).
 # Exit: 0 = synced-or-ahead (FF possible) | 1 = fetch failed | 2 = behind or true divergence
 set -uo pipefail
 cd "$(dirname "$0")/.."
 export GIT_TERMINAL_PROMPT=0
-git fetch origin saos-cockpit >/dev/null 2>&1 || { echo "FETCH-FAIL (offline / credential / remote unreachable)"; exit 1; }
-RT=$(git rev-parse origin/saos-cockpit)
+git fetch origin cockpit-zai >/dev/null 2>&1 || { echo "FETCH-FAIL (offline / credential / remote unreachable)"; exit 1; }
+RT=$(git rev-parse origin/cockpit-zai)
 LH=$(git rev-parse HEAD)
 COUNTS=$(git rev-list --left-right --count "$RT...$LH")
 BEHIND=$(echo "$COUNTS" | cut -f1)
