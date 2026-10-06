@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-06",
-  "at": "2026-10-06T23:32:03.196Z",
+  "at": "2026-10-06T23:42:03.196Z",
   "schedule": {
     "headcorner": {
       "post": 647,
@@ -124,12 +124,12 @@
         "name": "headcorner",
         "sp": 6.37,
         "vpEff": 17.5,
-        "rcPct": 31.7,
+        "rcPct": 31.5,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
         "rcGate": null,
-        "steem": 82.144,
+        "steem": 80.172,
         "lastVote": "2026-10-06T20:35:18"
       },
       {
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-06T23:32:10.376Z"
+    "at": "2026-10-06T23:42:10.188Z"
   },
   "engagement": {
     "ok": true,
@@ -352,7 +352,7 @@
         "author": "haran",
         "permlink": "optimizing-your-steem-workflow-tools-for-content-creators-20261006-0",
         "title": "Optimizing Your Steem Workflow: Tools for Content Creators",
-        "ageH": 1,
+        "ageH": 2,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -518,7 +518,7 @@
         "author": "wic",
         "permlink": "understanding-steem-s-dual-token-economy-20261006-0",
         "title": "Understanding Steem's Dual-Token Economy",
-        "ageH": 3,
+        "ageH": 4,
         "fleetVotes": [],
         "fleetRepliers": [
           "headcorner"
@@ -546,7 +546,7 @@
         "author": "tov",
         "permlink": "streamlining-your-steem-workflow-20261006-0",
         "title": "Streamlining Your Steem Workflow",
-        "ageH": 3,
+        "ageH": 4,
         "fleetVotes": [
           "headcorner"
         ],
@@ -574,7 +574,7 @@
         "author": "macrame",
         "permlink": "how-do-you-discover-quality-content-on-steem-20261006-0",
         "title": "How Do You Discover Quality Content on Steem?",
-        "ageH": 3,
+        "ageH": 4,
         "fleetVotes": [
           "headcorner",
           "siq"
@@ -1025,73 +1025,73 @@
       "acc": "hcsoldier3",
       "kind": "vote2",
       "at": "23:46",
-      "inMin": 14
+      "inMin": 4
     },
     {
       "acc": "hcsoldier1",
       "kind": "engage",
       "at": "00:09",
-      "inMin": 37
+      "inMin": 27
     },
     {
       "acc": "woq",
       "kind": "engage",
       "at": "00:50",
-      "inMin": 78
+      "inMin": 68
     },
     {
       "acc": "tov",
       "kind": "vote1",
       "at": "01:15",
-      "inMin": 103
+      "inMin": 93
     },
     {
       "acc": "lsa",
       "kind": "post",
       "at": "01:35",
-      "inMin": 123
+      "inMin": 113
     },
     {
       "acc": "wog",
       "kind": "engage",
       "at": "01:55",
-      "inMin": 143
+      "inMin": 133
     },
     {
       "acc": "hcsoldier2",
       "kind": "engage",
       "at": "02:15",
-      "inMin": 163
+      "inMin": 153
     },
     {
       "acc": "cashmachine",
       "kind": "vote1",
       "at": "02:35",
-      "inMin": 183
+      "inMin": 173
     },
     {
       "acc": "lsa",
       "kind": "vote1",
       "at": "02:55",
-      "inMin": 203
+      "inMin": 193
     },
     {
       "acc": "israelnews",
       "kind": "vote1",
       "at": "04:31",
-      "inMin": 299
+      "inMin": 289
     },
     {
       "acc": "tov",
       "kind": "post",
       "at": "04:51",
-      "inMin": 319
+      "inMin": 309
     },
     {
       "acc": "haran",
       "kind": "post",
       "at": "05:56",
-      "inMin": 384
+      "inMin": 374
     }
   ],
   "law": {
@@ -1099,13 +1099,13 @@
     "power": "הצבעות לפי מצב-הכוח: משקל מלא ב-VP≥80, הפחתה מתחת, מנוחה מ-30; רצפת RC 20%",
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)"
   },
-  "ms": 18255,
+  "ms": 18723,
   "lastPublish": {
     "day": "2026-10-06",
-    "at": "2026-10-06T23:32:29.477Z",
+    "at": "2026-10-06T23:42:29.713Z",
     "ok": true,
     "verdict": "BROADCAST",
-    "txid": "8ccc21847cb2f88b7126593aa811d8671aac9fff",
+    "txid": "34eeb5220e6806dbdb2110304232938c19320a32",
     "error": null,
     "bytes": 2132
   }
