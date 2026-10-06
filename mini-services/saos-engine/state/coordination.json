@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-06",
-  "at": "2026-10-06T21:32:03.184Z",
+  "at": "2026-10-06T21:42:03.185Z",
   "schedule": {
     "headcorner": {
       "post": 647,
@@ -124,12 +124,12 @@
         "name": "headcorner",
         "sp": 6.37,
         "vpEff": 17.5,
-        "rcPct": 35,
+        "rcPct": 34.5,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
         "rcGate": null,
-        "steem": 122.63,
+        "steem": 111.789,
         "lastVote": "2026-10-06T20:35:18"
       },
       {
@@ -289,11 +289,38 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-06T21:32:12.546Z"
+    "at": "2026-10-06T21:42:10.352Z"
   },
   "engagement": {
     "ok": true,
     "posts": [
+      {
+        "author": "headcorner",
+        "permlink": "sbdsteem-spread-widens-to-2519-zero-external-votes-recorded-mux764vw",
+        "title": "SBD:STEEM Spread Widens to 2.519%, Zero External Votes Recorded",
+        "ageH": 0,
+        "fleetVotes": [],
+        "fleetRepliers": [],
+        "threads": 0,
+        "coveragePct": 0,
+        "missing": [
+          "headcorner",
+          "cashmachine",
+          "haran",
+          "israelnews",
+          "lsa",
+          "macrame",
+          "siq",
+          "tov",
+          "wic",
+          "wog",
+          "woq",
+          "hcsoldier1",
+          "hcsoldier2",
+          "hcsoldier3"
+        ],
+        "covered": false
+      },
       {
         "author": "siq",
         "permlink": "streamlining-your-steem-workflow-tools-for-efficiency-20261006-0",
@@ -354,7 +381,7 @@
         "author": "wic",
         "permlink": "understanding-steem-s-dual-token-economy-20261006-0",
         "title": "Understanding Steem's Dual-Token Economy",
-        "ageH": 1,
+        "ageH": 2,
         "fleetVotes": [],
         "fleetRepliers": [
           "headcorner"
@@ -382,7 +409,7 @@
         "author": "tov",
         "permlink": "streamlining-your-steem-workflow-20261006-0",
         "title": "Streamlining Your Steem Workflow",
-        "ageH": 1,
+        "ageH": 2,
         "fleetVotes": [
           "headcorner"
         ],
@@ -410,7 +437,7 @@
         "author": "macrame",
         "permlink": "how-do-you-discover-quality-content-on-steem-20261006-0",
         "title": "How Do You Discover Quality Content on Steem?",
-        "ageH": 1,
+        "ageH": 2,
         "fleetVotes": [
           "headcorner",
           "siq"
@@ -553,40 +580,10 @@
         "covered": false
       },
       {
-        "author": "headcorner",
-        "permlink": "saos-daily-20261006",
-        "title": "SAOS Mission Daily — 2026-10-06",
-        "ageH": 20,
-        "fleetVotes": [
-          "israelnews",
-          "wic",
-          "tov"
-        ],
-        "fleetRepliers": [
-          "tov"
-        ],
-        "threads": 1,
-        "coveragePct": 21,
-        "missing": [
-          "headcorner",
-          "cashmachine",
-          "haran",
-          "lsa",
-          "macrame",
-          "siq",
-          "wog",
-          "woq",
-          "hcsoldier1",
-          "hcsoldier2",
-          "hcsoldier3"
-        ],
-        "covered": false
-      },
-      {
         "author": "cashmachine",
         "permlink": "saosweb-probe-muv0xvyv-b",
         "title": "SAOS WEB probe B",
-        "ageH": 36,
+        "ageH": 37,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -639,13 +636,19 @@
     ],
     "summary": {
       "posts": 12,
-      "avgCoveragePct": 17.2,
+      "avgCoveragePct": 15.4,
       "fullyCovered": 0,
-      "openThreads": 8
+      "openThreads": 7
     }
   },
   "assignments": {
     "headcorner": [
+      {
+        "author": "headcorner",
+        "permlink": "sbdsteem-spread-widens-to-2519-zero-external-votes-recorded-mux764vw",
+        "title": "SBD:STEEM Spread Widens to 2.519%, Zero External Votes Recorded",
+        "kind": "cover-gap"
+      },
       {
         "author": "siq",
         "permlink": "streamlining-your-steem-workflow-tools-for-efficiency-20261006-0",
@@ -657,15 +660,15 @@
         "permlink": "how-do-you-evaluate-content-value-on-steem-20261006-0",
         "title": "How Do You Evaluate Content Value on Steem?",
         "kind": "cover-gap"
-      },
+      }
+    ],
+    "cashmachine": [
       {
         "author": "wic",
         "permlink": "understanding-steem-s-dual-token-economy-20261006-0",
         "title": "Understanding Steem's Dual-Token Economy",
-        "kind": "develop-thread"
-      }
-    ],
-    "cashmachine": [
+        "kind": "cover-gap"
+      },
       {
         "author": "tov",
         "permlink": "streamlining-your-steem-workflow-20261006-0",
@@ -677,15 +680,15 @@
         "permlink": "how-do-you-discover-quality-content-on-steem-20261006-0",
         "title": "How Do You Discover Quality Content on Steem?",
         "kind": "develop-thread"
-      },
-      {
-        "author": "headcorner",
-        "permlink": "saos-grid-20261006",
-        "title": "SAOS Grid Mechanics — 2026-10-06",
-        "kind": "cover-gap"
       }
     ],
     "haran": [
+      {
+        "author": "headcorner",
+        "permlink": "understanding-steem-s-curation-rewards-20261006-0",
+        "title": "Understanding Steem's Curation Rewards",
+        "kind": "cover-gap"
+      },
       {
         "author": "headcorner",
         "permlink": "saos-grid-20261006",
@@ -696,12 +699,6 @@
         "author": "headcorner",
         "permlink": "the-weave-truth-report-the-network-that-verifies-itself-2026-muwi6iea",
         "title": "THE WEAVE · Truth Report — the network that verifies itself (2026-10-06)",
-        "kind": "cover-gap"
-      },
-      {
-        "author": "headcorner",
-        "permlink": "the-weave-measured-market-brief-2026-10-06-muw6pni8",
-        "title": "THE WEAVE · תדריך-שוק מדוד — Measured Market Brief (2026-10-06)",
         "kind": "cover-gap"
       }
     ],
@@ -727,6 +724,12 @@
     ],
     "lsa": [
       {
+        "author": "headcorner",
+        "permlink": "sbdsteem-spread-widens-to-2519-zero-external-votes-recorded-mux764vw",
+        "title": "SBD:STEEM Spread Widens to 2.519%, Zero External Votes Recorded",
+        "kind": "cover-gap"
+      },
+      {
         "author": "siq",
         "permlink": "streamlining-your-steem-workflow-tools-for-efficiency-20261006-0",
         "title": "Streamlining Your Steem Workflow: Tools for Efficiency",
@@ -737,15 +740,15 @@
         "permlink": "how-do-you-evaluate-content-value-on-steem-20261006-0",
         "title": "How Do You Evaluate Content Value on Steem?",
         "kind": "develop-thread"
-      },
+      }
+    ],
+    "macrame": [
       {
         "author": "wic",
         "permlink": "understanding-steem-s-dual-token-economy-20261006-0",
         "title": "Understanding Steem's Dual-Token Economy",
         "kind": "cover-gap"
-      }
-    ],
-    "macrame": [
+      },
       {
         "author": "tov",
         "permlink": "streamlining-your-steem-workflow-20261006-0",
@@ -757,15 +760,15 @@
         "permlink": "how-do-you-discover-quality-content-on-steem-20261006-0",
         "title": "How Do You Discover Quality Content on Steem?",
         "kind": "cover-gap"
-      },
+      }
+    ],
+    "siq": [
       {
         "author": "headcorner",
         "permlink": "understanding-steem-s-curation-rewards-20261006-0",
         "title": "Understanding Steem's Curation Rewards",
         "kind": "cover-gap"
-      }
-    ],
-    "siq": [
+      },
       {
         "author": "headcorner",
         "permlink": "saos-grid-20261006",
@@ -777,20 +780,14 @@
         "permlink": "the-weave-truth-report-the-network-that-verifies-itself-2026-muwi6iea",
         "title": "THE WEAVE · Truth Report — the network that verifies itself (2026-10-06)",
         "kind": "cover-gap"
-      },
-      {
-        "author": "headcorner",
-        "permlink": "the-weave-measured-market-brief-2026-10-06-muw6pni8",
-        "title": "THE WEAVE · תדריך-שוק מדוד — Measured Market Brief (2026-10-06)",
-        "kind": "develop-thread"
       }
     ],
     "tov": [
       {
         "author": "headcorner",
-        "permlink": "saos-daily-20261006",
-        "title": "SAOS Mission Daily — 2026-10-06",
-        "kind": "develop-thread"
+        "permlink": "the-weave-measured-market-brief-2026-10-06-muw6pni8",
+        "title": "THE WEAVE · תדריך-שוק מדוד — Measured Market Brief (2026-10-06)",
+        "kind": "cover-gap"
       },
       {
         "author": "cashmachine",
@@ -807,6 +804,12 @@
     ],
     "wic": [
       {
+        "author": "headcorner",
+        "permlink": "sbdsteem-spread-widens-to-2519-zero-external-votes-recorded-mux764vw",
+        "title": "SBD:STEEM Spread Widens to 2.519%, Zero External Votes Recorded",
+        "kind": "cover-gap"
+      },
+      {
         "author": "siq",
         "permlink": "streamlining-your-steem-workflow-tools-for-efficiency-20261006-0",
         "title": "Streamlining Your Steem Workflow: Tools for Efficiency",
@@ -817,15 +820,15 @@
         "permlink": "how-do-you-evaluate-content-value-on-steem-20261006-0",
         "title": "How Do You Evaluate Content Value on Steem?",
         "kind": "cover-gap"
-      },
+      }
+    ],
+    "wog": [
       {
         "author": "wic",
         "permlink": "understanding-steem-s-dual-token-economy-20261006-0",
         "title": "Understanding Steem's Dual-Token Economy",
         "kind": "cover-gap"
-      }
-    ],
-    "wog": [
+      },
       {
         "author": "tov",
         "permlink": "streamlining-your-steem-workflow-20261006-0",
@@ -837,12 +840,6 @@
         "permlink": "how-do-you-discover-quality-content-on-steem-20261006-0",
         "title": "How Do You Discover Quality Content on Steem?",
         "kind": "cover-gap"
-      },
-      {
-        "author": "headcorner",
-        "permlink": "understanding-steem-s-curation-rewards-20261006-0",
-        "title": "Understanding Steem's Curation Rewards",
-        "kind": "develop-thread"
       }
     ],
     "woq": [
@@ -859,23 +856,23 @@
         "kind": "cover-gap"
       },
       {
-        "author": "headcorner",
-        "permlink": "saos-daily-20261006",
-        "title": "SAOS Mission Daily — 2026-10-06",
+        "author": "cashmachine",
+        "permlink": "saosweb-probe-muv0xvyv-b",
+        "title": "SAOS WEB probe B",
         "kind": "cover-gap"
       }
     ],
     "hcsoldier1": [
       {
-        "author": "cashmachine",
-        "permlink": "saosweb-probe-muv0xvyv-b",
-        "title": "SAOS WEB probe B",
-        "kind": "cover-gap"
-      },
-      {
         "author": "tov",
         "permlink": "the-library-that-lends-drills-20261004",
         "title": "The library that lends drills",
+        "kind": "cover-gap"
+      },
+      {
+        "author": "headcorner",
+        "permlink": "sbdsteem-spread-widens-to-2519-zero-external-votes-recorded-mux764vw",
+        "title": "SBD:STEEM Spread Widens to 2.519%, Zero External Votes Recorded",
         "kind": "cover-gap"
       },
       {
@@ -1032,76 +1029,76 @@
   },
   "nextWindows": [
     {
-      "acc": "hcsoldier1",
-      "kind": "vote2",
-      "at": "21:33",
-      "inMin": 1
-    },
-    {
       "acc": "cashmachine",
       "kind": "post",
       "at": "21:53",
-      "inMin": 21
+      "inMin": 11
     },
     {
       "acc": "hcsoldier2",
       "kind": "vote2",
       "at": "22:26",
-      "inMin": 54
+      "inMin": 44
     },
     {
       "acc": "tov",
       "kind": "engage",
       "at": "22:46",
-      "inMin": 74
+      "inMin": 64
     },
     {
       "acc": "siq",
       "kind": "vote2",
       "at": "23:06",
-      "inMin": 94
+      "inMin": 84
     },
     {
       "acc": "hcsoldier3",
       "kind": "engage",
       "at": "23:26",
-      "inMin": 114
+      "inMin": 104
     },
     {
       "acc": "hcsoldier3",
       "kind": "vote2",
       "at": "23:46",
-      "inMin": 134
+      "inMin": 124
     },
     {
       "acc": "hcsoldier1",
       "kind": "engage",
       "at": "00:09",
-      "inMin": 157
+      "inMin": 147
     },
     {
       "acc": "woq",
       "kind": "engage",
       "at": "00:50",
-      "inMin": 198
+      "inMin": 188
     },
     {
       "acc": "tov",
       "kind": "vote1",
       "at": "01:15",
-      "inMin": 223
+      "inMin": 213
     },
     {
       "acc": "lsa",
       "kind": "post",
       "at": "01:35",
-      "inMin": 243
+      "inMin": 233
     },
     {
       "acc": "wog",
       "kind": "engage",
       "at": "01:55",
-      "inMin": 263
+      "inMin": 253
+    },
+    {
+      "acc": "hcsoldier2",
+      "kind": "engage",
+      "at": "02:15",
+      "inMin": 273
     }
   ],
   "law": {
@@ -1109,14 +1106,14 @@
     "power": "הצבעות לפי מצב-הכוח: משקל מלא ב-VP≥80, הפחתה מתחת, מנוחה מ-30; רצפת RC 20%",
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)"
   },
-  "ms": 18706,
+  "ms": 19045,
   "lastPublish": {
     "day": "2026-10-06",
-    "at": "2026-10-06T21:32:32.081Z",
+    "at": "2026-10-06T21:42:30.097Z",
     "ok": true,
     "verdict": "BROADCAST",
-    "txid": "bb261e9de3e7b419be804b70e57f3a956dd4f6eb",
+    "txid": "07272c82be9e779924b59c1d0058408b603d76c2",
     "error": null,
-    "bytes": 2129
+    "bytes": 2131
   }
 }
