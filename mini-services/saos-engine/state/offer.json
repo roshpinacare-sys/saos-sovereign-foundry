@@ -1,6 +1,6 @@
 {
   "verdict": "OFFER-READY",
-  "parityBps": 44,
+  "parityBps": 0,
   "blocker": null,
   "plan": {
     "asks": [],
@@ -11,7 +11,7 @@
         "amountSteem": 0.74184,
         "unit": 0.105122,
         "sbdOut3": 0.078,
-        "at": "2026-10-06T20:47:35.303Z",
+        "at": "2026-10-06T20:57:35.303Z",
         "tranche": "flow"
       },
       {
@@ -19,14 +19,14 @@
         "amountSteem": 0.74184,
         "unit": 0.10647,
         "sbdOut3": 0.079,
-        "at": "2026-10-06T20:47:35.303Z",
+        "at": "2026-10-06T20:57:35.303Z",
         "tranche": "flow"
       }
     ],
     "flowBids": []
   },
   "flow": {
-    "bestAsk": 0.103266,
+    "bestAsk": 0.103163,
     "bestBid": 0.100227,
     "spacingBps": 15,
     "levels": 4,
@@ -37,11 +37,11 @@
     "flowBids": 0
   },
   "book": {
-    "bestAsk": 0.10326562098225765,
+    "bestAsk": 0.10316276677809205,
     "bestBid": 0.100227,
-    "askDepthSteem": 1284.246,
+    "askDepthSteem": 1245.409,
     "bidDepthSbd": 2879.956,
-    "at": "2026-10-06T20:47:35.303Z"
+    "at": "2026-10-06T20:57:35.303Z"
   },
   "market": {
     "at": "2026-10-06T20:47:38.924Z",
@@ -64,19 +64,19 @@
     }
   },
   "marks": {
-    "paritySbdPerSteem": 0.10455,
-    "source": "coingecko",
-    "lowConfidence": false,
+    "paritySbdPerSteem": 0.104097,
+    "source": "internal-feed-fallback+derived-sbd",
+    "lowConfidence": true,
     "internalFeed": 0.104097,
-    "dragK": 1.1495,
-    "floor": 0.10476,
-    "ceiling": 0.10434,
-    "spreadBpsFed": 299
+    "dragK": 1.1445,
+    "floor": 0.104305,
+    "ceiling": 0.103888,
+    "spreadBpsFed": 289
   },
   "skew": {
-    "skew": 0.296539,
-    "askMult": 1.296539,
-    "bidMult": 0.703461,
+    "skew": 0.296524,
+    "askMult": 1.296524,
+    "bidMult": 0.703476,
     "reason": "hummingbot-inventory-skew"
   },
   "stale": {
@@ -90,5 +90,5 @@
     "bidBudget": 0,
     "deployCap": 0.6
   },
-  "publishedAt": "2026-10-06T20:47:35.303Z"
+  "publishedAt": "2026-10-06T20:57:35.303Z"
 }
