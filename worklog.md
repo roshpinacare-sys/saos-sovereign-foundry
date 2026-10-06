@@ -1655,3 +1655,18 @@ Stage Summary:
 - VERDICT: no force-push overwrites anywhere; the real damage class is (a) environment resets + uncommitted work, (b) forked worklog/TODO never reconciled, (c) same-prompt parallel agents shipping identical work to different repos, (d) live-wins state clobbers. All four are process gaps, not data loss events on main lines.
 - CURRENT ISOLATION STATE (post-R227 migration): my lane = foundry/saos-cockpit (custodian-aligned), other agent's lane = steem/saos-cockpit (untouched since migration at 3d74451), main worlds = bot-driven and untouched by me. Zero active collision surface right now.
 - RECOMMENDATION for the operator (not executed without order): give each parallel agent a UNIQUE branch name (e.g., foundry/cockpit-zai vs foundry/cockpit-<other>) — the generic name "saos-cockpit" is the same attractor that caused the steem collisions; a second agent ordered "עלה על foundry" would land on the exact same branch. Also: reconcile the forked worklog (recovery/branch-worklog.md 207KB vs live 155KB) into one canonical timeline.
+---
+Task ID: R229
+Agent: Z.ai Code (main orchestrator)
+Task: OPERATOR ORDER "כן — תעשה סדר בהכל, תבדוק עוד פעם ותסדר" — lane hardening + worklog reconciliation + registries + re-audit
+
+Work Log:
+- UNIFIED THE FORKED WORKLOG: verified the two lineages share a byte-identical 136,630-char prefix (through T-80 start); rebuilt worklog.md as ONE canonical timeline: shared prefix + T-80 + [ERA marker + lost T-84-era tail T-81..R-4 recovered from recovery/branch-saos-cockpit-e4cdfd6/branch-worklog.md] + [survivor marker + live tail R210..R228]. Result: 79 Task-ID entries (was 64 live + 15 lost-era), zero content lost on either side. The only T-80 diff between lineages was one blank line (live version kept).
+- LANE HARDENING (anti-collision): branch renamed saos-cockpit -> cockpit-zai (local + foundry); scripts/sovereign-push.sh TARGET and scripts/divergence-check.sh retargeted; generic-named branch DELETED from foundry (was an identical copy — the exact attractor R228 identified: a second agent ordered "עלה על foundry" would land on it).
+- REGISTRIES CREATED: FLEET-LANES.md (lane table: my lane foundry/cockpit-zai; other agent steem/saos-cockpit; bot mains; satellite repos read-only + 5 lane laws incl. no-force, no unrelated-histories merge without operator decision) + docs/ROUND-REGISTRY.md (73 unique IDs chronologically, 6 historical duplicate groups documented, next free ID = R230).
+- BOOTSTRAP + GATE VERIFICATION: signed commit 33c4152 pushed (bootstrap), old branch deleted via API, divergence-check: SYNCED 0/0 exit 0.
+- RE-AUDIT (operator's "check again"): dev server 200; worklog integrity 79/79; foundry branch surface = cockpit-zai (mine) + main (bots) + security/audit archive — no generic names left in my estate; steem/saos-cockpit untouched (other agent's lane).
+
+Stage Summary:
+- The four overwrite families from R228 now have structural countermeasures: (1) env-resets -> everything committed+pushed (custody via gate), (2) forked worklog -> unified canonical file, (3) same-prompt parallel agents -> lane registry + lane-unique branch name, (4) round-ID collisions -> ROUND-REGISTRY as single source of truth.
+- My git estate is now: foundry @ cockpit-zai ONLY. Next round opens at R230.
