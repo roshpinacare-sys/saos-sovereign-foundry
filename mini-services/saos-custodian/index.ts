@@ -52,7 +52,7 @@ async function anchorWitness(): Promise<void> {
     if (Date.now() - last < 3600000) { appendAlert("anchor-skip", `rate-limited durably (last ${new Date(last).toISOString()})`); return; }
     const acct: string = masterAccount() as any;
     const tip = sh("git", ["rev-parse", "HEAD"]).out;
-    const ops: any = [["custom_json", { required_auths: [], required_posting_auths: [acct], id: "saos-git-custody-v1", json: JSON.stringify({ branch: "saos-cockpit", tip, at: new Date().toISOString(), src: "R216-custodian", fp: credentialFingerprint(acct) }) }]];
+    const ops: any = [["custom_json", { required_auths: [], required_posting_auths: [acct], id: "saos-git-custody-v1", json: JSON.stringify({ branch: "cockpit-zai", tip, at: new Date().toISOString(), src: "R230-custodian", fp: credentialFingerprint(acct) }) }]];
     const gate: any = thinkGate(acct, ops, { source: "custody-witness" });
     if (gate.verdict !== "ALLOW") { appendAlert("anchor-refused", (gate.reasons ?? []).join(";")); return; }
     const r: any = await executeAs(acct, ops, { tag: "custody-witness", role: "posting" } as any);
