@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-06",
-  "at": "2026-10-06T21:22:48.186Z",
+  "at": "2026-10-06T21:32:03.184Z",
   "schedule": {
     "headcorner": {
       "post": 647,
@@ -124,12 +124,12 @@
         "name": "headcorner",
         "sp": 6.37,
         "vpEff": 17.5,
-        "rcPct": 35.8,
+        "rcPct": 35,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
         "rcGate": null,
-        "steem": 25.728,
+        "steem": 122.63,
         "lastVote": "2026-10-06T20:35:18"
       },
       {
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-06T21:22:54.400Z"
+    "at": "2026-10-06T21:32:12.546Z"
   },
   "engagement": {
     "ok": true,
@@ -498,7 +498,7 @@
         "author": "headcorner",
         "permlink": "the-weave-truth-report-the-network-that-verifies-itself-2026-muwi6iea",
         "title": "THE WEAVE · Truth Report — the network that verifies itself (2026-10-06)",
-        "ageH": 11,
+        "ageH": 12,
         "fleetVotes": [
           "macrame",
           "israelnews",
@@ -1035,73 +1035,73 @@
       "acc": "hcsoldier1",
       "kind": "vote2",
       "at": "21:33",
-      "inMin": 10
+      "inMin": 1
     },
     {
       "acc": "cashmachine",
       "kind": "post",
       "at": "21:53",
-      "inMin": 30
+      "inMin": 21
     },
     {
       "acc": "hcsoldier2",
       "kind": "vote2",
       "at": "22:26",
-      "inMin": 63
+      "inMin": 54
     },
     {
       "acc": "tov",
       "kind": "engage",
       "at": "22:46",
-      "inMin": 83
+      "inMin": 74
     },
     {
       "acc": "siq",
       "kind": "vote2",
       "at": "23:06",
-      "inMin": 103
+      "inMin": 94
     },
     {
       "acc": "hcsoldier3",
       "kind": "engage",
       "at": "23:26",
-      "inMin": 123
+      "inMin": 114
     },
     {
       "acc": "hcsoldier3",
       "kind": "vote2",
       "at": "23:46",
-      "inMin": 143
+      "inMin": 134
     },
     {
       "acc": "hcsoldier1",
       "kind": "engage",
       "at": "00:09",
-      "inMin": 166
+      "inMin": 157
     },
     {
       "acc": "woq",
       "kind": "engage",
       "at": "00:50",
-      "inMin": 207
+      "inMin": 198
     },
     {
       "acc": "tov",
       "kind": "vote1",
       "at": "01:15",
-      "inMin": 232
+      "inMin": 223
     },
     {
       "acc": "lsa",
       "kind": "post",
       "at": "01:35",
-      "inMin": 252
+      "inMin": 243
     },
     {
       "acc": "wog",
       "kind": "engage",
       "at": "01:55",
-      "inMin": 272
+      "inMin": 263
     }
   ],
   "law": {
@@ -1109,14 +1109,14 @@
     "power": "הצבעות לפי מצב-הכוח: משקל מלא ב-VP≥80, הפחתה מתחת, מנוחה מ-30; רצפת RC 20%",
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)"
   },
-  "ms": 18586,
+  "ms": 18706,
   "lastPublish": {
     "day": "2026-10-06",
-    "at": "2026-10-06T21:23:14.114Z",
+    "at": "2026-10-06T21:32:32.081Z",
     "ok": true,
     "verdict": "BROADCAST",
-    "txid": "c407e366a0a5c7f6029234225cfca3a316786b1a",
+    "txid": "bb261e9de3e7b419be804b70e57f3a956dd4f6eb",
     "error": null,
-    "bytes": 2131
+    "bytes": 2129
   }
 }
