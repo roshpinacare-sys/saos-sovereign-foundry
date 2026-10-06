@@ -21,6 +21,8 @@ import { contentState } from "./content.mjs";
 import { rcTankState } from "./rctank.mjs";
 import { payoutsState } from "./payouts.mjs";
 import { weaveState } from "./weave.mjs";
+import { coordinationState, runCoordination, publishManifest } from "./coordination.mjs";
+import { trendsState, runTrends } from "./trends.mjs";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -108,6 +110,9 @@ async function handle(req) {
       /* T-21 evidence files the cockpit renders (single source: the engine) */
       roles: readJson(path.join(STATE, "fleet-roles.json")),
       economics: readJson(path.join(STATE, "economics.json")),
+      /* R231 · the fleet coordination center + trend radar */
+      coordination: coordinationState(),
+      trends: trendsState(),
       execLog,
       events: readLines(path.join(STATE, "events.jsonl"), 20),
       notes: ["sovereign engine · state lives inside my-project · master credential engine-held, doctrine-capped, never logged", "T-14: continuous-learning layer live — lessons from recorded history, hard-clamped tunings, growth-option discovery", "T-22: one-body law — every domain fact on this page is computed exactly once (here)"],
@@ -121,6 +126,24 @@ async function handle(req) {
   }
   if (p === "/weave") {
     return json({ ok: true, at: new Date().toISOString(), account: ACCOUNT, weave: weaveState() });
+  }
+  /* R231 · the fleet coordination center: schedule + power + engagement + trends */
+  if (p === "/coordination") {
+    return json({ ok: true, at: new Date().toISOString(), account: ACCOUNT, coordination: coordinationState(), trends: trendsState() });
+  }
+  if (p === "/coordination/refresh") {
+    if (req.method !== "POST") return json({ ok: false, error: "POST required" }, 405);
+    const out = await runCoordination({ now: new Date().toISOString(), publish: false }).catch((e) => ({ error: String(e?.message ?? e).slice(0, 160) }));
+    return json({ ok: !out.error, at: new Date().toISOString(), summary: { engagement: out.engagement?.summary ?? null, power: out.power?.ok ?? false, ms: out.ms ?? null }, error: out.error ?? null });
+  }
+  if (p === "/coordination/publish") {
+    if (req.method !== "POST") return json({ ok: false, error: "POST required" }, 405);
+    const out = await publishManifest({ now: new Date().toISOString(), force: true }).catch((e) => ({ ok: false, error: String(e?.message ?? e).slice(0, 160) }));
+    return json({ at: new Date().toISOString(), ...out });
+  }
+  if (p === "/trends") {
+    const out = await runTrends({ now: new Date().toISOString() }).catch((e) => ({ error: String(e?.message ?? e).slice(0, 160) }));
+    return json({ ok: !out.error, at: new Date().toISOString(), ...out, trends: trendsState() });
   }
   if (p === "/cycle") {
     if (req.method !== "POST") return json({ ok: false, error: "POST required" }, 405);
@@ -187,7 +210,7 @@ async function handle(req) {
                      : "credential secured but not matching this account's authorities — install the proposedPubkeys on steemit.com, or paste the CURRENT password instead",
     });
   }
-  return json({ ok: false, error: "not-found", routes: ["/health", "/status", "/hyper", "/payouts", "/weave", "/cycle", "/cycle-status", "/live", "/fills", "/exec-status", "/fleet", "/adopt-credential"] }, 404);
+  return json({ ok: false, error: "not-found", routes: ["/health", "/status", "/hyper", "/payouts", "/weave", "/coordination", "/coordination/refresh", "/coordination/publish", "/trends", "/cycle", "/cycle-status", "/live", "/fills", "/exec-status", "/fleet", "/adopt-credential"] }, 404);
 }
 
 // T-15 SINGLE-INSTANCE LAW (measured live: 3 duplicate engine processes were

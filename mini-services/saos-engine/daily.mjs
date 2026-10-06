@@ -37,6 +37,8 @@ import { runContent } from "./content.mjs";
 import { runRcTank, rcTankState } from "./rctank.mjs";
 import { runPayouts, payoutsState } from "./payouts.mjs";
 import { runWeave, weaveState } from "./weave.mjs";
+import { runCoordination, coordinationState } from "./coordination.mjs";
+import { runTrends } from "./trends.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const STATE = path.join(DIR, "state");
@@ -571,6 +573,32 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
     }
     const out = await runWeave({ now, account: ACCOUNT });
     return { verdict: "PUBLISHED", day: out.day, theirVotesToday: out.theirs?.votesToday ?? 0, ourVotesToday: out.ours?.votesToday ?? 0, revision: out.handshake?.revision ?? 1 };
+  });
+
+  /* R231 · מכ"ם-הטרנדים: what's trending INSIDE our contexts (crypto, DPoS,
+   * network development, AI) — chain trending sweep + the AI trend analyst
+   * via the bridge. Own 6h cadence inside; fail-isolated. */
+  report.steps.trends = await stepWrap("trends", async () => {
+    const out = await runTrends({ now });
+    return { verdict: out.verdict, topics: out.topics ?? null, chainScanned: out.chainScanned ?? null, lastAt: out.lastAt ?? null, ms: out.ms ?? null };
+  });
+
+  /* R231 · מרכז-תיאום הצי: the operator's coordination order — staggered
+   * schedule (each account enters at its own time), power-aware vote law
+   * (VP/RC floors, weights, no wasted power), fleet engagement matrix
+   * (respond to ALL our posts, develop threads) + the PUBLIC coordination
+   * manifest (saos.fleet.coordination.v1 custom_json) the second signer can
+   * adopt. Publish day-gated inside; fail-isolated. */
+  report.steps.coordination = await stepWrap("coordination", async () => {
+    const out = await runCoordination({ now, publish: true });
+    const c = coordinationState();
+    return {
+      verdict: `SCHEDULED:${(c?.schedule ?? null) ? "ok" : "none"}·POWER:${c?.power?.ok ? "ok" : "fail"}·ENG:${c?.engagement?.ok ? "ok" : "fail"}`,
+      accounts: c?.power?.accounts?.length ?? null,
+      engagement: c?.engagement?.summary ?? null,
+      publish: out.publish ?? null,
+      ms: out.ms ?? null,
+    };
   });
 
   /* T-22 · STANDING SELFTEST: the machine audits its own laws daily —
