@@ -1312,3 +1312,23 @@ Work Log:
 Stage Summary:
 - The operator's three demands are all measured GREEN: (1) sandbox state diagnosed honestly (it DID reset; cause = uncommitted seal work + stale platform archive), (2) seal password located in the project's own folders/lineage and the seal is OPEN with zero secret printed, (3) the preview renders and is now defended by three survival layers (guardian loop, custodian gate hatch in the boot tree, everything committed+pushed so the next reset restores the correct state).
 - Honest notes: (a) the vault-transfer ECDH MAIN_KEY remains sealed — recipient key not in custody, recorded not forced; (b) .secrets/headcorner.key appeared at 17:59Z from a boot-time adopter (pre-dating my session) — provenance unverified but chain-validated by the seal lib; (c) the earlier "seal query kills the server" correlation was coincidental — deaths were the environment's reaper, proven by the control experiment (sleep died too).
+---
+Task ID: R227
+Agent: Z.ai Code (main orchestrator)
+Task: OPERATOR ORDER "עבור לתיקיה אחרת בגיט — סוכן אחר על אותו ממשק, שלא יהיו דריסות; אתה יכול לעלות על foundry" — git home migration steem → saos-sovereign-foundry
+
+Work Log:
+- Verified sandbox state first: dev server alive (port 3000, HTTP 200), project tree intact — NO reset this time (unlike R226).
+- Enumerated operator's repos via authenticated API; located the migration target: roshpinacare-sys/saos-sovereign-foundry (private, "SAOS Sovereign Foundry v2 — cross-network anchoring, energy sovereignty, evidence economy"), default branch main, own automation (foundry-selftest PASS commits), branches: main + security/audit-2026-09-28.
+- ROOT-CAUSED first push rejection: local clone was SHALLOW (49 commits, 3 shallow boundary refs) → "remote unpack failed: did not receive expected object 2a9ab9c" when pushing into an unrelated repo (client cannot backfill missing history).
+- HEALED by unshallowing from steem: git fetch steem --unshallow → full 205-commit history, is-shallow=false. Retry push → SUCCESS.
+- Migration executed: origin renamed → steem (fetch-only backup reference, kept deliberately); new origin → https://github.com/roshpinacare-sys/saos-sovereign-foundry.git; branch saos-cockpit pushed to foundry as [new branch] with upstream tracking; pre-push commit 602d190 "state sync before foundry migration (agent split, no-overwrite law)" (11 state files).
+- CUSTODIAN ALIGNMENT VERIFIED (measured, not assumed): sovereign-push.sh TARGET="saos-cockpit" + divergence-check.sh both drive off `origin` → after the swap, the boot-tree custodian's automatic persistence now flows to foundry/saos-cockpit — the whole organ (guardian, gate, commits) follows the new home with zero script edits, push law untouched.
+- No-overwrite guarantee: the other agent keeps steem/saos-cockpit; my branch lives on foundry as a SEPARATE branch (foundry main + its selftest automation untouched); different repos → zero collision surface.
+- Post-flight sync check: fetch origin saos-cockpit → 0/0 ahead/behind (local == foundry).
+
+Stage Summary:
+- My git home is now roshpinacare-sys/saos-sovereign-foundry, branch saos-cockpit (602d190, tracked, 0/0). steem kept as steem remote for lineage/recovery only — never pushed to by me.
+- The foundry-selftest cron on foundry main is untouched; my work stream is isolated on its own branch.
+- Token hygiene preserved: cred-helper.sh reads upload/pat.env only; remote URLs remain token-free.
+- Next agent on this seat: push targets origin=foundry automatically; do NOT switch back to steem without an explicit operator order.
