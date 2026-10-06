@@ -109,7 +109,7 @@
       "cadence": "6h",
       "truthContract": "findings carry url+date from real search results; no finding without a source",
       "recruitedAt": "2026-10-01T22:23:08.223Z",
-      "evidence": "state/webintel.json: 15 sourced findings, age 4h — external recon live",
+      "evidence": "state/webintel.json: 15 sourced findings, age 5h — external recon live",
       "priorStatus": "active"
     },
     {
@@ -137,6 +137,6 @@
       "priorStatus": "active"
     }
   ],
-  "at": "2026-10-06T20:16:02.723Z",
+  "at": "2026-10-06T20:26:02.726Z",
   "pid": 8926
 }

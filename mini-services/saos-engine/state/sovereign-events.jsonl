@@ -577,3 +577,6 @@
 {"at":"2026-10-06T19:56:10.727Z","kind":"cycle-ok(auto)","ms":4971,"engineMeasured":true,"steps":18,"verdict":null,"blockedSteps":[],"error":null}
 {"at":"2026-10-06T20:06:10.728Z","kind":"cycle-ok(auto)","ms":4744,"engineMeasured":true,"steps":18,"verdict":null,"blockedSteps":[],"error":null}
 {"at":"2026-10-06T20:16:10.731Z","kind":"cycle-ok(auto)","ms":6060,"engineMeasured":true,"steps":18,"verdict":null,"blockedSteps":[],"error":null}
+{"at":"2026-10-06T20:26:10.733Z","kind":"cycle-ok(auto)","ms":5073,"engineMeasured":true,"steps":18,"verdict":null,"blockedSteps":[],"error":null}
+{"at":"2026-10-06T20:27:07.461Z","kind":"boot","pid":20607,"resumed":false,"carriedOver":{"checks":2405,"cyclesOk":175,"heals":37}}
+{"at":"2026-10-06T20:27:07.480Z","kind":"watchdog-up"}
