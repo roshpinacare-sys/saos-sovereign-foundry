@@ -11,7 +11,7 @@
         "amountSteem": 0.74184,
         "unit": 0.105122,
         "sbdOut3": 0.078,
-        "at": "2026-10-06T21:07:35.304Z",
+        "at": "2026-10-06T21:22:48.186Z",
         "tranche": "flow"
       },
       {
@@ -19,14 +19,14 @@
         "amountSteem": 0.74184,
         "unit": 0.10647,
         "sbdOut3": 0.079,
-        "at": "2026-10-06T21:07:35.304Z",
+        "at": "2026-10-06T21:22:48.186Z",
         "tranche": "flow"
       }
     ],
     "flowBids": []
   },
   "flow": {
-    "bestAsk": 0.10306,
+    "bestAsk": 0.102854,
     "bestBid": 0.100227,
     "spacingBps": 15,
     "levels": 4,
@@ -37,14 +37,14 @@
     "flowBids": 0
   },
   "book": {
-    "bestAsk": 0.10305991257392647,
+    "bestAsk": 0.10285420416559526,
     "bestBid": 0.100227,
-    "askDepthSteem": 1245.419,
-    "bidDepthSbd": 2879.956,
-    "at": "2026-10-06T21:07:35.304Z"
+    "askDepthSteem": 1244.526,
+    "bidDepthSbd": 2880.612,
+    "at": "2026-10-06T21:22:48.186Z"
   },
   "market": {
-    "at": "2026-10-06T20:47:38.924Z",
+    "at": "2026-10-06T21:17:39.352Z",
     "windowHours": 24,
     "class": "measured",
     "trades": 568,
@@ -56,10 +56,10 @@
     "sizeP50": 1,
     "sizeP90": 1,
     "book": {
-      "bestAsk": 0.10326562098225765,
+      "bestAsk": 0.10295705836976086,
       "bestBid": 0.100227,
-      "spreadBps": 303.17,
-      "askDepthSteem": 1284.246,
+      "spreadBps": 272.39,
+      "askDepthSteem": 1245.429,
       "bidDepthSbd": 2879.956
     }
   },
@@ -68,10 +68,10 @@
     "source": "internal-feed-fallback+derived-sbd",
     "lowConfidence": true,
     "internalFeed": 0.104097,
-    "dragK": 1.1395,
+    "dragK": 1.1295,
     "floor": 0.104305,
     "ceiling": 0.103888,
-    "spreadBpsFed": 279
+    "spreadBpsFed": 259
   },
   "skew": {
     "skew": 0.296524,
@@ -84,11 +84,11 @@
     "orderids": []
   },
   "liquidity": {
-    "deployedAsks": 1106.404,
+    "deployedAsks": 1105.404,
     "deployedBids": 0,
     "askBudget": 0,
     "bidBudget": 0,
     "deployCap": 0.6
   },
-  "publishedAt": "2026-10-06T21:07:35.304Z"
+  "publishedAt": "2026-10-06T21:22:48.186Z"
 }

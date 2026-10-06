@@ -125,15 +125,21 @@ export async function powerBoard() {
   const rcMap = {};
   for (const a of (rc.ok ? rc.result?.rc_accounts ?? [] : [])) rcMap[a.account] = a;
   const accounts = (r.result ?? []).filter(Boolean).map((acc) => {
+    /* EFFECTIVE-VESTS LAW (measured live R231): the manabar max runs on
+     * vesting_shares + received − delegated — raw vests alone gave the
+     * phantom VP>100% on delegated accounts (cashmachine 1414%!). */
     const vests = Number(String(acc.vesting_shares ?? "0").split(" ")[0]) || 0;
+    const recv = Number(String(acc.received_vesting_shares ?? "0").split(" ")[0]) || 0;
+    const dele = Number(String(acc.delegated_vesting_shares ?? "0").split(" ")[0]) || 0;
+    const effVests = Math.max(0, vests + recv - dele);
     const mana = Number(acc.voting_manabar?.current_mana ?? 0);
-    const vpEff = vests > 0 ? Math.round((mana / (vests * 1e6)) * 1000) / 10 : null;
+    const vpEff = effVests > 0 ? Math.min(100, Math.round((mana / (effVests * 1e6)) * 1000) / 10) : null;
     let rcPct = null;
     const rcA = rcMap[acc.name];
     if (rcA) {
       const cur = Number(rcA.rc_manabar?.current_mana ?? 0);
-      const max = Number(rcA.rc_manabar?.max_rc ?? 0);
-      rcPct = max > 0 ? Math.round((cur / max) * 1000) / 10 : null;
+      const max = Number(rcA.max_rc ?? 0); // NOTE: max_rc lives at account level (chain shape, measured)
+      rcPct = max > 0 ? Math.min(100, Math.round((cur / max) * 1000) / 10) : null;
     }
     const law = powerVerdict(vpEff);
     const lowRc = rcPct != null && rcPct < RC_FLOOR_PCT;
@@ -306,6 +312,7 @@ export async function runCoordination({ now = new Date().toISOString(), publish 
     power, engagement, assignments,
     trends: { fetchedAt: trends.fetchedAt, verdict: trends.verdict, topics: (trends.topics ?? []).slice(0, 6) },
     nextWindows: nextWindows.slice(0, 12),
+    lastPublish: prev?.lastPublish ?? null,
     law: {
       stagger: "שכל-אחד יכנס בזמן אחר — מרווח 20 דק בין כל-שני חלונות-צי",
       power: "הצבעות לפי מצב-הכוח: משקל מלא ב-VP≥80, הפחתה מתחת, מנוחה מ-30; רצפת RC 20%",

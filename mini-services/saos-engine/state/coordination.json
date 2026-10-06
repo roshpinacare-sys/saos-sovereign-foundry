@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-06",
-  "at": "2026-10-06T21:15:40.933Z",
+  "at": "2026-10-06T21:22:48.186Z",
   "schedule": {
     "headcorner": {
       "post": 647,
@@ -123,20 +123,20 @@
       {
         "name": "headcorner",
         "sp": 6.37,
-        "vpEff": 5.1,
-        "rcPct": null,
+        "vpEff": 17.5,
+        "rcPct": 35.8,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
         "rcGate": null,
-        "steem": 24.728,
+        "steem": 25.728,
         "lastVote": "2026-10-06T20:35:18"
       },
       {
         "name": "cashmachine",
         "sp": 0.01,
-        "vpEff": 1414.5,
-        "rcPct": null,
+        "vpEff": 99,
+        "rcPct": 98.7,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -147,10 +147,10 @@
       {
         "name": "haran",
         "sp": 0.38,
-        "vpEff": 30.7,
-        "rcPct": null,
-        "verdict": "REDUCED",
-        "weightPct": 50,
+        "vpEff": 93.2,
+        "rcPct": 98,
+        "verdict": "READY-FULL",
+        "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
         "steem": 0.01,
@@ -159,8 +159,8 @@
       {
         "name": "israelnews",
         "sp": 0,
-        "vpEff": 72640.5,
-        "rcPct": null,
+        "vpEff": 99.1,
+        "rcPct": 97.7,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -171,8 +171,8 @@
       {
         "name": "lsa",
         "sp": 0.01,
-        "vpEff": 1663.8,
-        "rcPct": null,
+        "vpEff": 99,
+        "rcPct": 97.9,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -183,8 +183,8 @@
       {
         "name": "macrame",
         "sp": 0,
-        "vpEff": 3656.6,
-        "rcPct": null,
+        "vpEff": 99,
+        "rcPct": 95.6,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -195,8 +195,8 @@
       {
         "name": "siq",
         "sp": 0.01,
-        "vpEff": 657.5,
-        "rcPct": null,
+        "vpEff": 99.1,
+        "rcPct": 92.2,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -207,8 +207,8 @@
       {
         "name": "tov",
         "sp": 0.01,
-        "vpEff": 660.9,
-        "rcPct": null,
+        "vpEff": 99,
+        "rcPct": 95.5,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -219,8 +219,8 @@
       {
         "name": "wic",
         "sp": 0,
-        "vpEff": 1285.4,
-        "rcPct": null,
+        "vpEff": 99,
+        "rcPct": 89.7,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -231,8 +231,8 @@
       {
         "name": "wog",
         "sp": 0.01,
-        "vpEff": 657.7,
-        "rcPct": null,
+        "vpEff": 99.1,
+        "rcPct": 92.4,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -243,8 +243,8 @@
       {
         "name": "woq",
         "sp": 0,
-        "vpEff": 2053.3,
-        "rcPct": null,
+        "vpEff": 99,
+        "rcPct": 88.8,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-06T21:15:42.343Z"
+    "at": "2026-10-06T21:22:54.400Z"
   },
   "engagement": {
     "ok": true,
@@ -439,7 +439,7 @@
         "author": "headcorner",
         "permlink": "understanding-steem-s-curation-rewards-20261006-0",
         "title": "Understanding Steem's Curation Rewards",
-        "ageH": 1,
+        "ageH": 2,
         "fleetVotes": [
           "cashmachine",
           "wic",
@@ -927,82 +927,181 @@
     ]
   },
   "trends": {
-    "fetchedAt": null,
-    "verdict": "NOT-RUN-YET",
-    "topics": []
+    "fetchedAt": "2026-10-06T21:16:09.311Z",
+    "verdict": "TRENDS-OK",
+    "topics": [
+      {
+        "id": "tr1791321369311-0",
+        "topic": "STEEM Price Breaking 365-day SMA: What Does It Mean for the Network?",
+        "angle": "Educational explainer about technical indicators and their significance for blockchain networks",
+        "talkTrack": "What does it technically mean when STEEM breaks its 365-day SMA? How might this affect investor confidence and network development? What historical precedents can we learn from?",
+        "tags": [
+          "steem",
+          "crypto",
+          "blockchain",
+          "technical-analysis"
+        ],
+        "score": 8.5,
+        "basedOn": [
+          "I didn't know that STEEM price broke the 365d SMA line since 26th Sep 🤯"
+        ]
+      },
+      {
+        "id": "tr1791321369311-1",
+        "topic": "The Steem-to-Hive Transition: Community Perspectives on Network Forks",
+        "angle": "Open question about community experiences with blockchain network splits",
+        "talkTrack": "For those who experienced the Steem-to-Hive transition, what were the most significant challenges and opportunities? How did it affect your participation in the ecosystem? What lessons can other DPoS networks learn from this?",
+        "tags": [
+          "steem",
+          "blockchain",
+          "dpos",
+          "web3"
+        ],
+        "score": 8.2,
+        "basedOn": [
+          "Steem Community Relaunches Platform as Hive to Make It"
+        ]
+      },
+      {
+        "id": "tr1791321369311-2",
+        "topic": "Building AI Agents on DPoS: Enhancing Community Engagement",
+        "angle": "Tooling/workflow for combining AI with blockchain governance",
+        "talkTrack": "How could AI agents be designed to enhance DPoS governance while maintaining decentralization? What specific tasks could they handle to reduce friction for community members? What ethical considerations should we prioritize?",
+        "tags": [
+          "ai",
+          "dpos",
+          "blockchain",
+          "web3"
+        ],
+        "score": 7.8,
+        "basedOn": [
+          "Butterflies can retain memories from when they were caterpilleras/Las mariposas pueden conservar recuerdos",
+          "Share your thoughts about Technology"
+        ]
+      },
+      {
+        "id": "tr1791321369311-3",
+        "topic": "Energy Storage Innovation: Blockchain's Role in Sustainable Tech",
+        "angle": "Network-development/possibilities piece connecting blockchain to real-world applications",
+        "talkTrack": "How might blockchain networks like Steem facilitate the adoption of new energy storage technologies? What tokenization models could make building-integrated batteries more accessible? Could this create new economic models for sustainable development?",
+        "tags": [
+          "blockchain",
+          "technology",
+          "web3",
+          "sustainability"
+        ],
+        "score": 7.5,
+        "basedOn": [
+          "New device could turn buildings into batteries/Nuevo dispositivo podría convertir a los edificios en"
+        ]
+      },
+      {
+        "id": "tr1791321369311-4",
+        "topic": "Cross-Chain Communication: Enhancing DPoS Interoperability",
+        "angle": "Technical discussion about improving blockchain connectivity",
+        "talkTrack": "What technical approaches could make DPoS chains like Steem more interoperable with other blockchain ecosystems? How might this benefit content creators and users across platforms? What are the security implications of increased cross-chain communication?",
+        "tags": [
+          "blockchain",
+          "dpos",
+          "crypto",
+          "web3"
+        ],
+        "score": 7.3,
+        "basedOn": [
+          "#2560 Die deutschsprachigen Steem- & Finanzartikel (Dienstag, 06.10.2026) - Mit Gewinnspiel-Sektion"
+        ]
+      },
+      {
+        "id": "tr1791321369311-5",
+        "topic": "Decentralized Identity for Content Creators: Web3 Possibilities",
+        "angle": "Exploring new models for creator economy in Web3",
+        "talkTrack": "How could decentralized identity transform how content creators on platforms like Steem verify ownership and control their work? What new economic models might emerge from this shift? How would this affect platform governance and revenue distribution?",
+        "tags": [
+          "web3",
+          "blockchain",
+          "dpos",
+          "identity"
+        ],
+        "score": 7,
+        "basedOn": [
+          "박사 지원",
+          "도용된 전지 전능"
+        ]
+      }
+    ]
   },
   "nextWindows": [
     {
       "acc": "hcsoldier1",
       "kind": "vote2",
       "at": "21:33",
-      "inMin": 17
+      "inMin": 10
     },
     {
       "acc": "cashmachine",
       "kind": "post",
       "at": "21:53",
-      "inMin": 37
+      "inMin": 30
     },
     {
       "acc": "hcsoldier2",
       "kind": "vote2",
       "at": "22:26",
-      "inMin": 70
+      "inMin": 63
     },
     {
       "acc": "tov",
       "kind": "engage",
       "at": "22:46",
-      "inMin": 90
+      "inMin": 83
     },
     {
       "acc": "siq",
       "kind": "vote2",
       "at": "23:06",
-      "inMin": 110
+      "inMin": 103
     },
     {
       "acc": "hcsoldier3",
       "kind": "engage",
       "at": "23:26",
-      "inMin": 130
+      "inMin": 123
     },
     {
       "acc": "hcsoldier3",
       "kind": "vote2",
       "at": "23:46",
-      "inMin": 150
+      "inMin": 143
     },
     {
       "acc": "hcsoldier1",
       "kind": "engage",
       "at": "00:09",
-      "inMin": 173
+      "inMin": 166
     },
     {
       "acc": "woq",
       "kind": "engage",
       "at": "00:50",
-      "inMin": 214
+      "inMin": 207
     },
     {
       "acc": "tov",
       "kind": "vote1",
       "at": "01:15",
-      "inMin": 239
+      "inMin": 232
     },
     {
       "acc": "lsa",
       "kind": "post",
       "at": "01:35",
-      "inMin": 259
+      "inMin": 252
     },
     {
       "acc": "wog",
       "kind": "engage",
       "at": "01:55",
-      "inMin": 279
+      "inMin": 272
     }
   ],
   "law": {
@@ -1010,14 +1109,14 @@
     "power": "הצבעות לפי מצב-הכוח: משקל מלא ב-VP≥80, הפחתה מתחת, מנוחה מ-30; רצפת RC 20%",
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)"
   },
-  "ms": 18601,
+  "ms": 18586,
   "lastPublish": {
     "day": "2026-10-06",
-    "at": "2026-10-06T21:16:39.750Z",
+    "at": "2026-10-06T21:23:14.114Z",
     "ok": true,
     "verdict": "BROADCAST",
-    "txid": "23d72139d181dd8500f8c9351573a07ca20e081b",
+    "txid": "c407e366a0a5c7f6029234225cfca3a316786b1a",
     "error": null,
-    "bytes": 1956
+    "bytes": 2131
   }
 }

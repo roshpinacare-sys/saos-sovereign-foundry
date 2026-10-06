@@ -1,30 +1,30 @@
 {
-  "bootedAt": "2026-10-06T20:37:35.292Z",
-  "pid": 22251,
+  "bootedAt": "2026-10-06T21:22:03.150Z",
+  "pid": 32014,
   "armed": true,
   "paused": false,
   "watchdog": {
-    "checks": 2448,
+    "checks": 2459,
     "downs": 104,
     "heals": 37,
     "healVerified": 36,
     "healFailed": 0,
-    "lastCheckAt": "2026-10-06T21:16:35.320Z",
+    "lastCheckAt": "2026-10-06T21:27:03.179Z",
     "engineUp": true,
     "lastSpawnAt": null,
-    "lastUpAt": "2026-10-06T21:16:35.323Z",
+    "lastUpAt": "2026-10-06T21:27:03.182Z",
     "blips": 1
   },
   "cycles": {
-    "autoRuns": 238,
-    "ok": 180,
-    "fail": 20,
+    "autoRuns": 240,
+    "ok": 181,
+    "fail": 21,
     "blocked": 38,
-    "lastAt": "2026-10-06T21:07:39.313Z",
+    "lastAt": "2026-10-06T21:23:16.213Z",
     "lastOk": true,
     "lastHealth": "ok",
-    "lastMs": 4006,
-    "nextAt": "2026-10-06T21:17:39.313Z"
+    "lastMs": 25935,
+    "nextAt": "2026-10-06T21:33:16.213Z"
   },
   "selftest": {
     "runs": 1,
@@ -41,16 +41,22 @@
     "lastAlertAt": "2026-10-05T20:18:33.747Z"
   },
   "custodian": {
-    "checks": 890,
+    "checks": 901,
     "downs": 4,
     "heals": 4,
     "healFailed": 0,
-    "lastCheckAt": "2026-10-06T21:16:35.323Z",
+    "lastCheckAt": "2026-10-06T21:27:03.182Z",
     "up": true,
-    "lastUpAt": "2026-10-06T21:16:35.325Z",
+    "lastUpAt": "2026-10-06T21:27:03.184Z",
     "lastSpawnAt": null
   },
   "control": [
+    {
+      "at": "2026-10-06T21:22:03.151Z",
+      "action": "boot",
+      "by": "instrumentation",
+      "note": "SovereignCore armed (gen 3)"
+    },
     {
       "at": "2026-10-06T20:37:35.293Z",
       "action": "boot",
@@ -159,12 +165,6 @@
     },
     {
       "at": "2026-09-30T17:25:54.215Z",
-      "action": "boot",
-      "by": "instrumentation",
-      "note": "SovereignCore armed"
-    },
-    {
-      "at": "2026-09-30T15:26:15.021Z",
       "action": "boot",
       "by": "instrumentation",
       "note": "SovereignCore armed"
