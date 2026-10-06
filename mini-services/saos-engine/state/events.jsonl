@@ -4690,3 +4690,14 @@
 {"type":"hyper.requote","at":"2026-10-06T20:04:05.101Z","label":"requote-front","ops":2,"cancels":2,"creates":0,"txid":"89eaa50bab900a560d63f4886d87966b10561b1c","rcPct":38.3,"opsToday":3959,"equilibriumOpsPerDay":9654,"bestAsk":0.10388274620725123,"bestBid":0.100227}
 {"type":"hyper.requote","at":"2026-10-06T20:04:38.103Z","label":"requote-front","ops":2,"cancels":2,"creates":0,"txid":"a70b834854ebe379b65097fda8fd54f8989abe26","rcPct":38.3,"opsToday":3961,"equilibriumOpsPerDay":9654,"bestAsk":0.10388274620725123,"bestBid":0.100227}
 {"type":"hyper.requote","at":"2026-10-06T20:05:11.104Z","label":"front-create","ops":2,"cancels":0,"creates":2,"txid":"a5c1a8e30d1c8e2e1f3937e29f7468ff844db215","rcPct":38.3,"opsToday":3963,"equilibriumOpsPerDay":9654,"bestAsk":0.10388274620725123,"bestBid":0.100227}
+{"type":"hyper.requote","at":"2026-10-06T20:05:47.107Z","label":"front-create","ops":2,"cancels":0,"creates":2,"txid":"40a156728a8907034d77bd894ca09c98f33e3b56","rcPct":38.3,"opsToday":3965,"equilibriumOpsPerDay":9654,"bestAsk":0.10388274620725123,"bestBid":0.100227}
+{"type":"observe.done","at":"2026-10-06T20:06:02.722Z","fills":0,"parity":0.10409653889308818}
+{"type":"grid.tick","at":"2026-10-06T20:06:02.722Z","runCount":287,"refPrice":0.10409653889308818,"internalFeed":0.10409653889308818,"dragK":1,"inv":{"steem":436.343,"sbd":0.015}}
+{"type":"sweep.scan","at":"2026-10-06T20:06:02.722Z","grid":"sweep","dustSteem":0.34300000000001774}
+{"type":"anchor.quote","at":"2026-10-06T20:06:02.722Z","grid":"anchor-quote","bid":0.103888345815302,"ask":0.10430473197087435}
+{"type":"offer.published","at":"2026-10-06T20:06:02.722Z","verdict":"OFFER-READY","asks":0,"bids":0,"flowAsks":4,"flowBids":0,"bestAsk":0.10388274620725123,"bestBid":0.100227}
+{"type":"convert.planned","at":"2026-10-06T20:06:02.722Z","verdict":"CONVERT-HOLD","edgeBps":6962,"amountSbd":0}
+{"type":"learn.done","at":"2026-10-06T20:06:02.722Z","verdict":"LEARNED","lessons":["signing-cred-blocked"],"tunings":[]}
+{"type":"hyper.requote","at":"2026-10-06T20:06:23.109Z","label":"front-create","ops":2,"cancels":0,"creates":2,"txid":"bf21540de16daed2866929bdf784e126a3b33e14","rcPct":38.3,"opsToday":3967,"equilibriumOpsPerDay":9654,"bestAsk":0.10388274620725123,"bestBid":0.100227}
+{"type":"hyper.requote","at":"2026-10-06T20:06:56.112Z","label":"front-create","ops":2,"cancels":0,"creates":2,"txid":"8e09b94db19ddd48665f362677faa4efc8840af9","rcPct":38.2,"opsToday":3969,"equilibriumOpsPerDay":9654,"bestAsk":0.10378142530646167,"bestBid":0.100227}
+{"type":"hyper.requote","at":"2026-10-06T20:07:29.114Z","label":"front-create","ops":2,"cancels":0,"creates":2,"txid":"d4528a441fe8202db240c7962cb74a4af42913c2","rcPct":38.2,"opsToday":3971,"equilibriumOpsPerDay":9654,"bestAsk":0.10378142530646167,"bestBid":0.100227}
