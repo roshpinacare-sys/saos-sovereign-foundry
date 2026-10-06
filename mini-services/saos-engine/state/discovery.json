@@ -1,6 +1,6 @@
 {
-  "at": "2026-10-06T19:46:02.726Z",
-  "lastFullScanAt": "2026-10-06T19:36:02.719Z",
+  "at": "2026-10-06T19:56:02.720Z",
+  "lastFullScanAt": "2026-10-06T19:56:02.720Z",
   "verdict": "OPTIONS-FOUND",
   "tagBoard": [
     {
@@ -17,7 +17,7 @@
     },
     {
       "tag": "hive-166405",
-      "payoutsSbd": 1489.528
+      "payoutsSbd": 1489.548
     },
     {
       "tag": "hive-196917",
@@ -33,7 +33,7 @@
     },
     {
       "tag": "hive-144064",
-      "payoutsSbd": 972.534
+      "payoutsSbd": 965.567
     },
     {
       "tag": "atomy",
@@ -49,23 +49,23 @@
     },
     {
       "tag": "hive-188619",
-      "payoutsSbd": 822.756
+      "payoutsSbd": 822.731
     }
   ],
   "curationEst": {
-    "dailyPoolSteem": 928837.303,
-    "voteVestsShare": 0.000009281854348968673,
-    "estimatedSteemPerDay": 8.6213,
+    "dailyPoolSteem": 928620.993,
+    "voteVestsShare": 0.000009279720102145216,
+    "estimatedSteemPerDay": 8.6173,
     "note": "linear approx over reward-fund window — ESTIMATED class, never claimed as measured"
   },
   "vpEff": 4.8,
   "opportunities": [
     {
-      "id": "spread-normal",
+      "id": "spread-wide",
       "kind": "book-spread",
       "potentialClass": "measured",
-      "evidence": "spread 0bps (bestAsk 0.10106221547799696 / bestBid 0.10106114199090449)",
-      "potential": "spread inside normal band — hold shape",
+      "evidence": "spread 368bps (bestAsk 0.10398560041141681 / bestBid 0.100227)",
+      "potential": "wide spread = richer maker margins for the ladder",
       "gate": "VF1 floor law: never sell below external value",
       "effort": "dragK already intel-fed"
     },
@@ -82,8 +82,8 @@
       "id": "curation-share",
       "kind": "curation-yield",
       "potentialClass": "estimated",
-      "evidence": "reward-fund pool 928837.303 STEEM/window · our vests share 0.0009% → ~8.6213 STEEM/day",
-      "potential": 8.6213,
+      "evidence": "reward-fund pool 928620.993 STEEM/window · our vests share 0.0009% → ~8.6173 STEEM/day",
+      "potential": 8.6173,
       "gate": "measured truth only lands via curation_reward ops (measureAll) — estimator never claims payout",
       "effort": "rail live since T-13"
     },
@@ -98,6 +98,5 @@
     }
   ],
   "learningConsumer": [],
-  "honesty": "ranked options, zero execution · classes: measured>estimated>potential · gates own the decisions",
-  "freshCached": true
+  "honesty": "ranked options, zero execution · classes: measured>estimated>potential · gates own the decisions"
 }

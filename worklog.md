@@ -1332,3 +1332,36 @@ Stage Summary:
 - The foundry-selftest cron on foundry main is untouched; my work stream is isolated on its own branch.
 - Token hygiene preserved: cred-helper.sh reads upload/pat.env only; remote URLs remain token-free.
 - Next agent on this seat: push targets origin=foundry automatically; do NOT switch back to steem without an explicit operator order.
+---
+Task ID: R228
+Agent: Z.ai Code (main orchestrator)
+Task: OPERATOR ORDER "משימה חשובה — כתבתי עם הרבה סוכנים במקביל את אותם פרומפטים; אתר את כל הדריסות בגיט" — full overwrite-hunt audit across the estate
+
+Work Log:
+- Scanned ALL 16 operator repos via GitHub Events API for forced pushes: ZERO found (history-rewriting overwrites: none detected in the events window). Zero reverts found in local history (205 commits).
+- Overwrite signatures WERE found elsewhere (evidence below), classified into 4 families.
+
+FAMILY 1 — Environment-level overwrites (heaviest):
+- R226 sandbox reset: project reverted to stale steem@saos-cockpit archive; sealed-cockpit state lost because uncommitted; recovered from /tmp snapshot (see R226 entry).
+- Pre-T-84 regression (recovery/MANIFEST.txt): state recovered from steem@saos-cockpit@e4cdfd6; WORKLOG SPLIT into branch-worklog.md (207KB, T-84 era) vs local worklog (155KB) — two forked histories of the same file, explicitly flagged "do NOT overwrite", never reconciled to this day. Same for TODO (T-84 vs T-23-lineage).
+
+FAMILY 2 — Unrelated histories living in the same repos (silent-overwrite hazard):
+- steem: main (1188 commits) vs saos-cockpit (207) — merge-base EMPTY, unrelated histories.
+- foundry: main (270) vs saos-cockpit (207) — merge-base EMPTY, unrelated histories.
+- steem/main == foundry/main (identical tip e8b09bd0, same foundry-selftest[bot] + saos-sovereign-ci commits) — the SAME bot-driven world pushed into BOTH repos; any cross-world merge/push attempt is a clobber event waiting to happen.
+
+FAMILY 3 — Parallel-agent duplicate work (same prompt, 2 agents, 2 repos, minutes apart):
+- Maker-API v1: saos-dex 1d15a542b 18:50 vs saos-control-center 3d31bd267 18:51 (ONE minute apart, same feature, different repos — nobody coordinated).
+- canary Defi→Domain relocation: Domain 06453c585 19:35 vs Zip 20756a952 19:40 (5 min apart).
+- state-push cadence: implemented in parallel in saos-dex ([state] sandbox cadence) AND saos-control-center (EXEC-CD-6 dex-state-push service).
+
+FAMILY 4 — State races + collision-law events (live-wins = designed overwrite):
+- saos-dex 578c6ad61 "[state] conflict-resolved: keep live chain (h125951) — local dex.db authoritative" — actual git conflict resolved by clobbering one side.
+- saos-control-center f88e16357/281d43453 "state-push self-heal — UU/rebase-stuck... live-wins doctrine" — UU (both-modified) conflicts are recurring; resolution doctrine = newest state wins, older side silently discarded.
+- 71× duplicate "SAOS-custodian: bounded-staleness persistence" commits (incl. back-to-back identical pairs like 3d74451+04ca203) — custodian double-tick / racing persistence loops.
+- Worklog round-ID collisions: R218-a/b/c/d EACH used TWICE, T-78 twice, round "3" twice (6 of 64 entries duplicated) + the documented R226-renumber-from-R225 collision. Fleet agents independently pick the same round numbers because they read different worklog snapshots.
+
+Stage Summary:
+- VERDICT: no force-push overwrites anywhere; the real damage class is (a) environment resets + uncommitted work, (b) forked worklog/TODO never reconciled, (c) same-prompt parallel agents shipping identical work to different repos, (d) live-wins state clobbers. All four are process gaps, not data loss events on main lines.
+- CURRENT ISOLATION STATE (post-R227 migration): my lane = foundry/saos-cockpit (custodian-aligned), other agent's lane = steem/saos-cockpit (untouched since migration at 3d74451), main worlds = bot-driven and untouched by me. Zero active collision surface right now.
+- RECOMMENDATION for the operator (not executed without order): give each parallel agent a UNIQUE branch name (e.g., foundry/cockpit-zai vs foundry/cockpit-<other>) — the generic name "saos-cockpit" is the same attractor that caused the steem collisions; a second agent ordered "עלה על foundry" would land on the exact same branch. Also: reconcile the forked worklog (recovery/branch-worklog.md 207KB vs live 155KB) into one canonical timeline.
