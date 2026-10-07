@@ -32,11 +32,17 @@ export async function POST(req: Request) {
   let action = "refresh";
   try {
     const b = await req.json();
-    if (b && (b.action === "publish" || b.action === "refresh")) action = b.action;
+    if (b && ["publish", "refresh", "dry-run"].includes(b.action)) action = b.action;
   } catch { /* default refresh */ }
+  /* R233 · dry-run = engine /execute {dry:true} — preflight plan, zero signing */
+  const path = action === "publish" ? "/coordination/publish" : action === "dry-run" ? "/execute" : "/coordination/refresh";
   try {
-    const path = action === "publish" ? "/coordination/publish" : "/coordination/refresh";
-    const r = await fetch(`${ENGINE_HTTP}${path}`, { method: "POST", signal: AbortSignal.timeout(110_000) });
+    const r = await fetch(`${ENGINE_HTTP}${path}`, {
+      method: "POST",
+      headers: action === "dry-run" ? { "Content-Type": "application/json" } : undefined,
+      body: action === "dry-run" ? JSON.stringify({ dry: true }) : undefined,
+      signal: AbortSignal.timeout(110_000),
+    });
     const j = await r.json();
     return NextResponse.json({ action, ...j }, { status: r.status });
   } catch (e) {

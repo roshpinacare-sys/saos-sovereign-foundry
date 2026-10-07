@@ -616,3 +616,9 @@
 {"at":"2026-10-07T00:27:14.260Z","kind":"cycle-ok(auto)","ms":24461,"engineMeasured":true,"steps":22,"verdict":null,"blockedSteps":[],"error":null}
 {"at":"2026-10-07T00:37:14.265Z","kind":"cycle-ok(auto)","ms":26353,"engineMeasured":true,"steps":22,"verdict":null,"blockedSteps":[],"error":null}
 {"at":"2026-10-07T00:47:10.265Z","kind":"cycle-fail(auto)","ms":24031,"engineMeasured":true,"steps":0,"verdict":null,"blockedSteps":null,"error":"engine-restarted-mid-cycle"}
+{"at":"2026-10-07T00:50:06.137Z","kind":"boot","pid":22985,"resumed":false,"carriedOver":{"checks":2659,"cyclesOk":201,"heals":37}}
+{"at":"2026-10-07T00:50:11.150Z","kind":"watchdog-down-again","downForMs":204896,"confirmMs":5000}
+{"at":"2026-10-07T00:50:11.151Z","kind":"heal-attempt","reason":"watchdog"}
+{"at":"2026-10-07T00:50:11.174Z","kind":"heal-spawn","reason":"watchdog","pid":23024}
+{"at":"2026-10-07T00:50:15.193Z","kind":"heal-verified","up":true}
+{"at":"2026-10-07T00:51:23.178Z","kind":"cycle-ok(auto)","ms":29520,"engineMeasured":true,"steps":22,"verdict":null,"blockedSteps":[],"error":null}

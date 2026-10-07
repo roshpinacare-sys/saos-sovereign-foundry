@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T00:36:46.240Z",
+  "at": "2026-10-07T00:50:51.150Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -124,7 +124,7 @@
         "name": "headcorner",
         "sp": 6.45,
         "vpEff": 24.1,
-        "rcPct": 33.5,
+        "rcPct": 33.3,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T00:36:54.643Z"
+    "at": "2026-10-07T00:50:56.997Z"
   },
   "engagement": {
     "ok": true,
@@ -298,7 +298,7 @@
         "author": "headcorner",
         "permlink": "saos-transparency-20261007",
         "title": "SAOS daily transparency report — real numbers, no promises",
-        "ageH": 0,
+        "ageH": 1,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -489,7 +489,7 @@
         "author": "siq",
         "permlink": "streamlining-your-steem-workflow-tools-for-efficiency-20261006-0",
         "title": "Streamlining Your Steem Workflow: Tools for Efficiency",
-        "ageH": 3,
+        "ageH": 4,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -516,7 +516,7 @@
         "author": "woq",
         "permlink": "how-do-you-evaluate-content-value-on-steem-20261006-0",
         "title": "How Do You Evaluate Content Value on Steem?",
-        "ageH": 4,
+        "ageH": 5,
         "fleetVotes": [
           "siq"
         ],
@@ -545,7 +545,7 @@
         "author": "wic",
         "permlink": "understanding-steem-s-dual-token-economy-20261006-0",
         "title": "Understanding Steem's Dual-Token Economy",
-        "ageH": 4,
+        "ageH": 5,
         "fleetVotes": [],
         "fleetRepliers": [
           "headcorner"
@@ -573,7 +573,7 @@
         "author": "tov",
         "permlink": "streamlining-your-steem-workflow-20261006-0",
         "title": "Streamlining Your Steem Workflow",
-        "ageH": 4,
+        "ageH": 5,
         "fleetVotes": [
           "headcorner"
         ],
@@ -601,7 +601,7 @@
         "author": "macrame",
         "permlink": "how-do-you-discover-quality-content-on-steem-20261006-0",
         "title": "How Do You Discover Quality Content on Steem?",
-        "ageH": 4,
+        "ageH": 5,
         "fleetVotes": [
           "headcorner",
           "siq"
@@ -915,10 +915,120 @@
       }
     ]
   },
+  "threads": {
+    "ok": true,
+    "metrics": [
+      {
+        "author": "headcorner",
+        "permlink": "saos-transparency-20261007",
+        "layer1Count": 0,
+        "layer2Count": 0,
+        "fleetRepliers": 0,
+        "authorResponded": false,
+        "firstFleetReplyH": null,
+        "depth": 1,
+        "developed": false,
+        "score": 0
+      },
+      {
+        "author": "wog",
+        "permlink": "what-makes-content-truly-valuable-on-blockchain-20261006-0",
+        "layer1Count": 0,
+        "layer2Count": 0,
+        "fleetRepliers": 0,
+        "authorResponded": false,
+        "firstFleetReplyH": null,
+        "depth": 1,
+        "developed": false,
+        "score": 0
+      },
+      {
+        "author": "lsa",
+        "permlink": "understanding-blockchain-curation-rewards-20261006-0",
+        "layer1Count": 0,
+        "layer2Count": 0,
+        "fleetRepliers": 0,
+        "authorResponded": false,
+        "firstFleetReplyH": null,
+        "depth": 1,
+        "developed": false,
+        "score": 0
+      },
+      {
+        "author": "haran",
+        "permlink": "optimizing-your-steem-workflow-tools-for-content-creators-20261006-0",
+        "layer1Count": 0,
+        "layer2Count": 0,
+        "fleetRepliers": 0,
+        "authorResponded": false,
+        "firstFleetReplyH": null,
+        "depth": 1,
+        "developed": false,
+        "score": 0
+      },
+      {
+        "author": "israelnews",
+        "permlink": "how-effective-is-steem-s-curation-reward-system-20261006-0",
+        "layer1Count": 0,
+        "layer2Count": 0,
+        "fleetRepliers": 0,
+        "authorResponded": false,
+        "firstFleetReplyH": null,
+        "depth": 1,
+        "developed": false,
+        "score": 0
+      },
+      {
+        "author": "cashmachine",
+        "permlink": "understanding-steem-s-dual-token-system-steem-vs-sbd-20261006-0",
+        "layer1Count": 0,
+        "layer2Count": 0,
+        "fleetRepliers": 0,
+        "authorResponded": false,
+        "firstFleetReplyH": null,
+        "depth": 1,
+        "developed": false,
+        "score": 1.1
+      },
+      {
+        "author": "headcorner",
+        "permlink": "sbdsteem-spread-widens-to-2519-zero-external-votes-recorded-mux764vw",
+        "layer1Count": 0,
+        "layer2Count": 0,
+        "fleetRepliers": 0,
+        "authorResponded": false,
+        "firstFleetReplyH": null,
+        "depth": 1,
+        "developed": false,
+        "score": 1.1
+      },
+      {
+        "author": "siq",
+        "permlink": "streamlining-your-steem-workflow-tools-for-efficiency-20261006-0",
+        "layer1Count": 0,
+        "layer2Count": 0,
+        "fleetRepliers": 0,
+        "authorResponded": false,
+        "firstFleetReplyH": null,
+        "depth": 1,
+        "developed": false,
+        "score": 0
+      }
+    ],
+    "summary": {
+      "postsMeasured": 8,
+      "developed": 0,
+      "avgDepth": 1,
+      "avgLayer2": 0,
+      "authorResponseRate": 0,
+      "avgScore": 0.3
+    },
+    "at": "2026-10-07T00:50:51.150Z"
+  },
   "compliance": {
     "protocol": "saos.fleet.compliance.v1",
     "day": "2026-10-07",
-    "at": "2026-10-07T00:16:46.241Z",
+    "at": "2026-10-07T00:46:47.874Z",
     "scheduleHint": "14 accounts × (post+2vote+engage) · tol 30min",
     "rows": [
       {
@@ -1065,8 +1175,30 @@
       "verdict": "NOT-ADOPTED"
     },
     "readFails": [],
-    "note": "ציות = הפעולה בפועל נחתה בתוך חלון-הלו\"ז הדטרמיניסטי (אותו יום, אותו חוק). QUIET = עדיין אין פעילות-היום — לא-ציות ולא-הפרה.",
-    "ms": 14886
+    "history": [
+      {
+        "day": "2026-10-07",
+        "avgCompliancePct": 0,
+        "verdict": "NOT-ADOPTED",
+        "densestBurst": 1,
+        "burstAt": "00:13",
+        "clusterViolations": 0,
+        "accountsActive": 1,
+        "totalActions": 1,
+        "at": "2026-10-07T00:46:47.874Z"
+      }
+    ],
+    "trend": {
+      "day": "2026-10-07",
+      "cur": 0,
+      "prev": null,
+      "delta": null,
+      "curVerdict": "NOT-ADOPTED",
+      "prevVerdict": null,
+      "prevDay": null
+    },
+    "note": "ציות = הפעולה בפועל נחתה בתוך חלון-הלו\"ז הדטרמיניסטי (אותו יום, אותו חוק). QUIET = עדיין אין פעילות-היום — לא-ציות ולא-הפרה. R233: history = קו-המגמה יום-מול-יום.",
+    "ms": 14792
   },
   "trends": {
     "fetchedAt": "2026-10-06T21:16:09.311Z",
@@ -1177,73 +1309,73 @@
       "acc": "woq",
       "kind": "engage",
       "at": "00:51",
-      "inMin": 14
+      "inMin": 0
     },
     {
       "acc": "tov",
       "kind": "vote1",
       "at": "01:16",
-      "inMin": 39
+      "inMin": 25
     },
     {
       "acc": "lsa",
       "kind": "post",
       "at": "01:36",
-      "inMin": 59
+      "inMin": 45
     },
     {
       "acc": "wog",
       "kind": "engage",
       "at": "01:56",
-      "inMin": 79
+      "inMin": 65
     },
     {
       "acc": "hcsoldier2",
       "kind": "engage",
       "at": "02:16",
-      "inMin": 99
+      "inMin": 85
     },
     {
       "acc": "cashmachine",
       "kind": "vote1",
       "at": "02:36",
-      "inMin": 119
+      "inMin": 105
     },
     {
       "acc": "lsa",
       "kind": "vote1",
       "at": "02:56",
-      "inMin": 139
+      "inMin": 125
     },
     {
       "acc": "israelnews",
       "kind": "vote1",
       "at": "04:32",
-      "inMin": 235
+      "inMin": 221
     },
     {
       "acc": "tov",
       "kind": "post",
       "at": "04:52",
-      "inMin": 255
+      "inMin": 241
     },
     {
       "acc": "haran",
       "kind": "post",
       "at": "05:57",
-      "inMin": 320
+      "inMin": 306
     },
     {
       "acc": "cashmachine",
       "kind": "engage",
       "at": "06:17",
-      "inMin": 340
+      "inMin": 326
     },
     {
       "acc": "haran",
       "kind": "vote1",
       "at": "06:53",
-      "inMin": 376
+      "inMin": 362
     }
   ],
   "lastPublish": {
@@ -1258,7 +1390,8 @@
   "law": {
     "stagger": "שכל-אחד יכנס בזמן אחר — מרווח 20 דק בין כל-שני חלונות-צי",
     "power": "הצבעות לפי מצב-הכוח: משקל מלא ב-VP≥80, הפחתה מתחת, מנוחה מ-30; רצפת RC 20%",
-    "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)"
+    "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)",
+    "threads": "שיח מתפתח = תגובות-לתגובות + הגב-מחבר — R233 מודד את העומק, לא רק את הכיסוי"
   },
-  "ms": 18703
+  "ms": 24327
 }

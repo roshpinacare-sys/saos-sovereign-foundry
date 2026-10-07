@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { CalendarClock, ClipboardCheck, Gauge, MessagesSquare, Radar, RefreshCw, Send, Zap } from 'lucide-react'
+import { CalendarClock, ClipboardCheck, Gauge, MessagesSquare, Radar, RefreshCw, Send, ShieldQuestion, Zap } from 'lucide-react'
 import { SectionCard } from './SectionCard'
 import { StatusBadge } from './StatusBadge'
 import { cn } from '@/lib/utils'
@@ -35,11 +35,27 @@ type ComplianceRow = {
   clusters: number; verdict: string
   misses?: { kind: string; at: string; nearest: string }[]
 }
+type HistoryDay = {
+  day: string; avgCompliancePct: number | null; verdict: string
+  densestBurst?: number; clusterViolations?: number; accountsActive?: number
+}
+type TrendPoint = {
+  day: string; cur: number | null; prev: number | null; delta: number | null
+  curVerdict: string | null; prevVerdict: string | null; prevDay: string | null
+}
 type ComplianceDoc = {
   day?: string; at?: string
   rows?: ComplianceRow[]
   summary?: { accounts?: number; accountsActive?: number; totalActions?: number; avgCompliancePct?: number | null; densestBurst?: number; burstAt?: string | null; clusterViolations?: number; verdict?: string } | null
+  history?: HistoryDay[]
+  trend?: TrendPoint | null
 }
+type ThreadsSummary = {
+  postsMeasured?: number; developed?: number; avgDepth?: number | null
+  avgLayer2?: number | null; authorResponseRate?: number | null; avgScore?: number | null
+}
+type ThreadsDoc = { ok?: boolean; summary?: ThreadsSummary | null; metrics?: { author: string; permlink: string; depth: number; developed: boolean; authorResponded: boolean; score: number }[]; at?: string }
+type DryPlanEntry = { kind: string; verdict: string; window?: number | null; target?: string; tasksCount?: number; vpEff?: number | null }
 type ExecutionDoc = {
   day?: string; at?: string; minute?: number; rcPct?: number | null
   windows?: Record<string, { at?: string; verdict?: string; landed?: number }>
@@ -52,6 +68,7 @@ type CoordPayload = {
     schedule?: Record<string, { post: number; votes: number[]; engage: number }>
     power?: { ok?: boolean; accounts?: PowerAcc[]; at?: string }
     engagement?: { ok?: boolean; posts?: EngPost[]; summary?: { posts?: number; avgCoveragePct?: number; fullyCovered?: number; openThreads?: number } }
+    threads?: ThreadsDoc | null
     assignments?: Record<string, { author: string; permlink: string; title: string; kind: string }[]>
     nextWindows?: { acc: string; kind: string; at: string; inMin: number }[]
     lastPublish?: { day?: string; at?: string; ok?: boolean; txid?: string | null; error?: string | null }
@@ -109,6 +126,7 @@ export function CoordinationCard() {
   const [loading, setLoading] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
+  const [dryPlan, setDryPlan] = useState<DryPlanEntry[] | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -138,13 +156,35 @@ export function CoordinationCard() {
     } catch { setMsg('הפעולה נכשלה — נסה שוב') } finally { setBusy(null) }
   }
 
+  /* R233 · dry preflight — proves the executor's gates/laws/targets resolve,
+   * zero signing, zero state writes */
+  const dryRun = async () => {
+    setBusy('dry')
+    setMsg(null)
+    try {
+      const r = await fetch('/api/saos/coordination', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'dry-run' }),
+      })
+      const j = await r.json()
+      if (j?.dry && Array.isArray(j.plan)) {
+        setDryPlan(j.plan as DryPlanEntry[])
+        setMsg(`בדיקת-יבשה הושלמה · RC ${j.rcPct ?? '?'}% · VP ${j.vpEff ?? '?'}% · ${j.plan.length} חלונות-פעילים כרגע`)
+      } else {
+        setMsg(`בדיקת-יבשה נחסמה: ${j?.verdict ?? j?.error ?? 'לא-ידוע'}`)
+      }
+    } catch { setMsg('בדיקת-היבשה נכשלה — נסה שוב') } finally { setBusy(null) }
+  }
+
   const c = d?.coordination ?? null
   const power = c?.power?.accounts ?? []
   const eng = c?.engagement ?? null
+  const threads = c?.threads ?? null
   const trends = d?.trends ?? null
   const next = c?.nextWindows ?? []
   const compliance = d?.compliance ?? null
   const execution = d?.execution ?? null
+  const hist = compliance?.history ?? []
+  const trend = compliance?.trend ?? null
 
   return (
     <SectionCard
@@ -285,6 +325,15 @@ export function CoordinationCard() {
               <span className="rounded-md border border-slate-700 bg-slate-800/60 px-2 py-1 text-slate-300">מכוסים-מלא <b className="tnum text-emerald-400">{eng.summary.fullyCovered ?? 0}</b></span>
               <span className="rounded-md border border-slate-700 bg-slate-800/60 px-2 py-1 text-slate-300">שיחות-פתוחות <b className="tnum text-orange-300">{eng.summary.openThreads ?? 0}</b></span>
             </div>
+            {/* R233 · מדד-עומק-שיח — האם התגובות מפתחות שיחות אמיתיות */}
+            {threads?.summary && (
+              <div className="mt-1.5 flex flex-wrap gap-2 text-[10px]">
+                <span className="rounded-md border border-fuchsia-500/30 bg-fuchsia-500/10 px-2 py-1 text-fuchsia-300">עומק-שיח ממוצע <b className="tnum">{threads.summary.avgDepth ?? '—'}</b>/3</span>
+                <span className="rounded-md border border-fuchsia-500/30 bg-fuchsia-500/10 px-2 py-1 text-fuchsia-300">שיחות-שהתפתחו (שכבה-2) <b className="tnum">{threads.summary.developed ?? 0}</b>/{threads.summary.postsMeasured ?? 0}</span>
+                <span className="rounded-md border border-fuchsia-500/30 bg-fuchsia-500/10 px-2 py-1 text-fuchsia-300">הגב-מחבר <b className="tnum">{threads.summary.authorResponseRate != null ? `${threads.summary.authorResponseRate}%` : '—'}</b></span>
+                <span className="rounded-md border border-fuchsia-500/30 bg-fuchsia-500/10 px-2 py-1 text-fuchsia-300">ציון-שיח <b className="tnum">{threads.summary.avgScore ?? '—'}</b>/10</span>
+              </div>
+            )}
             <div className="mt-2 max-h-64 overflow-y-auto rounded-md border border-slate-800">
               <table className="w-full min-w-[520px] text-[11px]">
                 <thead className="sticky top-0 bg-slate-900 text-slate-500">
@@ -356,6 +405,35 @@ export function CoordinationCard() {
               <span className="rounded-md border border-slate-700 bg-slate-800/60 px-2 py-1 text-slate-300">הפרץ-הצפוף ביותר <b className={cn('tnum', (compliance.summary.densestBurst ?? 0) > 4 ? 'text-rose-400' : 'text-emerald-400')} dir="ltr">{compliance.summary.densestBurst ?? 0} פעולות/30דק</b>{compliance.summary.burstAt ? <span dir="ltr"> @{compliance.summary.burstAt}</span> : null}</span>
               <span className="rounded-md border border-slate-700 bg-slate-800/60 px-2 py-1 text-slate-300">קלאסטרים-צפופים <b className={cn('tnum', (compliance.summary.clusterViolations ?? 0) > 0 ? 'text-amber-400' : 'text-emerald-400')}>{compliance.summary.clusterViolations ?? 0}</b></span>
             </div>
+            {/* R233 · קו-מגמת ציות יום-מול-יום — האימוץ משתפר? */}
+            {hist.length > 0 && (
+              <div className="mt-2 rounded-md border border-slate-800 bg-slate-900/50 px-2.5 py-2">
+                <p className="text-[10px] font-bold text-slate-400">קו-מגמת ציות (יום-מול-יום, עד 30 ימים)</p>
+                <div className="mt-1.5 flex items-end gap-1" role="img" aria-label="היסטוריית ציות יומית">
+                  {hist.slice(-14).map((h) => {
+                    const pct = h.avgCompliancePct ?? 0
+                    return (
+                      <div key={h.day} className="flex flex-1 flex-col items-center gap-0.5" title={`${h.day}: ${pct}% · ${h.verdict}`}>
+                        <div className={cn('w-full max-w-6 rounded-t', pct >= 80 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-500' : pct > 0 ? 'bg-rose-500' : 'bg-slate-700')}
+                          style={{ height: `${Math.max(2, Math.round((pct / 100) * 28))}px` }} />
+                        <span className="text-[8px] text-slate-600" dir="ltr">{h.day.slice(5)}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+                {trend && (
+                  <p className="mt-1 text-[10px] text-slate-500">
+                    היום <b className="tnum text-teal-300">{trend.cur != null ? `${trend.cur}%` : '—'}</b>
+                    {trend.prev != null ? (<>
+                      {' '}· אתמול <b className="tnum text-slate-300">{trend.prev}%</b>
+                      {' '}· <span className={cn('font-bold', (trend.delta ?? 0) > 0 ? 'text-emerald-400' : (trend.delta ?? 0) < 0 ? 'text-rose-400' : 'text-slate-400')} dir="ltr">
+                        {trend.delta != null && trend.delta > 0 ? `+${trend.delta}` : trend.delta ?? 0}
+                      </span>
+                    </>) : ' · עדיין אין יום-קודם להשוואה'}
+                  </p>
+                )}
+              </div>
+            )}
             <div className="mt-2 max-h-56 overflow-y-auto rounded-md border border-slate-800">
               <table className="w-full min-w-[420px] text-[11px]">
                 <thead className="sticky top-0 bg-slate-900 text-slate-500">
@@ -401,7 +479,34 @@ export function CoordinationCard() {
       <div className="rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2.5">
         <p className="flex items-center gap-1.5 text-[11px] font-bold text-sky-300">
           <Zap className="h-3.5 w-3.5" aria-hidden /> הביצוע שלנו — חלונות headcorner בפועל (החוק חל גם עלינו)
+          <button
+            type="button"
+            onClick={() => void dryRun()}
+            disabled={busy != null}
+            aria-label="בדיקת-יבשה של המבצע — אימות שערים וחוקים בלי חתימה"
+            className="ml-auto inline-flex h-6 items-center gap-1 rounded border border-sky-500/40 bg-sky-500/10 px-2 text-[10px] font-bold text-sky-300 transition-colors hover:bg-sky-500/20 disabled:opacity-50"
+          >
+            <ShieldQuestion className={cn('h-3 w-3', busy === 'dry' && 'animate-pulse')} aria-hidden />
+            בדיקת-יבשה
+          </button>
         </p>
+        {dryPlan && (
+          <div className="mt-2 rounded-md border border-sky-500/25 bg-sky-500/5 px-2.5 py-2">
+            <p className="text-[10px] font-bold text-sky-300">תוכנית-מבצע (יבשה — אפס חתימות):</p>
+            {dryPlan.length > 0 ? (
+              <ul className="mt-1 space-y-0.5">
+                {dryPlan.map((p) => (
+                  <li key={p.kind} className="text-[10px] text-slate-300" dir="ltr">
+                    <b className="text-sky-300">{p.kind}</b> @ {hhmm(p.window)} — <span className={cn(p.verdict.includes('DRY-VOTE') || p.verdict.includes('DRY-ENGAGE') ? 'font-bold text-emerald-400' : 'text-slate-400')}>{p.verdict}</span>
+                    {p.target ? <span className="text-slate-500"> → {p.target}</span> : null}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-1 text-[10px] text-slate-500">אין חלון-פעיל כרגע — השערים והקריאות נבדקו ותקינים (RC/VP חי). הפעולות ייחתמו כשהחלונות ייפתחו.</p>
+            )}
+          </div>
+        )}
         {execution?.windows && Object.keys(execution.windows).length > 0 ? (
           <>
             <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
