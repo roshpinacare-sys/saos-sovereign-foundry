@@ -1,12 +1,12 @@
 {
-  "at": "2026-10-07T05:55:46.626Z",
+  "at": "2026-10-07T06:05:46.626Z",
   "enabled": true,
-  "runsTotal": 308,
+  "runsTotal": 309,
   "verdict": "LEARNED",
   "metrics": {
     "cycles": {
-      "window": 132,
-      "oks": 130,
+      "window": 133,
+      "oks": 131,
       "fails": 2,
       "blocked": 0,
       "okRate": 98.5,
@@ -16,7 +16,7 @@
         "unknown": 1
       },
       "msP50": 14471,
-      "msP90": 40858
+      "msP90": 44587
     },
     "curator": {
       "present": true,
@@ -38,15 +38,15 @@
       "lastError": null
     },
     "watchdog": {
-      "checks": 2967,
+      "checks": 2977,
       "downs": 111,
       "heals": 45,
       "healVerified": 44,
       "healFailed": 0,
-      "lastCheckAt": "2026-10-07T05:55:46.702Z",
+      "lastCheckAt": "2026-10-07T06:05:46.707Z",
       "engineUp": true,
       "lastSpawnAt": "2026-10-07T03:40:51.694Z",
-      "lastUpAt": "2026-10-07T05:55:46.704Z",
+      "lastUpAt": "2026-10-07T06:05:46.708Z",
       "blips": 2
     }
   },
@@ -57,15 +57,23 @@
       "evidence": "1 fails journaled without a reason class (pre-T-17 era — the sovereign recorded \"fail\" without engine-measured health)",
       "lesson": "unclassified fails poison the failure histogram — a lesson machine that cannot classify cannot fully learn",
       "action": "STRUCTURAL T-17: the marker flow journals engine-measured health+reason for every new fail; legacy history stays as evidence, never back-filled with invented causes"
+    },
+    {
+      "id": "cycle-latency-tail",
+      "severity": "medium",
+      "evidence": "p50 14471ms vs p90 44587ms",
+      "lesson": "cycle duration tail is fat — RPC latency inside steps",
+      "action": "watch: observe/node switch is already fail-isolated; no unsafe tuning"
     }
   ],
   "tunings": {},
   "tuningsApplied": [],
   "lessonsTotal": {
     "cycle-conn-fails": 132,
-    "unclassified-fail-legacy": 162,
+    "unclassified-fail-legacy": 163,
     "signing-cred-blocked": 205,
-    "broadcast-fails": 80
+    "broadcast-fails": 80,
+    "cycle-latency-tail": 1
   },
   "honesty": "learning reads recorded history only · tunings hard-clamped (LEARN_CLAMP) · doctrine laws untouchable"
 }

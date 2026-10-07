@@ -28,3 +28,4 @@
 {"at":"2026-10-07T05:27:37.392Z","kind":"anchor-skip","detail":"rate-limited durably (last 2026-10-07T04:37:41.629Z)"}
 {"at":"2026-10-07T05:37:37.186Z","kind":"anchor-skip","detail":"rate-limited durably (last 2026-10-07T04:37:41.629Z)"}
 {"at":"2026-10-07T05:47:40.041Z","kind":"anchor-ok","detail":"{\"txid\":\"5e4ecf3c1f1ef7124ab8d495448aa979db583f85\",\"tip\":\"3ebfae628f4f6d31f49d46dd12adb7780efa18d8\"}"}
+{"at":"2026-10-07T05:57:37.443Z","kind":"anchor-skip","detail":"rate-limited durably (last 2026-10-07T05:47:40.040Z)"}

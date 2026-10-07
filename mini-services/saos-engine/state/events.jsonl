@@ -5757,3 +5757,15 @@
 {"type":"fleet-grid.ladder","at":"2026-10-07T05:55:51.780Z","account":"wic","ops":5,"txid":"3c0e7dfe03c464994412a7b5c2a863e583ae6adb","decision":"deploy"}
 {"type":"fleet-grid.ladder","at":"2026-10-07T05:55:51.780Z","account":"wog","ops":5,"txid":"20a790ab0f2b414bce530895ac8eae518b3127a9","decision":"deploy"}
 {"type":"fleet-grid.ladder","at":"2026-10-07T05:55:51.780Z","account":"woq","ops":5,"txid":"804b7728486ef38bd5f66a3c763935f82fb83010","decision":"deploy"}
+{"type":"fleet-grid.ladder","at":"2026-10-07T05:58:51.780Z","account":"haran","ops":5,"txid":"f6770fba06d9721376785f56c80f184b2a8a9e1f","decision":"deploy"}
+{"type":"observe.done","at":"2026-10-07T06:05:46.626Z","fills":12,"parity":0.10007170986493795}
+{"type":"grid.tick","at":"2026-10-07T06:05:46.626Z","runCount":351,"refPrice":0.10007170986493795,"internalFeed":0.10409643846084451,"dragK":1.193317305347601,"inv":{"steem":1.871,"sbd":0.024}}
+{"type":"grid.fill","at":"2026-10-07T06:05:46.626Z","grid":"mm-grid","side":"ask","unit":0.1001911271680955,"real":false}
+{"type":"arb.signal","at":"2026-10-07T06:05:46.626Z","grid":"micro-arb","gapBps":387,"dir":"buy-external"}
+{"type":"sweep.scan","at":"2026-10-07T06:05:46.626Z","grid":"sweep","dustSteem":0.871}
+{"type":"anchor.quote","at":"2026-10-07T06:05:46.626Z","grid":"anchor-quote","bid":0.09983287525862283,"ask":0.10031054447125305}
+{"type":"fee.spawn","at":"2026-10-07T06:05:46.626Z","mu":500,"to":"R-FEE-SPAWN"}
+{"type":"offer.published","at":"2026-10-07T06:05:46.626Z","verdict":"OFFER-EMPTY","asks":0,"bids":0,"flowAsks":0,"flowBids":0,"bestAsk":0.10072,"bestBid":0.10023053021950486}
+{"type":"convert.planned","at":"2026-10-07T06:05:46.626Z","verdict":"CONVERT-HOLD","edgeBps":6953,"amountSbd":0}
+{"type":"learn.done","at":"2026-10-07T06:05:46.626Z","verdict":"LEARNED","lessons":["unclassified-fail-legacy","cycle-latency-tail"],"tunings":[]}
+{"type":"discover.done","at":"2026-10-07T06:05:46.626Z","verdict":"OPTIONS-FOUND","tags":12,"opportunities":["spread-normal","tags-realloc","curation-share","fleet-growth"]}
