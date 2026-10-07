@@ -37,7 +37,7 @@
       "cadence": "cycle+tail",
       "truthContract": "countDayFillsFromHistory / countDayOrderOpsFromHistory on real rows",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/observe.json: 8 chain-truth fills counted (last 2026-10-07T03:41:12.000Z)",
+      "evidence": "state/observe.json: 9 chain-truth fills counted (last 2026-10-07T03:53:15.000Z)",
       "priorStatus": "active"
     },
     {
@@ -49,7 +49,7 @@
       "cadence": "cycle",
       "truthContract": "edge in bps from measured market vs implied, HOLD verdict honest",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/convert-plan.json: CONVERT-HOLD (edge 7489bps)",
+      "evidence": "state/convert-plan.json: CONVERT-HOLD (edge 6910bps)",
       "priorStatus": "active"
     },
     {
@@ -109,7 +109,7 @@
       "cadence": "6h",
       "truthContract": "findings carry url+date from real search results; no finding without a source",
       "recruitedAt": "2026-10-01T22:23:08.223Z",
-      "evidence": "state/webintel.json: 20 sourced findings, age 6h — external recon live",
+      "evidence": "state/webintel.json: 15 sourced findings, age 0h — external recon live",
       "priorStatus": "active"
     },
     {
@@ -137,6 +137,6 @@
       "priorStatus": "active"
     }
   ],
-  "at": "2026-10-07T03:55:46.618Z",
+  "at": "2026-10-07T04:05:46.618Z",
   "pid": 5736
 }

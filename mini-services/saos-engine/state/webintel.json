@@ -1,58 +1,58 @@
 {
-  "fetchedAt": "2026-10-06T22:02:03.187Z",
+  "fetchedAt": "2026-10-07T04:05:46.618Z",
   "verdict": "INTEL-OK",
-  "totalFindings": 20,
+  "totalFindings": 15,
   "droppedJunk": 0,
-  "failedScans": 0,
+  "failedScans": 1,
   "scans": [
     {
       "id": "steem-price",
       "note": "price sentiment for the market rails",
       "findings": [
         {
-          "url": "https://coinmarketcap.com",
-          "title": "Steem price today, STEEM to USD live price, marketcap",
-          "snippet": "The live Steem price today is $0.06178 USD with a 24-hour trading volume of $6255811.46 USD. Steem is down 2.32% in the last 24 hours. live market cap of $34, ...",
-          "host": "coinmarketcap.com",
+          "url": "https://www.bitnovo.com",
+          "title": "Steem Price Today, Charts & Market Cap",
+          "snippet": "The price of Steem (STEEM) today is €0.06 with a 24 hour trading volume of €17,872,450.00, which represents a increase price of the 6.76% in the last 24 hours",
+          "host": "www.bitnovo.com",
           "date": null,
           "query": "STEEM coin price news today",
-          "fetchedAt": "2026-10-06T22:02:03.187Z"
+          "fetchedAt": "2026-10-07T04:05:46.618Z"
         },
         {
-          "url": "https://www.coingecko.com",
-          "title": "STEEM/USD Live Price Chart, Market Cap & News Today",
-          "snippet": "The price of Steem (STEEM) is $0.06246 today with a 24-hour trading volume of $3,325,178. This represents a -0.71% price decline in the last ...",
-          "host": "www.coingecko.com",
+          "url": "https://in.investing.com",
+          "title": "Steem Price Today Live",
+          "snippet": "Live Steem data, market capitalization, charts, prices, trades and volumes . Use this page to follow news and updates regarding Steem, 7.68M Market Cap 30.02M ...",
+          "host": "in.investing.com",
           "date": null,
           "query": "STEEM coin price news today",
-          "fetchedAt": "2026-10-06T22:02:03.187Z"
+          "fetchedAt": "2026-10-07T04:05:46.618Z"
         },
         {
-          "url": "https://www.tradingview.com",
-          "title": "STEEMUSD - Steem Price Chart",
-          "snippet": "The current price of Steem (STEEM) is 0.062680 USD — it has fallen −0.58% in the past 24 hours. The current market capitalization of Steem (STEEM) is ‪35.09 M‬ ...",
-          "host": "www.tradingview.com",
+          "url": "https://www.coinbase.com",
+          "title": "Steem Price, STEEM Price, Live Charts, and Marketcap",
+          "snippet": "Steem (STEEM) Price BRL Today is R$0.2361 . The last known price of Steem is 0.05033539 USD and is down -0.09 over the last 24 hours. It is currently trading on ...",
+          "host": "www.coinbase.com",
           "date": null,
           "query": "STEEM coin price news today",
-          "fetchedAt": "2026-10-06T22:02:03.187Z"
+          "fetchedAt": "2026-10-07T04:05:46.618Z"
         },
         {
-          "url": "https://crypto.com",
-          "title": "STEEM Live Price, Charts, News",
-          "snippet": "Steem's price today is $0.063 , with a 24-hour trading volume of $3.75M. STEEM is -1.59% in the last 24 hours. It is currently -9.78% from its 7-day all- ...",
-          "host": "crypto.com",
+          "url": "https://www.gate.com",
+          "title": "Steem Price Prediction, Market Trends & Analysis",
+          "snippet": "Steem can go as high as $0.1168 from now until 2030. current price of $0.06455. Steem has moved +2.50% in the last 24 hours, and +1.09% in the past 7 days.  ...",
+          "host": "www.gate.com",
           "date": null,
           "query": "STEEM coin price news today",
-          "fetchedAt": "2026-10-06T22:02:03.187Z"
+          "fetchedAt": "2026-10-07T04:05:46.618Z"
         },
         {
-          "url": "https://bit2me.com",
-          "title": "Price of Steem (STEEM) today in EUR – Quote and market",
-          "snippet": "STEEM moved -1.67% in the last 24 hours . The reference price is now 0,0559€ with about 2.83M€ in 24h volume",
-          "host": "bit2me.com",
+          "url": "https://www.coinlore.com",
+          "title": "Steem News",
+          "snippet": "em (STEEM) news for today, Steem (STEEM) Live Price $0.0447 USD (+3.32%) +$0.001434. STEEM to USD 0.0447 USD STEEM to PHP 2.75 PHP. STEEM to PKR 12.39. Bedrock ...",
+          "host": "www.coinlore.com",
           "date": null,
           "query": "STEEM coin price news today",
-          "fetchedAt": "2026-10-06T22:02:03.187Z"
+          "fetchedAt": "2026-10-07T04:05:46.618Z"
         }
       ],
       "count": 5,
@@ -69,16 +69,16 @@
           "host": "github.com",
           "date": null,
           "query": "Steem blockchain development update",
-          "fetchedAt": "2026-10-06T22:02:03.187Z"
+          "fetchedAt": "2026-10-07T04:05:46.618Z"
         },
         {
           "url": "https://coinmarketcap.com",
           "title": "Latest Steem (STEEM) News Update",
           "snippet": "8 days ago — STEEM's development focus has shifted from technical upgrades to sustaining . Steem blockchain is currently driven by social engagement programs ...",
           "host": "coinmarketcap.com",
-          "date": "Sep 28, 2026",
+          "date": "Sep 29, 2026",
           "query": "Steem blockchain development update",
-          "fetchedAt": "2026-10-06T22:02:03.187Z"
+          "fetchedAt": "2026-10-07T04:05:46.618Z"
         },
         {
           "url": "https://developers.steem.io",
@@ -87,16 +87,7 @@
           "host": "developers.steem.io",
           "date": null,
           "query": "Steem blockchain development update",
-          "fetchedAt": "2026-10-06T22:02:03.187Z"
-        },
-        {
-          "url": "https://capital.com",
-          "title": "What is Steem and how to trade it?",
-          "snippet": "The latter half of 2023 and early 2024 saw a modest recovery for STEEM . in the Steem blockchain , including updates to its consensus mechanism and the ...",
-          "host": "capital.com",
-          "date": null,
-          "query": "Steem blockchain development update",
-          "fetchedAt": "2026-10-06T22:02:03.187Z"
+          "fetchedAt": "2026-10-07T04:05:46.618Z"
         },
         {
           "url": "https://www.prnewswire.com",
@@ -105,7 +96,16 @@
           "host": "www.prnewswire.com",
           "date": "Sep 19, 2019",
           "query": "Steem blockchain development update",
-          "fetchedAt": "2026-10-06T22:02:03.187Z"
+          "fetchedAt": "2026-10-07T04:05:46.618Z"
+        },
+        {
+          "url": "https://capital.com",
+          "title": "What is Steem and how to trade it?",
+          "snippet": "The latter half of 2023 and early 2024 saw a modest recovery for STEEM . in the Steem blockchain , including updates to its consensus mechanism and the ...",
+          "host": "capital.com",
+          "date": null,
+          "query": "Steem blockchain development update",
+          "fetchedAt": "2026-10-07T04:05:46.618Z"
         }
       ],
       "count": 5,
@@ -122,7 +122,7 @@
           "host": "www.coingecko.com",
           "date": null,
           "query": "Steem Dollar SBD market news",
-          "fetchedAt": "2026-10-06T22:02:03.187Z"
+          "fetchedAt": "2026-10-07T04:05:46.618Z"
         },
         {
           "url": "https://crypto.com",
@@ -131,7 +131,7 @@
           "host": "crypto.com",
           "date": null,
           "query": "Steem Dollar SBD market news",
-          "fetchedAt": "2026-10-06T22:02:03.187Z"
+          "fetchedAt": "2026-10-07T04:05:46.618Z"
         },
         {
           "url": "https://coinmarketcap.com",
@@ -140,16 +140,7 @@
           "host": "coinmarketcap.com",
           "date": null,
           "query": "Steem Dollar SBD market news",
-          "fetchedAt": "2026-10-06T22:02:03.187Z"
-        },
-        {
-          "url": "https://www.forbes.com",
-          "title": "Steem Dollars (SBD) Price, Charts & News",
-          "snippet": "Steem Dollars is a global digital currency exchange. Steem Dollars (SBD) Price, Charts & News $0.5855(+3.80%) Steem Dollars are liquid stable-value currency ...",
-          "host": "www.forbes.com",
-          "date": null,
-          "query": "Steem Dollar SBD market news",
-          "fetchedAt": "2026-10-06T22:02:03.187Z"
+          "fetchedAt": "2026-10-07T04:05:46.618Z"
         },
         {
           "url": "https://sg.finance.yahoo.com",
@@ -158,7 +149,16 @@
           "host": "sg.finance.yahoo.com",
           "date": null,
           "query": "Steem Dollar SBD market news",
-          "fetchedAt": "2026-10-06T22:02:03.187Z"
+          "fetchedAt": "2026-10-07T04:05:46.618Z"
+        },
+        {
+          "url": "https://www.forbes.com",
+          "title": "Steem Dollars (SBD) Price, Charts & News",
+          "snippet": "Steem Dollars is a global digital currency exchange. Steem Dollars (SBD) Price, Charts & News $0.5855(+3.80%) Steem Dollars are liquid stable-value currency ...",
+          "host": "www.forbes.com",
+          "date": null,
+          "query": "Steem Dollar SBD market news",
+          "fetchedAt": "2026-10-07T04:05:46.618Z"
         }
       ],
       "count": 5,
@@ -167,60 +167,19 @@
     {
       "id": "competitors",
       "note": "competitive landscape for the sovereign bloc",
-      "findings": [
-        {
-          "url": "https://finance.yahoo.com",
-          "title": "HIVE Stock Soars on New Plans for AI Infrastructure Campus",
-          "snippet": "May 18, 2026 — While HIVE's crypto mining rivals struggle under post-halving mining economics , its dual-engine model continues to thrive in 2026. The company ... Read more",
-          "host": "finance.yahoo.com",
-          "date": "May 18, 2026",
-          "query": "Hive blockchain vs Steem 2026",
-          "fetchedAt": "2026-10-06T22:02:03.187Z"
-        },
-        {
-          "url": "https://www.rootdata.com",
-          "title": "Hive",
-          "snippet": "It originated from a contentious chain split with Steem , and as a result, the Hive network contains all of the content previously deployed to Steem .",
-          "host": "www.rootdata.com",
-          "date": null,
-          "query": "Hive blockchain vs Steem 2026",
-          "fetchedAt": "2026-10-06T22:02:03.187Z"
-        },
-        {
-          "url": "https://decrypt.co",
-          "title": "Hive forked Steemit, but the war for the social network",
-          "snippet": "Mar 22, 2020 — Hive is essentially the same platform , and Steem tokens can be swapped for Hive tokens. Well, not everyone can swap tokens:",
-          "host": "decrypt.co",
-          "date": "Mar 22, 2020",
-          "query": "Hive blockchain vs Steem 2026",
-          "fetchedAt": "2026-10-06T22:02:03.187Z"
-        },
-        {
-          "url": "https://www.gate.com",
-          "title": "What Is Hive Blockchain? Decentralized Web3 Ecosystem",
-          "snippet": "Apr 5, 2026 — Hive is a decentralized, fast, and scalable blockchain built for Web3 applications, offering a strong ecosystem for DApps, gaming, social media ...",
-          "host": "www.gate.com",
-          "date": "Apr 5, 2026",
-          "query": "Hive blockchain vs Steem 2026",
-          "fetchedAt": "2026-10-06T22:02:03.187Z"
-        },
-        {
-          "url": "https://digitalcoinprice.com",
-          "title": "HIVE Price Live, HIVE to USD, Chart & Market Cap",
-          "snippet": "Hive price today is 0.0421 USD . Hive (HIVE) launched in March 2020 as a hard fork of the centralized Steem blockchain. It is an open-source blockchain that ...",
-          "host": "digitalcoinprice.com",
-          "date": null,
-          "query": "Hive blockchain vs Steem 2026",
-          "fetchedAt": "2026-10-06T22:02:03.187Z"
-        }
-      ],
-      "count": 5,
-      "dropped": 0
+      "findings": [],
+      "count": 0,
+      "error": "bridge 502"
     }
   ],
-  "ms": 6932,
+  "ms": 11148,
   "law": "כל ממצא נושא מקור (url+תאריך) — ממצא בלי-מקור אינו ממצא",
   "history": [
+    {
+      "fetchedAt": "2026-10-07T04:05:46.618Z",
+      "totalFindings": 15,
+      "verdict": "INTEL-OK"
+    },
     {
       "fetchedAt": "2026-10-06T22:02:03.187Z",
       "totalFindings": 20,
@@ -229,11 +188,6 @@
     {
       "fetchedAt": "2026-10-06T15:55:39.639Z",
       "totalFindings": 15,
-      "verdict": "INTEL-OK"
-    },
-    {
-      "fetchedAt": "2026-10-06T07:09:05.915Z",
-      "totalFindings": 20,
       "verdict": "INTEL-OK"
     }
   ]

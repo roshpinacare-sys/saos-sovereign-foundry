@@ -16,3 +16,4 @@
 {"at":"2026-10-07T03:27:45.679Z","kind":"anchor-ok","detail":"{\"txid\":\"43b42018059bf68b03ab7cf225718d7ff967757c\",\"tip\":\"cfe5bb825d5b7260523da4f41440b19739ad7572\"}"}
 {"at":"2026-10-07T03:37:37.444Z","kind":"anchor-skip","detail":"rate-limited durably (last 2026-10-07T03:27:45.679Z)"}
 {"at":"2026-10-07T03:47:37.979Z","kind":"anchor-skip","detail":"rate-limited durably (last 2026-10-07T03:27:45.679Z)"}
+{"at":"2026-10-07T03:57:37.759Z","kind":"anchor-skip","detail":"rate-limited durably (last 2026-10-07T03:27:45.679Z)"}

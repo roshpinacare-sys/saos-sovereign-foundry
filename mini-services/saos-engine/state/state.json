@@ -1,10 +1,10 @@
 {
-  "runCount": 339,
-  "simFills": 31,
-  "simFeesMu": 15500,
-  "asof": "2026-10-07T03:55:46.618Z",
+  "runCount": 340,
+  "simFills": 32,
+  "simFeesMu": 16000,
+  "asof": "2026-10-07T04:05:46.618Z",
   "market": {
-    "refPrice": 0.1040964413671177,
+    "refPrice": 0.10012615117171778,
     "source": "engine",
     "stale": false
   },
@@ -38,5 +38,5 @@
       "pnlSimMu": 0
     }
   ],
-  "at": "2026-10-07T03:55:46.618Z"
+  "at": "2026-10-07T04:05:46.618Z"
 }

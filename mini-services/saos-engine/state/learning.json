@@ -1,22 +1,22 @@
 {
-  "at": "2026-10-07T03:55:46.618Z",
+  "at": "2026-10-07T04:05:46.618Z",
   "enabled": true,
-  "runsTotal": 296,
+  "runsTotal": 297,
   "verdict": "LEARNED",
   "metrics": {
     "cycles": {
-      "window": 129,
-      "oks": 127,
+      "window": 130,
+      "oks": 128,
       "fails": 2,
       "blocked": 0,
-      "okRate": 98.4,
+      "okRate": 98.5,
       "blockedRate": 0,
       "failReasons": {
         "none": 1,
         "unknown": 1
       },
-      "msP50": 13276,
-      "msP90": 37905
+      "msP50": 13400,
+      "msP90": 37907
     },
     "curator": {
       "present": true,
@@ -34,19 +34,19 @@
     },
     "exec": {
       "window": 5,
-      "fails": 5,
+      "fails": 4,
       "lastError": "missing required active authority:Missing Active Authority headcorner"
     },
     "watchdog": {
-      "checks": 2847,
+      "checks": 2857,
       "downs": 111,
       "heals": 45,
       "healVerified": 44,
       "healFailed": 0,
-      "lastCheckAt": "2026-10-07T03:55:46.646Z",
+      "lastCheckAt": "2026-10-07T04:05:46.648Z",
       "engineUp": true,
       "lastSpawnAt": "2026-10-07T03:40:51.694Z",
-      "lastUpAt": "2026-10-07T03:55:46.655Z",
+      "lastUpAt": "2026-10-07T04:05:46.650Z",
       "blips": 2
     }
   },
@@ -62,7 +62,7 @@
       "id": "broadcast-fails",
       "severity": "low",
       "resolved": true,
-      "evidence": "5/5 broadcasts failed in the window (last: missing required active authority:Missing Active Authority h) · last fail 2026-10-07T03:36:24.518Z < last OK broadcast 2026-10-07T03:54:40.240Z (live posting-role ops succeed)",
+      "evidence": "4/5 broadcasts failed in the window (last: missing required active authority:Missing Active Authority h) · last fail 2026-10-07T03:36:24.518Z < last OK broadcast 2026-10-07T04:05:54.539Z (live posting-role ops succeed)",
       "lesson": "historical: the missing-posting-authority failure class was fixed by ADAPT-claim-role-posting-R209 (claim executor switched to posting role) — live broadcasts now succeed",
       "action": "none — resolved by R209; watch for any NEW failure class in the live window"
     }
@@ -71,9 +71,9 @@
   "tuningsApplied": [],
   "lessonsTotal": {
     "cycle-conn-fails": 132,
-    "unclassified-fail-legacy": 150,
+    "unclassified-fail-legacy": 151,
     "signing-cred-blocked": 205,
-    "broadcast-fails": 74
+    "broadcast-fails": 75
   },
   "honesty": "learning reads recorded history only · tunings hard-clamped (LEARN_CLAMP) · doctrine laws untouchable"
 }
