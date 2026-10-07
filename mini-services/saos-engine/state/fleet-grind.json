@@ -16,12 +16,16 @@
     "hcsoldier4": {
       "vote": null,
       "engage": null
+    },
+    "wic": {
+      "vote": null,
+      "engage": null
     }
   },
-  "at": "2026-10-07T07:35:46.631Z",
+  "at": "2026-10-07T07:45:46.632Z",
   "verdict": "IDLE-GATES",
   "votes": 0,
   "replies": 0,
   "failed": 0,
-  "skipped": 12
+  "skipped": 11
 }
