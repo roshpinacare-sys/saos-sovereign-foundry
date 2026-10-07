@@ -32,6 +32,7 @@ import { EconomicsRailsCard } from '@/components/saos/EconomicsRailsCard'
 import { PayoutsCard } from '@/components/saos/PayoutsCard'
 import { WeaveCard } from '@/components/saos/WeaveCard'
 import { CoordinationCard } from '@/components/saos/CoordinationCard'
+import { FleetGridCard } from '@/components/saos/FleetGridCard'
 import SealCard from '@/components/saos/SealCard'
 import { X2Card } from '@/components/saos/X2Card'
 import type { Status, Sovereign } from '@/components/saos/types'
@@ -603,6 +604,9 @@ export default function Home() {
 
                 {/* R231 · מרכז-תיאום הצי — לו"ז מפוזר + כוח + שיחות + טרנדים; self-fetching */}
                 <CoordinationCard />
+
+                {/* R234 · גריד-הצבא — הצי-הקיים גורד קודם (הוראת-מפעיל) */}
+                <FleetGridCard />
 
                 {/* חיילים · צי-גרידים (T-12) · T-80 הקפאת-אפוטרופסות */}
                 <SectionCard

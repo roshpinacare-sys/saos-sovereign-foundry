@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T01:50:06.151Z",
+  "at": "2026-10-07T02:00:06.150Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -124,19 +124,19 @@
         "name": "headcorner",
         "sp": 6.46,
         "vpEff": 25.4,
-        "rcPct": 32.6,
+        "rcPct": 32.2,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
         "rcGate": null,
-        "steem": 36.129,
+        "steem": 26.129,
         "lastVote": "2026-10-06T20:35:18"
       },
       {
         "name": "cashmachine",
         "sp": 0.01,
         "vpEff": 99,
-        "rcPct": 98.4,
+        "rcPct": 99.1,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -148,7 +148,7 @@
         "name": "haran",
         "sp": 0.38,
         "vpEff": 99.1,
-        "rcPct": 98.3,
+        "rcPct": 99.2,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -160,7 +160,7 @@
         "name": "israelnews",
         "sp": 0,
         "vpEff": 99.1,
-        "rcPct": 97.6,
+        "rcPct": 99.3,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -172,7 +172,7 @@
         "name": "lsa",
         "sp": 0.01,
         "vpEff": 99,
-        "rcPct": 98.3,
+        "rcPct": 99.2,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -184,7 +184,7 @@
         "name": "macrame",
         "sp": 0,
         "vpEff": 99,
-        "rcPct": 95.6,
+        "rcPct": 98.9,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -196,7 +196,7 @@
         "name": "siq",
         "sp": 0.01,
         "vpEff": 99.1,
-        "rcPct": 92.2,
+        "rcPct": 94.1,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -208,19 +208,19 @@
         "name": "tov",
         "sp": 0.01,
         "vpEff": 99,
-        "rcPct": 95.5,
+        "rcPct": 97.7,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
-        "steem": 0.449,
+        "steem": 0.009,
         "lastVote": "2026-10-06T20:11:39"
       },
       {
         "name": "wic",
         "sp": 0,
         "vpEff": 99,
-        "rcPct": 89.7,
+        "rcPct": 92.1,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -232,7 +232,7 @@
         "name": "wog",
         "sp": 0.01,
         "vpEff": 99.1,
-        "rcPct": 91.3,
+        "rcPct": 92,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -244,7 +244,7 @@
         "name": "woq",
         "sp": 0,
         "vpEff": 99,
-        "rcPct": 88.8,
+        "rcPct": 91.2,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T01:50:14.400Z"
+    "at": "2026-10-07T02:00:15.041Z"
   },
   "engagement": {
     "ok": true,
@@ -1021,33 +1021,22 @@
       "authorResponseRate": 0,
       "avgScore": 0.3
     },
-    "at": "2026-10-07T01:50:06.151Z"
+    "at": "2026-10-07T02:00:06.150Z"
   },
   "compliance": {
     "protocol": "saos.fleet.compliance.v1",
     "day": "2026-10-07",
-    "at": "2026-10-07T01:20:06.150Z",
+    "at": "2026-10-07T01:50:06.151Z",
     "scheduleHint": "14 accounts × (post+2vote+engage) · tol 30min",
     "rows": [
       {
         "acc": "headcorner",
-        "total": 2,
+        "total": 0,
         "inWindow": 0,
-        "compliancePct": 0,
+        "compliancePct": null,
         "clusters": 0,
-        "misses": [
-          {
-            "kind": "post",
-            "at": "00:13",
-            "nearest": "10:48"
-          },
-          {
-            "kind": "post",
-            "at": "01:14",
-            "nearest": "10:48"
-          }
-        ],
-        "verdict": "OFF-SCHEDULE"
+        "misses": [],
+        "verdict": "NO-ACTIVITY"
       },
       {
         "acc": "cashmachine",
@@ -1169,39 +1158,54 @@
     ],
     "summary": {
       "accounts": 14,
-      "accountsActive": 1,
-      "totalActions": 2,
-      "avgCompliancePct": 0,
-      "densestBurst": 1,
-      "burstAt": "00:13",
+      "accountsActive": 0,
+      "totalActions": 0,
+      "avgCompliancePct": null,
+      "densestBurst": 0,
+      "burstAt": null,
       "clusterViolations": 0,
-      "verdict": "NOT-ADOPTED"
+      "verdict": "QUIET"
     },
-    "readFails": [],
+    "readFails": [
+      "headcorner",
+      "cashmachine",
+      "haran",
+      "israelnews",
+      "lsa",
+      "macrame",
+      "siq",
+      "tov",
+      "wic",
+      "wog",
+      "woq",
+      "hcsoldier1",
+      "hcsoldier2",
+      "hcsoldier3"
+    ],
     "history": [
       {
         "day": "2026-10-07",
-        "avgCompliancePct": 0,
-        "verdict": "NOT-ADOPTED",
-        "densestBurst": 1,
-        "burstAt": "00:13",
+        "avgCompliancePct": null,
+        "verdict": "QUIET",
+        "densestBurst": 0,
+        "burstAt": null,
         "clusterViolations": 0,
-        "accountsActive": 1,
-        "totalActions": 2,
-        "at": "2026-10-07T01:20:06.150Z"
+        "accountsActive": 0,
+        "totalActions": 0,
+        "at": "2026-10-07T01:50:06.151Z"
       }
     ],
     "trend": {
       "day": "2026-10-07",
-      "cur": 0,
+      "cur": null,
       "prev": null,
       "delta": null,
-      "curVerdict": "NOT-ADOPTED",
+      "curVerdict": "QUIET",
       "prevVerdict": null,
       "prevDay": null
     },
     "note": "ציות = הפעולה בפועל נחתה בתוך חלון-הלו\"ז הדטרמיניסטי (אותו יום, אותו חוק). QUIET = עדיין אין פעילות-היום — לא-ציות ולא-הפרה. R233: history = קו-המגמה יום-מול-יום.",
-    "ms": 16149
+    "ms": 14036
   },
   "trends": {
     "fetchedAt": "2026-10-06T21:16:09.311Z",
@@ -1309,76 +1313,76 @@
   },
   "nextWindows": [
     {
-      "acc": "wog",
-      "kind": "engage",
-      "at": "01:56",
-      "inMin": 6
-    },
-    {
       "acc": "hcsoldier2",
       "kind": "engage",
       "at": "02:16",
-      "inMin": 26
+      "inMin": 16
     },
     {
       "acc": "cashmachine",
       "kind": "vote1",
       "at": "02:36",
-      "inMin": 46
+      "inMin": 36
     },
     {
       "acc": "lsa",
       "kind": "vote1",
       "at": "02:56",
-      "inMin": 66
+      "inMin": 56
     },
     {
       "acc": "israelnews",
       "kind": "vote1",
       "at": "04:32",
-      "inMin": 162
+      "inMin": 152
     },
     {
       "acc": "tov",
       "kind": "post",
       "at": "04:52",
-      "inMin": 182
+      "inMin": 172
     },
     {
       "acc": "haran",
       "kind": "post",
       "at": "05:57",
-      "inMin": 247
+      "inMin": 237
     },
     {
       "acc": "cashmachine",
       "kind": "engage",
       "at": "06:17",
-      "inMin": 267
+      "inMin": 257
     },
     {
       "acc": "haran",
       "kind": "vote1",
       "at": "06:53",
-      "inMin": 303
+      "inMin": 293
     },
     {
       "acc": "macrame",
       "kind": "post",
       "at": "07:13",
-      "inMin": 323
+      "inMin": 313
     },
     {
       "acc": "israelnews",
       "kind": "post",
       "at": "07:52",
-      "inMin": 362
+      "inMin": 352
     },
     {
       "acc": "macrame",
       "kind": "vote1",
       "at": "08:12",
-      "inMin": 382
+      "inMin": 372
+    },
+    {
+      "acc": "wic",
+      "kind": "vote1",
+      "at": "08:54",
+      "inMin": 414
     }
   ],
   "lastPublish": {
@@ -1396,5 +1400,5 @@
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)",
     "threads": "שיח מתפתח = תגובות-לתגובות + הגב-מחבר — R233 מודד את העומק, לא רק את הכיסוי"
   },
-  "ms": 27460
+  "ms": 29379
 }

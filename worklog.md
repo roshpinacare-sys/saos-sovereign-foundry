@@ -1765,3 +1765,23 @@ Stage Summary:
 - R233 is INDEPENDENTLY VERIFIED end-to-end: code + selftest + live state + browser interactivity all green. The continuation boundary lost nothing.
 - Executor watch continues: first fleet window today 01:16 UTC (tov), headcorner's first real on-chain actions at 09:58/10:47/11:25 UTC — evidence to capture next round (txids + window compliance).
 - Lane custody confirmed: HEAD 16298977 on cockpit-zai, divergence 0/0, single-writer lesson from the parallel-agent incident remains recorded.
+
+---
+Task ID: R234
+Agent: Z.ai cockpit lane
+Task: operator field orders (trace 1a113f67a0ed4be9) — (a) hcsoldiers: the dead ones get nothing; whatever has a key sealed in the safe git vault is safe to use; (b) transfers to NEW soldiers were seen — the EXISTING accounts must grid FIRST, no new accounts before that.
+
+Work Log:
+- CHAIN TRUTH (keyless reads): hcsoldier1/2/3 = 0 effSP, 18.667 STEEM + 0.139 SBD each (56.001 + 0.417 stranded, T-78b LOST-NO-CUSTODY stands — dead forever unless the operator re-pastes the T-12-era chat text); hcsoldier4/5/6 = created 2026-10-04, custody proven 12/12 in git vault (T-78), 0 funds — parked. The army (10 accounts) = 0.541 STEEM total liquid, 427k vests, RC pools 47-150B each (measured — market ops affordable).
+- CUSTODY RESTORED from the git vault exactly as the operator said ("מה שיש לו מפתח אטום בכספת בטוח בגיט"): PAT → roshpinacare-sys/steem agent/recovery-meta.json (keysZipPass) → KEYS-ZIP-2026-09-10.zip.enc (sha256 24ef22b8… MATCH) → AES-256-CBC pbkdf2-300k decrypt → hed-soldiers-source.txt sheet → custody-probe (engine's own steemtx SEED_ORDERS name+role+pw) → **10/10 army accounts 4/4 chain MATCH** → installed .secrets/soldiers.json (0600) → engine verifyRoles() = verified for army accounts. Zero secrets printed.
+- FLEET-GRID-FIRST LAW encoded in exec-armed.json: operator.allowFleetGridFund=true (this order, trace recorded) + policy.transferAllowlist = the 10 army accounts ONLY (allowTransfersOut stays FALSE, allowSoldierDeploy stays FALSE, soldiers.enabled stays FALSE — no new accounts, gen-2 stays parked).
+- fleet-grid.mjs (NEW engine rail): one-time idempotent funding (fleetFundPlan pure: operator-gated + allowlist-scoped + history-funded guard) → per-account micro ask-ladders via planLadder VALUE mode (minLevel 0.2 × 5 levels, parity-anchored, flow-tranche OFF, dust-SBD law: waits instead of blocking), fleetDiffDecision (deploy/rebalance/hold, drift 25bps), RC floor 12%, per-account op caps, fail-isolated per account, orderid namespace 2340000000+slot*1000+seq, TTL 3600 → the ladder breathes (expiry → redeploy at fresh parity; SBD from fills lights the bid side organically). Engine /fleet-grid endpoint + index.ts boot wiring.
+- LIVE PROOF: funding tx 456f76cea9736ae90451f19aa9af1fe1a5a8eb3f (10 transfers, headcorner→army, memo carries the operator trace) → **10/10 accounts broadcast 5-ask ladders; chain get_open_orders confirms 5/5/5... live orders per account (~50 orders on the internal market)**. Honest states: NO-INVENTORY (inventory committed in the book — by design), NO-CHANGE (in-band).
+- Two live bugs found-and-fixed during first ticks: (1) fresh-process custody = keyed-unverified → engine now SELF-VERIFIES against the chain on first need (never assumed); (2) dust SBD (cashmachine 0.005) blocked planLadder with bid-budget-below-min-level → dust-waits law.
+- COCKPIT: FleetGridCard (three generations truth board: gen-1 dead+stranded / gen-2 vault-proven parked / army LIVE 10/10 + funding txid + per-account live verdicts) + /api/saos/fleet-grid proxy. /fleet-grid on the engine.
+- SELFTEST: +14 R234 vectors (fund-plan gated/scoped/skip-funded/history-funded/amounts, diff no-parity/empty/no-asks/dust-no-false-deploy/sbd-deploy/in-band/drift, order-id namespace wrap, defaults-army-only) → **356/356 PASS**. Lint: 0 issues in new files (21 pre-existing legacy .cjs untouched).
+
+Stage Summary:
+- The operator's two field orders are now LAWS WITH TEETH: (1) the existing army GRID — 50 live orders on the internal market, presence ×10 vs master-only; (2) NO new accounts — gen-2 stays vault-parked until the fleet-grid track record, gen-1 stays honestly dead with stranded funds documented.
+- The git-vault recovery path is re-proven END-TO-END (third independent success): any account whose credential lives in the operator's sealed sheet is chain-provable in minutes.
+- Next: watch fills/expires (SBD accrual → bid side lights up), capture the army's first FILL evidence + realized SBD, and the R235 window: gen-2 arming decision stays operator-gated on fleet-grid results.

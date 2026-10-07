@@ -16,9 +16,9 @@
       "id": "curation",
       "label": "קיורציה · מסילת-דלק",
       "measuredUsdPerDay": null,
-      "estUsdPerDay": 0.531818,
+      "estUsdPerDay": 0.521975,
       "confidence": "estimated",
-      "note": "~8.74 STEEM/יום — ESTIMATED (payout clock ~7d, first verification T-18c)"
+      "note": "~8.75 STEEM/יום — ESTIMATED (payout clock ~7d, first verification T-18c)"
     },
     {
       "id": "fuel",
@@ -34,7 +34,7 @@
       "measuredUsdPerDay": null,
       "estUsdPerDay": 0,
       "confidence": "blocked",
-      "note": "HOLD honest (7113bps edge, dust-or-capped) — the rail is armed-in-doctrine, not burning"
+      "note": "HOLD honest (6952bps edge, dust-or-capped) — the rail is armed-in-doctrine, not burning"
     },
     {
       "id": "promo",
@@ -57,13 +57,13 @@
     }
   ],
   "totalMeasuredUsdPerDay": 0,
-  "totalEstUsdPerDay": 0.531818,
+  "totalEstUsdPerDay": 0.521975,
   "measuredCount": 1,
   "estimatedCount": 2,
   "blockedCount": 3,
   "law": "סכום-מדוד וסכום-מוערך לעולם לא מתמזגים — שתי שורות-אמת נפרדות",
-  "parity": 0.1040964601152634,
-  "asof": "2026-10-07T01:50:06.151Z",
+  "parity": 0.10110428116619143,
+  "asof": "2026-10-07T02:00:06.150Z",
   "context": {
     "venueFillsPerDay": 558,
     "venueVolSteem24h": 701.923,
@@ -85,43 +85,43 @@
     "any": false
   },
   "x2": {
-    "currentUsdPerDay": 0.5318,
+    "currentUsdPerDay": 0.522,
     "targetUsdPerDay": 1000,
     "currentSp": 958,
-    "factor": 1880.4,
+    "factor": 1915.9,
     "rows": [
       {
         "mult": 1,
         "sp": 958,
-        "usdPerDay": 0.53,
+        "usdPerDay": 0.52,
         "reachesTarget": false
       },
       {
         "mult": 10,
         "sp": 9585,
-        "usdPerDay": 5.32,
+        "usdPerDay": 5.22,
         "reachesTarget": false
       },
       {
         "mult": 40,
         "sp": 38340,
-        "usdPerDay": 21.27,
+        "usdPerDay": 20.88,
         "reachesTarget": false
       },
       {
         "mult": 100,
         "sp": 95849,
-        "usdPerDay": 53.18,
+        "usdPerDay": 52.2,
         "reachesTarget": false
       },
       {
-        "mult": 1881,
-        "sp": 1802921,
-        "usdPerDay": 1000.35,
+        "mult": 1916,
+        "sp": 1836469,
+        "usdPerDay": 1000.1,
         "reachesTarget": true
       }
     ],
     "law": "הקיורציה גדלה ∝ חלק-ה-SP מבריכת-התגמולים; תקרת-העסקאות ∝ RC ∝ SP — ההון מכפיל את המדידה, הקוד נשאר"
   },
-  "pid": 23024
+  "pid": 9187
 }

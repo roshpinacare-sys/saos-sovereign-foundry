@@ -1,25 +1,24 @@
 {
   "account": "headcorner",
   "parity": {
-    "steemUsd": 0.06083,
-    "sbdUsd": 0.5843618498904235,
-    "parity": 0.1040964601152634,
-    "source": "internal-feed-fallback+derived-sbd",
-    "lowConfidence": true
+    "steemUsd": 0.05852,
+    "sbdUsd": 0.590163,
+    "parity": 0.09915904589071156,
+    "source": "coingecko"
   },
   "feed": 0.1040964601152634,
   "band": {
     "ok": true,
     "reason": "band-ok",
-    "bps": 0
+    "bps": -474
   },
-  "steemUsd": 0.06083,
-  "sbdUsd": 0.5843618498904235,
+  "steemUsd": 0.05852,
+  "sbdUsd": 0.590163,
   "inventory": {
-    "steem": 36.129,
+    "steem": 26.129,
     "sbd": 0.015,
-    "spOwn": 958.4905425361936,
-    "rcPct": 32.6
+    "spOwn": 958.4912355974097,
+    "rcPct": 32
   },
   "ordersOk": true,
   "orders": [
@@ -64,12 +63,12 @@
       "created": "2026-10-06T20:27:57"
     },
     {
-      "orderid": 2100002659,
+      "orderid": 2100002672,
       "side": "ask",
       "base": "0.500 STEEM",
       "quote": "0.053 SBD",
       "unit": 0.106,
-      "created": "2026-10-07T01:48:45"
+      "created": "2026-10-07T02:05:15"
     }
   ],
   "fills": 0,
@@ -104,5 +103,5 @@
     "node": "https://api.justyy.com",
     "windowNote": "no reward ops inside the measured window — rails dormant, not a parse failure (deep-scan documented separately)"
   },
-  "at": "2026-10-07T01:50:06.151Z"
+  "at": "2026-10-07T02:05:26.242Z"
 }

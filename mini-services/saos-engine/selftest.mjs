@@ -804,6 +804,26 @@ ok("r233 dry-vote-rest", r233dry("vote1", { ...dryBase, weightPct: 0, vpEff: 20 
 ok("r233 dry-vote-no-target", r233dry("vote1", { ...dryBase, target: null }).verdict === "DRY-NO-TARGET");
 ok("r233 dry-vp-unknown", r233dry("vote1", { ...dryBase, vpEff: null, weightPct: 0 }).verdict === "DRY-VP-UNKNOWN");
 
+/* ── R234 · fleet-grid-first: pure helpers (existing army grids before any new account) ── */
+import { fleetFundPlan as r234fp, fleetDiffDecision as r234dd, fleetOrderIds as r234oi, FLEET_GRID_DEFAULTS as r234def } from "./fleet-grid.mjs";
+
+const r234conf = { accounts: ["haran", "woq", "tov"], fundEach: 1.0 };
+ok("r234 fund-plan operator-gated", r234fp({ conf: r234conf, allowFleetGridFund: false, allowlist: ["haran"] }).verdict === "FUND-OPERATOR-GATED");
+ok("r234 fund-plan allowlist-scoped", r234fp({ conf: r234conf, allowFleetGridFund: true, allowlist: ["haran"], balances: { haran: 0.01, woq: 0.01, tov: 0.01 } }).transfers.map((t) => t.name).join(",") === "haran");
+ok("r234 fund-plan skip-funded", r234fp({ conf: r234conf, allowFleetGridFund: true, allowlist: ["haran", "woq"], balances: { haran: 0.01, woq: 0.01 }, funded: { haran: { txid: "abc" } } }).transfers.map((t) => t.name).join(",") === "woq");
+ok("r234 fund-plan skip-history-funded", r234fp({ conf: r234conf, allowFleetGridFund: true, allowlist: ["haran"], balances: { haran: 0.95 } }).verdict === "ALL-FUNDED-OR-NONE-NEEDED");
+ok("r234 fund-plan amounts-capped", r234fp({ conf: r234conf, allowFleetGridFund: true, allowlist: ["haran"], balances: { haran: 0.01 } }).transfers[0].amount === 1);
+ok("r234 diff-no-parity-holds", r234dd({ live: [], parity: 0 }).action === "hold");
+ok("r234 diff-empty-deploys", r234dd({ live: [], parity: 0.105 }).action === "deploy");
+ok("r234 diff-no-asks-deploys", r234dd({ live: [{ side: "bid", unit: 0.104 }], parity: 0.105 }).action === "deploy");
+ok("r234 diff-dust-sbd-no-false-deploy", r234dd({ live: [{ side: "ask", unit: 0.105 }], parity: 0.105, bidBudgetSbd: 0.005, minLevel: 0.2 }).action === "hold");
+ok("r234 diff-sbd-no-bids-deploys", r234dd({ live: [{ side: "ask", unit: 0.105 }], parity: 0.105, bidBudgetSbd: 0.4, minLevel: 0.2 }).action === "deploy");
+ok("r234 diff-in-band-holds", r234dd({ live: [{ side: "ask", unit: 0.1051 }], parity: 0.105 }).action === "hold");
+ok("r234 diff-drift-rebalances", r234dd({ live: [{ side: "ask", unit: 0.1060 }], parity: 0.105, driftBps: 25 }).action === "rebalance");
+const r234ids = r234oi({ idBase: 2340000000, slot: 3, seq: 998, count: 5 });
+ok("r234 order-ids-namespace-wrap", r234ids[0] === 2340003998 && r234ids[4] === 2340003002 && new Set(r234ids).size === 5);
+ok("r234 defaults-army-only-10", r234def.accounts.length === 10 && r234def.accounts.every((n) => n.startsWith("hc") === false || n.includes("soldier") === false));
+
 console.log(`\nSELFTEST ${pass}/${pass + fail} ${fail === 0 ? "PASS" : "FAIL"}`);
 /* T-21 · last-run marker: the recruiter's evidence for the integrity-auditor
  * role — written ONLY on a full run, never by a partial import. */
