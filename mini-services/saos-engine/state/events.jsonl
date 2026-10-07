@@ -5821,3 +5821,15 @@
 {"type":"fleet-grid.ladder","at":"2026-10-07T06:55:51.781Z","account":"wic","ops":5,"txid":"e44e0c8a393eec81397ad85adc45305ed3e56788","decision":"deploy"}
 {"type":"fleet-grid.ladder","at":"2026-10-07T06:55:51.781Z","account":"wog","ops":5,"txid":"e666050abe85bdfbcab6f5a0824669218c35b2a7","decision":"deploy"}
 {"type":"fleet-grid.ladder","at":"2026-10-07T06:55:51.781Z","account":"woq","ops":5,"txid":"cfa25e2a5011de5fa0af77a025764a9fc872f9ad","decision":"deploy"}
+{"type":"fleet-grid.ladder","at":"2026-10-07T06:58:51.781Z","account":"haran","ops":5,"txid":"53858202fcde2e248fbef1082835d1e6a2b53940","decision":"deploy"}
+{"type":"observe.done","at":"2026-10-07T07:05:46.627Z","fills":12,"parity":0.0999399719419414}
+{"type":"grid.tick","at":"2026-10-07T07:05:46.627Z","runCount":357,"refPrice":0.0999399719419414,"internalFeed":0.10409643661181801,"dragK":1.1996449064522892,"inv":{"steem":1.871,"sbd":0.024}}
+{"type":"grid.fill","at":"2026-10-07T07:05:46.627Z","grid":"mm-grid","side":"ask","unit":0.10005986442023253,"real":false}
+{"type":"arb.signal","at":"2026-10-07T07:05:46.627Z","grid":"micro-arb","gapBps":399,"dir":"buy-external"}
+{"type":"sweep.scan","at":"2026-10-07T07:05:46.627Z","grid":"sweep","dustSteem":0.871}
+{"type":"anchor.quote","at":"2026-10-07T07:05:46.627Z","grid":"anchor-quote","bid":0.09970018698535912,"ask":0.10017975689852368}
+{"type":"fee.spawn","at":"2026-10-07T07:05:46.627Z","mu":500,"to":"R-FEE-SPAWN"}
+{"type":"offer.published","at":"2026-10-07T07:05:46.627Z","verdict":"OFFER-EMPTY","asks":0,"bids":0,"flowAsks":0,"flowBids":0,"bestAsk":0.10364842454394693,"bestBid":0.10114803014211299}
+{"type":"convert.planned","at":"2026-10-07T07:05:46.627Z","verdict":"CONVERT-HOLD","edgeBps":6862,"amountSbd":0}
+{"type":"learn.done","at":"2026-10-07T07:05:46.627Z","verdict":"LEARNED","lessons":["unclassified-fail-legacy","cycle-latency-tail"],"tunings":[]}
+{"type":"discover.done","at":"2026-10-07T07:05:46.627Z","verdict":"OPTIONS-FOUND","tags":12,"opportunities":["spread-wide","tags-realloc","curation-share","fleet-growth"]}
