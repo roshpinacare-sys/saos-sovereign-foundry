@@ -14,3 +14,5 @@
 {"at":"2026-10-07T10:40:42.573Z","kind":"service-heal","detail":"fleet-cure :3034 spawned at 2026-10-07T10:40:42.573Z (was down)"}
 {"at":"2026-10-07T10:40:42.650Z","kind":"service-heal","detail":"rotation-keeper :3035 spawned at 2026-10-07T10:40:42.650Z (was down)"}
 {"at":"2026-10-07T10:40:48.751Z","kind":"anchor-skip","detail":"rate-limited durably (last 2026-10-07T10:21:03.138Z)"}
+{"at":"2026-10-07T10:41:55.066Z","kind":"service-heal","detail":"chief-of-staff :3032 spawned at 2026-10-07T10:41:55.066Z (was down)"}
+{"at":"2026-10-07T10:41:55.086Z","kind":"service-heal","detail":"fleet-cure :3034 spawned at 2026-10-07T10:41:55.086Z (was down)"}

@@ -742,3 +742,6 @@
 {"at":"2026-10-07T10:36:54.955Z","kind":"custodian-heal-attempt","reason":"watchdog"}
 {"at":"2026-10-07T10:36:55.085Z","kind":"custodian-spawn","reason":"watchdog","pid":32719}
 {"at":"2026-10-07T10:36:59.684Z","kind":"custodian-heal-verified","up":true}
+{"at":"2026-10-07T10:41:54.954Z","kind":"custodian-down","confirmMs":4000}
+{"at":"2026-10-07T10:41:54.955Z","kind":"custodian-heal-attempt","reason":"watchdog"}
+{"at":"2026-10-07T10:41:54.991Z","kind":"custodian-spawn","reason":"watchdog","pid":1883}
