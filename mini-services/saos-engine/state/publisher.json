@@ -48,9 +48,17 @@
       "verdict": "POST-FAIL:Assert Exception:( now - auth.last_root_",
       "at": "2026-10-07T03:35:46.619Z",
       "txid": "791e3c50898f38ffb83a16ef7c904022e59192d1"
+    },
+    {
+      "id": "d1791270545915-2",
+      "title": "Streamlining Your Steem Workflow: Tools for Efficiency",
+      "permlink": "streamlining-your-steem-workflow-tools-for-efficiency-2026-10-07",
+      "verdict": "POSTED",
+      "at": "2026-10-07T03:45:46.619Z",
+      "txid": "53dbc96e145a49c8a350acba67a70055cd376e49"
     }
   ],
   "verdict": "PUBLISHED",
-  "rcPct": 29.9,
-  "at": "2026-10-07T03:35:46.619Z"
+  "rcPct": 30.3,
+  "at": "2026-10-07T03:45:46.619Z"
 }

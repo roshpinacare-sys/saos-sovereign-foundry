@@ -9,16 +9,16 @@
       "note": "no fill window yet — measured once real fills accumulate",
       "meta": {
         "realizedSbdTotal": 0,
-        "fillsToday": 0
+        "fillsToday": 2
       }
     },
     {
       "id": "curation",
       "label": "קיורציה · מסילת-דלק",
       "measuredUsdPerDay": null,
-      "estUsdPerDay": 0.519096,
+      "estUsdPerDay": 0.521551,
       "confidence": "estimated",
-      "note": "~8.74 STEEM/יום — ESTIMATED (payout clock ~7d, first verification T-18c)"
+      "note": "~8.79 STEEM/יום — ESTIMATED (payout clock ~7d, first verification T-18c)"
     },
     {
       "id": "fuel",
@@ -34,7 +34,7 @@
       "measuredUsdPerDay": null,
       "estUsdPerDay": 0,
       "confidence": "blocked",
-      "note": "HOLD honest (6904bps edge, dust-or-capped) — the rail is armed-in-doctrine, not burning"
+      "note": "HOLD honest (7542bps edge, dust-or-capped) — the rail is armed-in-doctrine, not burning"
     },
     {
       "id": "promo",
@@ -50,24 +50,24 @@
       "measuredUsdPerDay": null,
       "estUsdPerDay": null,
       "confidence": "measured",
-      "note": "10148 ops/day measured — presence + optionality, deliberately NOT priced as profit",
+      "note": "10284 ops/day measured — presence + optionality, deliberately NOT priced as profit",
       "meta": {
-        "opsPerDay": 10148
+        "opsPerDay": 10284
       }
     }
   ],
   "totalMeasuredUsdPerDay": 0,
-  "totalEstUsdPerDay": 0.519096,
+  "totalEstUsdPerDay": 0.521551,
   "measuredCount": 1,
   "estimatedCount": 2,
   "blockedCount": 3,
   "law": "סכום-מדוד וסכום-מוערך לעולם לא מתמזגים — שתי שורות-אמת נפרדות",
-  "parity": 0.10036107673894963,
-  "asof": "2026-10-07T03:35:46.619Z",
+  "parity": 0.1040964413671177,
+  "asof": "2026-10-07T03:45:46.619Z",
   "context": {
     "venueFillsPerDay": 566,
     "venueVolSteem24h": 992.091,
-    "ourFillsObservable": 0,
+    "ourFillsObservable": 2,
     "scalingLaw": "ops/day ∝ RC ∝ SP — ההון-החכם מכפיל את התקרה, לא את הקוד"
   },
   "payoutClock": {
@@ -85,43 +85,43 @@
     "any": false
   },
   "x2": {
-    "currentUsdPerDay": 0.5191,
+    "currentUsdPerDay": 0.5216,
     "targetUsdPerDay": 1000,
-    "currentSp": 958,
-    "factor": 1926.5,
+    "currentSp": 975,
+    "factor": 1917.4,
     "rows": [
       {
         "mult": 1,
-        "sp": 958,
+        "sp": 975,
         "usdPerDay": 0.52,
         "reachesTarget": false
       },
       {
         "mult": 10,
-        "sp": 9585,
-        "usdPerDay": 5.19,
+        "sp": 9748,
+        "usdPerDay": 5.22,
         "reachesTarget": false
       },
       {
         "mult": 40,
-        "sp": 38340,
-        "usdPerDay": 20.76,
+        "sp": 38990,
+        "usdPerDay": 20.86,
         "reachesTarget": false
       },
       {
         "mult": 100,
-        "sp": 95850,
-        "usdPerDay": 51.91,
+        "sp": 97475,
+        "usdPerDay": 52.16,
         "reachesTarget": false
       },
       {
-        "mult": 1927,
-        "sp": 1847020,
-        "usdPerDay": 1000.3,
+        "mult": 1918,
+        "sp": 1869578,
+        "usdPerDay": 1000.33,
         "reachesTarget": true
       }
     ],
     "law": "הקיורציה גדלה ∝ חלק-ה-SP מבריכת-התגמולים; תקרת-העסקאות ∝ RC ∝ SP — ההון מכפיל את המדידה, הקוד נשאר"
   },
-  "pid": 4605
+  "pid": 5736
 }

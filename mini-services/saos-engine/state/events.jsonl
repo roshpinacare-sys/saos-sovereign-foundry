@@ -5566,3 +5566,15 @@
 {"type":"hyper.boot","at":"2026-10-07T03:40:51.775Z","pid":5736,"conf":{"enabled":true,"tickMs":3000,"levels":10,"spacingBps":15,"ttlSec":60,"orderTtlSec":3600,"askBudgetPct":0.12,"minRcPct":25,"setpointPct":50,"burst":3,"maxOpsPerTick":24,"opsDayCap":32000,"chainTailSec":60,"maxOpsPerTx":24}}
 {"type":"fleet-grid.boot","at":"2026-10-07T03:40:51.779Z","tickMs":180000,"accounts":13,"orderTrace":"1a113f67a0ed4be9"}
 {"type":"hyper.requote","at":"2026-10-07T03:42:18.780Z","label":"requote-front","ops":2,"cancels":2,"creates":0,"txid":"52ad5d39a74a9c039a896fc53e3cd914d2893257","rcPct":29.5,"opsToday":316,"equilibriumOpsPerDay":10148,"bestAsk":0.10128899682421072,"bestBid":0.10037369697764374}
+{"type":"hyper.requote","at":"2026-10-07T03:43:57.783Z","label":"requote-front","ops":2,"cancels":2,"creates":0,"txid":"3a04517016782165da26e6b0ef95b296139ea037","rcPct":29.4,"opsToday":318,"equilibriumOpsPerDay":10148,"bestAsk":0.10128899682421072,"bestBid":0.1003814495081309}
+{"type":"hyper.requote","at":"2026-10-07T03:45:30.786Z","label":"requote-front","ops":2,"cancels":2,"creates":0,"txid":"c1dfdbf0a75dcf0d9d84017596cdc3217b2047f1","rcPct":30.3,"opsToday":320,"equilibriumOpsPerDay":10284,"bestAsk":0.10128899682421072,"bestBid":0.1003814495081309}
+{"type":"observe.done","at":"2026-10-07T03:45:46.619Z","fills":2,"parity":0.1040964413671177}
+{"type":"grid.tick","at":"2026-10-07T03:45:46.619Z","runCount":337,"refPrice":0.1040964413671177,"internalFeed":0.1040964413671177,"dragK":1,"inv":{"steem":34.392,"sbd":0.853}}
+{"type":"sweep.scan","at":"2026-10-07T03:45:46.619Z","grid":"sweep","dustSteem":0.392000000000003}
+{"type":"anchor.quote","at":"2026-10-07T03:45:46.619Z","grid":"anchor-quote","bid":0.10388824848438347,"ask":0.10430463424985192}
+{"type":"offer.published","at":"2026-10-07T03:45:46.619Z","verdict":"OFFER-READY","asks":0,"bids":0,"flowAsks":3,"flowBids":0,"bestAsk":0.10128899682421072,"bestBid":0.1003814495081309}
+{"type":"convert.planned","at":"2026-10-07T03:45:46.619Z","verdict":"CONVERT-HOLD","edgeBps":7542,"amountSbd":0}
+{"type":"learn.done","at":"2026-10-07T03:45:46.619Z","verdict":"LEARNED","lessons":["unclassified-fail-legacy","broadcast-fails"],"tunings":[]}
+{"type":"discover.done","at":"2026-10-07T03:45:46.619Z","verdict":"OPTIONS-FOUND","tags":12,"opportunities":["spread-normal","tags-realloc","curation-share","fleet-growth"]}
+{"type":"publish.post","at":"2026-10-07T03:45:46.619Z","id":"d1791270545915-2","title":"Streamlining Your Steem Workflow: Tools for Efficiency","permlink":"streamlining-your-steem-workflow-tools-for-efficiency-2026-10-07","verdict":"POSTED","txid":"53dbc96e145a49c8a350acba67a70055cd376e49"}
+{"type":"hyper.requote","at":"2026-10-07T03:47:30.789Z","label":"front-create","ops":1,"cancels":0,"creates":1,"txid":"3f7968173603786ce823ac3976117cc7ec73f7e4","rcPct":30.2,"opsToday":321,"equilibriumOpsPerDay":10284,"bestAsk":0.10128899682421072,"bestBid":0.1003814495081309}

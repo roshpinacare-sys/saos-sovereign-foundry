@@ -1,6 +1,6 @@
 {
   "startedAt": "2026-10-07T01:52:05.866Z",
-  "runs": 39,
+  "runs": 41,
   "parity": 0.1040964413671177,
   "funded": {
     "cashmachine": {
@@ -73,9 +73,9 @@
     "cashmachine": {
       "slot": 1,
       "seq": 10,
-      "runs": 39,
+      "runs": 41,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T03:41:36.779Z",
+      "lastAt": "2026-10-07T03:46:51.779Z",
       "live": 5,
       "txid": "582e96e52c30ccbde47f3afb255b24ddc258212e",
       "rcPct": 99.1,
@@ -87,9 +87,9 @@
     "haran": {
       "slot": 2,
       "seq": 10,
-      "runs": 39,
+      "runs": 41,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T03:41:36.779Z",
+      "lastAt": "2026-10-07T03:46:51.779Z",
       "live": 5,
       "txid": "4e68dad3c704e8c69d85bed3a6c9940cbe13cfdd",
       "rcPct": 99.2,
@@ -101,9 +101,9 @@
     "israelnews": {
       "slot": 3,
       "seq": 10,
-      "runs": 39,
+      "runs": 41,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T03:41:36.779Z",
+      "lastAt": "2026-10-07T03:46:51.779Z",
       "live": 5,
       "txid": "0b3fbce7636c8b55b90811285e052fd0d6f3a9e6",
       "rcPct": 99.3,
@@ -115,9 +115,9 @@
     "lsa": {
       "slot": 4,
       "seq": 10,
-      "runs": 39,
+      "runs": 41,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T03:41:36.779Z",
+      "lastAt": "2026-10-07T03:46:51.779Z",
       "live": 5,
       "txid": "31635b011e21e8d88fb6e2528a09ff3e506a45a2",
       "rcPct": 99.2,
@@ -129,9 +129,9 @@
     "macrame": {
       "slot": 5,
       "seq": 10,
-      "runs": 39,
+      "runs": 41,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T03:41:36.779Z",
+      "lastAt": "2026-10-07T03:46:51.779Z",
       "live": 5,
       "txid": "cd05e6122eee0220588178d5d3a9a7ca5f8a9056",
       "rcPct": 98.9,
@@ -143,9 +143,9 @@
     "siq": {
       "slot": 6,
       "seq": 10,
-      "runs": 39,
+      "runs": 41,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T03:41:36.779Z",
+      "lastAt": "2026-10-07T03:46:51.779Z",
       "live": 5,
       "txid": "2ae02c120264f0ac57c18d173819d12608b5a199",
       "rcPct": 93.1,
@@ -157,9 +157,9 @@
     "tov": {
       "slot": 7,
       "seq": 10,
-      "runs": 39,
+      "runs": 41,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T03:41:36.779Z",
+      "lastAt": "2026-10-07T03:46:51.779Z",
       "live": 5,
       "txid": "de05bccc9193e148c1621b27f77dcced4dec46e0",
       "rcPct": 96.7,
@@ -171,9 +171,9 @@
     "wic": {
       "slot": 8,
       "seq": 10,
-      "runs": 39,
+      "runs": 41,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T03:41:36.779Z",
+      "lastAt": "2026-10-07T03:46:51.779Z",
       "live": 5,
       "txid": "c9d17d24f1556092a559fffad0dfa00842370a01",
       "rcPct": 91.1,
@@ -185,9 +185,9 @@
     "wog": {
       "slot": 9,
       "seq": 10,
-      "runs": 39,
+      "runs": 41,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T03:41:36.779Z",
+      "lastAt": "2026-10-07T03:46:51.779Z",
       "live": 5,
       "txid": "6a8b0d723a76190d5bd0db570643592fb4c9e586",
       "rcPct": 90.9,
@@ -199,9 +199,9 @@
     "woq": {
       "slot": 10,
       "seq": 10,
-      "runs": 39,
+      "runs": 41,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T03:41:36.779Z",
+      "lastAt": "2026-10-07T03:46:51.779Z",
       "live": 5,
       "txid": "dfc63f5a31ab5b1f2789c7bf3b877008955ff6a0",
       "rcPct": 90.3,
@@ -213,9 +213,9 @@
     "hcsoldier4": {
       "slot": 11,
       "seq": 8,
-      "runs": 28,
+      "runs": 30,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T03:41:36.779Z",
+      "lastAt": "2026-10-07T03:46:51.779Z",
       "live": 4,
       "txid": "e7abaca78b68cbf1426c2676f147dc553608dd4d",
       "rcPct": 46.4,
@@ -227,9 +227,9 @@
     "hcsoldier5": {
       "slot": 12,
       "seq": 8,
-      "runs": 28,
+      "runs": 30,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T03:41:36.779Z",
+      "lastAt": "2026-10-07T03:46:51.779Z",
       "live": 4,
       "txid": "6d8f8ca7fa27b591db31dee6b58b17ea5f750db0",
       "rcPct": 55.4,
@@ -241,9 +241,9 @@
     "hcsoldier6": {
       "slot": 13,
       "seq": 8,
-      "runs": 28,
+      "runs": 30,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T03:41:36.779Z",
+      "lastAt": "2026-10-07T03:46:51.779Z",
       "live": 4,
       "txid": "b08b42451e103f0c521c3ced44dfdccc9f1746d1",
       "rcPct": 46.9,
@@ -253,7 +253,7 @@
       "reason": "no-live-orders"
     }
   },
-  "lastTickAt": "2026-10-07T03:41:36.779Z",
+  "lastTickAt": "2026-10-07T03:46:51.779Z",
   "lastFundTxid": "937204b7547dcc3a08d06224f80737b6625217bd",
   "fundingVerdict": "ALL-FUNDED-OR-NONE-NEEDED",
   "lastFundError": null
