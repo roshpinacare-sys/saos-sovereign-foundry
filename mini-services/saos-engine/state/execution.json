@@ -1,8 +1,39 @@
 {
   "day": "2026-10-07",
-  "windows": {},
-  "actions": [],
-  "at": "2026-10-07T09:25:46.661Z",
-  "minute": 565,
+  "windows": {
+    "engage": {
+      "at": "2026-10-07T09:35:46.659Z",
+      "verdict": "ENGAGED:3",
+      "landed": 3
+    }
+  },
+  "actions": [
+    {
+      "kind": "engage",
+      "verdict": "REPLIED",
+      "to": "headcorner/streamlining-your-steem-workflow-tools-for-efficiency-2026-10-07",
+      "via": "ai-bridge",
+      "txid": "f0f7f62d80cda762701b57ea963ba4b62e0f8545",
+      "at": "2026-10-07T09:35:46.659Z"
+    },
+    {
+      "kind": "engage",
+      "verdict": "REPLIED",
+      "to": "headcorner/how-effective-is-steem-s-curation-reward-system-2026-10-07",
+      "via": "ai-bridge",
+      "txid": "5bde928fee810a08017980f24b9ecdee45ffaf13",
+      "at": "2026-10-07T09:35:46.659Z"
+    },
+    {
+      "kind": "engage",
+      "verdict": "REPLIED",
+      "to": "headcorner/the-weave-measured-market-brief-2026-10-07-muxj1ir6",
+      "via": "ai-bridge",
+      "txid": "65df64aed0b1277810d80331bd76118be44b516e",
+      "at": "2026-10-07T09:35:46.659Z"
+    }
+  ],
+  "at": "2026-10-07T09:35:46.659Z",
+  "minute": 575,
   "rcPct": 32.9
 }

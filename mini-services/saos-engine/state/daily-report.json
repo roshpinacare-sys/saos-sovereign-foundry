@@ -1,30 +1,30 @@
 {
-  "startedAt": "2026-10-07T09:25:46.661Z",
+  "startedAt": "2026-10-07T09:35:46.659Z",
   "account": "headcorner",
   "steps": {
     "observe": {
       "name": "observe",
       "ok": true,
-      "ms": 2491,
+      "ms": 2732,
       "account": "headcorner",
       "parity": {
-        "steemUsd": 0.05908,
-        "sbdUsd": 0.589763,
-        "parity": 0.1001758333432243,
+        "steemUsd": 0.05885,
+        "sbdUsd": 0.592639,
+        "parity": 0.09930159844357188,
         "source": "coingecko"
       },
-      "feed": 0.10409594631036095,
+      "feed": 0.10409594672255837,
       "band": {
         "ok": true,
         "reason": "band-ok",
-        "bps": -377
+        "bps": -461
       },
-      "steemUsd": 0.05908,
-      "sbdUsd": 0.589763,
+      "steemUsd": 0.05885,
+      "sbdUsd": 0.592639,
       "inventory": {
         "steem": 1.871,
         "sbd": 0.024,
-        "spOwn": 974.7694118417164,
+        "spOwn": 974.7698738642249,
         "rcPct": 32.9
       },
       "ordersOk": true,
@@ -102,12 +102,12 @@
         "node": "https://api.justyy.com",
         "windowNote": "no reward ops inside the measured window — rails dormant, not a parse failure (deep-scan documented separately)"
       },
-      "summary": "parity 0.1001758333432243 (coingecko) · fills 12 · fuel 0$"
+      "summary": "parity 0.09930159844357188 (coingecko) · fills 12 · fuel 0$"
     },
     "intel": {
       "name": "intel",
       "ok": true,
-      "ms": 1469,
+      "ms": 1533,
       "verdict": "DECISIONS:5",
       "decisions": [
         "book-depth:hold-shape",
@@ -127,31 +127,31 @@
       "name": "tick",
       "ok": true,
       "ms": 0,
-      "runCount": 372,
-      "simFills": 51,
-      "simFeesMu": 25500,
+      "runCount": 373,
+      "simFills": 52,
+      "simFeesMu": 26000,
       "events": 6
     },
     "peg": {
       "name": "peg",
       "ok": true,
-      "ms": 749,
+      "ms": 2979,
       "verdict": "OFFER-EMPTY",
       "asks": 0,
       "bids": 0,
       "flowAsks": 0,
       "flowBids": 0,
       "staleCount": 0,
-      "skew": 0.231892,
+      "skew": 0.231361,
       "book": {
         "bestAsk": 0.1036376826614157,
         "bestBid": 0.100002,
         "askDepthSteem": 532.091,
-        "bidDepthSbd": 2840.212,
-        "at": "2026-10-07T09:25:46.661Z"
+        "bidDepthSbd": 2830.786,
+        "at": "2026-10-07T09:35:46.659Z"
       },
       "market": {
-        "tradesPerDay": 488,
+        "tradesPerDay": 259,
         "spreadBps": 363.56
       },
       "liquidity": {
@@ -168,15 +168,15 @@
       "ms": 0,
       "verdict": "CONVERT-HOLD",
       "amountSbd": 0,
-      "edgeBps": 6956,
-      "marketSbdUsd": 0.589763,
-      "impliedSbdUsd": 0.567553,
+      "edgeBps": 6874,
+      "marketSbdUsd": 0.592639,
+      "impliedSbdUsd": 0.565344,
       "marketSourceNote": "external-measured"
     },
     "curate": {
       "name": "curate",
       "ok": true,
-      "ms": 689,
+      "ms": 739,
       "verdict": "VP-FLOOR",
       "votes": 0,
       "txid": null,
@@ -187,7 +187,7 @@
     "execute": {
       "name": "execute",
       "ok": true,
-      "ms": 704,
+      "ms": 755,
       "verdict": "NO-OPS",
       "ops": 0,
       "opsToday": 4,
@@ -202,13 +202,13 @@
     "learn": {
       "name": "learn",
       "ok": true,
-      "ms": 2498,
+      "ms": 10,
       "verdict": "LEARNED",
       "lessons": [
         "unclassified-fail-legacy"
       ],
       "tunings": [],
-      "discoveryVerdict": "OPTIONS-FOUND",
+      "discoveryVerdict": "FRESH-CACHED",
       "topOpportunities": [
         "spread-wide(measured)",
         "tags-realloc(measured)",
@@ -266,16 +266,16 @@
     "trends": {
       "name": "trends",
       "ok": true,
-      "ms": 21009,
-      "verdict": "TRENDS-OK",
+      "ms": null,
+      "verdict": "CADENCE-GATED",
       "topics": 6,
-      "chainScanned": 67,
-      "lastAt": null
+      "chainScanned": null,
+      "lastAt": "2026-10-07T09:25:46.661Z"
     },
     "coordination": {
       "name": "coordination",
       "ok": true,
-      "ms": 26910,
+      "ms": 25975,
       "verdict": "SCHEDULED:ok·POWER:ok·ENG:ok",
       "accounts": 14,
       "engagement": {
@@ -313,15 +313,46 @@
         "clusterViolations": 0,
         "verdict": "QUIET"
       },
-      "cadence": "MEASURED"
+      "cadence": "GATED-30MIN"
     },
     "windowExec": {
       "name": "window-exec",
       "ok": true,
-      "ms": 716,
-      "verdict": "WINDOWS-ASSESSED:0",
-      "verdicts": [],
-      "windows": {},
+      "ms": 15141,
+      "verdict": "WINDOWS-ASSESSED:3",
+      "verdicts": [
+        {
+          "kind": "engage",
+          "verdict": "REPLIED",
+          "to": "headcorner/streamlining-your-steem-workflow-tools-for-efficiency-2026-10-07",
+          "via": "ai-bridge",
+          "txid": "f0f7f62d80cda762701b57ea963ba4b62e0f8545",
+          "at": "2026-10-07T09:35:46.659Z"
+        },
+        {
+          "kind": "engage",
+          "verdict": "REPLIED",
+          "to": "headcorner/how-effective-is-steem-s-curation-reward-system-2026-10-07",
+          "via": "ai-bridge",
+          "txid": "5bde928fee810a08017980f24b9ecdee45ffaf13",
+          "at": "2026-10-07T09:35:46.659Z"
+        },
+        {
+          "kind": "engage",
+          "verdict": "REPLIED",
+          "to": "headcorner/the-weave-measured-market-brief-2026-10-07-muxj1ir6",
+          "via": "ai-bridge",
+          "txid": "65df64aed0b1277810d80331bd76118be44b516e",
+          "at": "2026-10-07T09:35:46.659Z"
+        }
+      ],
+      "windows": {
+        "engage": {
+          "at": "2026-10-07T09:35:46.659Z",
+          "verdict": "ENGAGED:3",
+          "landed": 3
+        }
+      },
       "error": null
     },
     "publish": {
@@ -358,7 +389,7 @@
       "ok": true,
       "ms": 1,
       "totalMeasuredUsdPerDay": 0,
-      "totalEstUsdPerDay": 0.525144,
+      "totalEstUsdPerDay": 0.5231,
       "rails": 6,
       "measuredCount": 1,
       "estimatedCount": 2,
@@ -404,5 +435,5 @@
     "failedSteps": [],
     "blockedSteps": []
   },
-  "finishedAt": "2026-10-07T09:26:58.250Z"
+  "finishedAt": "2026-10-07T09:36:35.791Z"
 }
