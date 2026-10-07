@@ -22,3 +22,6 @@
 {"at":"2026-10-07T10:52:04.108Z","kind":"anchor-skip","detail":"rate-limited durably (last 2026-10-07T10:21:03.138Z)"}
 {"at":"2026-10-07T11:01:59.034Z","kind":"service-heal","detail":"chief-of-staff :3032 spawned at 2026-10-07T11:01:59.034Z (was down)"}
 {"at":"2026-10-07T11:01:59.049Z","kind":"service-heal","detail":"fleet-cure :3034 spawned at 2026-10-07T11:01:59.049Z (was down)"}
+{"at":"2026-10-07T11:02:04.446Z","kind":"anchor-skip","detail":"rate-limited durably (last 2026-10-07T10:21:03.138Z)"}
+{"at":"2026-10-07T11:11:59.079Z","kind":"service-heal","detail":"chief-of-staff :3032 spawned at 2026-10-07T11:11:59.079Z (was down)"}
+{"at":"2026-10-07T11:11:59.151Z","kind":"service-heal","detail":"fleet-cure :3034 spawned at 2026-10-07T11:11:59.151Z (was down)"}

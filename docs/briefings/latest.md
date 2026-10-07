@@ -1,19 +1,19 @@
-# בריף ראש-המטה — 2026-10-07T10:41:12.068Z
+# בריף ראש-המטה — 2026-10-07T11:10:54.096Z
 
 > מופק אוטומטית ע"י mini-services/chief-of-staff (LLM). ניתוח-בלבד; ביצוע ע"י סוכן תורן עם ראיות.
 
 <details><summary>קלט-מצב (מקוצר)</summary>
 
 ```
-HEAD: 4dc9f47e
+HEAD: 8ff35614
 כספת: שגיאה ENOENT: no such file or directory, open '/home/z/.secrets/external-signer-token'
-guardian: ok=true runs=1 devMode=true tickAlive=true token=true
-- 4dc9f47e SAOS-custodian: bounded-staleness persistence (jq-validated state, FF law)
-- 2767b604 R237-b: grind day-counters derived from evidence (GRIND:V4/R4 survives cycles) + noTargets day-guard carried + verdict pure helper (selftest 387/387)
-- 35a20989 SAOS-custodian: bounded-staleness persistence (jq-validated state, FF law)
-- f6ea269d SAOS-custodian: bounded-staleness persistence (jq-validated state, FF law)
-- 8ff1cbdb R237: sandbox-rollback recovery + fleet-grid budget-aware spread funding + grind catch-up & community scan (first-ever GRIND:V4/R4) + custodian engine-heal hatch + services/sources/secrets restored
-briefings אחרונים: BRIEF-2026-10-07T00-48-19.md, BRIEF-2026-10-07T09-38-31.md
+guardian: ok=true runs=21 devMode=true tickAlive=true token=true
+- 8ff35614 SAOS-custodian: bounded-staleness persistence (jq-validated state, FF law)
+- d361c13a SAOS-custodian: bounded-staleness persistence (jq-validated state, FF law)
+- b8cb14c4 R237-final: Turbopack root-caused (poisoned .next cache) + services-heal generalized (7 organs) + grind evidence-derived counters — all green
+- 694f1606 SAOS-custodian: bounded-staleness persistence (jq-validated state, FF law)
+- 38e9b451 R237-c: custodian services-heal hatch generalized — 7 organs probed+spawned every tick (boot-tree survivor parents the whole mini-service fleet)
+briefings אחרונים: BRIEF-2026-10-07T00-48-19.md, BRIEF-2026-10-07T09-38-31.md, BRIEF-2026-10-07T10-41-12.md
 ── זנב next-steps.md ──
 (לא זמין)
 ── זנב owner-decisions.md ──
@@ -21,21 +21,18 @@ briefings אחרונים: BRIEF-2026-10-07T00-48-19.md, BRIEF-2026-10-07T09-38-3
 ```
 </details>
 ## מצב רשת
-הרשת פעילה עם guardian במצב תקין (ok=true) ומצב devMode. קיימת שגיאה בגישה לקובץ external-signer-token. הקומיט האחרון (4dc9f47e) מצביע על bounded-staleness persistence.
+הרשת פעילה עם guardian מדויק, אך כספת החיצונית חסרה (ENOENT). קיימים 4 קומיטים עם גישות מרובות לפרויקט SAOS-custodian. קובצי ה-next-steps.md ו-owner-decisions.md אינם זמינים.
 
 ## סיכונים / דברים מדממים
-- שגיאת גישה לקובץ האימות external-signer-token, אשר עלולה להשפיע על תפקוד הגנים החיצוניים
-- חוסר במידע מעודכן (next-steps.md ו-owner-decisions.md אינם זמינים)
+כספת חיצונית חסרה (ENOENT), מה שעלול למנוע גישה למפתחות חיצוניים או אימות חיצוני.
 
 ## 3 פעולות הבאות — כל אחת: [סוכן-בעלים] פעולה מדויקת + קריטריון-אימת
-1. [SAOS-custodian] בדוק את מיקום וקיום קובץ ה external-signer-token ואם חסר, צור קובץ זמני במצב devMode + אימת באמצעות guardian token=true
-2. [SAOS-custodian] סנכרן את מצב הרשת עם הקומיט האחרון (4dc9f47e) ואמת את bounded-staleness persistence + דווח על כל חריגות
-3. [R237-b] נהל את תהליך grind day-counters ואמת את המצב מול ה-cycles האחרונים + דווח על מצב ה-verdict pure helper
+1. [SAOS-custodian] בדוק את מיקום הכספת החיצונית ואם היא צריכה להיות במיקום אחר, עדכן את התצורה + קריטריון-אימת: קובץ הכספת נגיש לתהליך ה-guardian
+2. [SAOS-custodian] ייצור קובץ חדש ב-next-steps.md עם המשך הפעולות המתוכננות + קריטריון-אימת: קובץ נוצר ומכיל את הפעולות הבאות לפי סדר עדיפות
+3. [SAOS-custodian] יבדוק את כל הקומיטים הקשורים ל-custodian ויבצע מיזוג אם נדרש כדי לשמור על אחידות הקוד + קריטריון-אימת: כל הקומיטים מראים אותו מצב פעולה
 
 ## החלטות שאני (ראש-המטה) מקבל עכשיו בעצמי
-- מינוי סוכן SAOS-custodian לטיפול במשימת תיקון/יצירת external-signer-token
-- הפעלת תהליך ניטור מצב הרשת עם דיווח דו-שעתי עד לייצוב מלא של המערכת
-- הקצאת משאבים לפתרון בעיית הגישה לקובץ האימות
+אין לי מספיק מידע כדי לקבוע החלטות על פי הכללים שניתנו לי, במיוחד בנוגע למפתחות וכספות. אני חייב גישה לקלט נוסף כדי להבין את המצב המלא של הרשת והמפתחות.
 
 ## נשאר לבעלים בלבד (או "כלום")
-החלטות בעלים - קבלת החלטות-על בהתאם להנחיית-בעלים 2026-09-08
+הגישה לכספת והטיפול במפתחות (בהתאם לסעיף כספת-חי בקלט) נשארת לבעלים בלבד.

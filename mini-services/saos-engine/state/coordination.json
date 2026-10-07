@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T10:54:13.638Z",
+  "at": "2026-10-07T11:04:13.639Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -124,7 +124,7 @@
         "name": "headcorner",
         "sp": 6.49,
         "vpEff": 33.9,
-        "rcPct": 33.6,
+        "rcPct": 33.7,
         "verdict": "REDUCED",
         "weightPct": 50,
         "lowRc": false,
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T10:54:23.374Z"
+    "at": "2026-10-07T11:04:20.079Z"
   },
   "engagement": {
     "ok": true,
@@ -1030,7 +1030,7 @@
       "authorResponseRate": 38,
       "avgScore": 2.4
     },
-    "at": "2026-10-07T10:54:13.638Z"
+    "at": "2026-10-07T11:04:13.639Z"
   },
   "compliance": {
     "protocol": "saos.fleet.compliance.v1",
@@ -1318,73 +1318,73 @@
       "acc": "headcorner",
       "kind": "vote1",
       "at": "11:26",
-      "inMin": 32
+      "inMin": 22
     },
     {
       "acc": "wic",
       "kind": "post",
       "at": "12:14",
-      "inMin": 80
+      "inMin": 70
     },
     {
       "acc": "wog",
       "kind": "vote1",
       "at": "12:34",
-      "inMin": 100
+      "inMin": 90
     },
     {
       "acc": "israelnews",
       "kind": "vote2",
       "at": "12:54",
-      "inMin": 120
+      "inMin": 110
     },
     {
       "acc": "israelnews",
       "kind": "engage",
       "at": "13:14",
-      "inMin": 140
+      "inMin": 130
     },
     {
       "acc": "hcsoldier1",
       "kind": "vote1",
       "at": "13:34",
-      "inMin": 160
+      "inMin": 150
     },
     {
       "acc": "haran",
       "kind": "engage",
       "at": "13:58",
-      "inMin": 184
+      "inMin": 174
     },
     {
       "acc": "hcsoldier2",
       "kind": "vote1",
       "at": "14:26",
-      "inMin": 212
+      "inMin": 202
     },
     {
       "acc": "haran",
       "kind": "vote2",
       "at": "14:54",
-      "inMin": 240
+      "inMin": 230
     },
     {
       "acc": "siq",
       "kind": "engage",
       "at": "15:14",
-      "inMin": 260
+      "inMin": 250
     },
     {
       "acc": "macrame",
       "kind": "engage",
       "at": "15:34",
-      "inMin": 280
+      "inMin": 270
     },
     {
       "acc": "woq",
       "kind": "post",
       "at": "15:54",
-      "inMin": 300
+      "inMin": 290
     }
   ],
   "lastPublish": {
@@ -1402,5 +1402,5 @@
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)",
     "threads": "שיח מתפתח = תגובות-לתגובות + הגב-מחבר — R233 מודד את העומק, לא רק את הכיסוי"
   },
-  "ms": 32175
+  "ms": 38382
 }

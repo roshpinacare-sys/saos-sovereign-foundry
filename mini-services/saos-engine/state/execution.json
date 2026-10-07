@@ -9,6 +9,11 @@
     "post": {
       "at": "2026-10-07T10:22:50.911Z",
       "verdict": "POST-DELEGATED-TO-CONTENT-RAIL"
+    },
+    "vote1": {
+      "at": "2026-10-07T11:04:13.639Z",
+      "verdict": "VOTED:50%",
+      "vpEff": 33.9
     }
   },
   "actions": [
@@ -35,9 +40,17 @@
       "via": "ai-bridge",
       "txid": "65df64aed0b1277810d80331bd76118be44b516e",
       "at": "2026-10-07T09:35:46.659Z"
+    },
+    {
+      "kind": "vote1",
+      "verdict": "VOTED:50%",
+      "vpEff": 33.9,
+      "target": "wog/myth-vs-fact-steem-dollars-are-stable-20261007-0",
+      "txid": "098da590b443836ee8b6f3b2f4b7fb777e4e8961",
+      "at": "2026-10-07T11:04:13.639Z"
     }
   ],
-  "at": "2026-10-07T10:54:13.638Z",
-  "minute": 654,
+  "at": "2026-10-07T11:04:13.639Z",
+  "minute": 664,
   "rcPct": 33.7
 }
