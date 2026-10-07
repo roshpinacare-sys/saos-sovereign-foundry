@@ -1,251 +1,161 @@
 {
-  "startedAt": "2026-10-07T01:52:05.866Z",
-  "runs": 157,
-  "parity": 0.09928494610968204,
-  "funded": {
-    "cashmachine": {
-      "txid": "456f76cea9736ae90451f19aa9af1fe1a5a8eb3f",
-      "amount": 1,
-      "at": "2026-10-07T01:52:05.866Z"
-    },
-    "haran": {
-      "txid": "456f76cea9736ae90451f19aa9af1fe1a5a8eb3f",
-      "amount": 1,
-      "at": "2026-10-07T01:52:05.866Z"
-    },
-    "israelnews": {
-      "txid": "456f76cea9736ae90451f19aa9af1fe1a5a8eb3f",
-      "amount": 1,
-      "at": "2026-10-07T01:52:05.866Z"
-    },
-    "lsa": {
-      "txid": "456f76cea9736ae90451f19aa9af1fe1a5a8eb3f",
-      "amount": 1,
-      "at": "2026-10-07T01:52:05.866Z"
-    },
-    "macrame": {
-      "txid": "456f76cea9736ae90451f19aa9af1fe1a5a8eb3f",
-      "amount": 1,
-      "at": "2026-10-07T01:52:05.866Z"
-    },
-    "siq": {
-      "txid": "456f76cea9736ae90451f19aa9af1fe1a5a8eb3f",
-      "amount": 1,
-      "at": "2026-10-07T01:52:05.866Z"
-    },
-    "tov": {
-      "txid": "456f76cea9736ae90451f19aa9af1fe1a5a8eb3f",
-      "amount": 1,
-      "at": "2026-10-07T01:52:05.866Z"
-    },
-    "wic": {
-      "txid": "456f76cea9736ae90451f19aa9af1fe1a5a8eb3f",
-      "amount": 1,
-      "at": "2026-10-07T01:52:05.866Z"
-    },
-    "wog": {
-      "txid": "456f76cea9736ae90451f19aa9af1fe1a5a8eb3f",
-      "amount": 1,
-      "at": "2026-10-07T01:52:05.866Z"
-    },
-    "woq": {
-      "txid": "456f76cea9736ae90451f19aa9af1fe1a5a8eb3f",
-      "amount": 1,
-      "at": "2026-10-07T01:52:05.866Z"
-    },
-    "hcsoldier4": {
-      "txid": "937204b7547dcc3a08d06224f80737b6625217bd",
-      "amount": 1,
-      "at": "2026-10-07T02:22:18.539Z"
-    },
-    "hcsoldier5": {
-      "txid": "937204b7547dcc3a08d06224f80737b6625217bd",
-      "amount": 1,
-      "at": "2026-10-07T02:22:18.539Z"
-    },
-    "hcsoldier6": {
-      "txid": "937204b7547dcc3a08d06224f80737b6625217bd",
-      "amount": 1,
-      "at": "2026-10-07T02:22:18.539Z"
-    }
-  },
+  "startedAt": "2026-10-07T09:37:51.782Z",
+  "runs": 4,
+  "parity": 0.09945215028475327,
+  "funded": {},
   "accounts": {
     "cashmachine": {
       "slot": 1,
-      "seq": 20,
-      "runs": 157,
+      "seq": 0,
+      "runs": 4,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T09:34:51.782Z",
+      "lastAt": "2026-10-07T09:46:51.782Z",
       "live": 0,
-      "txid": "0bd3a3b07069237e73259d08f29b1fbcc8d589b4",
+      "txid": null,
       "rcPct": 99.1,
       "steem": 0.01,
-      "sbd": 0.105,
-      "decision": "deploy",
-      "reason": "no-live-orders"
+      "sbd": 0.105
     },
     "haran": {
       "slot": 2,
-      "seq": 40,
-      "runs": 157,
+      "seq": 0,
+      "runs": 4,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T09:34:51.782Z",
+      "lastAt": "2026-10-07T09:46:51.782Z",
       "live": 0,
-      "txid": "8c6a2e319ad20bc0a16d65e9ebe0315ab4209d9c",
+      "txid": null,
       "rcPct": 99.2,
       "steem": 0.01,
-      "sbd": 0.1,
-      "decision": "deploy",
-      "reason": "no-live-orders"
+      "sbd": 0.1
     },
     "israelnews": {
       "slot": 3,
-      "seq": 40,
-      "runs": 157,
+      "seq": 0,
+      "runs": 4,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T09:34:51.782Z",
+      "lastAt": "2026-10-07T09:46:51.782Z",
       "live": 5,
-      "txid": "696216bfaf759d1fd5497f3ccf5ac116d24a41f7",
+      "txid": null,
       "rcPct": 99.3,
       "steem": 0.012,
-      "sbd": 0,
-      "decision": "deploy",
-      "reason": "no-live-orders"
+      "sbd": 0
     },
     "lsa": {
       "slot": 4,
-      "seq": 40,
-      "runs": 157,
+      "seq": 0,
+      "runs": 4,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T09:34:51.782Z",
+      "lastAt": "2026-10-07T09:46:51.782Z",
       "live": 5,
-      "txid": "189492d8b75007a7f62f61b87cc882b6b3d2d79f",
+      "txid": null,
       "rcPct": 99.2,
       "steem": 0.01,
-      "sbd": 0,
-      "decision": "deploy",
-      "reason": "no-live-orders"
+      "sbd": 0
     },
     "macrame": {
       "slot": 5,
-      "seq": 40,
-      "runs": 157,
+      "seq": 0,
+      "runs": 4,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T09:34:51.782Z",
+      "lastAt": "2026-10-07T09:46:51.782Z",
       "live": 5,
-      "txid": "f41cd0bf5bbddb447db6e19b6534700752b98fcb",
+      "txid": null,
       "rcPct": 98.9,
       "steem": 0.01,
-      "sbd": 0,
-      "decision": "deploy",
-      "reason": "no-live-orders"
+      "sbd": 0
     },
     "siq": {
       "slot": 6,
-      "seq": 40,
-      "runs": 157,
+      "seq": 0,
+      "runs": 4,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T09:34:51.782Z",
+      "lastAt": "2026-10-07T09:46:51.782Z",
       "live": 5,
-      "txid": "ef4bb27952f36578325304bfc266b3bb2c656a42",
+      "txid": null,
       "rcPct": 86.6,
       "steem": 0.01,
-      "sbd": 0,
-      "decision": "deploy",
-      "reason": "no-live-orders"
+      "sbd": 0
     },
     "tov": {
       "slot": 7,
-      "seq": 40,
-      "runs": 157,
+      "seq": 0,
+      "runs": 4,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T09:34:51.782Z",
+      "lastAt": "2026-10-07T09:46:51.782Z",
       "live": 5,
-      "txid": "77d31d810171c693734e0c116651dcd8723abd81",
+      "txid": null,
       "rcPct": 90.2,
       "steem": 0.009,
-      "sbd": 0,
-      "decision": "deploy",
-      "reason": "no-live-orders"
+      "sbd": 0
     },
     "wic": {
       "slot": 8,
-      "seq": 40,
-      "runs": 157,
+      "seq": 0,
+      "runs": 4,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T09:34:51.782Z",
+      "lastAt": "2026-10-07T09:46:51.782Z",
       "live": 5,
-      "txid": "bfcf64fd53e28b7d5ba2ad83a1064568a81e615f",
+      "txid": null,
       "rcPct": 85.1,
       "steem": 0.01,
-      "sbd": 0,
-      "decision": "deploy",
-      "reason": "no-live-orders"
+      "sbd": 0
     },
     "wog": {
       "slot": 9,
-      "seq": 40,
-      "runs": 157,
+      "seq": 0,
+      "runs": 4,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T09:34:51.782Z",
+      "lastAt": "2026-10-07T09:46:51.782Z",
       "live": 5,
-      "txid": "053227a02312d8c72e2319749ee5b657d04e8ec7",
+      "txid": null,
       "rcPct": 84.5,
       "steem": 0.01,
-      "sbd": 0,
-      "decision": "deploy",
-      "reason": "no-live-orders"
+      "sbd": 0
     },
     "woq": {
       "slot": 10,
-      "seq": 40,
-      "runs": 157,
+      "seq": 0,
+      "runs": 4,
       "lastVerdict": "NO-INVENTORY",
-      "lastAt": "2026-10-07T09:34:51.782Z",
+      "lastAt": "2026-10-07T09:46:51.782Z",
       "live": 5,
-      "txid": "5b732180e635cbbce8d6b07eab464214f475f47b",
+      "txid": null,
       "rcPct": 84.6,
       "steem": 0.01,
-      "sbd": 0,
-      "decision": "deploy",
-      "reason": "no-live-orders"
+      "sbd": 0
     },
     "hcsoldier4": {
       "slot": 11,
-      "seq": 16,
-      "runs": 146,
+      "seq": 0,
+      "runs": 4,
       "lastVerdict": "RC-FLOOR(11.7%)",
-      "lastAt": "2026-10-07T09:34:51.782Z",
+      "lastAt": "2026-10-07T09:46:51.782Z",
       "live": 0,
-      "txid": "abb3b82bab576620a78e0de4a871c7e067876074",
+      "txid": null,
       "rcPct": 11.7,
       "steem": 1,
-      "sbd": 0,
-      "decision": "deploy",
-      "reason": "no-live-orders"
+      "sbd": 0
     },
     "hcsoldier5": {
       "slot": 12,
-      "seq": 20,
-      "runs": 146,
+      "seq": 0,
+      "runs": 4,
       "lastVerdict": "RC-FLOOR(3.4%)",
-      "lastAt": "2026-10-07T09:34:51.782Z",
+      "lastAt": "2026-10-07T09:46:51.782Z",
       "live": 0,
-      "txid": "a0861e88b16a2b1f71b94046a610f7935db4f182",
+      "txid": null,
       "rcPct": 3.4,
       "steem": 0.2,
-      "sbd": 0.08,
-      "decision": "deploy",
-      "reason": "no-live-orders"
+      "sbd": 0.08
     },
     "hcsoldier6": {
       "slot": 13,
-      "seq": 276,
-      "runs": 146,
-      "lastVerdict": "FAIL(plugin exception:Account: hcsoldier6 has 757534448 RC, needs 880263963 RC. Please wait to transact, or power up STEEM.rethrow)",
-      "lastAt": "2026-10-07T09:34:51.782Z",
+      "seq": 16,
+      "runs": 4,
+      "lastVerdict": "FAIL(plugin exception:Account: hcsoldier6 has 765667329 RC, needs 880226505 RC. Please wait to transact, or power up STEEM.rethrow)",
+      "lastAt": "2026-10-07T09:46:51.782Z",
       "live": 0,
-      "txid": "89a6baebab31a3aa2458e118c6b0089a279f41b9",
+      "txid": "3fbfd4db2fc5f8e0709ff530feb2e43c72f245d3",
       "rcPct": 12.2,
       "steem": 1,
       "sbd": 0,
@@ -253,8 +163,8 @@
       "reason": "no-live-orders"
     }
   },
-  "lastTickAt": "2026-10-07T09:34:51.782Z",
-  "lastFundTxid": "937204b7547dcc3a08d06224f80737b6625217bd",
-  "fundingVerdict": "ALL-FUNDED-OR-NONE-NEEDED",
-  "lastFundError": null
+  "lastTickAt": "2026-10-07T09:46:51.782Z",
+  "lastFundTxid": null,
+  "fundingVerdict": "FAIL(Assert Exception:available >= -delta: Account headcorner does not have sufficient funds for balance adjustment. Required: {\"amount\":\"-1000\",\"precision\":3,\"nai\":\"@@000000021\"}, Available: {\"amount\":\"87)",
+  "lastFundError": "Assert Exception:available >= -delta: Account headcorner does not have sufficient funds for balance adjustment. Required: {\"amount\":\"-1000\",\"precision\":3,\"nai\":\"@@000000021\"}, Available: {\"amount\":\"87"
 }

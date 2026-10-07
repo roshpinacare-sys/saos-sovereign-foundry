@@ -1,6 +1,6 @@
 {
-  "at": "2026-10-07T09:35:46.659Z",
-  "lastFullScanAt": "2026-10-07T09:25:46.661Z",
+  "at": "2026-10-07T09:43:35.908Z",
+  "lastFullScanAt": "2026-10-07T09:43:35.908Z",
   "verdict": "OPTIONS-FOUND",
   "tagBoard": [
     {
@@ -9,19 +9,19 @@
     },
     {
       "tag": "kr",
-      "payoutsSbd": 2917.192
+      "payoutsSbd": 2880.793
     },
     {
       "tag": "hive-150122",
-      "payoutsSbd": 1987.429
+      "payoutsSbd": 1987.465
     },
     {
       "tag": "hive-196917",
-      "payoutsSbd": 1377.066
+      "payoutsSbd": 1377.151
     },
     {
       "tag": "steem",
-      "payoutsSbd": 1350.754
+      "payoutsSbd": 1350.759
     },
     {
       "tag": "hive-166405",
@@ -40,22 +40,22 @@
       "payoutsSbd": 896.747
     },
     {
-      "tag": "hive-183959",
-      "payoutsSbd": 885.211
-    },
-    {
       "tag": "atomy",
       "payoutsSbd": 866.167
     },
     {
       "tag": "hive-183397",
       "payoutsSbd": 858.756
+    },
+    {
+      "tag": "hive-183959",
+      "payoutsSbd": 850.5
     }
   ],
   "curationEst": {
-    "dailyPoolSteem": 934310.53,
-    "voteVestsShare": 0.000009513618474906145,
-    "estimatedSteemPerDay": 8.8887,
+    "dailyPoolSteem": 934174.258,
+    "voteVestsShare": 0.00000951149940017976,
+    "estimatedSteemPerDay": 8.8854,
     "note": "linear approx over reward-fund window — ESTIMATED class, never claimed as measured"
   },
   "vpEff": 8.6,
@@ -82,8 +82,8 @@
       "id": "curation-share",
       "kind": "curation-yield",
       "potentialClass": "estimated",
-      "evidence": "reward-fund pool 934310.53 STEEM/window · our vests share 0.0010% → ~8.8887 STEEM/day",
-      "potential": 8.8887,
+      "evidence": "reward-fund pool 934174.258 STEEM/window · our vests share 0.0010% → ~8.8854 STEEM/day",
+      "potential": 8.8854,
       "gate": "measured truth only lands via curation_reward ops (measureAll) — estimator never claims payout",
       "effort": "rail live since T-13"
     },
@@ -98,6 +98,5 @@
     }
   ],
   "learningConsumer": [],
-  "honesty": "ranked options, zero execution · classes: measured>estimated>potential · gates own the decisions",
-  "freshCached": true
+  "honesty": "ranked options, zero execution · classes: measured>estimated>potential · gates own the decisions"
 }

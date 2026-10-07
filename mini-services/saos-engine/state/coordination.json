@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T09:35:46.659Z",
+  "at": "2026-10-07T09:43:35.908Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T09:35:56.230Z"
+    "at": "2026-10-07T09:43:45.066Z"
   },
   "engagement": {
     "ok": true,
@@ -300,11 +300,12 @@
         "title": "Streamlining Your Steem Workflow: Tools for Efficiency",
         "ageH": 6,
         "fleetVotes": [],
-        "fleetRepliers": [],
-        "threads": 0,
-        "coveragePct": 0,
+        "fleetRepliers": [
+          "headcorner"
+        ],
+        "threads": 1,
+        "coveragePct": 7,
         "missing": [
-          "headcorner",
           "cashmachine",
           "haran",
           "israelnews",
@@ -327,11 +328,12 @@
         "title": "How Effective Is Steem's Curation Reward System?",
         "ageH": 6,
         "fleetVotes": [],
-        "fleetRepliers": [],
-        "threads": 0,
-        "coveragePct": 0,
+        "fleetRepliers": [
+          "headcorner"
+        ],
+        "threads": 1,
+        "coveragePct": 7,
         "missing": [
-          "headcorner",
           "cashmachine",
           "haran",
           "israelnews",
@@ -352,13 +354,14 @@
         "author": "headcorner",
         "permlink": "the-weave-measured-market-brief-2026-10-07-muxj1ir6",
         "title": "THE WEAVE · תדריך-שוק מדוד — Measured Market Brief (2026-10-07)",
-        "ageH": 6,
+        "ageH": 7,
         "fleetVotes": [],
-        "fleetRepliers": [],
-        "threads": 0,
-        "coveragePct": 0,
+        "fleetRepliers": [
+          "headcorner"
+        ],
+        "threads": 1,
+        "coveragePct": 7,
         "missing": [
-          "headcorner",
           "cashmachine",
           "haran",
           "israelnews",
@@ -596,7 +599,7 @@
         "author": "woq",
         "permlink": "how-do-you-evaluate-content-value-on-steem-20261006-0",
         "title": "How Do You Evaluate Content Value on Steem?",
-        "ageH": 13,
+        "ageH": 14,
         "fleetVotes": [
           "siq"
         ],
@@ -623,9 +626,9 @@
     ],
     "summary": {
       "posts": 12,
-      "avgCoveragePct": 1.2,
+      "avgCoveragePct": 2.9,
       "fullyCovered": 0,
-      "openThreads": 0
+      "openThreads": 3
     }
   },
   "assignments": {
@@ -634,19 +637,19 @@
         "author": "headcorner",
         "permlink": "streamlining-your-steem-workflow-tools-for-efficiency-2026-10-07",
         "title": "Streamlining Your Steem Workflow: Tools for Efficiency",
-        "kind": "cover-gap"
+        "kind": "develop-thread"
       },
       {
         "author": "headcorner",
         "permlink": "how-effective-is-steem-s-curation-reward-system-2026-10-07",
         "title": "How Effective Is Steem's Curation Reward System?",
-        "kind": "cover-gap"
+        "kind": "develop-thread"
       },
       {
         "author": "headcorner",
         "permlink": "the-weave-measured-market-brief-2026-10-07-muxj1ir6",
         "title": "THE WEAVE · תדריך-שוק מדוד — Measured Market Brief (2026-10-07)",
-        "kind": "cover-gap"
+        "kind": "develop-thread"
       }
     ],
     "cashmachine": [
@@ -916,38 +919,38 @@
       {
         "author": "headcorner",
         "permlink": "streamlining-your-steem-workflow-tools-for-efficiency-2026-10-07",
-        "layer1Count": 0,
+        "layer1Count": 1,
         "layer2Count": 0,
-        "fleetRepliers": 0,
-        "authorResponded": false,
+        "fleetRepliers": 1,
+        "authorResponded": true,
         "firstFleetReplyH": null,
-        "depth": 1,
+        "depth": 2,
         "developed": false,
-        "score": 0
+        "score": 3.1
       },
       {
         "author": "headcorner",
         "permlink": "how-effective-is-steem-s-curation-reward-system-2026-10-07",
-        "layer1Count": 0,
+        "layer1Count": 1,
         "layer2Count": 0,
-        "fleetRepliers": 0,
-        "authorResponded": false,
+        "fleetRepliers": 1,
+        "authorResponded": true,
         "firstFleetReplyH": null,
-        "depth": 1,
+        "depth": 2,
         "developed": false,
-        "score": 0
+        "score": 3.1
       },
       {
         "author": "headcorner",
         "permlink": "the-weave-measured-market-brief-2026-10-07-muxj1ir6",
-        "layer1Count": 0,
+        "layer1Count": 1,
         "layer2Count": 0,
-        "fleetRepliers": 0,
-        "authorResponded": false,
+        "fleetRepliers": 1,
+        "authorResponded": true,
         "firstFleetReplyH": null,
-        "depth": 1,
+        "depth": 2,
         "developed": false,
-        "score": 0
+        "score": 3.1
       },
       {
         "author": "headcorner",
@@ -1013,12 +1016,12 @@
     "summary": {
       "postsMeasured": 8,
       "developed": 0,
-      "avgDepth": 1,
+      "avgDepth": 1.4,
       "avgLayer2": 0,
-      "authorResponseRate": 0,
-      "avgScore": 0
+      "authorResponseRate": 38,
+      "avgScore": 1.2
     },
-    "at": "2026-10-07T09:35:46.659Z"
+    "at": "2026-10-07T09:43:35.908Z"
   },
   "compliance": {
     "protocol": "saos.fleet.compliance.v1",
@@ -1306,73 +1309,73 @@
       "acc": "headcorner",
       "kind": "engage",
       "at": "09:59",
-      "inMin": 23
+      "inMin": 15
     },
     {
       "acc": "lsa",
       "kind": "vote2",
       "at": "10:28",
-      "inMin": 52
+      "inMin": 44
     },
     {
       "acc": "headcorner",
       "kind": "post",
       "at": "10:48",
-      "inMin": 72
+      "inMin": 64
     },
     {
       "acc": "headcorner",
       "kind": "vote1",
       "at": "11:26",
-      "inMin": 110
+      "inMin": 102
     },
     {
       "acc": "wic",
       "kind": "post",
       "at": "12:14",
-      "inMin": 158
+      "inMin": 150
     },
     {
       "acc": "wog",
       "kind": "vote1",
       "at": "12:34",
-      "inMin": 178
+      "inMin": 170
     },
     {
       "acc": "israelnews",
       "kind": "vote2",
       "at": "12:54",
-      "inMin": 198
+      "inMin": 190
     },
     {
       "acc": "israelnews",
       "kind": "engage",
       "at": "13:14",
-      "inMin": 218
+      "inMin": 210
     },
     {
       "acc": "hcsoldier1",
       "kind": "vote1",
       "at": "13:34",
-      "inMin": 238
+      "inMin": 230
     },
     {
       "acc": "haran",
       "kind": "engage",
       "at": "13:58",
-      "inMin": 262
+      "inMin": 254
     },
     {
       "acc": "hcsoldier2",
       "kind": "vote1",
       "at": "14:26",
-      "inMin": 290
+      "inMin": 282
     },
     {
       "acc": "haran",
       "kind": "vote2",
       "at": "14:54",
-      "inMin": 318
+      "inMin": 310
     }
   ],
   "lastPublish": {
@@ -1390,5 +1393,5 @@
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)",
     "threads": "שיח מתפתח = תגובות-לתגובות + הגב-מחבר — R233 מודד את העומק, לא רק את הכיסוי"
   },
-  "ms": 25975
+  "ms": 31587
 }
