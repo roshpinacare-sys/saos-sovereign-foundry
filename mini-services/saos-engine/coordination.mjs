@@ -30,6 +30,8 @@ import { rpcCall } from "./measure.mjs";
 import { executeAs, masterAccount, armedConf, execPaused, loadCredential } from "./signer.mjs";
 import { trendsState } from "./trends.mjs";
 import { complianceState } from "./compliance.mjs";
+import { enrichThreads } from "./threads.mjs";
+import { enrichThreads } from "./threads.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const STATE = path.join(DIR, "state");
@@ -241,7 +243,7 @@ export function assignEngagement(rows, schedule, { perWindow = 3 } = {}) {
 /* ── state + manifest ─────────────────────────────────────────────────── */
 export function coordinationState() { return readJson(FILE, null); }
 
-export function buildManifest({ day, schedule, power, engagement, trends, compliance } = {}) {
+export function buildManifest({ day, schedule, power, engagement, threads, trends, compliance } = {}) {
   const sched = {};
   for (const acc of FLEET_NAMES) {
     sched[acc] = [hhmm(schedule[acc].post), schedule[acc].votes.map(hhmm).join(","), hhmm(schedule[acc].engage)].join("|");
@@ -257,7 +259,9 @@ export function buildManifest({ day, schedule, power, engagement, trends, compli
     scheduleMin: sched,
     powerNow: (power.accounts ?? []).map((a) => ({ n: a.name, vp: a.vpEff, rc: a.rcPct, w: a.weightPct })).filter((a) => a.n),
     engagementNow: engagement.summary ?? null,
+    threadsNow: threads?.summary ?? null,
     complianceNow: compliance?.summary ?? null,
+    complianceTrend: compliance?.trend ?? null,
     trends: (trends.topics ?? []).slice(0, 3).map((t) => t.topic.slice(0, 120)),
     note: "public contract: any signer holding these accounts adopts this schedule by recomputing it deterministically from the day key; deltas → publish an amendment, never a silent override. R232: complianceNow = the measured adherence of the fleet's REAL activity to THIS schedule — the contract measures itself.",
   };

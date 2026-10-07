@@ -1,6 +1,6 @@
 {
-  "at": "2026-10-07T00:26:46.238Z",
-  "lastFullScanAt": "2026-10-07T00:16:46.241Z",
+  "at": "2026-10-07T00:36:46.240Z",
+  "lastFullScanAt": "2026-10-07T00:36:46.240Z",
   "verdict": "OPTIONS-FOUND",
   "tagBoard": [
     {
@@ -9,7 +9,7 @@
     },
     {
       "tag": "kr",
-      "payoutsSbd": 2914.671
+      "payoutsSbd": 2914.761
     },
     {
       "tag": "hive-150122",
@@ -21,11 +21,11 @@
     },
     {
       "tag": "hive-196917",
-      "payoutsSbd": 1348.092
+      "payoutsSbd": 1348.491
     },
     {
       "tag": "steem",
-      "payoutsSbd": 1302.9
+      "payoutsSbd": 1302.913
     },
     {
       "tag": "hive-180932",
@@ -33,11 +33,11 @@
     },
     {
       "tag": "hive-144064",
-      "payoutsSbd": 966.913
+      "payoutsSbd": 966.907
     },
     {
       "tag": "atomy",
-      "payoutsSbd": 879.883
+      "payoutsSbd": 891.601
     },
     {
       "tag": "hive-183397",
@@ -48,17 +48,17 @@
       "payoutsSbd": 845.349
     },
     {
-      "tag": "hive-188619",
-      "payoutsSbd": 841.736
+      "tag": "life",
+      "payoutsSbd": 844.545
     }
   ],
   "curationEst": {
-    "dailyPoolSteem": 926504.815,
-    "voteVestsShare": 0.000009349847293162298,
-    "estimatedSteemPerDay": 8.6627,
+    "dailyPoolSteem": 927169.21,
+    "voteVestsShare": 0.00000938381292910414,
+    "estimatedSteemPerDay": 8.7004,
     "note": "linear approx over reward-fund window — ESTIMATED class, never claimed as measured"
   },
-  "vpEff": 6.9,
+  "vpEff": 7.2,
   "opportunities": [
     {
       "id": "spread-wide",
@@ -82,8 +82,8 @@
       "id": "curation-share",
       "kind": "curation-yield",
       "potentialClass": "estimated",
-      "evidence": "reward-fund pool 926504.815 STEEM/window · our vests share 0.0009% → ~8.6627 STEEM/day",
-      "potential": 8.6627,
+      "evidence": "reward-fund pool 927169.21 STEEM/window · our vests share 0.0009% → ~8.7004 STEEM/day",
+      "potential": 8.7004,
       "gate": "measured truth only lands via curation_reward ops (measureAll) — estimator never claims payout",
       "effort": "rail live since T-13"
     },
@@ -98,6 +98,5 @@
     }
   ],
   "learningConsumer": [],
-  "honesty": "ranked options, zero execution · classes: measured>estimated>potential · gates own the decisions",
-  "freshCached": true
+  "honesty": "ranked options, zero execution · classes: measured>estimated>potential · gates own the decisions"
 }

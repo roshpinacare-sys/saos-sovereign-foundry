@@ -27,6 +27,7 @@ import { FLEET_ROSTER, buildSchedule, hhmm } from "./coordination.mjs";
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const STATE = path.join(DIR, "state");
 const FILE = path.join(STATE, "compliance.json");
+const HFILE = path.join(STATE, "compliance-history.json");
 
 const readJson = (p, d = null) => { try { return JSON.parse(fs.readFileSync(p, "utf8")); } catch { return d; } };
 const writeJson = (p, v) => {
@@ -136,6 +137,37 @@ export function complianceFromActions(actions, schedule, {
   };
 }
 
+/* ── R233 · day-over-day trend line (pure, selftestable) ─────────────── */
+/** pure: upsert one measured day into the history (sorted by day, cap 30).
+ * entry = { day, avgCompliancePct, verdict, densestBurst, burstAt,
+ *           clusterViolations, accountsActive, totalActions, at } */
+export const HISTORY_CAP_DAYS = 30;
+export function upsertHistory(history, entry, { cap = HISTORY_CAP_DAYS } = {}) {
+  const clean = Array.isArray(history) ? history.filter((h) => h && typeof h.day === "string" && h.day !== entry.day) : [];
+  clean.push({ ...entry });
+  clean.sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0));
+  return clean.slice(-cap);
+}
+
+/** pure: yesterday-vs-today delta for the cockpit trend strip */
+export function trendDelta(history, day) {
+  const h = Array.isArray(history) ? history : [];
+  const cur = h.find((x) => x.day === day) ?? null;
+  const idx = cur ? h.indexOf(cur) : -1;
+  const prev = idx > 0 ? h[idx - 1] : null;
+  const num = (v) => (Number.isFinite(v) ? v : null);
+  const curPct = num(cur?.avgCompliancePct);
+  const prevPct = num(prev?.avgCompliancePct);
+  return {
+    day: cur?.day ?? day, cur: curPct, prev: prevPct,
+    delta: curPct != null && prevPct != null ? Math.round((curPct - prevPct) * 10) / 10 : null,
+    curVerdict: cur?.verdict ?? null, prevVerdict: prev?.verdict ?? null,
+    prevDay: prev?.day ?? null,
+  };
+}
+
+export function complianceHistory() { return readJson(HFILE, []); }
+
 /* ── chain extraction (bounded, public reads) ────────────────────────── */
 /** extract today's post/vote/comment actions for one account from history */
 export async function extractAccountActions(acc, day, { limit = 250 } = {}) {
@@ -180,11 +212,18 @@ export async function runCompliance({ now = new Date().toISOString(), force = fa
     } catch { readFails.push(acc); }
   }
   const { rows, summary } = complianceFromActions(actions, schedule);
+  const history = upsertHistory(readJson(HFILE, []), {
+    day, avgCompliancePct: summary.avgCompliancePct, verdict: summary.verdict,
+    densestBurst: summary.densestBurst, burstAt: summary.burstAt,
+    clusterViolations: summary.clusterViolations, accountsActive: summary.accountsActive,
+    totalActions: summary.totalActions, at: now,
+  });
+  writeJson(HFILE, history);
   const doc = {
     protocol: "saos.fleet.compliance.v1", day, at: now,
     scheduleHint: `${roster.length} accounts × (post+2vote+engage) · tol ${TOLERANCE_MIN}min`,
-    rows, summary, readFails,
-    note: "ציות = הפעולה בפועל נחתה בתוך חלון-הלו\"ז הדטרמיניסטי (אותו יום, אותו חוק). QUIET = עדיין אין פעילות-היום — לא-ציות ולא-הפרה.",
+    rows, summary, readFails, history, trend: trendDelta(history, day),
+    note: "ציות = הפעולה בפועל נחתה בתוך חלון-הלו\"ז הדטרמיניסטי (אותו יום, אותו חוק). QUIET = עדיין אין פעילות-היום — לא-ציות ולא-הפרה. R233: history = קו-המגמה יום-מול-יום.",
     ms: Date.now() - t0,
   };
   writeJson(FILE, doc);

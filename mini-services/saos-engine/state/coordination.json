@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T00:26:46.238Z",
+  "at": "2026-10-07T00:36:46.240Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -124,12 +124,12 @@
         "name": "headcorner",
         "sp": 6.45,
         "vpEff": 24.1,
-        "rcPct": 33.6,
+        "rcPct": 33.5,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
         "rcGate": null,
-        "steem": 29.749,
+        "steem": 30.749,
         "lastVote": "2026-10-06T20:35:18"
       },
       {
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T00:26:53.068Z"
+    "at": "2026-10-07T00:36:54.643Z"
   },
   "engagement": {
     "ok": true,
@@ -379,7 +379,7 @@
         "author": "haran",
         "permlink": "optimizing-your-steem-workflow-tools-for-content-creators-20261006-0",
         "title": "Optimizing Your Steem Workflow: Tools for Content Creators",
-        "ageH": 2,
+        "ageH": 3,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -1177,73 +1177,73 @@
       "acc": "woq",
       "kind": "engage",
       "at": "00:51",
-      "inMin": 24
+      "inMin": 14
     },
     {
       "acc": "tov",
       "kind": "vote1",
       "at": "01:16",
-      "inMin": 49
+      "inMin": 39
     },
     {
       "acc": "lsa",
       "kind": "post",
       "at": "01:36",
-      "inMin": 69
+      "inMin": 59
     },
     {
       "acc": "wog",
       "kind": "engage",
       "at": "01:56",
-      "inMin": 89
+      "inMin": 79
     },
     {
       "acc": "hcsoldier2",
       "kind": "engage",
       "at": "02:16",
-      "inMin": 109
+      "inMin": 99
     },
     {
       "acc": "cashmachine",
       "kind": "vote1",
       "at": "02:36",
-      "inMin": 129
+      "inMin": 119
     },
     {
       "acc": "lsa",
       "kind": "vote1",
       "at": "02:56",
-      "inMin": 149
+      "inMin": 139
     },
     {
       "acc": "israelnews",
       "kind": "vote1",
       "at": "04:32",
-      "inMin": 245
+      "inMin": 235
     },
     {
       "acc": "tov",
       "kind": "post",
       "at": "04:52",
-      "inMin": 265
+      "inMin": 255
     },
     {
       "acc": "haran",
       "kind": "post",
       "at": "05:57",
-      "inMin": 330
+      "inMin": 320
     },
     {
       "acc": "cashmachine",
       "kind": "engage",
       "at": "06:17",
-      "inMin": 350
+      "inMin": 340
     },
     {
       "acc": "haran",
       "kind": "vote1",
       "at": "06:53",
-      "inMin": 386
+      "inMin": 376
     }
   ],
   "lastPublish": {
@@ -1260,5 +1260,5 @@
     "power": "הצבעות לפי מצב-הכוח: משקל מלא ב-VP≥80, הפחתה מתחת, מנוחה מ-30; רצפת RC 20%",
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)"
   },
-  "ms": 18324
+  "ms": 18703
 }
