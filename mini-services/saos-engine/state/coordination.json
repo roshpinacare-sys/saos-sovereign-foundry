@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T04:45:46.618Z",
+  "at": "2026-10-07T04:55:46.619Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -124,7 +124,7 @@
         "name": "headcorner",
         "sp": 6.49,
         "vpEff": 28.4,
-        "rcPct": 29.1,
+        "rcPct": 29.2,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T04:45:57.339Z"
+    "at": "2026-10-07T04:55:54.869Z"
   },
   "engagement": {
     "ok": true,
@@ -1018,7 +1018,7 @@
       "authorResponseRate": 0,
       "avgScore": 0
     },
-    "at": "2026-10-07T04:45:46.618Z"
+    "at": "2026-10-07T04:55:46.619Z"
   },
   "compliance": {
     "protocol": "saos.fleet.compliance.v1",
@@ -1293,76 +1293,76 @@
   },
   "nextWindows": [
     {
-      "acc": "tov",
-      "kind": "post",
-      "at": "04:52",
-      "inMin": 6
-    },
-    {
       "acc": "haran",
       "kind": "post",
       "at": "05:57",
-      "inMin": 71
+      "inMin": 61
     },
     {
       "acc": "cashmachine",
       "kind": "engage",
       "at": "06:17",
-      "inMin": 91
+      "inMin": 81
     },
     {
       "acc": "haran",
       "kind": "vote1",
       "at": "06:53",
-      "inMin": 127
+      "inMin": 117
     },
     {
       "acc": "macrame",
       "kind": "post",
       "at": "07:13",
-      "inMin": 147
+      "inMin": 137
     },
     {
       "acc": "israelnews",
       "kind": "post",
       "at": "07:52",
-      "inMin": 186
+      "inMin": 176
     },
     {
       "acc": "macrame",
       "kind": "vote1",
       "at": "08:12",
-      "inMin": 206
+      "inMin": 196
     },
     {
       "acc": "wic",
       "kind": "vote1",
       "at": "08:54",
-      "inMin": 248
+      "inMin": 238
     },
     {
       "acc": "tov",
       "kind": "vote2",
       "at": "09:17",
-      "inMin": 271
+      "inMin": 261
     },
     {
       "acc": "headcorner",
       "kind": "engage",
       "at": "09:59",
-      "inMin": 313
+      "inMin": 303
     },
     {
       "acc": "lsa",
       "kind": "vote2",
       "at": "10:28",
-      "inMin": 342
+      "inMin": 332
     },
     {
       "acc": "headcorner",
       "kind": "post",
       "at": "10:48",
-      "inMin": 362
+      "inMin": 352
+    },
+    {
+      "acc": "headcorner",
+      "kind": "vote1",
+      "at": "11:26",
+      "inMin": 390
     }
   ],
   "lastPublish": {
@@ -1380,5 +1380,5 @@
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)",
     "threads": "שיח מתפתח = תגובות-לתגובות + הגב-מחבר — R233 מודד את העומק, לא רק את הכיסוי"
   },
-  "ms": 29580
+  "ms": 29553
 }

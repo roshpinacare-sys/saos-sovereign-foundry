@@ -1,6 +1,6 @@
 {
   "verdict": "OFFER-EMPTY",
-  "parityBps": -350,
+  "parityBps": 0,
   "blocker": null,
   "plan": {
     "asks": [],
@@ -23,8 +23,8 @@
     "bestAsk": 0.1009090909090909,
     "bestBid": 0.10023162771109707,
     "askDepthSteem": 660.004,
-    "bidDepthSbd": 2842.224,
-    "at": "2026-10-07T04:45:46.618Z"
+    "bidDepthSbd": 2836.402,
+    "at": "2026-10-07T04:55:46.619Z"
   },
   "market": {
     "at": "2026-10-07T04:25:51.542Z",
@@ -47,24 +47,26 @@
     }
   },
   "marks": {
-    "paritySbdPerSteem": 0.10045,
-    "source": "coingecko",
-    "lowConfidence": false,
+    "paritySbdPerSteem": 0.104096,
+    "source": "internal-feed-fallback+derived-sbd",
+    "lowConfidence": true,
     "internalFeed": 0.104096,
     "dragK": 1.0335,
-    "floor": 0.100652,
-    "ceiling": 0.100249,
+    "floor": 0.104305,
+    "ceiling": 0.103888,
     "spreadBpsFed": 67
   },
   "skew": {
-    "skew": 0.232057,
-    "askMult": 1.232057,
-    "bidMult": 0.767943,
+    "skew": 0.234176,
+    "askMult": 1.234176,
+    "bidMult": 0.765824,
     "reason": "hummingbot-inventory-skew"
   },
   "stale": {
-    "count": 0,
-    "orderids": []
+    "count": 1,
+    "orderids": [
+      2026100701
+    ]
   },
   "liquidity": {
     "deployedAsks": 952.74,
@@ -73,5 +75,5 @@
     "bidBudget": 0,
     "deployCap": 0.6
   },
-  "publishedAt": "2026-10-07T04:45:46.618Z"
+  "publishedAt": "2026-10-07T04:55:46.619Z"
 }
