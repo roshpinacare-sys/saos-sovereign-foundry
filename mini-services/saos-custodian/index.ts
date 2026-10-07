@@ -65,6 +65,29 @@ async function anchorWitness(): Promise<void> {
 let lastTick: TickResult | null = null;
 let log: TickResult[] = [];
 
+/* R237 · ENGINE-HEAL HATCH: measured live failure — the engine :3040 had NO
+ * supervisor (the boot's mini-services-start.sh is one-shot; the duplicate-exit
+ * probe law correctly made the boot instance leave the port to the old engine;
+ * when that engine died, NOTHING respawned it → fleet-grid, publisher, grind,
+ * curator all dead until the next sandbox boot). The custodian is the proven
+ * boot-tree survivor, so the heal belongs HERE. Law: health-probe first,
+ * NEVER kill; spawn fully detached (setsid); rate-limited 5min; the engine's
+ * own duplicate-exit probe keeps single-instance by construction. */
+let lastEngineHealAt = 0;
+let lastEngineUp: boolean | null = null;
+function engineHeal(): void {
+  try {
+    const up = sh("bash", ["-c", "curl -sf --max-time 5 http://127.0.0.1:3040/health >/dev/null 2>&1"]).code === 0;
+    lastEngineUp = up;
+    if (up) return;
+    const since = Date.now() - lastEngineHealAt;
+    if (lastEngineHealAt > 0 && since < 5 * 60000) { appendAlert("engine-heal-skip", `rate-limited (${Math.round(since / 1000)}s since last)`); return; }
+    lastEngineHealAt = Date.now();
+    sh("bash", ["-c", "cd /home/z/my-project/mini-services/saos-engine && setsid nohup bun index.ts >> engine-stdout.log 2>&1 < /dev/null &"]);
+    appendAlert("engine-heal", `spawned detached engine at ${new Date(lastEngineHealAt).toISOString()} (was down)`);
+  } catch (e) { appendAlert("engine-heal-error", String(e).slice(0, 200)); }
+}
+
 function tick() {
   const res: TickResult = {
     at: new Date().toISOString(),
@@ -76,6 +99,7 @@ function tick() {
     pushed: false,
   };
   try {
+    engineHeal(); // R237: the engine feeds every rail — heal it BEFORE persisting its state
     res.head = sh("git", ["rev-parse", "HEAD"]).out;
 
     // 1) divergence visibility (read-only)
@@ -140,7 +164,7 @@ Bun.serve({
   fetch(req) {
     const u = new URL(req.url);
     if (u.pathname === "/health") {
-      return json({ ok: true, service: "saos-custodian", at: new Date().toISOString(), tickMs: TICK_MS, ticks: log.length, last: lastTick });
+      return json({ ok: true, service: "saos-custodian", at: new Date().toISOString(), tickMs: TICK_MS, ticks: log.length, last: lastTick, engineUp: lastEngineUp, lastEngineHealAt: lastEngineHealAt ? new Date(lastEngineHealAt).toISOString() : null });
     }
     if (u.pathname === "/drift") {
       const head = sh("git", ["rev-parse", "HEAD"]).out;
@@ -164,6 +188,6 @@ Bun.serve({
   },
 });
 
-console.log(`[custodian] up on :${PORT}, tick=${TICK_MS}ms — bounded-staleness persistence, FF-law only`);
+console.log(`[custodian] up on :${PORT}, tick=${TICK_MS}ms — bounded-staleness persistence, FF-law only, engine-heal armed`);
 tick();
 setInterval(tick, TICK_MS);
