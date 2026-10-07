@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T07:55:46.632Z",
+  "at": "2026-10-07T08:05:46.632Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -165,7 +165,7 @@
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
-        "steem": 1.012,
+        "steem": 0.012,
         "lastVote": "2026-10-06T20:15:39"
       },
       {
@@ -177,7 +177,7 @@
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
-        "steem": 1.01,
+        "steem": 0.01,
         "lastVote": "2026-10-06T20:10:45"
       },
       {
@@ -189,67 +189,67 @@
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
-        "steem": 1.01,
+        "steem": 0.01,
         "lastVote": "2026-10-06T20:11:06"
       },
       {
         "name": "siq",
         "sp": 0.01,
         "vpEff": 99.1,
-        "rcPct": 88.8,
+        "rcPct": 87.7,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
-        "steem": 1.01,
+        "steem": 0.01,
         "lastVote": "2026-10-06T20:53:30"
       },
       {
         "name": "tov",
         "sp": 0.01,
         "vpEff": 99,
-        "rcPct": 92.4,
+        "rcPct": 91.3,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
-        "steem": 1.449,
+        "steem": 0.009,
         "lastVote": "2026-10-06T20:11:39"
       },
       {
         "name": "wic",
         "sp": 0,
         "vpEff": 99,
-        "rcPct": 87.1,
+        "rcPct": 86.1,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
-        "steem": 1.01,
+        "steem": 0.01,
         "lastVote": "2026-10-06T20:12:00"
       },
       {
         "name": "wog",
         "sp": 0.01,
         "vpEff": 99.1,
-        "rcPct": 86.6,
+        "rcPct": 85.6,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
-        "steem": 1.01,
+        "steem": 0.01,
         "lastVote": "2026-10-06T20:16:12"
       },
       {
         "name": "woq",
         "sp": 0,
         "vpEff": 99,
-        "rcPct": 86.5,
+        "rcPct": 85.6,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
-        "steem": 1.01,
+        "steem": 0.01,
         "lastVote": "2026-10-06T20:12:42"
       },
       {
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T07:55:56.976Z"
+    "at": "2026-10-07T08:05:55.826Z"
   },
   "engagement": {
     "ok": true,
@@ -460,7 +460,7 @@
         "author": "lsa",
         "permlink": "understanding-blockchain-curation-rewards-20261006-0",
         "title": "Understanding Blockchain Curation Rewards",
-        "ageH": 9,
+        "ageH": 10,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -1018,12 +1018,12 @@
       "authorResponseRate": 0,
       "avgScore": 0
     },
-    "at": "2026-10-07T07:55:46.632Z"
+    "at": "2026-10-07T08:05:46.632Z"
   },
   "compliance": {
     "protocol": "saos.fleet.compliance.v1",
     "day": "2026-10-07",
-    "at": "2026-10-07T07:25:46.630Z",
+    "at": "2026-10-07T07:55:46.632Z",
     "scheduleHint": "14 accounts × (post+2vote+engage) · tol 30min",
     "rows": [
       {
@@ -1189,7 +1189,7 @@
         "clusterViolations": 0,
         "accountsActive": 0,
         "totalActions": 0,
-        "at": "2026-10-07T07:25:46.630Z"
+        "at": "2026-10-07T07:55:46.632Z"
       }
     ],
     "trend": {
@@ -1202,7 +1202,7 @@
       "prevDay": null
     },
     "note": "ציות = הפעולה בפועל נחתה בתוך חלון-הלו\"ז הדטרמיניסטי (אותו יום, אותו חוק). QUIET = עדיין אין פעילות-היום — לא-ציות ולא-הפרה. R233: history = קו-המגמה יום-מול-יום.",
-    "ms": 17051
+    "ms": 15657
   },
   "trends": {
     "fetchedAt": "2026-10-07T03:24:59.567Z",
@@ -1296,73 +1296,73 @@
       "acc": "macrame",
       "kind": "vote1",
       "at": "08:12",
-      "inMin": 16
+      "inMin": 6
     },
     {
       "acc": "wic",
       "kind": "vote1",
       "at": "08:54",
-      "inMin": 58
+      "inMin": 48
     },
     {
       "acc": "tov",
       "kind": "vote2",
       "at": "09:17",
-      "inMin": 81
+      "inMin": 71
     },
     {
       "acc": "headcorner",
       "kind": "engage",
       "at": "09:59",
-      "inMin": 123
+      "inMin": 113
     },
     {
       "acc": "lsa",
       "kind": "vote2",
       "at": "10:28",
-      "inMin": 152
+      "inMin": 142
     },
     {
       "acc": "headcorner",
       "kind": "post",
       "at": "10:48",
-      "inMin": 172
+      "inMin": 162
     },
     {
       "acc": "headcorner",
       "kind": "vote1",
       "at": "11:26",
-      "inMin": 210
+      "inMin": 200
     },
     {
       "acc": "wic",
       "kind": "post",
       "at": "12:14",
-      "inMin": 258
+      "inMin": 248
     },
     {
       "acc": "wog",
       "kind": "vote1",
       "at": "12:34",
-      "inMin": 278
+      "inMin": 268
     },
     {
       "acc": "israelnews",
       "kind": "vote2",
       "at": "12:54",
-      "inMin": 298
+      "inMin": 288
     },
     {
       "acc": "israelnews",
       "kind": "engage",
       "at": "13:14",
-      "inMin": 318
+      "inMin": 308
     },
     {
       "acc": "hcsoldier1",
       "kind": "vote1",
       "at": "13:34",
-      "inMin": 338
+      "inMin": 328
     }
   ],
   "lastPublish": {
@@ -1380,5 +1380,5 @@
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)",
     "threads": "שיח מתפתח = תגובות-לתגובות + הגב-מחבר — R233 מודד את העומק, לא רק את הכיסוי"
   },
-  "ms": 32352
+  "ms": 29934
 }
