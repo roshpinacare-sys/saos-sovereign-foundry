@@ -5776,3 +5776,15 @@
 {"type":"offer.published","at":"2026-10-07T06:15:46.629Z","verdict":"OFFER-EMPTY","asks":0,"bids":0,"flowAsks":0,"flowBids":0,"bestAsk":0.10072,"bestBid":0.10023053021950486}
 {"type":"convert.planned","at":"2026-10-07T06:15:46.629Z","verdict":"CONVERT-HOLD","edgeBps":7614,"amountSbd":0}
 {"type":"learn.done","at":"2026-10-07T06:15:46.629Z","verdict":"LEARNED","lessons":["unclassified-fail-legacy","cycle-latency-tail"],"tunings":[]}
+{"type":"fleet-grid.ladder","at":"2026-10-07T06:22:51.780Z","account":"hcsoldier5","ops":4,"txid":"a0861e88b16a2b1f71b94046a610f7935db4f182","decision":"deploy"}
+{"type":"observe.done","at":"2026-10-07T06:25:46.629Z","fills":12,"parity":0.10082411716981939}
+{"type":"grid.tick","at":"2026-10-07T06:25:46.629Z","runCount":353,"refPrice":0.10082411716981939,"internalFeed":0.10409643846084451,"dragK":1.1571773895153963,"inv":{"steem":1.871,"sbd":0.024}}
+{"type":"grid.fill","at":"2026-10-07T06:25:46.629Z","grid":"mm-grid","side":"ask","unit":0.10094078855852615,"real":false}
+{"type":"arb.signal","at":"2026-10-07T06:25:46.629Z","grid":"micro-arb","gapBps":314,"dir":"buy-external"}
+{"type":"sweep.scan","at":"2026-10-07T06:25:46.629Z","grid":"sweep","dustSteem":0.871}
+{"type":"anchor.quote","at":"2026-10-07T06:25:46.629Z","grid":"anchor-quote","bid":0.10059077439240585,"ask":0.10105745994723292}
+{"type":"fee.spawn","at":"2026-10-07T06:25:46.629Z","mu":500,"to":"R-FEE-SPAWN"}
+{"type":"offer.published","at":"2026-10-07T06:25:46.629Z","verdict":"OFFER-EMPTY","asks":0,"bids":0,"flowAsks":0,"flowBids":0,"bestAsk":0.10066,"bestBid":0.10024057738572574}
+{"type":"convert.planned","at":"2026-10-07T06:25:46.629Z","verdict":"CONVERT-HOLD","edgeBps":7080,"amountSbd":0}
+{"type":"learn.done","at":"2026-10-07T06:25:46.629Z","verdict":"LEARNED","lessons":["unclassified-fail-legacy","cycle-latency-tail"],"tunings":[]}
+{"type":"discover.done","at":"2026-10-07T06:25:46.629Z","verdict":"OPTIONS-FOUND","tags":12,"opportunities":["spread-normal","tags-realloc","curation-share","fleet-growth"]}
