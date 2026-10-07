@@ -16,7 +16,7 @@
       "id": "curation",
       "label": "קיורציה · מסילת-דלק",
       "measuredUsdPerDay": null,
-      "estUsdPerDay": 0.526657,
+      "estUsdPerDay": 0.526391,
       "confidence": "estimated",
       "note": "~8.86 STEEM/יום — ESTIMATED (payout clock ~7d, first verification T-18c)"
     },
@@ -34,7 +34,7 @@
       "measuredUsdPerDay": null,
       "estUsdPerDay": 0,
       "confidence": "blocked",
-      "note": "HOLD honest (7516bps edge, dust-or-capped) — the rail is armed-in-doctrine, not burning"
+      "note": "HOLD honest (7525bps edge, dust-or-capped) — the rail is armed-in-doctrine, not burning"
     },
     {
       "id": "promo",
@@ -57,13 +57,13 @@
     }
   ],
   "totalMeasuredUsdPerDay": 0,
-  "totalEstUsdPerDay": 0.526657,
+  "totalEstUsdPerDay": 0.526391,
   "measuredCount": 1,
   "estimatedCount": 2,
   "blockedCount": 3,
   "law": "סכום-מדוד וסכום-מוערך לעולם לא מתמזגים — שתי שורות-אמת נפרדות",
   "parity": 0.10409594818108096,
-  "asof": "2026-10-07T08:05:46.632Z",
+  "asof": "2026-10-07T08:15:46.631Z",
   "context": {
     "venueFillsPerDay": 655,
     "venueVolSteem24h": 2409.199,
@@ -85,10 +85,10 @@
     "any": false
   },
   "x2": {
-    "currentUsdPerDay": 0.5267,
+    "currentUsdPerDay": 0.5264,
     "targetUsdPerDay": 1000,
     "currentSp": 975,
-    "factor": 1898.8,
+    "factor": 1899.8,
     "rows": [
       {
         "mult": 1,
@@ -99,25 +99,25 @@
       {
         "mult": 10,
         "sp": 9748,
-        "usdPerDay": 5.27,
+        "usdPerDay": 5.26,
         "reachesTarget": false
       },
       {
         "mult": 40,
         "sp": 38991,
-        "usdPerDay": 21.07,
+        "usdPerDay": 21.06,
         "reachesTarget": false
       },
       {
         "mult": 100,
         "sp": 97477,
-        "usdPerDay": 52.67,
+        "usdPerDay": 52.64,
         "reachesTarget": false
       },
       {
-        "mult": 1899,
-        "sp": 1851080,
-        "usdPerDay": 1000.12,
+        "mult": 1900,
+        "sp": 1852056,
+        "usdPerDay": 1000.14,
         "reachesTarget": true
       }
     ],
