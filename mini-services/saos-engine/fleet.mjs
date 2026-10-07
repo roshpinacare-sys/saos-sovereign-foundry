@@ -165,7 +165,7 @@ export function fleetState({ now = new Date().toISOString(), credential = null, 
     fg.running && fg.lastTickAt
       ? classifyAgent({ lastRunAt: fg.lastTickAt, nowMs, freshnessMin: FRESH.grid })
       : { status: "IDLE", ageMin: null, blockedBy: null },
-    `tickMs=${fg.tickMs} · runs=${fg.runs ?? 0} · liveOrders=${fgLive} · fundingTx=${fg.funding?.txid ? fg.funding.txid.slice(0, 12) + "…" : "—"} · gen2 trace=${fg.orderTrace}`));
+    `tickMs=${fg.tickMs} · runs=${fg.runs ?? 0} · liveOrders=${fgLive} · fundingTx=${fg.funding?.txid ? fg.funding.txid.slice(0, 12) + "…" : "—"} · gen2 fundTx=${(fg.funding?.funded?.hcsoldier4?.txid ?? "").slice(0, 12) || "—"}`));
   const soldierRecs = soldiers?.deployed ? (soldiers.accounts ?? []).filter((r) => !GEN2_ACCOUNTS.includes(r.name)) : [];
   for (const rec of soldierRecs) {
     agents.push(mk(rec.name, "gen-1 soldier · LOST-NO-CUSTODY (T-78b) — structurally frozen",

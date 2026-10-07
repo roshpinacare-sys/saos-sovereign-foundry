@@ -1785,3 +1785,26 @@ Stage Summary:
 - The operator's two field orders are now LAWS WITH TEETH: (1) the existing army GRID — 50 live orders on the internal market, presence ×10 vs master-only; (2) NO new accounts — gen-2 stays vault-parked until the fleet-grid track record, gen-1 stays honestly dead with stranded funds documented.
 - The git-vault recovery path is re-proven END-TO-END (third independent success): any account whose credential lives in the operator's sealed sheet is chain-provable in minutes.
 - Next: watch fills/expires (SBD accrual → bid side lights up), capture the army's first FILL evidence + realized SBD, and the R235 window: gen-2 arming decision stays operator-gated on fleet-grid results.
+
+---
+Task ID: R235
+Agent: Z.ai cockpit lane
+Task: operator verbal approval (trace 1a1141de0f148829) — "כן אני מאשר תפעיל" (attached: the lost-keys identification chat + הד.txt). Activate the vault-keyed dead accounts per the standing field orders: existing accounts grind FIRST (R234 fleet-grid), no new accounts, gen-1 stays honestly dead.
+
+Work Log:
+- STATE READ: R234 already signed by the parallel session (fbaeb9e2): army 10/10 custody + 50 live orders + funding tx 456f76ce… — the fleet-grid-first precondition is MET (engine tick 12 running, divergence 0/0 at HEAD 5249cb64).
+- VAULT OPENED (4th independent success): shallow clone of roshpinacare-sys/steem via the operator's PAT → agent/vault/KEYS-ACCESS-VERIFIED-2026-10-04-HE.md followed step-by-step → recovery-meta.json keysZipPass → sha256(KEYS-ZIP-2026-09-10.zip.enc)==24ef22b8… MATCH → AES-256-CBC/pbkdf2-300k decrypt → inner sha256 642bf7d2… MATCH → unzip (15-account vault incl. hcsoldier4/5/6.json + the 2018 sheet).
+- CUSTODY 3/3 (custody-probe-r235.mjs, verdict-only, zero secret prints): for hcsoldier4/5/6 — derived pubs (engine SEED_ORDERS name+role+pw) == LIVE chain authorities 4/4 (api.steemit.com) AND == vault-file pubs 4/4 (double gate); recovery anchor headcorner confirmed live on-chain; installed into .secrets/soldiers.json (0600, now 13 accounts). Gen-1 untouched (LOST-NO-CUSTODY stands).
+- POLICY ARMED (.secrets/exec-armed.json): policy.transferAllowlist += gen-2, fleetGrid.accounts += gen-2 (13), operator.gen2 {allowActivate:true, orderTrace:1a1141de0f148829, note records the verbatim approval}; allowSoldierDeploy=false and soldiers.enabled=false UNCHANGED (accounts already exist on-chain — activation ≠ creation; T-80 freeze intact), allowTransfersOut=false UNCHANGED.
+- ENGINE: fleet-grid.mjs — GEN2_ACCOUNTS/GEN2_ORDER_TRACE constants + per-transfer funding memo carrying the R235 approval trace + funded-map gen2 flags; restart #1 → tick 12 BROADCAST funding tx 937204b7547dcc3a08d06224f80737b6625217bd (3×1.0 STEEM) → ladders live: 4 orders per account (txids 4c60fe90/e7615e02/b899d7d1), RC 63.8/72.8/64.2%, NO-INVENTORY verdicts honest (inventory committed in the book).
+- TRUTH FIX (fleet.mjs): gen-1 read ALIVE from the stale pre-T-80 soldiers.json deploy record — now: one "fleet-grid" row (ALIVE, army 10 + gen-2 3, liveOrders=62, fundingTx evidence) + gen-1 rows DEAD with T-78b standing verdict (structurally frozen: allowlist+think-gate). Browser-verified.
+- COCKPIT: FleetGridCard gen-2 box dynamic (מופעל (R235 · אישור-מפעיל ״כן אני מאשר תפעיל״) · אפוטרופסות 3/3 (4/4+4/4) · ממומן 3/3 · הזמנות חיות) + per-account live rows under the truth board.
+- SELFTEST: +7 R235 vectors (constants, existing-not-new, still operator-gated, allowlist-scoped, plans-when-armed, idempotent, history-funded) → 363/363 PASS. Lint: new files clean (21 legacy .cjs pre-existing).
+- BROWSER: gen-2 truth board + live rows verified; fleet registry honest (fleet-grid חי · gen-1 מת); mobile 390px NO-HSCROLL; zero page errors.
+- /tmp/r235-vault + /tmp/r234-vault wiped right after use (zero-secrets doctrine).
+
+Stage Summary:
+- The operator's approval is now a live fact: hcsoldier4/5/6 are funded, custody-proven (triple-gated), and gridding on the internal market — 13 accounts total on the fleet-grid rail, presence ×13 vs master-only, ~62 live orders.
+- Nothing new was created: gen-2 existed on-chain since 2026-10-04; only custody+policy+funding were missing. The no-new-accounts law holds.
+- The transfers the operator saw are now fully explained and structurally closed: 30 STEEM leak into keyless gen-1 (09-30) + ~30k vests (10-04) died into the think-gate/allowlist; the only outbound path left is the operator-gated allowlist.
+- Next: watch gen-2 fills/SBD accrual (bid side lights organically), capture the first FILL txid, compliance windows evidence for the 13-account fleet, and R236 window: report on fleet-grid economics.
