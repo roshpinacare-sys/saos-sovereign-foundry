@@ -22,10 +22,10 @@
       "engage": null
     }
   },
-  "at": "2026-10-07T08:25:46.631Z",
-  "verdict": "IDLE-GATES",
+  "at": "2026-10-07T08:35:46.631Z",
+  "verdict": "WINDOWS-LATER",
   "votes": 0,
   "replies": 0,
   "failed": 0,
-  "skipped": 12
+  "skipped": 13
 }

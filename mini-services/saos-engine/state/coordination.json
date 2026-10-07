@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T08:25:46.631Z",
+  "at": "2026-10-07T08:35:46.631Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T08:26:00.681Z"
+    "at": "2026-10-07T08:35:53.064Z"
   },
   "engagement": {
     "ok": true,
@@ -379,7 +379,7 @@
         "author": "headcorner",
         "permlink": "the-measured-ledger-october-7-2026-market-signals-and-networ-muxiuzet",
         "title": "The Measured Ledger: October 7, 2026 - Market Signals and Network Pulse",
-        "ageH": 5,
+        "ageH": 6,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -487,7 +487,7 @@
         "author": "haran",
         "permlink": "optimizing-your-steem-workflow-tools-for-content-creators-20261006-0",
         "title": "Optimizing Your Steem Workflow: Tools for Content Creators",
-        "ageH": 10,
+        "ageH": 11,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -1018,12 +1018,12 @@
       "authorResponseRate": 0,
       "avgScore": 0
     },
-    "at": "2026-10-07T08:25:46.631Z"
+    "at": "2026-10-07T08:35:46.631Z"
   },
   "compliance": {
     "protocol": "saos.fleet.compliance.v1",
     "day": "2026-10-07",
-    "at": "2026-10-07T07:55:46.632Z",
+    "at": "2026-10-07T08:25:46.631Z",
     "scheduleHint": "14 accounts × (post+2vote+engage) · tol 30min",
     "rows": [
       {
@@ -1189,7 +1189,7 @@
         "clusterViolations": 0,
         "accountsActive": 0,
         "totalActions": 0,
-        "at": "2026-10-07T07:55:46.632Z"
+        "at": "2026-10-07T08:25:46.631Z"
       }
     ],
     "trend": {
@@ -1202,7 +1202,7 @@
       "prevDay": null
     },
     "note": "ציות = הפעולה בפועל נחתה בתוך חלון-הלו\"ז הדטרמיניסטי (אותו יום, אותו חוק). QUIET = עדיין אין פעילות-היום — לא-ציות ולא-הפרה. R233: history = קו-המגמה יום-מול-יום.",
-    "ms": 15657
+    "ms": 16454
   },
   "trends": {
     "fetchedAt": "2026-10-07T03:24:59.567Z",
@@ -1296,73 +1296,73 @@
       "acc": "wic",
       "kind": "vote1",
       "at": "08:54",
-      "inMin": 28
+      "inMin": 18
     },
     {
       "acc": "tov",
       "kind": "vote2",
       "at": "09:17",
-      "inMin": 51
+      "inMin": 41
     },
     {
       "acc": "headcorner",
       "kind": "engage",
       "at": "09:59",
-      "inMin": 93
+      "inMin": 83
     },
     {
       "acc": "lsa",
       "kind": "vote2",
       "at": "10:28",
-      "inMin": 122
+      "inMin": 112
     },
     {
       "acc": "headcorner",
       "kind": "post",
       "at": "10:48",
-      "inMin": 142
+      "inMin": 132
     },
     {
       "acc": "headcorner",
       "kind": "vote1",
       "at": "11:26",
-      "inMin": 180
+      "inMin": 170
     },
     {
       "acc": "wic",
       "kind": "post",
       "at": "12:14",
-      "inMin": 228
+      "inMin": 218
     },
     {
       "acc": "wog",
       "kind": "vote1",
       "at": "12:34",
-      "inMin": 248
+      "inMin": 238
     },
     {
       "acc": "israelnews",
       "kind": "vote2",
       "at": "12:54",
-      "inMin": 268
+      "inMin": 258
     },
     {
       "acc": "israelnews",
       "kind": "engage",
       "at": "13:14",
-      "inMin": 288
+      "inMin": 278
     },
     {
       "acc": "hcsoldier1",
       "kind": "vote1",
       "at": "13:34",
-      "inMin": 308
+      "inMin": 298
     },
     {
       "acc": "haran",
       "kind": "engage",
       "at": "13:58",
-      "inMin": 332
+      "inMin": 322
     }
   ],
   "lastPublish": {
@@ -1380,5 +1380,5 @@
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)",
     "threads": "שיח מתפתח = תגובות-לתגובות + הגב-מחבר — R233 מודד את העומק, לא רק את הכיסוי"
   },
-  "ms": 32875
+  "ms": 30331
 }

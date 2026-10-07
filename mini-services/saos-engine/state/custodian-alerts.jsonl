@@ -43,3 +43,4 @@
 {"at":"2026-10-07T07:57:37.936Z","kind":"anchor-skip","detail":"rate-limited durably (last 2026-10-07T06:57:42.510Z)"}
 {"at":"2026-10-07T08:07:44.896Z","kind":"anchor-ok","detail":"{\"txid\":\"fe713f0ba71cfc322f0d36f48a5139837da81610\",\"tip\":\"36abd8dc2a03ac0d81c82cdb682fceb5a3a7662c\"}"}
 {"at":"2026-10-07T08:17:37.994Z","kind":"anchor-skip","detail":"rate-limited durably (last 2026-10-07T08:07:44.896Z)"}
+{"at":"2026-10-07T08:27:38.101Z","kind":"anchor-skip","detail":"rate-limited durably (last 2026-10-07T08:07:44.896Z)"}
