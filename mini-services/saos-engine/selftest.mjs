@@ -872,6 +872,41 @@ ok("r236 grind-excludes-own-author", r236tg(r236posts, "community-a", new Set(["
 ok("r236 grind-day-rollover-resets", r236carry({ day: "2026-10-06", accounts: { haran: { vote: { verdict: "VOTED" } } } }, "2026-10-07").accounts && Object.keys(r236carry({ day: "2026-10-06", accounts: { haran: { vote: { verdict: "VOTED" } } } }, "2026-10-07").accounts).length === 0);
 ok("r236 grind-carries-same-day", r236carry({ day: "2026-10-07", accounts: { haran: { vote: { verdict: "VOTED" } } } }, "2026-10-07").accounts.haran.vote.verdict === "VOTED");
 
+/* ── R237 · sandbox-thaw recovery: budget-aware funding + grind catch-up ──
+ * measured live: (a) fund plan 13×1.0 vs master 1.871 → atomic assert every
+ * tick (funded={}, 0 ladders); (b) frozen 06:12/06:42 windows → the daily
+ * grind was lost forever with a dishonest WINDOWS-LATER verdict. */
+import { fleetFundPlan as r237fp } from "./fleet-grid.mjs";
+import { grindShouldRun as r237run, GRIND_CATCHUP_GRACE_MIN as r237grace, GRIND_WINDOW_MIN as r237wmin } from "./fleetgrind.mjs";
+
+const r237conf = { accounts: ["a1", "a2", "a3"], fundEach: 1.0, minLevel: 0.2 };
+ok("r237 fund-budget-spreads-partial", (() => {
+  const p = r237fp({ conf: r237conf, allowFleetGridFund: true, allowlist: r237conf.accounts, balances: { a1: 0.01, a2: 0.01, a3: 0.01 }, masterSteem: 1.871, masterReserve: 0.3 });
+  return p.verdict === "PLAN" && p.transfers.length === 3 && p.transfers[0].amount === 0.52;
+})());
+ok("r237 fund-budget-never-beats-reserve", r237fp({ conf: r237conf, allowFleetGridFund: true, allowlist: ["a1"], balances: { a1: 0.01 }, masterSteem: 1.25, masterReserve: 0.3 }).transfers[0]?.amount === 0.95);
+ok("r237 fund-master-bound-honest", (() => {
+  const p = r237fp({ conf: r237conf, allowFleetGridFund: true, allowlist: r237conf.accounts, balances: { a1: 0.01, a2: 0.01, a3: 0.01 }, masterSteem: 0.25, masterReserve: 0.3 });
+  return p.verdict === "MASTER-LIQUIDITY-BOUND" && p.transfers.length === 0;
+})());
+ok("r237 fund-no-master-measure-legacy", r237fp({ conf: r237conf, allowFleetGridFund: true, allowlist: r237conf.accounts, balances: { a1: 0.01 } }).transfers[0].amount === 1);
+ok("r237 fund-floors-at-min-level", (() => {
+  const c13 = { accounts: Array.from({ length: 13 }, (_, i) => `x${i}`), fundEach: 1.0, minLevel: 0.2 };
+  const p = r237fp({ conf: c13, allowFleetGridFund: true, allowlist: c13.accounts, balances: Object.fromEntries(c13.accounts.map((n) => [n, 0.01])), masterSteem: 1.29, masterReserve: 0.3 });
+  return p.verdict === "PLAN-PARTIAL(4/13)" && p.transfers.every((t) => t.amount === 0.2);
+})());
+ok("r237 catchup-boundaries", (() => {
+  const off = 360, end = off + r237wmin;
+  const atEnd = r237run(end, off, {});
+  const inGrace = r237run(end + 1, off, { vote: null, engage: null });
+  const graceEdge = r237run(end + r237grace, off, { vote: null, engage: null });
+  const pastGrace = r237run(end + r237grace + 1, off, { vote: null, engage: null });
+  const before = r237run(off - 1, off, { vote: null, engage: null });
+  return atEnd.run === true && atEnd.catchup === false && inGrace.catchup === true && graceEdge.run === true && pastGrace.run === false && before.run === false;
+})());
+ok("r237 catchup-only-when-outstanding", r237run(500, 360, { vote: { verdict: "VOTED" }, engage: { verdict: "REPLIED" } }).run === false && r237run(500, 360, { vote: { verdict: "VOTED" }, engage: null }).run === true && r237run(500, 360, { vote: { verdict: "VOTED" }, engage: null }).catchup === true);
+ok("r237 force-bypasses-catchup-flag", (() => { const g = r237run(0, 360, { vote: null, engage: null }, true); return g.run === true && g.catchup === false; })());
+
 console.log(`\nSELFTEST ${pass}/${pass + fail} ${fail === 0 ? "PASS" : "FAIL"}`);
 /* T-21 · last-run marker: the recruiter's evidence for the integrity-auditor
  * role — written ONLY on a full run, never by a partial import. */

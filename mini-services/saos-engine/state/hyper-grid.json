@@ -1,6 +1,6 @@
 {
-  "lastTickAt": "2026-10-07T09:57:32.188Z",
-  "ticks": 39641,
+  "lastTickAt": "2026-10-07T10:07:32.021Z",
+  "ticks": 39819,
   "nextId": 2100002905,
   "conf": {
     "enabled": true,
@@ -18,15 +18,15 @@
     "chainTailSec": 60,
     "maxOpsPerTx": 24
   },
-  "lastVerdict": "GOVERNOR-ACCUMULATING",
-  "lastVerdictAt": "2026-10-07T09:57:32.188Z",
+  "lastVerdict": "CYCLE-IN-FLIGHT",
+  "lastVerdictAt": "2026-10-07T10:07:32.021Z",
   "rcPct": 33,
   "opsToday": 368,
   "lastTxid": "9f0144cbeb8ec08e7df6922734f477f22dac4ab4",
   "governor": {
     "pairs": 0,
     "ops": 0,
-    "carry": 0.2591130509200264,
+    "carry": 0.2020875390749754,
     "reason": "accumulating",
     "headroom": 0.32,
     "burnPerDay": 125945592834,
@@ -44,7 +44,7 @@
   },
   "day": "2026-10-07",
   "lastError": null,
-  "carryGovernor": 0.2591130509200264,
+  "carryGovernor": 0.2020875390749754,
   "running": true,
   "blocker": null,
   "lastMaxRc": 1967899888038

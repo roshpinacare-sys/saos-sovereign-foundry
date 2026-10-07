@@ -61,6 +61,7 @@ export const FLEET_GRID_DEFAULTS = {
   rebalanceDriftBps: 25,  // rebalance when the live front drifted this far from parity
   tickMs: 180000,         // 3 min — the army breathes slowly (RC-gentle)
   idBase: 2340000000,     // orderid namespace (unique vs master 2100xxx and T-12)
+  masterReserve: 0.3,     // R237: STEEM the master always keeps (never planned away)
 };
 
 export function fleetGridConf() {
@@ -70,8 +71,15 @@ export function fleetGridConf() {
 
 /* ── pure helpers (selftest vectors) ──────────────────────────────────────── */
 
-/** funding plan: idempotent, operator-gated, allowlist-scoped. Garbage-tolerant. */
-export function fleetFundPlan({ funded = {}, balances = {}, conf = fleetGridConf(), allowFleetGridFund = false, allowlist = [] } = {}) {
+/** funding plan: idempotent, operator-gated, allowlist-scoped. Garbage-tolerant.
+ *  R237 · budget-aware + spread-first: the funding tx is ONE ATOMIC batch —
+ *  measured live failure: 13×1.0 planned vs 1.871 master STEEM → assert
+ *  "available >= -delta" → the whole batch died every tick, funded={} forever,
+ *  0 live ladders. Law now: never plan beyond (master − reserve); when tight,
+ *  spread evenly (floor = minLevel — presence ×N beats depth ×1: the group IS
+ *  the advantage) and report PLAN-PARTIAL honestly. No master measurement
+ *  (masterSteem null) → legacy behavior (selftest back-compat). */
+export function fleetFundPlan({ funded = {}, balances = {}, masterSteem = null, masterReserve = FLEET_GRID_DEFAULTS.masterReserve, conf = fleetGridConf(), allowFleetGridFund = false, allowlist = [] } = {}) {
   if (allowFleetGridFund !== true) return { ok: false, verdict: "FUND-OPERATOR-GATED", reason: "operator.allowFleetGridFund !== true", transfers: [] };
   const out = [];
   for (const name of Array.isArray(conf.accounts) ? conf.accounts : []) {
@@ -82,6 +90,18 @@ export function fleetFundPlan({ funded = {}, balances = {}, conf = fleetGridConf
     out.push({ name, amount: r6(conf.fundEach) });
   }
   if (!out.length) return { ok: true, verdict: "ALL-FUNDED-OR-NONE-NEEDED", transfers: [] };
+  const ms = masterSteem == null ? NaN : Number(masterSteem); // Number(null)=0 trap — NaN = "not measured" → legacy path
+  if (Number.isFinite(ms)) {
+    const budget = r6(Math.max(0, ms - Number(masterReserve)));
+    const per = r6(Math.min(conf.fundEach, Math.max(conf.minLevel, Math.floor((budget / out.length) * 100 + 1e-6) / 100)));
+    let spent = 0;
+    const affordable = [];
+    for (const t of out) {
+      if (r6(spent + per) <= budget + 1e-9) { affordable.push({ name: t.name, amount: per }); spent = r6(spent + per); }
+    }
+    if (!affordable.length) return { ok: true, verdict: "MASTER-LIQUIDITY-BOUND", reason: `master ${ms} − reserve ${masterReserve} < level ${conf.minLevel}`, transfers: [] };
+    return { ok: true, verdict: affordable.length < out.length ? `PLAN-PARTIAL(${affordable.length}/${out.length})` : "PLAN", transfers: affordable };
+  }
   return { ok: true, verdict: "PLAN", transfers: out };
 }
 
@@ -153,8 +173,10 @@ export async function runFleetGridOnce({ fund = true, grid = true, now = new Dat
     const balances = {};
     const probes = await Promise.all(conf.accounts.map((n) => accountState(n).catch(() => null)));
     conf.accounts.forEach((n, i) => { balances[n] = probes[i]?.steem ?? null; });
+    const m = await accountState(master).catch(() => null);
     const plan = fleetFundPlan({
       funded: st.funded, balances, conf,
+      masterSteem: m?.ok ? m.steem : null,
       allowFleetGridFund: armed?.operator?.allowFleetGridFund === true,
       allowlist: armed?.policy?.transferAllowlist ?? [],
     });

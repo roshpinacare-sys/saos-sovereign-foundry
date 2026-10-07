@@ -33,6 +33,12 @@ const EVENTS = path.join(STATE, "events.jsonl");
 export const FLEET_GRIND_RC_FLOOR_PCT = 12;
 export const GRIND_WINDOW_MIN = 45;
 export const GRIND_DAY_START_MIN = 360; // 06:00 UTC — the band starts
+/* R237 · catch-up grace: measured live failure — the sandbox froze processes
+ * across the 06:12/06:42 windows; on thaw the gate saw them as "not active"
+ * and the accounts lost their daily grind forever (WINDOWS-LATER verdict at
+ * 09:43 with past windows = dishonest). Law: a window that ended ≤ grace
+ * minutes ago with outstanding work still executes (verdict marked catchup). */
+export const GRIND_CATCHUP_GRACE_MIN = 240;
 
 const readJson = (p, d = null) => { try { return JSON.parse(fs.readFileSync(p, "utf8")); } catch { return d; } };
 const writeJson = (p, v) => {
@@ -61,6 +67,19 @@ export function grindMinute(name) {
 /** pure: is the window open at this minute (inclusive end) */
 export function grindWindowActive(minuteOfDay, offset) {
   return minuteOfDay >= offset && minuteOfDay <= offset + GRIND_WINDOW_MIN;
+}
+
+/** pure: R237 — should the account execute now? Active window, or catch-up
+ *  grace when the window already passed BUT work is still outstanding
+ *  (engine-down/freeze recovery). force bypasses everything. */
+export function grindShouldRun(minuteOfDay, offset, rec = {}, force = false, graceMin = GRIND_CATCHUP_GRACE_MIN) {
+  if (force) return { run: true, catchup: false };
+  if (grindWindowActive(minuteOfDay, offset)) return { run: true, catchup: false };
+  const end = offset + GRIND_WINDOW_MIN;
+  if (minuteOfDay > end && minuteOfDay <= end + graceMin) {
+    if (!rec?.vote || !rec?.engage) return { run: true, catchup: true };
+  }
+  return { run: false, catchup: false };
 }
 
 /** pure: pick vote + engage targets — community only, never fleet-authored, never done */
@@ -120,12 +139,14 @@ export async function runFleetGrind({ now = new Date().toISOString(), force = fa
   for (const account of accounts) {
     const rec = carried.accounts[account] ?? { vote: null, engage: null };
 
-    /* window gate — zero chain reads when closed (the cheap skip) */
+    /* window gate — active window OR catch-up grace (R237); zero chain reads when closed */
     const offset = grindMinute(account);
-    if (!force && !grindWindowActive(minute, offset)) {
+    const gate = grindShouldRun(minute, offset, rec, force);
+    if (!gate.run) {
       skipped++;
       continue;
     }
+    const late = gate.catchup === true;
 
     const doneKeys = new Set();
     if (rec.vote?.target) doneKeys.add(`vote:${rec.vote.target}`);
@@ -142,12 +163,12 @@ export async function runFleetGrind({ now = new Date().toISOString(), force = fa
         const { vpEff } = await vpEffOf(account).catch(() => ({ vpEff: null }));
         const law = powerVerdict(vpEff);
         if (law.votesPerWindow === 0) {
-          rec.vote = { target: `${targets.vote.author}/${targets.vote.permlink}`, verdict: "VP-REST", vpEff, at: now };
+          rec.vote = { target: `${targets.vote.author}/${targets.vote.permlink}`, verdict: "VP-REST", vpEff, at: now, ...(late ? { catchup: true } : {}) };
           carried.accounts[account] = { ...rec, engage: rec.engage ?? null };
           appendLine(EVENTS, { type: "grind.vote-rest", at: now, account, vpEff });
         } else {
           const op = [["vote", { voter: account, author: targets.vote.author, permlink: targets.vote.permlink, weight: Math.round(law.weightPct * 100) }]];
-          let v = { target: `${targets.vote.author}/${targets.vote.permlink}`, weightPct: law.weightPct, verdict: "SKIP", at: now, txid: null };
+          let v = { target: `${targets.vote.author}/${targets.vote.permlink}`, weightPct: law.weightPct, verdict: "SKIP", at: now, txid: null, ...(late ? { catchup: true } : {}) };
           try {
             const res = await executeAs(account, op, { tag: "fleet-grind", role: "posting", rcPct: rc });
             v.verdict = res.ok ? "VOTED" : `VOTE-FAIL:${String(res.error ?? res.verdict ?? "?").slice(0, 40)}`;
@@ -169,7 +190,7 @@ export async function runFleetGrind({ now = new Date().toISOString(), force = fa
         /* NOT marked done — re-checks next cycle until RC recovers */
         appendLine(EVENTS, { type: "grind.rc-hold", at: now, account, kind: "engage", rcPct: rc });
       } else {
-        let v = { target: `${targets.engage.author}/${targets.engage.permlink}`, verdict: "SKIP", at: now, txid: null };
+        let v = { target: `${targets.engage.author}/${targets.engage.permlink}`, verdict: "SKIP", at: now, txid: null, ...(late ? { catchup: true } : {}) };
         try {
           const cr = await rpcCall("condenser_api.get_content", [targets.engage.author, targets.engage.permlink]);
           const body = cr.ok ? String(cr.result?.body ?? "").replace(/[#*>\n]/g, " ").slice(0, 600) : "";

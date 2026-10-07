@@ -6022,3 +6022,14 @@
 {"type":"fleet-grid.ladder","at":"2026-10-07T09:55:51.783Z","account":"wic","ops":5,"txid":"17c35d09f7ccccbd2d65543261a0cb8e9529fa51","decision":"deploy"}
 {"type":"fleet-grid.ladder","at":"2026-10-07T09:55:51.783Z","account":"wog","ops":5,"txid":"b5222c66b2ad21f1b8f13dca810b226556d62fa5","decision":"deploy"}
 {"type":"fleet-grid.ladder","at":"2026-10-07T09:55:51.783Z","account":"woq","ops":5,"txid":"6eabb64ec713132fc4940ff7ea262c5283646505","decision":"deploy"}
+{"type":"hyper.boot","at":"2026-10-07T10:02:53.312Z","pid":22632,"conf":{"enabled":true,"tickMs":3000,"levels":10,"spacingBps":15,"ttlSec":60,"orderTtlSec":3600,"askBudgetPct":0.12,"minRcPct":25,"setpointPct":50,"burst":3,"maxOpsPerTick":24,"opsDayCap":32000,"chainTailSec":60,"maxOpsPerTx":24}}
+{"type":"fleet-grid.boot","at":"2026-10-07T10:02:53.315Z","tickMs":180000,"accounts":13,"orderTrace":"1a113f67a0ed4be9"}
+{"type":"hyper.boot","at":"2026-10-07T10:03:56.018Z","pid":22901,"conf":{"enabled":true,"tickMs":3000,"levels":10,"spacingBps":15,"ttlSec":60,"orderTtlSec":3600,"askBudgetPct":0.12,"minRcPct":25,"setpointPct":50,"burst":3,"maxOpsPerTick":24,"opsDayCap":32000,"chainTailSec":60,"maxOpsPerTx":24}}
+{"type":"fleet-grid.boot","at":"2026-10-07T10:03:56.022Z","tickMs":180000,"accounts":13,"orderTrace":"1a113f67a0ed4be9"}
+{"type":"fleet-grid.funded","at":"2026-10-07T10:04:41.023Z","txid":"e42925b442f390f84ea659a6c462618da3dc3af4","accounts":["cashmachine","haran","israelnews","lsa","macrame","siq","tov"],"each":1,"gen2":[],"gen2Trace":"1a1141de0f148829"}
+{"type":"fleet-grid.ladder","at":"2026-10-07T10:04:41.023Z","account":"cashmachine","ops":1,"txid":"b06e0e8799abe9604d2d554105a0e46d0d021254","decision":"deploy"}
+{"type":"fleet-grid.ladder","at":"2026-10-07T10:04:41.023Z","account":"haran","ops":1,"txid":"d97aee29dd95b06e628a5dd4fdf1591a16971818","decision":"deploy"}
+{"type":"fleet-grid.ladder","at":"2026-10-07T10:04:41.023Z","account":"israelnews","ops":1,"txid":"3f79704622e55364b84783f8737c80b63e558e67","decision":"deploy"}
+{"type":"fleet-grid.ladder","at":"2026-10-07T10:04:41.023Z","account":"lsa","ops":1,"txid":"0599d94706165c17942a6ab4b8aa6df621b1d17a","decision":"deploy"}
+{"type":"fleet-grid.ladder","at":"2026-10-07T10:04:41.023Z","account":"macrame","ops":1,"txid":"96911a43374d6325e849e72385c4b69a8d9c8a33","decision":"deploy"}
+{"type":"fleet-grid.ladder","at":"2026-10-07T10:04:41.023Z","account":"siq","ops":1,"txid":"00402e84514446ab02a5f931ff9d53783e12aaa0","decision":"deploy"}

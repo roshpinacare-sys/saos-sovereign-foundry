@@ -718,3 +718,8 @@
 {"at":"2026-10-07T09:42:50.922Z","kind":"watchdog-up"}
 {"at":"2026-10-07T09:44:15.941Z","kind":"cycle-ok(auto)","ms":39631,"engineMeasured":true,"steps":24,"verdict":null,"blockedSteps":[],"error":null}
 {"at":"2026-10-07T09:53:30.937Z","kind":"cycle-ok(auto)","ms":38169,"engineMeasured":true,"steps":24,"verdict":null,"blockedSteps":[],"error":null}
+{"at":"2026-10-07T10:02:54.917Z","kind":"cycle-fail(auto)","ms":4011,"engineMeasured":true,"steps":0,"verdict":null,"blockedSteps":null,"error":"engine-restarted-mid-cycle"}
+{"at":"2026-10-07T10:03:55.928Z","kind":"watchdog-down","downForMs":65007,"confirmMs":5000}
+{"at":"2026-10-07T10:03:55.928Z","kind":"heal-attempt","reason":"watchdog"}
+{"at":"2026-10-07T10:03:55.964Z","kind":"heal-spawn","reason":"watchdog","pid":22901}
+{"at":"2026-10-07T10:03:59.967Z","kind":"heal-verified","up":true}
