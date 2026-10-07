@@ -21,6 +21,7 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { fleetGridState, GEN2_ACCOUNTS } from "./fleet-grid.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const STATE = path.join(DIR, "state");
@@ -152,22 +153,29 @@ export function fleetState({ now = new Date().toISOString(), credential = null, 
     }),
     `convert-plan.json at=${convertPlan?.at ?? "—"} verdict=${convertPlan?.verdict ?? "—"}`));
 
-  /* 11-13 · soldiers ×3 — the deployed fleet */
-  const soldierRecs = soldiers?.deployed ? (soldiers.accounts ?? []) : [];
-  if (soldierRecs.length) {
-    const lastSoldierRun = daily?.steps?.soldiers?.ok === false ? null : (daily?.finishedAt ?? null);
-    for (const rec of soldierRecs) {
-      agents.push(mk(rec.name, "micro-grid soldier · own book around parity",
-        curBlocked
-          ? { status: "BLOCKED", ageMin: null, blockedBy: "credential-missing" }
-          : classifyAgent({ lastRunAt: lastSoldierRun, nowMs, freshnessMin: FRESH.soldiers }),
-        `soldiers.json deployed · last cycle soldiers.step=${daily?.steps?.soldiers?.verdict ?? "—"}${curBlocked ? " · cannot sign" : ""}`));
-      if (curBlocked) agents[agents.length - 1].revival = credRevival;
-    }
-  } else {
-    agents.push(mk("soldiers", "micro-grid soldiers ×3",
-      { status: "IDLE", ageMin: null, blockedBy: null },
-      "not deployed this era (deploy rail armed, waits for lawful budget)"));
+  /* 11-13 · soldiers TRUTH (R235 fix): the old soldiers.json deploy record made
+   * gen-1 (hcsoldier1/2/3) read ALIVE — a truth-drift against T-78b (keys lost
+   * forever, LOST-NO-CUSTODY, verified 3× independently). Honest registry:
+   *   - ONE "fleet-grid" row = the live market presence of the soldier
+   *     generations: army 10 (R234) + gen-2 3 (R235 operator-approved activation).
+   *   - gen-1 rows = DEAD with the standing verdict, never resurrectable. */
+  const fg = fleetGridState();
+  const fgLive = Object.values(fg.accounts ?? {}).reduce((s, r) => s + (r?.live ?? 0), 0);
+  agents.push(mk("fleet-grid", "soldier generations on the book · army 10 + gen-2 3 (R234/R235)",
+    fg.running && fg.lastTickAt
+      ? classifyAgent({ lastRunAt: fg.lastTickAt, nowMs, freshnessMin: FRESH.grid })
+      : { status: "IDLE", ageMin: null, blockedBy: null },
+    `tickMs=${fg.tickMs} · runs=${fg.runs ?? 0} · liveOrders=${fgLive} · fundingTx=${fg.funding?.txid ? fg.funding.txid.slice(0, 12) + "…" : "—"} · gen2 trace=${fg.orderTrace}`));
+  const soldierRecs = soldiers?.deployed ? (soldiers.accounts ?? []).filter((r) => !GEN2_ACCOUNTS.includes(r.name)) : [];
+  for (const rec of soldierRecs) {
+    agents.push(mk(rec.name, "gen-1 soldier · LOST-NO-CUSTODY (T-78b) — structurally frozen",
+      { status: "DEAD", ageMin: null, blockedBy: "no-custody" },
+      "keys lost forever (3 independent verifications) · 18.667 STEEM + 0.139 SBD stranded on-chain · no funding, no signing, no grid — allowlist+think-gate make this structural"));
+  }
+  if (!soldierRecs.length) {
+    agents.push(mk("gen-1-soldiers", "hcsoldier1/2/3 · LOST-NO-CUSTODY (T-78b)",
+      { status: "DEAD", ageMin: null, blockedBy: "no-custody" },
+      "not deployed this era; keys never recoverable — kept off every funding/grant path by policy"));
   }
 
   /* 14 · promo — one honest public report/day.

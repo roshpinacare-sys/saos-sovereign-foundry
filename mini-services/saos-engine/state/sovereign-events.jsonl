@@ -634,3 +634,12 @@
 {"at":"2026-10-07T02:06:02.276Z","kind":"cycle-ok(auto)","ms":33129,"engineMeasured":true,"steps":22,"verdict":null,"blockedSteps":[],"error":null}
 {"at":"2026-10-07T02:15:21.269Z","kind":"cycle-ok(auto)","ms":39250,"engineMeasured":true,"steps":22,"verdict":null,"blockedSteps":[],"error":null}
 {"at":"2026-10-07T02:25:33.284Z","kind":"cycle-ok(auto)","ms":50001,"engineMeasured":true,"steps":22,"verdict":null,"blockedSteps":[],"error":null}
+{"at":"2026-10-07T02:28:46.253Z","kind":"watchdog-down","downForMs":65002,"confirmMs":5000}
+{"at":"2026-10-07T02:28:46.253Z","kind":"heal-attempt","reason":"watchdog"}
+{"at":"2026-10-07T02:28:46.281Z","kind":"heal-spawn","reason":"watchdog","pid":20541}
+{"at":"2026-10-07T02:28:50.283Z","kind":"heal-verified","up":true}
+{"at":"2026-10-07T02:34:41.239Z","kind":"heal-attempt","reason":"cycle-preheal(auto)"}
+{"at":"2026-10-07T02:34:41.287Z","kind":"heal-spawn","reason":"cycle-preheal(auto)","pid":23559}
+{"at":"2026-10-07T02:34:45.290Z","kind":"heal-verified","up":true}
+{"at":"2026-10-07T02:34:46.292Z","kind":"watchdog-blip","downForMs":65039,"note":"transient — second pulse proved alive"}
+{"at":"2026-10-07T02:35:21.347Z","kind":"cycle-ok(auto)","ms":35160,"engineMeasured":true,"steps":22,"verdict":null,"blockedSteps":[],"error":null}

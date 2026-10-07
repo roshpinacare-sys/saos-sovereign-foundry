@@ -1,22 +1,22 @@
 {
-  "at": "2026-10-07T02:24:41.241Z",
+  "at": "2026-10-07T02:34:45.293Z",
   "enabled": true,
-  "runsTotal": 286,
+  "runsTotal": 287,
   "verdict": "LEARNED",
   "metrics": {
     "cycles": {
-      "window": 138,
-      "oks": 135,
+      "window": 131,
+      "oks": 129,
       "fails": 2,
-      "blocked": 1,
-      "okRate": 97.8,
-      "blockedRate": 0.7,
+      "blocked": 0,
+      "okRate": 98.5,
+      "blockedRate": 0,
       "failReasons": {
         "none": 1,
         "unknown": 1
       },
-      "msP50": 11819,
-      "msP90": 30368
+      "msP50": 12236,
+      "msP90": 30789
     },
     "curator": {
       "present": true,
@@ -38,27 +38,19 @@
       "lastError": null
     },
     "watchdog": {
-      "checks": 2755,
-      "downs": 105,
-      "heals": 38,
-      "healVerified": 37,
+      "checks": 2765,
+      "downs": 106,
+      "heals": 40,
+      "healVerified": 39,
       "healFailed": 0,
-      "lastCheckAt": "2026-10-07T02:24:41.245Z",
+      "lastCheckAt": "2026-10-07T02:34:41.287Z",
       "engineUp": true,
-      "lastSpawnAt": null,
-      "lastUpAt": "2026-10-07T02:24:41.247Z",
-      "blips": 1
+      "lastSpawnAt": "2026-10-07T02:34:41.286Z",
+      "lastUpAt": "2026-10-07T02:34:46.292Z",
+      "blips": 2
     }
   },
   "lessons": [
-    {
-      "id": "signing-cred-blocked",
-      "severity": "low",
-      "resolved": true,
-      "evidence": "cycle-blocked ×1/138 in the counted window (HISTORICAL) · credential present & chain-verified NOW — the blocks describe the past, not the present",
-      "lesson": "historical: those blocks were lawful then; the credential is now adopted and chain-verified (VERIFIED) — signing rails are LIVE, the counting window still carries the old blocked cycles",
-      "action": "none — resolved; the lesson self-clears once the event window rotates past the historical blocked cycles"
-    },
     {
       "id": "unclassified-fail-legacy",
       "severity": "medium",
@@ -71,7 +63,7 @@
   "tuningsApplied": [],
   "lessonsTotal": {
     "cycle-conn-fails": 132,
-    "unclassified-fail-legacy": 140,
+    "unclassified-fail-legacy": 141,
     "signing-cred-blocked": 205,
     "broadcast-fails": 65
   },

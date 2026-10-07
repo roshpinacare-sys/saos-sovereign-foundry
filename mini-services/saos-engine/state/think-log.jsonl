@@ -2497,3 +2497,5 @@
 {"at":"2026-10-07T02:24:14.013Z","account":"headcorner","source":"hyper-grid","verdict":"ALLOW","reasons":[],"shown":[{"op":"limit_order_create","to":null,"amount":null},{"op":"limit_order_create","to":null,"amount":null}],"custody":"master-verified"}
 {"at":"2026-10-07T02:26:10.954Z","account":"headcorner","source":"hyper-grid","verdict":"ALLOW","reasons":[],"shown":[{"op":"limit_order_cancel","to":null,"amount":null},{"op":"limit_order_create","to":null,"amount":null}],"custody":"master-verified"}
 {"at":"2026-10-07T02:27:17.051Z","account":"headcorner","source":"hyper-grid","verdict":"ALLOW","reasons":[],"shown":[{"op":"limit_order_cancel","to":null,"amount":null},{"op":"limit_order_create","to":null,"amount":null}],"custody":"master-verified"}
+{"at":"2026-10-07T02:27:37.857Z","account":"headcorner","source":"custody-witness","verdict":"ALLOW","reasons":[],"shown":[{"op":"custom_json","to":null,"amount":null}],"custody":"master-verified"}
+{"at":"2026-10-07T02:27:37.858Z","account":"headcorner","source":"custody-witness","verdict":"ALLOW","reasons":[],"shown":[{"op":"custom_json","to":null,"amount":null}],"custody":"master-verified"}
