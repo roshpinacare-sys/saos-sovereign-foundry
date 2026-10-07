@@ -5236,3 +5236,13 @@
 {"type":"hyper.requote","at":"2026-10-07T00:53:32.283Z","label":"requote-front","ops":2,"cancels":2,"creates":0,"txid":"5ff1754e6ea67e168a18dd53bf95e6042f907f6a","rcPct":33.3,"opsToday":92,"equilibriumOpsPerDay":10082,"bestAsk":0.10383137784238397,"bestBid":0.100227}
 {"type":"hyper.requote","at":"2026-10-07T00:54:26.289Z","label":"requote-front","ops":2,"cancels":1,"creates":1,"txid":"80b16ff52181c9284cc3eff6f9ddb06f0294773c","rcPct":33.2,"opsToday":94,"equilibriumOpsPerDay":10082,"bestAsk":0.10383137784238397,"bestBid":0.100227}
 {"type":"hyper.requote","at":"2026-10-07T00:56:14.295Z","label":"front-create","ops":2,"cancels":0,"creates":2,"txid":"e2effca0d9ce85b39b2a2196eb703b546b3baeda","rcPct":33.2,"opsToday":96,"equilibriumOpsPerDay":10082,"bestAsk":0.10383137784238397,"bestBid":0.100227}
+{"type":"hyper.requote","at":"2026-10-07T00:58:02.302Z","label":"requote-front","ops":2,"cancels":1,"creates":1,"txid":"6e18272fa3c77630252405945263b9b3fa2cd549","rcPct":33.2,"opsToday":98,"equilibriumOpsPerDay":10082,"bestAsk":0.10383137784238397,"bestBid":0.100227}
+{"type":"observe.done","at":"2026-10-07T01:00:06.149Z","fills":0,"parity":0.104328010475656}
+{"type":"grid.tick","at":"2026-10-07T01:00:06.149Z","runCount":319,"refPrice":0.104328010475656,"internalFeed":0.10409646215753957,"dragK":1.0111218149645667,"inv":{"steem":30.749,"sbd":0.015}}
+{"type":"sweep.scan","at":"2026-10-07T01:00:06.149Z","grid":"sweep","dustSteem":0.7489999999999988}
+{"type":"anchor.quote","at":"2026-10-07T01:00:06.149Z","grid":"anchor-quote","bid":0.10411703382104844,"ask":0.10453898713026356}
+{"type":"offer.published","at":"2026-10-07T01:00:06.149Z","verdict":"OFFER-READY","asks":0,"bids":0,"flowAsks":3,"flowBids":0,"bestAsk":0.10383137784238397,"bestBid":0.100227}
+{"type":"convert.planned","at":"2026-10-07T01:00:06.149Z","verdict":"CONVERT-HOLD","edgeBps":7006,"amountSbd":0}
+{"type":"learn.done","at":"2026-10-07T01:00:06.149Z","verdict":"LEARNED","lessons":["signing-cred-blocked","unclassified-fail-legacy"],"tunings":[]}
+{"type":"discover.done","at":"2026-10-07T01:00:06.149Z","verdict":"OPTIONS-FOUND","tags":12,"opportunities":["spread-wide","tags-realloc","curation-share","fleet-growth"]}
+{"type":"hyper.requote","at":"2026-10-07T01:01:11.335Z","label":"requote-front","ops":2,"cancels":1,"creates":1,"txid":"8fba4e141f2f328906d27b470047be940c44c6ae","rcPct":33.2,"opsToday":100,"equilibriumOpsPerDay":10082,"bestAsk":0.10383137784238397,"bestBid":0.100227}
