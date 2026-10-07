@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T04:55:46.619Z",
+  "at": "2026-10-07T05:05:46.620Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -196,7 +196,7 @@
         "name": "siq",
         "sp": 0.01,
         "vpEff": 99.1,
-        "rcPct": 92,
+        "rcPct": 90.9,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -208,7 +208,7 @@
         "name": "tov",
         "sp": 0.01,
         "vpEff": 99,
-        "rcPct": 95.6,
+        "rcPct": 94.5,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -220,7 +220,7 @@
         "name": "wic",
         "sp": 0,
         "vpEff": 99,
-        "rcPct": 90.1,
+        "rcPct": 89.1,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -232,7 +232,7 @@
         "name": "wog",
         "sp": 0.01,
         "vpEff": 99.1,
-        "rcPct": 89.9,
+        "rcPct": 88.8,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -244,7 +244,7 @@
         "name": "woq",
         "sp": 0,
         "vpEff": 99,
-        "rcPct": 89.3,
+        "rcPct": 88.4,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T04:55:54.869Z"
+    "at": "2026-10-07T05:05:57.685Z"
   },
   "engagement": {
     "ok": true,
@@ -460,7 +460,7 @@
         "author": "lsa",
         "permlink": "understanding-blockchain-curation-rewards-20261006-0",
         "title": "Understanding Blockchain Curation Rewards",
-        "ageH": 6,
+        "ageH": 7,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -1018,12 +1018,12 @@
       "authorResponseRate": 0,
       "avgScore": 0
     },
-    "at": "2026-10-07T04:55:46.619Z"
+    "at": "2026-10-07T05:05:46.620Z"
   },
   "compliance": {
     "protocol": "saos.fleet.compliance.v1",
     "day": "2026-10-07",
-    "at": "2026-10-07T04:25:46.619Z",
+    "at": "2026-10-07T04:55:46.619Z",
     "scheduleHint": "14 accounts × (post+2vote+engage) · tol 30min",
     "rows": [
       {
@@ -1189,7 +1189,7 @@
         "clusterViolations": 0,
         "accountsActive": 0,
         "totalActions": 0,
-        "at": "2026-10-07T04:25:46.619Z"
+        "at": "2026-10-07T04:55:46.619Z"
       }
     ],
     "trend": {
@@ -1202,7 +1202,7 @@
       "prevDay": null
     },
     "note": "ציות = הפעולה בפועל נחתה בתוך חלון-הלו\"ז הדטרמיניסטי (אותו יום, אותו חוק). QUIET = עדיין אין פעילות-היום — לא-ציות ולא-הפרה. R233: history = קו-המגמה יום-מול-יום.",
-    "ms": 16007
+    "ms": 19462
   },
   "trends": {
     "fetchedAt": "2026-10-07T03:24:59.567Z",
@@ -1296,73 +1296,73 @@
       "acc": "haran",
       "kind": "post",
       "at": "05:57",
-      "inMin": 61
+      "inMin": 51
     },
     {
       "acc": "cashmachine",
       "kind": "engage",
       "at": "06:17",
-      "inMin": 81
+      "inMin": 71
     },
     {
       "acc": "haran",
       "kind": "vote1",
       "at": "06:53",
-      "inMin": 117
+      "inMin": 107
     },
     {
       "acc": "macrame",
       "kind": "post",
       "at": "07:13",
-      "inMin": 137
+      "inMin": 127
     },
     {
       "acc": "israelnews",
       "kind": "post",
       "at": "07:52",
-      "inMin": 176
+      "inMin": 166
     },
     {
       "acc": "macrame",
       "kind": "vote1",
       "at": "08:12",
-      "inMin": 196
+      "inMin": 186
     },
     {
       "acc": "wic",
       "kind": "vote1",
       "at": "08:54",
-      "inMin": 238
+      "inMin": 228
     },
     {
       "acc": "tov",
       "kind": "vote2",
       "at": "09:17",
-      "inMin": 261
+      "inMin": 251
     },
     {
       "acc": "headcorner",
       "kind": "engage",
       "at": "09:59",
-      "inMin": 303
+      "inMin": 293
     },
     {
       "acc": "lsa",
       "kind": "vote2",
       "at": "10:28",
-      "inMin": 332
+      "inMin": 322
     },
     {
       "acc": "headcorner",
       "kind": "post",
       "at": "10:48",
-      "inMin": 352
+      "inMin": 342
     },
     {
       "acc": "headcorner",
       "kind": "vote1",
       "at": "11:26",
-      "inMin": 390
+      "inMin": 380
     }
   ],
   "lastPublish": {
@@ -1380,5 +1380,5 @@
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)",
     "threads": "שיח מתפתח = תגובות-לתגובות + הגב-מחבר — R233 מודד את העומק, לא רק את הכיסוי"
   },
-  "ms": 29553
+  "ms": 26104
 }
