@@ -16,7 +16,7 @@
       "id": "curation",
       "label": "קיורציה · מסילת-דלק",
       "measuredUsdPerDay": null,
-      "estUsdPerDay": 0.52127,
+      "estUsdPerDay": 0.521888,
       "confidence": "estimated",
       "note": "~8.83 STEEM/יום — ESTIMATED (payout clock ~7d, first verification T-18c)"
     },
@@ -34,7 +34,7 @@
       "measuredUsdPerDay": null,
       "estUsdPerDay": 0,
       "confidence": "blocked",
-      "note": "HOLD honest (6953bps edge, dust-or-capped) — the rail is armed-in-doctrine, not burning"
+      "note": "HOLD honest (7614bps edge, dust-or-capped) — the rail is armed-in-doctrine, not burning"
     },
     {
       "id": "promo",
@@ -57,13 +57,13 @@
     }
   ],
   "totalMeasuredUsdPerDay": 0,
-  "totalEstUsdPerDay": 0.52127,
+  "totalEstUsdPerDay": 0.521888,
   "measuredCount": 1,
   "estimatedCount": 2,
   "blockedCount": 3,
   "law": "סכום-מדוד וסכום-מוערך לעולם לא מתמזגים — שתי שורות-אמת נפרדות",
-  "parity": 0.10007170986493795,
-  "asof": "2026-10-07T06:05:46.626Z",
+  "parity": 0.10409643846084451,
+  "asof": "2026-10-07T06:15:46.629Z",
   "context": {
     "venueFillsPerDay": 635,
     "venueVolSteem24h": 1892.778,
@@ -85,10 +85,10 @@
     "any": false
   },
   "x2": {
-    "currentUsdPerDay": 0.5213,
+    "currentUsdPerDay": 0.5219,
     "targetUsdPerDay": 1000,
     "currentSp": 975,
-    "factor": 1918.4,
+    "factor": 1916.2,
     "rows": [
       {
         "mult": 1,
@@ -99,25 +99,25 @@
       {
         "mult": 10,
         "sp": 9748,
-        "usdPerDay": 5.21,
+        "usdPerDay": 5.22,
         "reachesTarget": false
       },
       {
         "mult": 40,
         "sp": 38990,
-        "usdPerDay": 20.85,
+        "usdPerDay": 20.88,
         "reachesTarget": false
       },
       {
         "mult": 100,
         "sp": 97476,
-        "usdPerDay": 52.13,
+        "usdPerDay": 52.19,
         "reachesTarget": false
       },
       {
-        "mult": 1919,
-        "sp": 1870565,
-        "usdPerDay": 1000.32,
+        "mult": 1917,
+        "sp": 1868616,
+        "usdPerDay": 1000.46,
         "reachesTarget": true
       }
     ],

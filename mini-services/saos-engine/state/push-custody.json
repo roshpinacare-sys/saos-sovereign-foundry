@@ -1,8 +1,8 @@
 {
-  "lastPushedSha": "9acd574d23763edfde94af10c29ab3173f5292ee",
-  "pushedAt": "2026-10-07T05:57:37Z",
+  "lastPushedSha": "4be3aad69fe3665ce377c98fc9f65e876070f66a",
+  "pushedAt": "2026-10-07T06:07:37Z",
   "branch": "cockpit-zai",
-  "localHeadAtPush": "9acd574d23763edfde94af10c29ab3173f5292ee",
+  "localHeadAtPush": "4be3aad69fe3665ce377c98fc9f65e876070f66a",
   "method": "scripts/sovereign-push.sh (FF-only gate)",
   "law": "SOVEREIGN-WRITER-LAW.md v1",
   "note": "updated only by sovereign-push; engine should surface drift vs git rev-parse HEAD each cycle"
