@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T01:10:06.148Z",
+  "at": "2026-10-07T01:20:06.150Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -124,12 +124,12 @@
         "name": "headcorner",
         "sp": 6.45,
         "vpEff": 24.1,
-        "rcPct": 33.1,
+        "rcPct": 32.8,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
         "rcGate": null,
-        "steem": 31.749,
+        "steem": 30.749,
         "lastVote": "2026-10-06T20:35:18"
       },
       {
@@ -289,11 +289,38 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T01:10:13.248Z"
+    "at": "2026-10-07T01:20:13.369Z"
   },
   "engagement": {
     "ok": true,
     "posts": [
+      {
+        "author": "headcorner",
+        "permlink": "saos-daily-20261007",
+        "title": "SAOS Mission Daily — 2026-10-07",
+        "ageH": 0,
+        "fleetVotes": [],
+        "fleetRepliers": [],
+        "threads": 0,
+        "coveragePct": 0,
+        "missing": [
+          "headcorner",
+          "cashmachine",
+          "haran",
+          "israelnews",
+          "lsa",
+          "macrame",
+          "siq",
+          "tov",
+          "wic",
+          "wog",
+          "woq",
+          "hcsoldier1",
+          "hcsoldier2",
+          "hcsoldier3"
+        ],
+        "covered": false
+      },
       {
         "author": "headcorner",
         "permlink": "saos-transparency-20261007",
@@ -325,7 +352,7 @@
         "author": "wog",
         "permlink": "what-makes-content-truly-valuable-on-blockchain-20261006-0",
         "title": "What Makes Content Truly Valuable on Blockchain?",
-        "ageH": 2,
+        "ageH": 3,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -547,12 +574,11 @@
         "title": "Understanding Steem's Dual-Token Economy",
         "ageH": 5,
         "fleetVotes": [],
-        "fleetRepliers": [
-          "headcorner"
-        ],
-        "threads": 1,
-        "coveragePct": 7,
+        "fleetRepliers": [],
+        "threads": 0,
+        "coveragePct": 0,
         "missing": [
+          "headcorner",
           "cashmachine",
           "haran",
           "israelnews",
@@ -596,45 +622,23 @@
           "hcsoldier3"
         ],
         "covered": false
-      },
-      {
-        "author": "macrame",
-        "permlink": "how-do-you-discover-quality-content-on-steem-20261006-0",
-        "title": "How Do You Discover Quality Content on Steem?",
-        "ageH": 5,
-        "fleetVotes": [
-          "headcorner",
-          "siq"
-        ],
-        "fleetRepliers": [],
-        "threads": 0,
-        "coveragePct": 14,
-        "missing": [
-          "cashmachine",
-          "haran",
-          "israelnews",
-          "lsa",
-          "macrame",
-          "tov",
-          "wic",
-          "wog",
-          "woq",
-          "hcsoldier1",
-          "hcsoldier2",
-          "hcsoldier3"
-        ],
-        "covered": false
       }
     ],
     "summary": {
       "posts": 12,
-      "avgCoveragePct": 5.3,
+      "avgCoveragePct": 3.5,
       "fullyCovered": 0,
-      "openThreads": 2
+      "openThreads": 1
     }
   },
   "assignments": {
     "headcorner": [
+      {
+        "author": "headcorner",
+        "permlink": "saos-daily-20261007",
+        "title": "SAOS Mission Daily — 2026-10-07",
+        "kind": "cover-gap"
+      },
       {
         "author": "headcorner",
         "permlink": "saos-transparency-20261007",
@@ -646,15 +650,15 @@
         "permlink": "what-makes-content-truly-valuable-on-blockchain-20261006-0",
         "title": "What Makes Content Truly Valuable on Blockchain?",
         "kind": "cover-gap"
-      },
+      }
+    ],
+    "cashmachine": [
       {
         "author": "lsa",
         "permlink": "understanding-blockchain-curation-rewards-20261006-0",
         "title": "Understanding Blockchain Curation Rewards",
         "kind": "cover-gap"
-      }
-    ],
-    "cashmachine": [
+      },
       {
         "author": "haran",
         "permlink": "optimizing-your-steem-workflow-tools-for-content-creators-20261006-0",
@@ -665,12 +669,6 @@
         "author": "israelnews",
         "permlink": "how-effective-is-steem-s-curation-reward-system-20261006-0",
         "title": "How Effective Is Steem's Curation Reward System?",
-        "kind": "cover-gap"
-      },
-      {
-        "author": "cashmachine",
-        "permlink": "understanding-steem-s-dual-token-system-steem-vs-sbd-20261006-0",
-        "title": "Understanding Steem's Dual-Token System: STEEM vs SBD",
         "kind": "cover-gap"
       }
     ],
@@ -702,9 +700,9 @@
         "kind": "cover-gap"
       },
       {
-        "author": "macrame",
-        "permlink": "how-do-you-discover-quality-content-on-steem-20261006-0",
-        "title": "How Do You Discover Quality Content on Steem?",
+        "author": "headcorner",
+        "permlink": "saos-daily-20261007",
+        "title": "SAOS Mission Daily — 2026-10-07",
         "kind": "cover-gap"
       },
       {
@@ -776,9 +774,9 @@
     ],
     "tov": [
       {
-        "author": "macrame",
-        "permlink": "how-do-you-discover-quality-content-on-steem-20261006-0",
-        "title": "How Do You Discover Quality Content on Steem?",
+        "author": "headcorner",
+        "permlink": "saos-daily-20261007",
+        "title": "SAOS Mission Daily — 2026-10-07",
         "kind": "cover-gap"
       },
       {
@@ -856,9 +854,9 @@
     ],
     "hcsoldier1": [
       {
-        "author": "macrame",
-        "permlink": "how-do-you-discover-quality-content-on-steem-20261006-0",
-        "title": "How Do You Discover Quality Content on Steem?",
+        "author": "headcorner",
+        "permlink": "saos-daily-20261007",
+        "title": "SAOS Mission Daily — 2026-10-07",
         "kind": "cover-gap"
       },
       {
@@ -920,6 +918,18 @@
     "metrics": [
       {
         "author": "headcorner",
+        "permlink": "saos-daily-20261007",
+        "layer1Count": 0,
+        "layer2Count": 0,
+        "fleetRepliers": 0,
+        "authorResponded": false,
+        "firstFleetReplyH": null,
+        "depth": 1,
+        "developed": false,
+        "score": 0
+      },
+      {
+        "author": "headcorner",
         "permlink": "saos-transparency-20261007",
         "layer1Count": 0,
         "layer2Count": 0,
@@ -1001,18 +1011,6 @@
         "depth": 1,
         "developed": false,
         "score": 1.1
-      },
-      {
-        "author": "siq",
-        "permlink": "streamlining-your-steem-workflow-tools-for-efficiency-20261006-0",
-        "layer1Count": 0,
-        "layer2Count": 0,
-        "fleetRepliers": 0,
-        "authorResponded": false,
-        "firstFleetReplyH": null,
-        "depth": 1,
-        "developed": false,
-        "score": 0
       }
     ],
     "summary": {
@@ -1023,7 +1021,7 @@
       "authorResponseRate": 0,
       "avgScore": 0.3
     },
-    "at": "2026-10-07T01:10:06.148Z"
+    "at": "2026-10-07T01:20:06.150Z"
   },
   "compliance": {
     "protocol": "saos.fleet.compliance.v1",
@@ -1306,76 +1304,76 @@
   },
   "nextWindows": [
     {
-      "acc": "tov",
-      "kind": "vote1",
-      "at": "01:16",
-      "inMin": 6
-    },
-    {
       "acc": "lsa",
       "kind": "post",
       "at": "01:36",
-      "inMin": 26
+      "inMin": 16
     },
     {
       "acc": "wog",
       "kind": "engage",
       "at": "01:56",
-      "inMin": 46
+      "inMin": 36
     },
     {
       "acc": "hcsoldier2",
       "kind": "engage",
       "at": "02:16",
-      "inMin": 66
+      "inMin": 56
     },
     {
       "acc": "cashmachine",
       "kind": "vote1",
       "at": "02:36",
-      "inMin": 86
+      "inMin": 76
     },
     {
       "acc": "lsa",
       "kind": "vote1",
       "at": "02:56",
-      "inMin": 106
+      "inMin": 96
     },
     {
       "acc": "israelnews",
       "kind": "vote1",
       "at": "04:32",
-      "inMin": 202
+      "inMin": 192
     },
     {
       "acc": "tov",
       "kind": "post",
       "at": "04:52",
-      "inMin": 222
+      "inMin": 212
     },
     {
       "acc": "haran",
       "kind": "post",
       "at": "05:57",
-      "inMin": 287
+      "inMin": 277
     },
     {
       "acc": "cashmachine",
       "kind": "engage",
       "at": "06:17",
-      "inMin": 307
+      "inMin": 297
     },
     {
       "acc": "haran",
       "kind": "vote1",
       "at": "06:53",
-      "inMin": 343
+      "inMin": 333
     },
     {
       "acc": "macrame",
       "kind": "post",
       "at": "07:13",
-      "inMin": 363
+      "inMin": 353
+    },
+    {
+      "acc": "israelnews",
+      "kind": "post",
+      "at": "07:52",
+      "inMin": 392
     }
   ],
   "lastPublish": {
@@ -1393,5 +1391,5 @@
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)",
     "threads": "שיח מתפתח = תגובות-לתגובות + הגב-מחבר — R233 מודד את העומק, לא רק את הכיסוי"
   },
-  "ms": 24460
+  "ms": 24913
 }

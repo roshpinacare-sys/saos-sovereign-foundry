@@ -16,9 +16,9 @@
       "id": "curation",
       "label": "קיורציה · מסילת-דלק",
       "measuredUsdPerDay": null,
-      "estUsdPerDay": 0.534005,
+      "estUsdPerDay": 0.533179,
       "confidence": "estimated",
-      "note": "~8.72 STEEM/יום — ESTIMATED (payout clock ~7d, first verification T-18c)"
+      "note": "~8.71 STEEM/יום — ESTIMATED (payout clock ~7d, first verification T-18c)"
     },
     {
       "id": "fuel",
@@ -34,7 +34,7 @@
       "measuredUsdPerDay": null,
       "estUsdPerDay": 0,
       "confidence": "blocked",
-      "note": "HOLD honest (6954bps edge, dust-or-capped) — the rail is armed-in-doctrine, not burning"
+      "note": "HOLD honest (7012bps edge, dust-or-capped) — the rail is armed-in-doctrine, not burning"
     },
     {
       "id": "promo",
@@ -57,13 +57,13 @@
     }
   ],
   "totalMeasuredUsdPerDay": 0,
-  "totalEstUsdPerDay": 0.534005,
+  "totalEstUsdPerDay": 0.533179,
   "measuredCount": 1,
   "estimatedCount": 2,
   "blockedCount": 3,
   "law": "סכום-מדוד וסכום-מוערך לעולם לא מתמזגים — שתי שורות-אמת נפרדות",
-  "parity": 0.10387686006038996,
-  "asof": "2026-10-07T01:10:06.148Z",
+  "parity": 0.10409646215753957,
+  "asof": "2026-10-07T01:20:06.150Z",
   "context": {
     "venueFillsPerDay": 558,
     "venueVolSteem24h": 701.923,
@@ -85,10 +85,10 @@
     "any": false
   },
   "x2": {
-    "currentUsdPerDay": 0.534,
+    "currentUsdPerDay": 0.5332,
     "targetUsdPerDay": 1000,
     "currentSp": 951,
-    "factor": 1872.7,
+    "factor": 1875.6,
     "rows": [
       {
         "mult": 1,
@@ -99,25 +99,25 @@
       {
         "mult": 10,
         "sp": 9508,
-        "usdPerDay": 5.34,
+        "usdPerDay": 5.33,
         "reachesTarget": false
       },
       {
         "mult": 40,
         "sp": 38031,
-        "usdPerDay": 21.36,
+        "usdPerDay": 21.33,
         "reachesTarget": false
       },
       {
         "mult": 100,
-        "sp": 95076,
-        "usdPerDay": 53.4,
+        "sp": 95077,
+        "usdPerDay": 53.32,
         "reachesTarget": false
       },
       {
-        "mult": 1873,
-        "sp": 1780782,
-        "usdPerDay": 1000.19,
+        "mult": 1876,
+        "sp": 1783635,
+        "usdPerDay": 1000.24,
         "reachesTarget": true
       }
     ],
