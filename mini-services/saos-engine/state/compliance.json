@@ -1,0 +1,153 @@
+{
+  "protocol": "saos.fleet.compliance.v1",
+  "day": "2026-10-07",
+  "at": "2026-10-07T00:16:46.241Z",
+  "scheduleHint": "14 accounts × (post+2vote+engage) · tol 30min",
+  "rows": [
+    {
+      "acc": "headcorner",
+      "total": 1,
+      "inWindow": 0,
+      "compliancePct": 0,
+      "clusters": 0,
+      "misses": [
+        {
+          "kind": "post",
+          "at": "00:13",
+          "nearest": "10:48"
+        }
+      ],
+      "verdict": "OFF-SCHEDULE"
+    },
+    {
+      "acc": "cashmachine",
+      "total": 0,
+      "inWindow": 0,
+      "compliancePct": null,
+      "clusters": 0,
+      "misses": [],
+      "verdict": "NO-ACTIVITY"
+    },
+    {
+      "acc": "haran",
+      "total": 0,
+      "inWindow": 0,
+      "compliancePct": null,
+      "clusters": 0,
+      "misses": [],
+      "verdict": "NO-ACTIVITY"
+    },
+    {
+      "acc": "israelnews",
+      "total": 0,
+      "inWindow": 0,
+      "compliancePct": null,
+      "clusters": 0,
+      "misses": [],
+      "verdict": "NO-ACTIVITY"
+    },
+    {
+      "acc": "lsa",
+      "total": 0,
+      "inWindow": 0,
+      "compliancePct": null,
+      "clusters": 0,
+      "misses": [],
+      "verdict": "NO-ACTIVITY"
+    },
+    {
+      "acc": "macrame",
+      "total": 0,
+      "inWindow": 0,
+      "compliancePct": null,
+      "clusters": 0,
+      "misses": [],
+      "verdict": "NO-ACTIVITY"
+    },
+    {
+      "acc": "siq",
+      "total": 0,
+      "inWindow": 0,
+      "compliancePct": null,
+      "clusters": 0,
+      "misses": [],
+      "verdict": "NO-ACTIVITY"
+    },
+    {
+      "acc": "tov",
+      "total": 0,
+      "inWindow": 0,
+      "compliancePct": null,
+      "clusters": 0,
+      "misses": [],
+      "verdict": "NO-ACTIVITY"
+    },
+    {
+      "acc": "wic",
+      "total": 0,
+      "inWindow": 0,
+      "compliancePct": null,
+      "clusters": 0,
+      "misses": [],
+      "verdict": "NO-ACTIVITY"
+    },
+    {
+      "acc": "wog",
+      "total": 0,
+      "inWindow": 0,
+      "compliancePct": null,
+      "clusters": 0,
+      "misses": [],
+      "verdict": "NO-ACTIVITY"
+    },
+    {
+      "acc": "woq",
+      "total": 0,
+      "inWindow": 0,
+      "compliancePct": null,
+      "clusters": 0,
+      "misses": [],
+      "verdict": "NO-ACTIVITY"
+    },
+    {
+      "acc": "hcsoldier1",
+      "total": 0,
+      "inWindow": 0,
+      "compliancePct": null,
+      "clusters": 0,
+      "misses": [],
+      "verdict": "NO-ACTIVITY"
+    },
+    {
+      "acc": "hcsoldier2",
+      "total": 0,
+      "inWindow": 0,
+      "compliancePct": null,
+      "clusters": 0,
+      "misses": [],
+      "verdict": "NO-ACTIVITY"
+    },
+    {
+      "acc": "hcsoldier3",
+      "total": 0,
+      "inWindow": 0,
+      "compliancePct": null,
+      "clusters": 0,
+      "misses": [],
+      "verdict": "NO-ACTIVITY"
+    }
+  ],
+  "summary": {
+    "accounts": 14,
+    "accountsActive": 1,
+    "totalActions": 1,
+    "avgCompliancePct": 0,
+    "densestBurst": 1,
+    "burstAt": "00:13",
+    "clusterViolations": 0,
+    "verdict": "NOT-ADOPTED"
+  },
+  "readFails": [],
+  "note": "ציות = הפעולה בפועל נחתה בתוך חלון-הלו\"ז הדטרמיניסטי (אותו יום, אותו חוק). QUIET = עדיין אין פעילות-היום — לא-ציות ולא-הפרה.",
+  "ms": 14886
+}

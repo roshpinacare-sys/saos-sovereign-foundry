@@ -39,6 +39,8 @@ import { runPayouts, payoutsState } from "./payouts.mjs";
 import { runWeave, weaveState } from "./weave.mjs";
 import { runCoordination, coordinationState } from "./coordination.mjs";
 import { runTrends } from "./trends.mjs";
+import { runCompliance } from "./compliance.mjs";
+import { runWindowExecution } from "./execute.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const STATE = path.join(DIR, "state");
@@ -599,6 +601,24 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
       publish: out.publish ?? null,
       ms: out.ms ?? null,
     };
+  });
+
+  /* R232 · טלמטריית-ציות: does the fleet's REAL activity (chain truth)
+   * land inside the deterministic windows? The daily answer to "הם עדיין
+   * מפרסמים צפוף?" — measured, not estimated. 30min cadence inside;
+   * fail-isolated. */
+  report.steps.compliance = await stepWrap("compliance", async () => {
+    const out = await runCompliance({ now });
+    return { verdict: out.summary?.verdict ?? out.verdict ?? "UNKNOWN", summary: out.summary ?? null, cadence: out.cadence ?? null, ms: out.ms ?? null };
+  });
+
+  /* R232 · מבצע-החלונות שלנו: when OUR windows open (engage/votes), the
+   * execution laws run for headcorner too — engagement assignments first,
+   * power-law votes second, RC floor + day-cap + honest verdicts inside.
+   * Fail-isolated; every verdict journaled by the executor itself. */
+  report.steps.windowExec = await stepWrap("window-exec", async () => {
+    const out = await runWindowExecution({ now });
+    return { verdict: out.ok ? `WINDOWS-ASSESSED:${(out.verdicts ?? []).length}` : out.verdict, verdicts: out.verdicts ?? null, windows: out.windows ?? null, error: out.error ?? null };
   });
 
   /* T-22 · STANDING SELFTEST: the machine audits its own laws daily —

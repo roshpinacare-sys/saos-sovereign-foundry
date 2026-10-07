@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { CalendarClock, Gauge, MessagesSquare, Radar, RefreshCw, Send } from 'lucide-react'
+import { CalendarClock, ClipboardCheck, Gauge, MessagesSquare, Radar, RefreshCw, Send, Zap } from 'lucide-react'
 import { SectionCard } from './SectionCard'
 import { StatusBadge } from './StatusBadge'
 import { cn } from '@/lib/utils'
@@ -30,6 +30,21 @@ type TrendTopic = {
   id?: string; topic: string; angle?: string; talkTrack?: string
   tags?: string[]; score?: number | null
 }
+type ComplianceRow = {
+  acc: string; total: number; inWindow: number; compliancePct: number | null
+  clusters: number; verdict: string
+  misses?: { kind: string; at: string; nearest: string }[]
+}
+type ComplianceDoc = {
+  day?: string; at?: string
+  rows?: ComplianceRow[]
+  summary?: { accounts?: number; accountsActive?: number; totalActions?: number; avgCompliancePct?: number | null; densestBurst?: number; burstAt?: string | null; clusterViolations?: number; verdict?: string } | null
+}
+type ExecutionDoc = {
+  day?: string; at?: string; minute?: number; rcPct?: number | null
+  windows?: Record<string, { at?: string; verdict?: string; landed?: number }>
+  actions?: { kind: string; verdict: string; to?: string; txid?: string | null; at: string }[]
+}
 type CoordPayload = {
   ok?: boolean
   coordination?: {
@@ -42,6 +57,8 @@ type CoordPayload = {
     lastPublish?: { day?: string; at?: string; ok?: boolean; txid?: string | null; error?: string | null }
     scheduleNote?: string
   } | null
+  compliance?: ComplianceDoc | null
+  execution?: ExecutionDoc | null
   trends?: { fetchedAt?: string | null; verdict?: string | null; topics?: TrendTopic[] } | null
   error?: string
 }
@@ -64,6 +81,25 @@ const verdictText = (v: string): string => {
     case 'READY': return 'מוכן · משקל 80%'
     case 'REDUCED': return 'מופחת · משקל 50%'
     case 'VP-REST': return 'מנוחת-טעינה · ללא הצבעות'
+    default: return v
+  }
+}
+
+const complianceTone = (v: string): 'emerald' | 'amber' | 'rose' | 'slate' => {
+  if (v === 'ADOPTED' || v === 'COMPLIANT') return 'emerald'
+  if (v === 'PARTIAL') return 'amber'
+  if (v === 'NOT-ADOPTED' || v === 'OFF-SCHEDULE') return 'rose'
+  return 'slate'
+}
+const complianceHeb = (v: string): string => {
+  switch (v) {
+    case 'ADOPTED': return 'מאומץ · הפעילות בחלונות'
+    case 'PARTIAL': return 'חלקי · חלק בחלונות'
+    case 'NOT-ADOPTED': return 'לא-מאומץ · פעילות מחוץ-לחלונות'
+    case 'QUIET': return 'שקט · אין פעילות-היום'
+    case 'COMPLIANT': return 'בחלונות'
+    case 'OFF-SCHEDULE': return 'מחוץ-לחלונות'
+    case 'NO-ACTIVITY': return 'ללא פעילות'
     default: return v
   }
 }
@@ -107,6 +143,8 @@ export function CoordinationCard() {
   const eng = c?.engagement ?? null
   const trends = d?.trends ?? null
   const next = c?.nextWindows ?? []
+  const compliance = d?.compliance ?? null
+  const execution = d?.execution ?? null
 
   return (
     <SectionCard
@@ -302,6 +340,102 @@ export function CoordinationCard() {
           <p className="mt-1 text-[11px] text-slate-500">המכ"ם ירוץ במחזור הבא (cadence 6ש') — או דרך רענון-מחזור</p>
         )}
         {trends?.fetchedAt && <p className="mt-1.5 text-[10px] text-slate-600">נסרק: {new Date(trends.fetchedAt).toLocaleTimeString('he-IL')} · כל-טרנד נושא מקור (פוסט-שרשרת או אינטל) — בלי-מקור לא-נכנס</p>}
+      </div>
+
+      {/* ─── 5 · לוח-ציות (R232) ─── */}
+      <div className="rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2.5">
+        <p className="flex items-center gap-1.5 text-[11px] font-bold text-teal-300">
+          <ClipboardCheck className="h-3.5 w-3.5" aria-hidden /> לוח-ציות — האם הפעילות בפועל נחתה בחלונות? (אמת-שרשרת)
+          {compliance?.summary?.verdict && <StatusBadge tone={complianceTone(compliance.summary.verdict)}>{complianceHeb(compliance.summary.verdict)}</StatusBadge>}
+        </p>
+        {compliance?.summary ? (
+          <>
+            <div className="mt-2 flex flex-wrap gap-2 text-[10px]">
+              <span className="rounded-md border border-slate-700 bg-slate-800/60 px-2 py-1 text-slate-300">ציות-ממוצע <b className="tnum text-teal-300">{compliance.summary.avgCompliancePct != null ? `${compliance.summary.avgCompliancePct}%` : '—'}</b></span>
+              <span className="rounded-md border border-slate-700 bg-slate-800/60 px-2 py-1 text-slate-300">פעילים-היום <b className="tnum text-slate-100">{compliance.summary.accountsActive ?? 0}/{compliance.summary.accounts ?? 14}</b></span>
+              <span className="rounded-md border border-slate-700 bg-slate-800/60 px-2 py-1 text-slate-300">הפרץ-הצפוף ביותר <b className={cn('tnum', (compliance.summary.densestBurst ?? 0) > 4 ? 'text-rose-400' : 'text-emerald-400')} dir="ltr">{compliance.summary.densestBurst ?? 0} פעולות/30דק</b>{compliance.summary.burstAt ? <span dir="ltr"> @{compliance.summary.burstAt}</span> : null}</span>
+              <span className="rounded-md border border-slate-700 bg-slate-800/60 px-2 py-1 text-slate-300">קלאסטרים-צפופים <b className={cn('tnum', (compliance.summary.clusterViolations ?? 0) > 0 ? 'text-amber-400' : 'text-emerald-400')}>{compliance.summary.clusterViolations ?? 0}</b></span>
+            </div>
+            <div className="mt-2 max-h-56 overflow-y-auto rounded-md border border-slate-800">
+              <table className="w-full min-w-[420px] text-[11px]">
+                <thead className="sticky top-0 bg-slate-900 text-slate-500">
+                  <tr>
+                    <th className="px-2.5 py-1.5 text-start font-medium">חשבון</th>
+                    <th className="px-2.5 py-1.5 text-end font-medium">פעולות</th>
+                    <th className="px-2.5 py-1.5 text-end font-medium">בחלון</th>
+                    <th className="px-2.5 py-1.5 text-end font-medium">ציות</th>
+                    <th className="px-2.5 py-1.5 text-end font-medium">צפיפות</th>
+                    <th className="px-2.5 py-1.5 text-start font-medium">פסק-דין</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {(compliance.rows ?? []).map((r) => (
+                    <tr key={r.acc}>
+                      <td className="px-2.5 py-1.5 font-bold text-slate-200" dir="ltr">{r.acc}</td>
+                      <td className="tnum px-2.5 py-1.5 text-end text-slate-300">{r.total}</td>
+                      <td className="tnum px-2.5 py-1.5 text-end text-slate-300">{r.total > 0 ? `${r.inWindow}/${r.total}` : '—'}</td>
+                      <td className="tnum px-2.5 py-1.5 text-end font-bold">
+                        <span className={cn(r.compliancePct == null ? 'text-slate-600' : r.compliancePct >= 80 ? 'text-emerald-400' : r.compliancePct >= 40 ? 'text-amber-400' : 'text-rose-400')}>
+                          {r.compliancePct != null ? `${r.compliancePct}%` : '—'}
+                        </span>
+                      </td>
+                      <td className="tnum px-2.5 py-1.5 text-end">
+                        <span className={cn(r.clusters > 0 ? 'font-bold text-amber-400' : 'text-slate-500')}>{r.clusters}</span>
+                      </td>
+                      <td className="px-2.5 py-1.5 text-[10px]">
+                        <StatusBadge tone={complianceTone(r.verdict)}>{complianceHeb(r.verdict)}</StatusBadge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-1.5 text-[10px] text-slate-600">נמדד: {compliance.at ? new Date(compliance.at).toLocaleTimeString('he-IL') : '—'} · סבלנות-חלון 30 דק · קלאסטר = פער &lt;5 דק בין פעולות-עצמיות · QUIET = אין פעילות-היום (לא-הפרה)</p>
+          </>
+        ) : (
+          <p className="mt-1 text-[11px] text-slate-500">טלמטריית-הציות תימדד במחזור הבא (cadence 30 דק) — או דרך רענון-מחזור</p>
+        )}
+      </div>
+
+      {/* ─── 6 · הביצוע שלנו (R232) ─── */}
+      <div className="rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2.5">
+        <p className="flex items-center gap-1.5 text-[11px] font-bold text-sky-300">
+          <Zap className="h-3.5 w-3.5" aria-hidden /> הביצוע שלנו — חלונות headcorner בפועל (החוק חל גם עלינו)
+        </p>
+        {execution?.windows && Object.keys(execution.windows).length > 0 ? (
+          <>
+            <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+              {Object.entries(execution.windows).map(([kind, w]) => (
+                <div key={kind} className="rounded-md border border-slate-800 bg-slate-900/70 px-2 py-1.5">
+                  <p className="text-[10px] font-bold text-slate-300">{kind === 'engage' ? 'חלון-שיחה' : kind === 'post' ? 'חלון-פרסום' : `חלון-הצבעה ${kind.replace('vote', '')}`}</p>
+                  <p className="mt-0.5 text-[10px] leading-tight text-slate-500" dir="ltr">{w.verdict ?? '—'}</p>
+                  {w.at && <p className="text-[9px] text-slate-600">{new Date(w.at).toLocaleTimeString('he-IL')}</p>}
+                </div>
+              ))}
+            </div>
+            {(execution.actions ?? []).length > 0 && (
+              <div className="mt-2 max-h-32 overflow-y-auto rounded-md border border-slate-800">
+                <table className="w-full min-w-[380px] text-[10px]">
+                  <tbody className="divide-y divide-slate-800/60">
+                    {(execution.actions ?? []).slice(-8).reverse().map((a, i) => (
+                      <tr key={`${a.at}-${i}`}>
+                        <td className="px-2 py-1 font-bold text-slate-300">{a.kind === 'engage' ? 'תגובה' : 'הצבעה'}</td>
+                        <td className="max-w-[200px] truncate px-2 py-1 text-slate-400" dir="ltr">{a.to ?? '—'}</td>
+                        <td className="px-2 py-1">
+                          <span className={cn(a.verdict.startsWith('REPLIED') || a.verdict.startsWith('VOTED') ? 'font-bold text-emerald-400' : 'text-amber-400')} dir="ltr">{a.verdict}</span>
+                        </td>
+                        {a.txid ? <td className="px-2 py-1 text-slate-600" dir="ltr">tx {String(a.txid).slice(0, 10)}…</td> : <td className="px-2 py-1 text-slate-700">—</td>}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <p className="mt-1.5 text-[10px] text-slate-600">RC {execution.rcPct != null ? `${execution.rcPct}%` : '?'} · יום {execution.day ?? '—'} · תקציב 3 תגובות/חלון · VP&lt;30 = מנוחה-חוקית · כל-פסק-דין ביומן השרשרת</p>
+          </>
+        ) : (
+          <p className="mt-1 text-[11px] text-slate-500">החלונות שלנו ייפתחו ויבוצעו אוטומטית במחזור — ההערכה הראשונה תופיע כאן</p>
+        )}
       </div>
 
       {d?.error && <p className="text-[11px] font-bold text-rose-400">שגיאה: {d.error}</p>}

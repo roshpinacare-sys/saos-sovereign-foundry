@@ -1,8 +1,8 @@
 {
   "running": false,
-  "startedAt": "2026-10-07T00:06:46.220Z",
-  "finishedAt": "2026-10-07T00:07:18.560Z",
-  "ms": 32340,
+  "startedAt": "2026-10-07T00:16:46.241Z",
+  "finishedAt": "2026-10-07T00:17:27.099Z",
+  "ms": 40858,
   "health": "ok",
   "ok": true,
   "steps": {
@@ -22,6 +22,8 @@
     "weave": true,
     "trends": true,
     "coordination": true,
+    "compliance": true,
+    "windowExec": true,
     "selftest": true,
     "economics": true,
     "recruit": true,

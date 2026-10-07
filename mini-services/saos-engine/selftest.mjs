@@ -734,6 +734,31 @@ ok("roster weave-ambassador-active", roster23.roster.find((r) => r.id === "weave
 const roster23NoEvidence = recruitRoles({ evidence: { recruiter: "self" }, now: "2026-10-02T00:00:00Z" });
 ok("roster new-stations-planned-without-evidence", roster23NoEvidence.roster.filter((r) => ["payout-auditor", "weave-ambassador"].includes(r.id)).every((r) => r.status === "planned"));
 
+/* ── R232 · compliance + window-executor pure laws ─────────────────────── */
+import { circDistMin as r232circ, complianceFromActions as r232score } from "./compliance.mjs";
+import { inWindow as r232inWin, windowKindActive as r232active, pickVoteTarget as r232target, replyPermlink as r232pl } from "./execute.mjs";
+ok("r232 circ-dist same-day", r232circ(100, 130) === 30);
+ok("r232 circ-dist midnight-wrap", r232circ(1435, 5) === 10);
+ok("r232 in-window within tol", r232inWin(600, 598) === true && r232inWin(640, 598) === false);
+ok("r232 active-kinds engage+vote", JSON.stringify(r232active(598, { post: 647, votes: [685, 1213], engage: 598 })) === JSON.stringify(["engage"]));
+const r232sched = { a: { post: 600, votes: [700], engage: 800 }, b: { post: 610, votes: [720], engage: 810 } };
+const r232out = r232score([
+  { acc: "a", kind: "post", minute: 590 },            // in window (10min before 600)
+  { acc: "a", kind: "vote", minute: 900 },            // OFF (200min from 700)
+  { acc: "b", kind: "post", minute: 611 },            // in
+  { acc: "b", kind: "post", minute: 614 },            // in but DENSE (3min after prev own)
+], r232sched);
+ok("r232 compliance mixed", r232out.rows.find((r) => r.acc === "a").compliancePct === 50);
+ok("r232 compliance b-dense-cluster", r232out.rows.find((r) => r.acc === "b").clusters === 1);
+ok("r232 burst-counted", r232out.summary.densestBurst === 3); // 590+611+614 all within a 30-min slide
+ok("r232 quiet-verdict", r232score([], r232sched).summary.verdict === "QUIET");
+const r232t = r232target([
+  { author: "x", permlink: "p1", fleetVotes: ["a"], fleetRepliers: [], missing: [] },
+  { author: "y", permlink: "p2", fleetVotes: [], fleetRepliers: [], missing: ["a"] },
+], "a");
+ok("r232 vote-target-skips-voted", r232t?.permlink === "p2");
+ok("r232 reply-permlink-safe", /^re-x-abc-\d{14}z$/.test(r232pl("x", "abc!!", "2026-10-07T00:00:00.000Z")));
+
 console.log(`\nSELFTEST ${pass}/${pass + fail} ${fail === 0 ? "PASS" : "FAIL"}`);
 /* T-21 · last-run marker: the recruiter's evidence for the integrity-auditor
  * role — written ONLY on a full run, never by a partial import. */

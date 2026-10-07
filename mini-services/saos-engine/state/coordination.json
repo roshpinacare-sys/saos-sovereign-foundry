@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T00:06:46.220Z",
+  "at": "2026-10-07T00:16:46.241Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -122,14 +122,14 @@
     "accounts": [
       {
         "name": "headcorner",
-        "sp": 6.37,
-        "vpEff": 17.5,
-        "rcPct": 31.1,
+        "sp": 6.43,
+        "vpEff": 23.2,
+        "rcPct": 33.2,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
         "rcGate": null,
-        "steem": 82.144,
+        "steem": 43.186,
         "lastVote": "2026-10-06T20:35:18"
       },
       {
@@ -289,16 +289,43 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T00:06:59.015Z"
+    "at": "2026-10-07T00:16:53.783Z"
   },
   "engagement": {
     "ok": true,
     "posts": [
       {
+        "author": "headcorner",
+        "permlink": "saos-transparency-20261007",
+        "title": "SAOS daily transparency report — real numbers, no promises",
+        "ageH": 0,
+        "fleetVotes": [],
+        "fleetRepliers": [],
+        "threads": 0,
+        "coveragePct": 0,
+        "missing": [
+          "headcorner",
+          "cashmachine",
+          "haran",
+          "israelnews",
+          "lsa",
+          "macrame",
+          "siq",
+          "tov",
+          "wic",
+          "wog",
+          "woq",
+          "hcsoldier1",
+          "hcsoldier2",
+          "hcsoldier3"
+        ],
+        "covered": false
+      },
+      {
         "author": "wog",
         "permlink": "what-makes-content-truly-valuable-on-blockchain-20261006-0",
         "title": "What Makes Content Truly Valuable on Blockchain?",
-        "ageH": 1,
+        "ageH": 2,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -597,45 +624,23 @@
           "hcsoldier3"
         ],
         "covered": false
-      },
-      {
-        "author": "headcorner",
-        "permlink": "understanding-steem-s-curation-rewards-20261006-0",
-        "title": "Understanding Steem's Curation Rewards",
-        "ageH": 4,
-        "fleetVotes": [
-          "cashmachine",
-          "wic",
-          "tov",
-          "woq"
-        ],
-        "fleetRepliers": [],
-        "threads": 0,
-        "coveragePct": 29,
-        "missing": [
-          "headcorner",
-          "haran",
-          "israelnews",
-          "lsa",
-          "macrame",
-          "siq",
-          "wog",
-          "hcsoldier1",
-          "hcsoldier2",
-          "hcsoldier3"
-        ],
-        "covered": false
       }
     ],
     "summary": {
       "posts": 12,
-      "avgCoveragePct": 7.7,
+      "avgCoveragePct": 5.3,
       "fullyCovered": 0,
       "openThreads": 2
     }
   },
   "assignments": {
     "headcorner": [
+      {
+        "author": "headcorner",
+        "permlink": "saos-transparency-20261007",
+        "title": "SAOS daily transparency report — real numbers, no promises",
+        "kind": "cover-gap"
+      },
       {
         "author": "wog",
         "permlink": "what-makes-content-truly-valuable-on-blockchain-20261006-0",
@@ -647,15 +652,15 @@
         "permlink": "understanding-blockchain-curation-rewards-20261006-0",
         "title": "Understanding Blockchain Curation Rewards",
         "kind": "cover-gap"
-      },
+      }
+    ],
+    "cashmachine": [
       {
         "author": "haran",
         "permlink": "optimizing-your-steem-workflow-tools-for-content-creators-20261006-0",
         "title": "Optimizing Your Steem Workflow: Tools for Content Creators",
         "kind": "cover-gap"
-      }
-    ],
-    "cashmachine": [
+      },
       {
         "author": "israelnews",
         "permlink": "how-effective-is-steem-s-curation-reward-system-20261006-0",
@@ -666,12 +671,6 @@
         "author": "cashmachine",
         "permlink": "understanding-steem-s-dual-token-system-steem-vs-sbd-20261006-0",
         "title": "Understanding Steem's Dual-Token System: STEEM vs SBD",
-        "kind": "cover-gap"
-      },
-      {
-        "author": "headcorner",
-        "permlink": "sbdsteem-spread-widens-to-2519-zero-external-votes-recorded-mux764vw",
-        "title": "SBD:STEEM Spread Widens to 2.519%, Zero External Votes Recorded",
         "kind": "cover-gap"
       }
     ],
@@ -710,8 +709,8 @@
       },
       {
         "author": "headcorner",
-        "permlink": "understanding-steem-s-curation-rewards-20261006-0",
-        "title": "Understanding Steem's Curation Rewards",
+        "permlink": "saos-transparency-20261007",
+        "title": "SAOS daily transparency report — real numbers, no promises",
         "kind": "cover-gap"
       }
     ],
@@ -783,19 +782,25 @@
         "kind": "cover-gap"
       },
       {
+        "author": "headcorner",
+        "permlink": "saos-transparency-20261007",
+        "title": "SAOS daily transparency report — real numbers, no promises",
+        "kind": "cover-gap"
+      },
+      {
         "author": "wog",
         "permlink": "what-makes-content-truly-valuable-on-blockchain-20261006-0",
         "title": "What Makes Content Truly Valuable on Blockchain?",
         "kind": "cover-gap"
-      },
+      }
+    ],
+    "wic": [
       {
         "author": "lsa",
         "permlink": "understanding-blockchain-curation-rewards-20261006-0",
         "title": "Understanding Blockchain Curation Rewards",
         "kind": "cover-gap"
-      }
-    ],
-    "wic": [
+      },
       {
         "author": "haran",
         "permlink": "optimizing-your-steem-workflow-tools-for-content-creators-20261006-0",
@@ -807,15 +812,15 @@
         "permlink": "how-effective-is-steem-s-curation-reward-system-20261006-0",
         "title": "How Effective Is Steem's Curation Reward System?",
         "kind": "cover-gap"
-      },
+      }
+    ],
+    "wog": [
       {
         "author": "cashmachine",
         "permlink": "understanding-steem-s-dual-token-system-steem-vs-sbd-20261006-0",
         "title": "Understanding Steem's Dual-Token System: STEEM vs SBD",
         "kind": "cover-gap"
-      }
-    ],
-    "wog": [
+      },
       {
         "author": "headcorner",
         "permlink": "sbdsteem-spread-widens-to-2519-zero-external-votes-recorded-mux764vw",
@@ -827,15 +832,15 @@
         "permlink": "streamlining-your-steem-workflow-tools-for-efficiency-20261006-0",
         "title": "Streamlining Your Steem Workflow: Tools for Efficiency",
         "kind": "cover-gap"
-      },
+      }
+    ],
+    "woq": [
       {
         "author": "woq",
         "permlink": "how-do-you-evaluate-content-value-on-steem-20261006-0",
         "title": "How Do You Evaluate Content Value on Steem?",
         "kind": "cover-gap"
-      }
-    ],
-    "woq": [
+      },
       {
         "author": "wic",
         "permlink": "understanding-steem-s-dual-token-economy-20261006-0",
@@ -847,19 +852,19 @@
         "permlink": "streamlining-your-steem-workflow-20261006-0",
         "title": "Streamlining Your Steem Workflow",
         "kind": "cover-gap"
-      },
+      }
+    ],
+    "hcsoldier1": [
       {
         "author": "macrame",
         "permlink": "how-do-you-discover-quality-content-on-steem-20261006-0",
         "title": "How Do You Discover Quality Content on Steem?",
         "kind": "cover-gap"
-      }
-    ],
-    "hcsoldier1": [
+      },
       {
         "author": "headcorner",
-        "permlink": "understanding-steem-s-curation-rewards-20261006-0",
-        "title": "Understanding Steem's Curation Rewards",
+        "permlink": "saos-transparency-20261007",
+        "title": "SAOS daily transparency report — real numbers, no promises",
         "kind": "cover-gap"
       },
       {
@@ -867,15 +872,15 @@
         "permlink": "what-makes-content-truly-valuable-on-blockchain-20261006-0",
         "title": "What Makes Content Truly Valuable on Blockchain?",
         "kind": "cover-gap"
-      },
+      }
+    ],
+    "hcsoldier2": [
       {
         "author": "lsa",
         "permlink": "understanding-blockchain-curation-rewards-20261006-0",
         "title": "Understanding Blockchain Curation Rewards",
         "kind": "cover-gap"
-      }
-    ],
-    "hcsoldier2": [
+      },
       {
         "author": "haran",
         "permlink": "optimizing-your-steem-workflow-tools-for-content-creators-20261006-0",
@@ -887,15 +892,15 @@
         "permlink": "how-effective-is-steem-s-curation-reward-system-20261006-0",
         "title": "How Effective Is Steem's Curation Reward System?",
         "kind": "cover-gap"
-      },
+      }
+    ],
+    "hcsoldier3": [
       {
         "author": "cashmachine",
         "permlink": "understanding-steem-s-dual-token-system-steem-vs-sbd-20261006-0",
         "title": "Understanding Steem's Dual-Token System: STEEM vs SBD",
         "kind": "cover-gap"
-      }
-    ],
-    "hcsoldier3": [
+      },
       {
         "author": "headcorner",
         "permlink": "sbdsteem-spread-widens-to-2519-zero-external-votes-recorded-mux764vw",
@@ -907,14 +912,360 @@
         "permlink": "streamlining-your-steem-workflow-tools-for-efficiency-20261006-0",
         "title": "Streamlining Your Steem Workflow: Tools for Efficiency",
         "kind": "cover-gap"
-      },
-      {
-        "author": "woq",
-        "permlink": "how-do-you-evaluate-content-value-on-steem-20261006-0",
-        "title": "How Do You Evaluate Content Value on Steem?",
-        "kind": "cover-gap"
       }
     ]
+  },
+  "compliance": {
+    "protocol": "saos.fleet.compliance.v1",
+    "day": "2026-10-06",
+    "at": "2026-10-06T23:59:59Z",
+    "scheduleHint": "14 accounts × (post+2vote+engage) · tol 30min",
+    "rows": [
+      {
+        "acc": "headcorner",
+        "total": 0,
+        "inWindow": 0,
+        "compliancePct": null,
+        "clusters": 0,
+        "misses": [],
+        "verdict": "NO-ACTIVITY"
+      },
+      {
+        "acc": "cashmachine",
+        "total": 4,
+        "inWindow": 1,
+        "compliancePct": 25,
+        "clusters": 1,
+        "misses": [
+          {
+            "kind": "vote",
+            "at": "20:09",
+            "nearest": "18:53"
+          },
+          {
+            "kind": "vote",
+            "at": "20:10",
+            "nearest": "18:53"
+          },
+          {
+            "kind": "comment",
+            "at": "20:52",
+            "nearest": "06:16"
+          }
+        ],
+        "verdict": "OFF-SCHEDULE"
+      },
+      {
+        "acc": "haran",
+        "total": 5,
+        "inWindow": 0,
+        "compliancePct": 0,
+        "clusters": 1,
+        "misses": [
+          {
+            "kind": "comment",
+            "at": "20:52",
+            "nearest": "13:57"
+          },
+          {
+            "kind": "comment",
+            "at": "20:52",
+            "nearest": "13:57"
+          },
+          {
+            "kind": "post",
+            "at": "22:05",
+            "nearest": "05:56"
+          },
+          {
+            "kind": "vote",
+            "at": "22:35",
+            "nearest": "14:53"
+          }
+        ],
+        "verdict": "OFF-SCHEDULE"
+      },
+      {
+        "acc": "israelnews",
+        "total": 6,
+        "inWindow": 0,
+        "compliancePct": 0,
+        "clusters": 2,
+        "misses": [
+          {
+            "kind": "vote",
+            "at": "20:10",
+            "nearest": "12:53"
+          },
+          {
+            "kind": "comment",
+            "at": "20:10",
+            "nearest": "13:13"
+          },
+          {
+            "kind": "vote",
+            "at": "20:15",
+            "nearest": "12:53"
+          },
+          {
+            "kind": "comment",
+            "at": "20:52",
+            "nearest": "13:13"
+          }
+        ],
+        "verdict": "OFF-SCHEDULE"
+      },
+      {
+        "acc": "lsa",
+        "total": 5,
+        "inWindow": 0,
+        "compliancePct": 0,
+        "clusters": 2,
+        "misses": [
+          {
+            "kind": "vote",
+            "at": "20:10",
+            "nearest": "02:55"
+          },
+          {
+            "kind": "vote",
+            "at": "20:10",
+            "nearest": "02:55"
+          },
+          {
+            "kind": "comment",
+            "at": "20:53",
+            "nearest": "16:33"
+          },
+          {
+            "kind": "comment",
+            "at": "20:53",
+            "nearest": "16:33"
+          }
+        ],
+        "verdict": "OFF-SCHEDULE"
+      },
+      {
+        "acc": "macrame",
+        "total": 6,
+        "inWindow": 0,
+        "compliancePct": 0,
+        "clusters": 4,
+        "misses": [
+          {
+            "kind": "post",
+            "at": "20:10",
+            "nearest": "07:12"
+          },
+          {
+            "kind": "vote",
+            "at": "20:11",
+            "nearest": "17:13"
+          },
+          {
+            "kind": "vote",
+            "at": "20:11",
+            "nearest": "17:13"
+          },
+          {
+            "kind": "comment",
+            "at": "20:53",
+            "nearest": "15:33"
+          }
+        ],
+        "verdict": "OFF-SCHEDULE"
+      },
+      {
+        "acc": "siq",
+        "total": 5,
+        "inWindow": 0,
+        "compliancePct": 0,
+        "clusters": 2,
+        "misses": [
+          {
+            "kind": "vote",
+            "at": "20:45",
+            "nearest": "19:53"
+          },
+          {
+            "kind": "vote",
+            "at": "20:53",
+            "nearest": "19:53"
+          },
+          {
+            "kind": "comment",
+            "at": "20:53",
+            "nearest": "15:13"
+          },
+          {
+            "kind": "comment",
+            "at": "20:53",
+            "nearest": "15:13"
+          }
+        ],
+        "verdict": "OFF-SCHEDULE"
+      },
+      {
+        "acc": "tov",
+        "total": 4,
+        "inWindow": 0,
+        "compliancePct": 0,
+        "clusters": 2,
+        "misses": [
+          {
+            "kind": "post",
+            "at": "20:11",
+            "nearest": "04:51"
+          },
+          {
+            "kind": "vote",
+            "at": "20:11",
+            "nearest": "01:15"
+          },
+          {
+            "kind": "vote",
+            "at": "20:11",
+            "nearest": "01:15"
+          },
+          {
+            "kind": "comment",
+            "at": "20:53",
+            "nearest": "22:46"
+          }
+        ],
+        "verdict": "OFF-SCHEDULE"
+      },
+      {
+        "acc": "wic",
+        "total": 6,
+        "inWindow": 0,
+        "compliancePct": 0,
+        "clusters": 4,
+        "misses": [
+          {
+            "kind": "post",
+            "at": "20:11",
+            "nearest": "12:13"
+          },
+          {
+            "kind": "vote",
+            "at": "20:11",
+            "nearest": "18:13"
+          },
+          {
+            "kind": "vote",
+            "at": "20:12",
+            "nearest": "18:13"
+          },
+          {
+            "kind": "comment",
+            "at": "20:54",
+            "nearest": "16:53"
+          }
+        ],
+        "verdict": "OFF-SCHEDULE"
+      },
+      {
+        "acc": "wog",
+        "total": 6,
+        "inWindow": 0,
+        "compliancePct": 0,
+        "clusters": 3,
+        "misses": [
+          {
+            "kind": "vote",
+            "at": "20:12",
+            "nearest": "21:13"
+          },
+          {
+            "kind": "comment",
+            "at": "20:12",
+            "nearest": "01:55"
+          },
+          {
+            "kind": "vote",
+            "at": "20:16",
+            "nearest": "21:13"
+          },
+          {
+            "kind": "comment",
+            "at": "20:54",
+            "nearest": "01:55"
+          }
+        ],
+        "verdict": "OFF-SCHEDULE"
+      },
+      {
+        "acc": "woq",
+        "total": 6,
+        "inWindow": 0,
+        "compliancePct": 0,
+        "clusters": 4,
+        "misses": [
+          {
+            "kind": "post",
+            "at": "20:12",
+            "nearest": "15:53"
+          },
+          {
+            "kind": "vote",
+            "at": "20:12",
+            "nearest": "20:53"
+          },
+          {
+            "kind": "vote",
+            "at": "20:12",
+            "nearest": "20:53"
+          },
+          {
+            "kind": "comment",
+            "at": "20:54",
+            "nearest": "00:50"
+          }
+        ],
+        "verdict": "OFF-SCHEDULE"
+      },
+      {
+        "acc": "hcsoldier1",
+        "total": 0,
+        "inWindow": 0,
+        "compliancePct": null,
+        "clusters": 0,
+        "misses": [],
+        "verdict": "NO-ACTIVITY"
+      },
+      {
+        "acc": "hcsoldier2",
+        "total": 0,
+        "inWindow": 0,
+        "compliancePct": null,
+        "clusters": 0,
+        "misses": [],
+        "verdict": "NO-ACTIVITY"
+      },
+      {
+        "acc": "hcsoldier3",
+        "total": 0,
+        "inWindow": 0,
+        "compliancePct": null,
+        "clusters": 0,
+        "misses": [],
+        "verdict": "NO-ACTIVITY"
+      }
+    ],
+    "summary": {
+      "accounts": 14,
+      "accountsActive": 10,
+      "totalActions": 53,
+      "avgCompliancePct": 2.5,
+      "densestBurst": 24,
+      "burstAt": "20:45",
+      "clusterViolations": 25,
+      "verdict": "NOT-ADOPTED"
+    },
+    "readFails": [],
+    "note": "ציות = הפעולה בפועל נחתה בתוך חלון-הלו\"ז הדטרמיניסטי (אותו יום, אותו חוק). QUIET = עדיין אין פעילות-היום — לא-ציות ולא-הפרה.",
+    "ms": 14680
   },
   "trends": {
     "fetchedAt": "2026-10-06T21:16:09.311Z",
@@ -1022,84 +1373,78 @@
   },
   "nextWindows": [
     {
-      "acc": "hcsoldier1",
-      "kind": "engage",
-      "at": "00:10",
-      "inMin": 3
-    },
-    {
       "acc": "woq",
       "kind": "engage",
       "at": "00:51",
-      "inMin": 44
+      "inMin": 34
     },
     {
       "acc": "tov",
       "kind": "vote1",
       "at": "01:16",
-      "inMin": 69
+      "inMin": 59
     },
     {
       "acc": "lsa",
       "kind": "post",
       "at": "01:36",
-      "inMin": 89
+      "inMin": 79
     },
     {
       "acc": "wog",
       "kind": "engage",
       "at": "01:56",
-      "inMin": 109
+      "inMin": 99
     },
     {
       "acc": "hcsoldier2",
       "kind": "engage",
       "at": "02:16",
-      "inMin": 129
+      "inMin": 119
     },
     {
       "acc": "cashmachine",
       "kind": "vote1",
       "at": "02:36",
-      "inMin": 149
+      "inMin": 139
     },
     {
       "acc": "lsa",
       "kind": "vote1",
       "at": "02:56",
-      "inMin": 169
+      "inMin": 159
     },
     {
       "acc": "israelnews",
       "kind": "vote1",
       "at": "04:32",
-      "inMin": 265
+      "inMin": 255
     },
     {
       "acc": "tov",
       "kind": "post",
       "at": "04:52",
-      "inMin": 285
+      "inMin": 275
     },
     {
       "acc": "haran",
       "kind": "post",
       "at": "05:57",
-      "inMin": 350
+      "inMin": 340
     },
     {
       "acc": "cashmachine",
       "kind": "engage",
       "at": "06:17",
-      "inMin": 370
+      "inMin": 360
+    },
+    {
+      "acc": "haran",
+      "kind": "vote1",
+      "at": "06:53",
+      "inMin": 396
     }
   ],
-  "law": {
-    "stagger": "שכל-אחד יכנס בזמן אחר — מרווח 20 דק בין כל-שני חלונות-צי",
-    "power": "הצבעות לפי מצב-הכוח: משקל מלא ב-VP≥80, הפחתה מתחת, מנוחה מ-30; רצפת RC 20%",
-    "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)"
-  },
-  "ms": 18708,
   "lastPublish": {
     "day": "2026-10-07",
     "at": "2026-10-07T00:07:18.454Z",
@@ -1108,5 +1453,11 @@
     "txid": "c89b68d3c5f71b78c2eb44134f4e0ac691431186",
     "error": null,
     "bytes": 2132
-  }
+  },
+  "law": {
+    "stagger": "שכל-אחד יכנס בזמן אחר — מרווח 20 דק בין כל-שני חלונות-צי",
+    "power": "הצבעות לפי מצב-הכוח: משקל מלא ב-VP≥80, הפחתה מתחת, מנוחה מ-30; רצפת RC 20%",
+    "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)"
+  },
+  "ms": 19847
 }

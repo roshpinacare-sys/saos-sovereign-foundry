@@ -1,0 +1,352 @@
+{
+  "protocol": "saos.fleet.compliance.v1",
+  "day": "2026-10-06",
+  "at": "2026-10-06T23:59:59Z",
+  "scheduleHint": "14 accounts × (post+2vote+engage) · tol 30min",
+  "rows": [
+    {
+      "acc": "headcorner",
+      "total": 0,
+      "inWindow": 0,
+      "compliancePct": null,
+      "clusters": 0,
+      "misses": [],
+      "verdict": "NO-ACTIVITY"
+    },
+    {
+      "acc": "cashmachine",
+      "total": 4,
+      "inWindow": 1,
+      "compliancePct": 25,
+      "clusters": 1,
+      "misses": [
+        {
+          "kind": "vote",
+          "at": "20:09",
+          "nearest": "18:53"
+        },
+        {
+          "kind": "vote",
+          "at": "20:10",
+          "nearest": "18:53"
+        },
+        {
+          "kind": "comment",
+          "at": "20:52",
+          "nearest": "06:16"
+        }
+      ],
+      "verdict": "OFF-SCHEDULE"
+    },
+    {
+      "acc": "haran",
+      "total": 5,
+      "inWindow": 0,
+      "compliancePct": 0,
+      "clusters": 1,
+      "misses": [
+        {
+          "kind": "comment",
+          "at": "20:52",
+          "nearest": "13:57"
+        },
+        {
+          "kind": "comment",
+          "at": "20:52",
+          "nearest": "13:57"
+        },
+        {
+          "kind": "post",
+          "at": "22:05",
+          "nearest": "05:56"
+        },
+        {
+          "kind": "vote",
+          "at": "22:35",
+          "nearest": "14:53"
+        }
+      ],
+      "verdict": "OFF-SCHEDULE"
+    },
+    {
+      "acc": "israelnews",
+      "total": 6,
+      "inWindow": 0,
+      "compliancePct": 0,
+      "clusters": 2,
+      "misses": [
+        {
+          "kind": "vote",
+          "at": "20:10",
+          "nearest": "12:53"
+        },
+        {
+          "kind": "comment",
+          "at": "20:10",
+          "nearest": "13:13"
+        },
+        {
+          "kind": "vote",
+          "at": "20:15",
+          "nearest": "12:53"
+        },
+        {
+          "kind": "comment",
+          "at": "20:52",
+          "nearest": "13:13"
+        }
+      ],
+      "verdict": "OFF-SCHEDULE"
+    },
+    {
+      "acc": "lsa",
+      "total": 5,
+      "inWindow": 0,
+      "compliancePct": 0,
+      "clusters": 2,
+      "misses": [
+        {
+          "kind": "vote",
+          "at": "20:10",
+          "nearest": "02:55"
+        },
+        {
+          "kind": "vote",
+          "at": "20:10",
+          "nearest": "02:55"
+        },
+        {
+          "kind": "comment",
+          "at": "20:53",
+          "nearest": "16:33"
+        },
+        {
+          "kind": "comment",
+          "at": "20:53",
+          "nearest": "16:33"
+        }
+      ],
+      "verdict": "OFF-SCHEDULE"
+    },
+    {
+      "acc": "macrame",
+      "total": 6,
+      "inWindow": 0,
+      "compliancePct": 0,
+      "clusters": 4,
+      "misses": [
+        {
+          "kind": "post",
+          "at": "20:10",
+          "nearest": "07:12"
+        },
+        {
+          "kind": "vote",
+          "at": "20:11",
+          "nearest": "17:13"
+        },
+        {
+          "kind": "vote",
+          "at": "20:11",
+          "nearest": "17:13"
+        },
+        {
+          "kind": "comment",
+          "at": "20:53",
+          "nearest": "15:33"
+        }
+      ],
+      "verdict": "OFF-SCHEDULE"
+    },
+    {
+      "acc": "siq",
+      "total": 5,
+      "inWindow": 0,
+      "compliancePct": 0,
+      "clusters": 2,
+      "misses": [
+        {
+          "kind": "vote",
+          "at": "20:45",
+          "nearest": "19:53"
+        },
+        {
+          "kind": "vote",
+          "at": "20:53",
+          "nearest": "19:53"
+        },
+        {
+          "kind": "comment",
+          "at": "20:53",
+          "nearest": "15:13"
+        },
+        {
+          "kind": "comment",
+          "at": "20:53",
+          "nearest": "15:13"
+        }
+      ],
+      "verdict": "OFF-SCHEDULE"
+    },
+    {
+      "acc": "tov",
+      "total": 4,
+      "inWindow": 0,
+      "compliancePct": 0,
+      "clusters": 2,
+      "misses": [
+        {
+          "kind": "post",
+          "at": "20:11",
+          "nearest": "04:51"
+        },
+        {
+          "kind": "vote",
+          "at": "20:11",
+          "nearest": "01:15"
+        },
+        {
+          "kind": "vote",
+          "at": "20:11",
+          "nearest": "01:15"
+        },
+        {
+          "kind": "comment",
+          "at": "20:53",
+          "nearest": "22:46"
+        }
+      ],
+      "verdict": "OFF-SCHEDULE"
+    },
+    {
+      "acc": "wic",
+      "total": 6,
+      "inWindow": 0,
+      "compliancePct": 0,
+      "clusters": 4,
+      "misses": [
+        {
+          "kind": "post",
+          "at": "20:11",
+          "nearest": "12:13"
+        },
+        {
+          "kind": "vote",
+          "at": "20:11",
+          "nearest": "18:13"
+        },
+        {
+          "kind": "vote",
+          "at": "20:12",
+          "nearest": "18:13"
+        },
+        {
+          "kind": "comment",
+          "at": "20:54",
+          "nearest": "16:53"
+        }
+      ],
+      "verdict": "OFF-SCHEDULE"
+    },
+    {
+      "acc": "wog",
+      "total": 6,
+      "inWindow": 0,
+      "compliancePct": 0,
+      "clusters": 3,
+      "misses": [
+        {
+          "kind": "vote",
+          "at": "20:12",
+          "nearest": "21:13"
+        },
+        {
+          "kind": "comment",
+          "at": "20:12",
+          "nearest": "01:55"
+        },
+        {
+          "kind": "vote",
+          "at": "20:16",
+          "nearest": "21:13"
+        },
+        {
+          "kind": "comment",
+          "at": "20:54",
+          "nearest": "01:55"
+        }
+      ],
+      "verdict": "OFF-SCHEDULE"
+    },
+    {
+      "acc": "woq",
+      "total": 6,
+      "inWindow": 0,
+      "compliancePct": 0,
+      "clusters": 4,
+      "misses": [
+        {
+          "kind": "post",
+          "at": "20:12",
+          "nearest": "15:53"
+        },
+        {
+          "kind": "vote",
+          "at": "20:12",
+          "nearest": "20:53"
+        },
+        {
+          "kind": "vote",
+          "at": "20:12",
+          "nearest": "20:53"
+        },
+        {
+          "kind": "comment",
+          "at": "20:54",
+          "nearest": "00:50"
+        }
+      ],
+      "verdict": "OFF-SCHEDULE"
+    },
+    {
+      "acc": "hcsoldier1",
+      "total": 0,
+      "inWindow": 0,
+      "compliancePct": null,
+      "clusters": 0,
+      "misses": [],
+      "verdict": "NO-ACTIVITY"
+    },
+    {
+      "acc": "hcsoldier2",
+      "total": 0,
+      "inWindow": 0,
+      "compliancePct": null,
+      "clusters": 0,
+      "misses": [],
+      "verdict": "NO-ACTIVITY"
+    },
+    {
+      "acc": "hcsoldier3",
+      "total": 0,
+      "inWindow": 0,
+      "compliancePct": null,
+      "clusters": 0,
+      "misses": [],
+      "verdict": "NO-ACTIVITY"
+    }
+  ],
+  "summary": {
+    "accounts": 14,
+    "accountsActive": 10,
+    "totalActions": 53,
+    "avgCompliancePct": 2.5,
+    "densestBurst": 24,
+    "burstAt": "20:45",
+    "clusterViolations": 25,
+    "verdict": "NOT-ADOPTED"
+  },
+  "readFails": [],
+  "note": "ציות = הפעולה בפועל נחתה בתוך חלון-הלו\"ז הדטרמיניסטי (אותו יום, אותו חוק). QUIET = עדיין אין פעילות-היום — לא-ציות ולא-הפרה.",
+  "ms": 14680
+}

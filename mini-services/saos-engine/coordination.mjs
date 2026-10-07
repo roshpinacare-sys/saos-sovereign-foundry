@@ -29,6 +29,7 @@ import * as path from "node:path";
 import { rpcCall } from "./measure.mjs";
 import { executeAs, masterAccount, armedConf, execPaused, loadCredential } from "./signer.mjs";
 import { trendsState } from "./trends.mjs";
+import { complianceState } from "./compliance.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const STATE = path.join(DIR, "state");
@@ -240,7 +241,7 @@ export function assignEngagement(rows, schedule, { perWindow = 3 } = {}) {
 /* ── state + manifest ─────────────────────────────────────────────────── */
 export function coordinationState() { return readJson(FILE, null); }
 
-export function buildManifest({ day, schedule, power, engagement, trends } = {}) {
+export function buildManifest({ day, schedule, power, engagement, trends, compliance } = {}) {
   const sched = {};
   for (const acc of FLEET_NAMES) {
     sched[acc] = [hhmm(schedule[acc].post), schedule[acc].votes.map(hhmm).join(","), hhmm(schedule[acc].engage)].join("|");
@@ -256,8 +257,9 @@ export function buildManifest({ day, schedule, power, engagement, trends } = {})
     scheduleMin: sched,
     powerNow: (power.accounts ?? []).map((a) => ({ n: a.name, vp: a.vpEff, rc: a.rcPct, w: a.weightPct })).filter((a) => a.n),
     engagementNow: engagement.summary ?? null,
+    complianceNow: compliance?.summary ?? null,
     trends: (trends.topics ?? []).slice(0, 3).map((t) => t.topic.slice(0, 120)),
-    note: "public contract: any signer holding these accounts adopts this schedule by recomputing it deterministically from the day key; deltas → publish an amendment, never a silent override",
+    note: "public contract: any signer holding these accounts adopts this schedule by recomputing it deterministically from the day key; deltas → publish an amendment, never a silent override. R232: complianceNow = the measured adherence of the fleet's REAL activity to THIS schedule — the contract measures itself.",
   };
 }
 
@@ -273,7 +275,7 @@ export async function publishManifest({ now = new Date().toISOString(), force = 
   if (force && Number.isFinite(lastAt) && Date.now() - lastAt < 30 * 60_000) return { ok: false, verdict: "RATE-GATED-30MIN", lastAt: prev.lastPublish.at };
   loadCredential(); // typed fail before any network signing
   const st = prev?.schedule && prev?.day === day ? prev : await runCoordination({ now, publish: false });
-  const manifest = buildManifest({ day, schedule: st.schedule, power: st.power, engagement: st.engagement, trends: st.trends ?? trendsState() ?? {} });
+  const manifest = buildManifest({ day, schedule: st.schedule, power: st.power, engagement: st.engagement, trends: st.trends ?? trendsState() ?? {}, compliance: st.compliance ?? complianceState() });
   const json = JSON.stringify(manifest);
   const res = await executeAs(masterAccount(), [[
     "custom_json",
@@ -310,6 +312,7 @@ export async function runCoordination({ now = new Date().toISOString(), publish 
     protocol: PROTOCOL, day, at: now,
     schedule, scheduleNote: "UTC minutes-of-day · deterministic from hash(account|kind|i|day) · gap 20min — שני-הכותבים מחשבים את אותו הלו\"ז",
     power, engagement, assignments,
+    compliance: complianceState(),
     trends: { fetchedAt: trends.fetchedAt, verdict: trends.verdict, topics: (trends.topics ?? []).slice(0, 6) },
     nextWindows: nextWindows.slice(0, 12),
     lastPublish: prev?.lastPublish ?? null,
