@@ -1,6 +1,6 @@
 {
   "verdict": "OFFER-EMPTY",
-  "parityBps": -396,
+  "parityBps": -439,
   "blocker": null,
   "plan": {
     "asks": [],
@@ -23,43 +23,43 @@
     "bestAsk": 0.10361620557455185,
     "bestBid": 0.100002,
     "askDepthSteem": 1131.406,
-    "bidDepthSbd": 2830.785,
-    "at": "2026-10-07T11:14:13.640Z"
+    "bidDepthSbd": 2830.72,
+    "at": "2026-10-07T11:24:13.638Z"
   },
   "market": {
-    "at": "2026-10-07T10:45:02.863Z",
+    "at": "2026-10-07T11:24:19.161Z",
     "windowHours": 24,
     "class": "measured",
-    "trades": 179,
-    "tradesPerDay": 179,
-    "volSteem": 2690.094,
+    "trades": 188,
+    "tradesPerDay": 188,
+    "volSteem": 2695.614,
     "priceMin": 0.09927,
     "priceMax": 0.111111,
     "rangeBps": 1193,
-    "sizeP50": 4.504,
+    "sizeP50": 4.168,
     "sizeP90": 50,
     "book": {
       "bestAsk": 0.10361620557455185,
-      "bestBid": 0.10120023478454471,
-      "spreadBps": 238.73,
-      "askDepthSteem": 1132.342,
-      "bidDepthSbd": 2845.733
+      "bestBid": 0.100002,
+      "spreadBps": 361.41,
+      "askDepthSteem": 1131.406,
+      "bidDepthSbd": 2830.72
     }
   },
   "marks": {
-    "paritySbdPerSteem": 0.099974,
+    "paritySbdPerSteem": 0.099523,
     "source": "coingecko",
     "lowConfidence": false,
     "internalFeed": 0.104096,
     "dragK": 1.1775,
-    "floor": 0.100175,
-    "ceiling": 0.099774,
+    "floor": 0.099723,
+    "ceiling": 0.099324,
     "spreadBpsFed": 355
   },
   "skew": {
-    "skew": 0.097434,
-    "askMult": 1.097434,
-    "bidMult": 0.902566,
+    "skew": 0.096826,
+    "askMult": 1.096826,
+    "bidMult": 0.903174,
     "reason": "hummingbot-inventory-skew"
   },
   "stale": {
@@ -73,5 +73,5 @@
     "bidBudget": 0,
     "deployCap": 0.6
   },
-  "publishedAt": "2026-10-07T11:14:13.640Z"
+  "publishedAt": "2026-10-07T11:24:13.638Z"
 }
