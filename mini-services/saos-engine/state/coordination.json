@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T10:32:50.912Z",
+  "at": "2026-10-07T10:37:28.877Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -123,26 +123,26 @@
       {
         "name": "headcorner",
         "sp": 6.49,
-        "vpEff": 28.4,
-        "rcPct": 33.4,
-        "verdict": "VP-REST",
-        "weightPct": 0,
+        "vpEff": 33.9,
+        "rcPct": 33.5,
+        "verdict": "REDUCED",
+        "weightPct": 50,
         "lowRc": false,
         "rcGate": null,
         "steem": 0.471,
-        "lastVote": "2026-10-06T20:35:18"
+        "lastVote": "2026-10-07T10:36:48"
       },
       {
         "name": "cashmachine",
         "sp": 0.01,
-        "vpEff": 99,
-        "rcPct": 99.7,
+        "vpEff": 99.5,
+        "rcPct": 99.9,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
         "steem": 0.01,
-        "lastVote": "2026-10-06T20:10:03"
+        "lastVote": "2026-10-07T10:37:06"
       },
       {
         "name": "haran",
@@ -159,14 +159,14 @@
       {
         "name": "israelnews",
         "sp": 0,
-        "vpEff": 98,
-        "rcPct": 98.3,
+        "vpEff": 97.2,
+        "rcPct": 98.4,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
         "steem": 0.012,
-        "lastVote": "2026-10-07T10:23:45"
+        "lastVote": "2026-10-07T10:37:27"
       },
       {
         "name": "lsa",
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T10:32:58.608Z"
+    "at": "2026-10-07T10:37:36.016Z"
   },
   "engagement": {
     "ok": true,
@@ -354,7 +354,7 @@
         "author": "headcorner",
         "permlink": "the-weave-measured-market-brief-2026-10-07-muxj1ir6",
         "title": "THE WEAVE · תדריך-שוק מדוד — Measured Market Brief (2026-10-07)",
-        "ageH": 7,
+        "ageH": 8,
         "fleetVotes": [],
         "fleetRepliers": [
           "headcorner"
@@ -490,11 +490,13 @@
         "author": "haran",
         "permlink": "optimizing-your-steem-workflow-tools-for-content-creators-20261006-0",
         "title": "Optimizing Your Steem Workflow: Tools for Content Creators",
-        "ageH": 12,
+        "ageH": 13,
         "fleetVotes": [],
-        "fleetRepliers": [],
-        "threads": 0,
-        "coveragePct": 0,
+        "fleetRepliers": [
+          "tov"
+        ],
+        "threads": 1,
+        "coveragePct": 7,
         "missing": [
           "headcorner",
           "cashmachine",
@@ -503,7 +505,6 @@
           "lsa",
           "macrame",
           "siq",
-          "tov",
           "wic",
           "wog",
           "woq",
@@ -626,9 +627,9 @@
     ],
     "summary": {
       "posts": 12,
-      "avgCoveragePct": 2.9,
+      "avgCoveragePct": 3.5,
       "fullyCovered": 0,
-      "openThreads": 3
+      "openThreads": 4
     }
   },
   "assignments": {
@@ -920,13 +921,13 @@
         "author": "headcorner",
         "permlink": "streamlining-your-steem-workflow-tools-for-efficiency-2026-10-07",
         "layer1Count": 1,
-        "layer2Count": 0,
+        "layer2Count": 1,
         "fleetRepliers": 1,
         "authorResponded": true,
         "firstFleetReplyH": null,
-        "depth": 2,
-        "developed": false,
-        "score": 3.1
+        "depth": 3,
+        "developed": true,
+        "score": 4.1
       },
       {
         "author": "headcorner",
@@ -1003,25 +1004,25 @@
       {
         "author": "haran",
         "permlink": "optimizing-your-steem-workflow-tools-for-content-creators-20261006-0",
-        "layer1Count": 0,
+        "layer1Count": 1,
         "layer2Count": 0,
-        "fleetRepliers": 0,
+        "fleetRepliers": 1,
         "authorResponded": false,
         "firstFleetReplyH": null,
         "depth": 1,
         "developed": false,
-        "score": 0
+        "score": 1.1
       }
     ],
     "summary": {
       "postsMeasured": 8,
-      "developed": 0,
-      "avgDepth": 1.4,
-      "avgLayer2": 0,
+      "developed": 1,
+      "avgDepth": 1.5,
+      "avgLayer2": 0.1,
       "authorResponseRate": 38,
-      "avgScore": 1.2
+      "avgScore": 1.4
     },
-    "at": "2026-10-07T10:32:50.912Z"
+    "at": "2026-10-07T10:37:28.877Z"
   },
   "compliance": {
     "protocol": "saos.fleet.compliance.v1",
@@ -1309,73 +1310,73 @@
       "acc": "headcorner",
       "kind": "post",
       "at": "10:48",
-      "inMin": 15
+      "inMin": 11
     },
     {
       "acc": "headcorner",
       "kind": "vote1",
       "at": "11:26",
-      "inMin": 53
+      "inMin": 49
     },
     {
       "acc": "wic",
       "kind": "post",
       "at": "12:14",
-      "inMin": 101
+      "inMin": 97
     },
     {
       "acc": "wog",
       "kind": "vote1",
       "at": "12:34",
-      "inMin": 121
+      "inMin": 117
     },
     {
       "acc": "israelnews",
       "kind": "vote2",
       "at": "12:54",
-      "inMin": 141
+      "inMin": 137
     },
     {
       "acc": "israelnews",
       "kind": "engage",
       "at": "13:14",
-      "inMin": 161
+      "inMin": 157
     },
     {
       "acc": "hcsoldier1",
       "kind": "vote1",
       "at": "13:34",
-      "inMin": 181
+      "inMin": 177
     },
     {
       "acc": "haran",
       "kind": "engage",
       "at": "13:58",
-      "inMin": 205
+      "inMin": 201
     },
     {
       "acc": "hcsoldier2",
       "kind": "vote1",
       "at": "14:26",
-      "inMin": 233
+      "inMin": 229
     },
     {
       "acc": "haran",
       "kind": "vote2",
       "at": "14:54",
-      "inMin": 261
+      "inMin": 257
     },
     {
       "acc": "siq",
       "kind": "engage",
       "at": "15:14",
-      "inMin": 281
+      "inMin": 277
     },
     {
       "acc": "macrame",
       "kind": "engage",
       "at": "15:34",
-      "inMin": 301
+      "inMin": 297
     }
   ],
   "lastPublish": {
@@ -1393,5 +1394,5 @@
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)",
     "threads": "שיח מתפתח = תגובות-לתגובות + הגב-מחבר — R233 מודד את העומק, לא רק את הכיסוי"
   },
-  "ms": 32631
+  "ms": 33070
 }

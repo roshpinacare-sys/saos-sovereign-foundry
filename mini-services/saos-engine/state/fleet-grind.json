@@ -78,10 +78,10 @@
       "engage": null
     }
   },
-  "at": "2026-10-07T10:32:50.912Z",
-  "verdict": "IDLE-GATES",
-  "votes": 0,
-  "replies": 0,
+  "at": "2026-10-07T10:37:28.877Z",
+  "verdict": "GRIND:V4/R4",
+  "votes": 4,
+  "replies": 4,
   "failed": 0,
   "skipped": 11
 }

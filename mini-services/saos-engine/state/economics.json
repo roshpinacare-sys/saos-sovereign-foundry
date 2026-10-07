@@ -16,7 +16,7 @@
       "id": "curation",
       "label": "קיורציה · מסילת-דלק",
       "measuredUsdPerDay": null,
-      "estUsdPerDay": 0.526444,
+      "estUsdPerDay": 0.526177,
       "confidence": "estimated",
       "note": "~8.91 STEEM/יום — ESTIMATED (payout clock ~7d, first verification T-18c)"
     },
@@ -34,7 +34,7 @@
       "measuredUsdPerDay": null,
       "estUsdPerDay": 0,
       "confidence": "blocked",
-      "note": "HOLD honest (6868bps edge, dust-or-capped) — the rail is armed-in-doctrine, not burning"
+      "note": "HOLD honest (6907bps edge, dust-or-capped) — the rail is armed-in-doctrine, not burning"
     },
     {
       "id": "promo",
@@ -57,13 +57,13 @@
     }
   ],
   "totalMeasuredUsdPerDay": 0,
-  "totalEstUsdPerDay": 0.526444,
+  "totalEstUsdPerDay": 0.526177,
   "measuredCount": 1,
   "estimatedCount": 2,
   "blockedCount": 3,
   "law": "סכום-מדוד וסכום-מוערך לעולם לא מתמזגים — שתי שורות-אמת נפרדות",
-  "parity": 0.09965404460817305,
-  "asof": "2026-10-07T10:32:50.912Z",
+  "parity": 0.09983701459429484,
+  "asof": "2026-10-07T10:37:28.877Z",
   "context": {
     "venueFillsPerDay": 178,
     "venueVolSteem24h": 2696.415,
@@ -85,10 +85,10 @@
     "any": false
   },
   "x2": {
-    "currentUsdPerDay": 0.5264,
+    "currentUsdPerDay": 0.5262,
     "targetUsdPerDay": 1000,
     "currentSp": 975,
-    "factor": 1899.6,
+    "factor": 1900.6,
     "rows": [
       {
         "mult": 1,
@@ -105,23 +105,23 @@
       {
         "mult": 40,
         "sp": 38991,
-        "usdPerDay": 21.06,
+        "usdPerDay": 21.05,
         "reachesTarget": false
       },
       {
         "mult": 100,
         "sp": 97477,
-        "usdPerDay": 52.64,
+        "usdPerDay": 52.62,
         "reachesTarget": false
       },
       {
-        "mult": 1900,
-        "sp": 1852068,
-        "usdPerDay": 1000.24,
+        "mult": 1901,
+        "sp": 1853043,
+        "usdPerDay": 1000.26,
         "reachesTarget": true
       }
     ],
     "law": "הקיורציה גדלה ∝ חלק-ה-SP מבריכת-התגמולים; תקרת-העסקאות ∝ RC ∝ SP — ההון מכפיל את המדידה, הקוד נשאר"
   },
-  "pid": 26838
+  "pid": 32504
 }

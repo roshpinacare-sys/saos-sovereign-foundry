@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-07T10:32:50.912Z",
+  "at": "2026-10-07T10:37:28.877Z",
   "decisions": [
     {
       "kind": "book-depth",
@@ -10,16 +10,16 @@
         "bestAsk": 0.10361620557455185,
         "bestBid": 0.10120023478454471
       },
-      "at": "2026-10-07T10:32:50.912Z"
+      "at": "2026-10-07T10:37:28.877Z"
     },
     {
       "kind": "parity-drift",
       "decision": "monitor",
-      "reason": "internal feed deviates -427bps from external parity",
+      "reason": "internal feed deviates -409bps from external parity",
       "action": {
-        "bps": -427
+        "bps": -409
       },
-      "at": "2026-10-07T10:32:50.912Z"
+      "at": "2026-10-07T10:37:28.877Z"
     },
     {
       "kind": "soldiers",
@@ -28,27 +28,27 @@
       "action": {
         "deployed": true
       },
-      "at": "2026-10-07T10:32:50.912Z"
+      "at": "2026-10-07T10:37:28.877Z"
     },
     {
       "kind": "rc-health",
       "decision": "healthy",
-      "reason": "RC at 33.4%",
+      "reason": "RC at 33.5%",
       "action": {
-        "rcPct": 33.4
+        "rcPct": 33.5
       },
-      "at": "2026-10-07T10:32:50.912Z"
+      "at": "2026-10-07T10:37:28.877Z"
     },
     {
       "kind": "curation",
       "decision": "curator-armed",
-      "reason": "rail armed, verdict VP-FLOOR today (VP 8.6%) — gates hold until candidates pass",
+      "reason": "rail armed, verdict VP-FLOOR today (VP 10.3%) — gates hold until candidates pass",
       "action": {
         "votesToday": 0,
-        "vpEff": 8.6,
+        "vpEff": 10.3,
         "verdict": "VP-FLOOR"
       },
-      "at": "2026-10-07T10:32:50.912Z"
+      "at": "2026-10-07T10:37:28.877Z"
     }
   ],
   "spreadBpsRec": 236,
