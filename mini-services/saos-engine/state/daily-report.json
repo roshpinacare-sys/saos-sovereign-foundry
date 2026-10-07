@@ -1,15 +1,15 @@
 {
-  "startedAt": "2026-10-07T08:45:46.632Z",
+  "startedAt": "2026-10-07T08:55:46.633Z",
   "account": "headcorner",
   "steps": {
     "observe": {
       "name": "observe",
       "ok": true,
-      "ms": 3796,
+      "ms": 2029,
       "account": "headcorner",
       "parity": {
-        "steemUsd": 0.05926,
-        "sbdUsd": 0.5692824946642682,
+        "steemUsd": 0.0591,
+        "sbdUsd": 0.5677454511417186,
         "parity": 0.10409594631036095,
         "source": "internal-feed-fallback+derived-sbd",
         "lowConfidence": true
@@ -20,12 +20,12 @@
         "reason": "band-ok",
         "bps": 0
       },
-      "steemUsd": 0.05926,
-      "sbdUsd": 0.5692824946642682,
+      "steemUsd": 0.0591,
+      "sbdUsd": 0.5677454511417186,
       "inventory": {
         "steem": 1.871,
         "sbd": 0.024,
-        "spOwn": 974.767564951174,
+        "spOwn": 974.7680273878138,
         "rcPct": 32.5
       },
       "ordersOk": true,
@@ -94,7 +94,7 @@
         "authorVestsPerDay": 0,
         "curationOps": 0,
         "authorOps": 0,
-        "windowSpanDays": 0.17,
+        "windowSpanDays": 0.19,
         "windowOps": 101,
         "measured": true,
         "fuelUsdPerDay": 0,
@@ -108,7 +108,7 @@
     "intel": {
       "name": "intel",
       "ok": true,
-      "ms": 1377,
+      "ms": 1443,
       "verdict": "DECISIONS:4",
       "decisions": [
         "book-depth:hold-shape",
@@ -116,18 +116,18 @@
         "rc-health:healthy",
         "curation:curator-armed"
       ],
-      "spreadBpsRec": 335,
+      "spreadBpsRec": 357,
       "book": {
         "bestAsk": 0.1036376826614157,
-        "bestBid": 0.100227,
-        "spreadBps": 335
+        "bestBid": 0.100002,
+        "spreadBps": 357
       }
     },
     "tick": {
       "name": "tick",
       "ok": true,
-      "ms": 1,
-      "runCount": 368,
+      "ms": 0,
+      "runCount": 369,
       "simFills": 48,
       "simFeesMu": 24000,
       "events": 3
@@ -135,7 +135,7 @@
     "peg": {
       "name": "peg",
       "ok": true,
-      "ms": 693,
+      "ms": 997,
       "verdict": "OFFER-EMPTY",
       "asks": 0,
       "bids": 0,
@@ -145,10 +145,10 @@
       "skew": 0.234175,
       "book": {
         "bestAsk": 0.1036376826614157,
-        "bestBid": 0.100227,
+        "bestBid": 0.100002,
         "askDepthSteem": 532.091,
-        "bidDepthSbd": 2830.645,
-        "at": "2026-10-07T08:45:46.632Z"
+        "bidDepthSbd": 2850.312,
+        "at": "2026-10-07T08:55:46.633Z"
       },
       "market": {
         "tradesPerDay": 669,
@@ -168,15 +168,15 @@
       "ms": 0,
       "verdict": "CONVERT-HOLD",
       "amountSbd": 0,
-      "edgeBps": 7566,
-      "marketSbdUsd": 0.569282,
-      "impliedSbdUsd": 0.569282,
+      "edgeBps": 7614,
+      "marketSbdUsd": 0.567745,
+      "impliedSbdUsd": 0.567745,
       "marketSourceNote": "external-measured"
     },
     "curate": {
       "name": "curate",
       "ok": true,
-      "ms": 1734,
+      "ms": 675,
       "verdict": "VP-FLOOR",
       "votes": 0,
       "txid": null,
@@ -202,13 +202,13 @@
     "learn": {
       "name": "learn",
       "ok": true,
-      "ms": 1040,
+      "ms": 6,
       "verdict": "LEARNED",
       "lessons": [
         "unclassified-fail-legacy"
       ],
       "tunings": [],
-      "discoveryVerdict": "OPTIONS-FOUND",
+      "discoveryVerdict": "FRESH-CACHED",
       "topOpportunities": [
         "spread-wide(measured)",
         "tags-realloc(measured)",
@@ -275,7 +275,7 @@
     "coordination": {
       "name": "coordination",
       "ok": true,
-      "ms": 32350,
+      "ms": 32397,
       "verdict": "SCHEDULED:ok·POWER:ok·ENG:ok",
       "accounts": 14,
       "engagement": {
@@ -301,7 +301,7 @@
     "compliance": {
       "name": "compliance",
       "ok": true,
-      "ms": 16454,
+      "ms": 16646,
       "verdict": "QUIET",
       "summary": {
         "accounts": 14,
@@ -313,12 +313,12 @@
         "clusterViolations": 0,
         "verdict": "QUIET"
       },
-      "cadence": "GATED-30MIN"
+      "cadence": "MEASURED"
     },
     "windowExec": {
       "name": "window-exec",
       "ok": true,
-      "ms": 655,
+      "ms": 699,
       "verdict": "WINDOWS-ASSESSED:0",
       "verdicts": [],
       "windows": {},
@@ -356,9 +356,9 @@
     "economics": {
       "name": "economics",
       "ok": true,
-      "ms": 0,
+      "ms": 1,
       "totalMeasuredUsdPerDay": 0,
-      "totalEstUsdPerDay": 0.526602,
+      "totalEstUsdPerDay": 0.52518,
       "rails": 6,
       "measuredCount": 1,
       "estimatedCount": 2,
@@ -375,7 +375,7 @@
     "report": {
       "name": "report",
       "ok": true,
-      "ms": 0,
+      "ms": 1,
       "realizedSbd": 0,
       "positionSteem": 26.192,
       "positionAvgCost": 0.101596,
@@ -404,5 +404,5 @@
     "failedSteps": [],
     "blockedSteps": []
   },
-  "finishedAt": "2026-10-07T08:46:27.305Z"
+  "finishedAt": "2026-10-07T08:56:41.612Z"
 }

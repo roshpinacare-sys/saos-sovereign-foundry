@@ -10,7 +10,7 @@
   },
   "flow": {
     "bestAsk": 0.103638,
-    "bestBid": 0.100227,
+    "bestBid": 0.100002,
     "spacingBps": 15,
     "levels": 4,
     "askBudgetSteem": 0.22452,
@@ -21,10 +21,10 @@
   },
   "book": {
     "bestAsk": 0.1036376826614157,
-    "bestBid": 0.100227,
+    "bestBid": 0.100002,
     "askDepthSteem": 532.091,
-    "bidDepthSbd": 2830.645,
-    "at": "2026-10-07T08:45:46.632Z"
+    "bidDepthSbd": 2850.312,
+    "at": "2026-10-07T08:55:46.633Z"
   },
   "market": {
     "at": "2026-10-07T08:25:53.224Z",
@@ -51,10 +51,10 @@
     "source": "internal-feed-fallback+derived-sbd",
     "lowConfidence": true,
     "internalFeed": 0.104096,
-    "dragK": 1.1675,
+    "dragK": 1.1785,
     "floor": 0.104305,
     "ceiling": 0.103887,
-    "spreadBpsFed": 335
+    "spreadBpsFed": 357
   },
   "skew": {
     "skew": 0.234175,
@@ -75,5 +75,5 @@
     "bidBudget": 0,
     "deployCap": 0.6
   },
-  "publishedAt": "2026-10-07T08:45:46.632Z"
+  "publishedAt": "2026-10-07T08:55:46.633Z"
 }

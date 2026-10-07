@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.compliance.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T08:25:46.631Z",
+  "at": "2026-10-07T08:55:46.633Z",
   "scheduleHint": "14 accounts × (post+2vote+engage) · tol 30min",
   "rows": [
     {
@@ -167,7 +167,7 @@
       "clusterViolations": 0,
       "accountsActive": 0,
       "totalActions": 0,
-      "at": "2026-10-07T08:25:46.631Z"
+      "at": "2026-10-07T08:55:46.633Z"
     }
   ],
   "trend": {
@@ -180,5 +180,5 @@
     "prevDay": null
   },
   "note": "ציות = הפעולה בפועל נחתה בתוך חלון-הלו\"ז הדטרמיניסטי (אותו יום, אותו חוק). QUIET = עדיין אין פעילות-היום — לא-ציות ולא-הפרה. R233: history = קו-המגמה יום-מול-יום.",
-  "ms": 16454
+  "ms": 16646
 }
