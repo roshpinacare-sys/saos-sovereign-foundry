@@ -2,6 +2,6 @@
   "beat": "health",
   "ok": false,
   "summary": "services 1/6 alive · down: app,chief-of-staff,external-signer,fleet-cure,key-broker",
-  "ts": "2026-10-07T10:40:57.857Z",
-  "hash": "8155f683e4adf62fa080b0e22ed86a49f3e194a5e2e67738348da4b01b8d4c32"
+  "ts": "2026-10-07T10:55:58.243Z",
+  "hash": "78f95db0266b09fe4fe77bcfc48ce607cc382cdbab23fa3ddcb46c74b31415b1"
 }
