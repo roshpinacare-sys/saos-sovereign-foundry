@@ -13,7 +13,7 @@
       "cadence": "cycle",
       "truthContract": "numbers only from market_history_api reads, labeled measured",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/market.json: 643 trades/24h measured (vol 2001.26 STEEM)",
+      "evidence": "state/market.json: 652 trades/24h measured (vol 2288.73 STEEM)",
       "priorStatus": "active"
     },
     {
@@ -49,7 +49,7 @@
       "cadence": "cycle",
       "truthContract": "edge in bps from measured market vs implied, HOLD verdict honest",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/convert-plan.json: CONVERT-HOLD (edge 6862bps)",
+      "evidence": "state/convert-plan.json: CONVERT-HOLD (edge 7528bps)",
       "priorStatus": "active"
     },
     {
@@ -137,6 +137,6 @@
       "priorStatus": "active"
     }
   ],
-  "at": "2026-10-07T07:05:46.627Z",
+  "at": "2026-10-07T07:15:46.631Z",
   "pid": 5736
 }

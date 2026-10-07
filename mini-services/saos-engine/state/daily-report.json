@@ -1,30 +1,31 @@
 {
-  "startedAt": "2026-10-07T07:05:46.627Z",
+  "startedAt": "2026-10-07T07:15:46.631Z",
   "account": "headcorner",
   "steps": {
     "observe": {
       "name": "observe",
       "ok": true,
-      "ms": 2575,
+      "ms": 2801,
       "account": "headcorner",
       "parity": {
-        "steemUsd": 0.05927,
-        "sbdUsd": 0.593056,
-        "parity": 0.0999399719419414,
-        "source": "coingecko"
+        "steemUsd": 0.05939,
+        "sbdUsd": 0.570528655284032,
+        "parity": 0.10409643661181801,
+        "source": "internal-feed-fallback+derived-sbd",
+        "lowConfidence": true
       },
       "feed": 0.10409643661181801,
       "band": {
         "ok": true,
         "reason": "band-ok",
-        "bps": -399
+        "bps": 0
       },
-      "steemUsd": 0.05927,
-      "sbdUsd": 0.593056,
+      "steemUsd": 0.05939,
+      "sbdUsd": 0.570528655284032,
       "inventory": {
         "steem": 1.871,
         "sbd": 0.024,
-        "spOwn": 974.7629614861429,
+        "spOwn": 974.7634193283519,
         "rcPct": 31
       },
       "ordersOk": true,
@@ -93,7 +94,7 @@
         "authorVestsPerDay": 0,
         "curationOps": 0,
         "authorOps": 0,
-        "windowSpanDays": 0.11,
+        "windowSpanDays": 0.12,
         "windowOps": 101,
         "measured": true,
         "fuelUsdPerDay": 0,
@@ -102,57 +103,56 @@
         "node": "https://api.justyy.com",
         "windowNote": "no reward ops inside the measured window — rails dormant, not a parse failure (deep-scan documented separately)"
       },
-      "summary": "parity 0.0999399719419414 (coingecko) · fills 12 · fuel 0$"
+      "summary": "parity 0.10409643661181801 (internal-feed-fallback+derived-sbd) · fills 12 · fuel 0$"
     },
     "intel": {
       "name": "intel",
       "ok": true,
-      "ms": 1383,
-      "verdict": "DECISIONS:5",
+      "ms": 4269,
+      "verdict": "DECISIONS:4",
       "decisions": [
         "book-depth:hold-shape",
-        "parity-drift:monitor",
         "soldiers:grids-live",
         "rc-health:healthy",
         "curation:curator-armed"
       ],
-      "spreadBpsRec": 244,
+      "spreadBpsRec": 40,
       "book": {
-        "bestAsk": 0.10364842454394693,
-        "bestBid": 0.10114803014211299,
-        "spreadBps": 244
+        "bestAsk": 0.10064,
+        "bestBid": 0.10024057738572574,
+        "spreadBps": 40
       }
     },
     "tick": {
       "name": "tick",
       "ok": true,
       "ms": 0,
-      "runCount": 358,
+      "runCount": 359,
       "simFills": 43,
       "simFeesMu": 21500,
-      "events": 6
+      "events": 3
     },
     "peg": {
       "name": "peg",
       "ok": true,
-      "ms": 744,
+      "ms": 5912,
       "verdict": "OFFER-EMPTY",
       "asks": 0,
       "bids": 0,
       "flowAsks": 0,
       "flowBids": 0,
-      "staleCount": 0,
-      "skew": 0.23175,
+      "staleCount": 1,
+      "skew": 0.234176,
       "book": {
-        "bestAsk": 0.10364842454394693,
-        "bestBid": 0.10114803014211299,
-        "askDepthSteem": 522.642,
-        "bidDepthSbd": 2835.143,
-        "at": "2026-10-07T07:05:46.627Z"
+        "bestAsk": 0.10064,
+        "bestBid": 0.10024057738572574,
+        "askDepthSteem": 542.911,
+        "bidDepthSbd": 2833.485,
+        "at": "2026-10-07T07:15:46.631Z"
       },
       "market": {
-        "tradesPerDay": 643,
-        "spreadBps": 234.67
+        "tradesPerDay": 652,
+        "spreadBps": 39.85
       },
       "liquidity": {
         "deployedAsks": 952.74,
@@ -165,18 +165,18 @@
     "convert": {
       "name": "convert",
       "ok": true,
-      "ms": 0,
+      "ms": 1,
       "verdict": "CONVERT-HOLD",
       "amountSbd": 0,
-      "edgeBps": 6862,
-      "marketSbdUsd": 0.593056,
-      "impliedSbdUsd": 0.569376,
+      "edgeBps": 7528,
+      "marketSbdUsd": 0.570529,
+      "impliedSbdUsd": 0.570529,
       "marketSourceNote": "external-measured"
     },
     "curate": {
       "name": "curate",
       "ok": true,
-      "ms": 722,
+      "ms": 1581,
       "verdict": "VP-FLOOR",
       "votes": 0,
       "txid": null,
@@ -187,7 +187,7 @@
     "execute": {
       "name": "execute",
       "ok": true,
-      "ms": 749,
+      "ms": 2020,
       "verdict": "NO-OPS",
       "ops": 0,
       "opsToday": 4,
@@ -196,20 +196,20 @@
     "soldiers": {
       "name": "soldiers",
       "ok": true,
-      "ms": 1,
+      "ms": 0,
       "verdict": "DISABLED-T80-OPERATOR-STOP"
     },
     "learn": {
       "name": "learn",
       "ok": true,
-      "ms": 885,
+      "ms": 7,
       "verdict": "LEARNED",
       "lessons": [
         "unclassified-fail-legacy",
         "cycle-latency-tail"
       ],
       "tunings": [],
-      "discoveryVerdict": "OPTIONS-FOUND",
+      "discoveryVerdict": "FRESH-CACHED",
       "topOpportunities": [
         "spread-wide(measured)",
         "tags-realloc(measured)",
@@ -247,7 +247,7 @@
     "payouts": {
       "name": "payouts",
       "ok": true,
-      "ms": 1,
+      "ms": 0,
       "verdict": "MEASURED",
       "day": "2026-10-07",
       "pendingVests": 0,
@@ -276,7 +276,7 @@
     "coordination": {
       "name": "coordination",
       "ok": true,
-      "ms": 32341,
+      "ms": 35823,
       "verdict": "SCHEDULED:ok·POWER:ok·ENG:ok",
       "accounts": 14,
       "engagement": {
@@ -319,7 +319,7 @@
     "windowExec": {
       "name": "window-exec",
       "ok": true,
-      "ms": 687,
+      "ms": 697,
       "verdict": "WINDOWS-ASSESSED:0",
       "verdicts": [],
       "windows": {},
@@ -328,7 +328,7 @@
     "publish": {
       "name": "publish",
       "ok": true,
-      "ms": 1,
+      "ms": 0,
       "verdict": "ALL-DONE-TODAY",
       "posted": 0,
       "txids": null,
@@ -357,9 +357,9 @@
     "economics": {
       "name": "economics",
       "ok": true,
-      "ms": 0,
+      "ms": 1,
       "totalMeasuredUsdPerDay": 0,
-      "totalEstUsdPerDay": 0.524077,
+      "totalEstUsdPerDay": 0.525138,
       "rails": 6,
       "measuredCount": 1,
       "estimatedCount": 2,
@@ -405,5 +405,5 @@
     "failedSteps": [],
     "blockedSteps": []
   },
-  "finishedAt": "2026-10-07T07:06:25.999Z"
+  "finishedAt": "2026-10-07T07:16:38.167Z"
 }
