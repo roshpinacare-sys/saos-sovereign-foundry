@@ -1,12 +1,12 @@
 {
-  "at": "2026-10-07T02:44:41.243Z",
+  "at": "2026-10-07T03:04:41.246Z",
   "enabled": true,
-  "runsTotal": 288,
+  "runsTotal": 290,
   "verdict": "LEARNED",
   "metrics": {
     "cycles": {
-      "window": 127,
-      "oks": 125,
+      "window": 129,
+      "oks": 127,
       "fails": 2,
       "blocked": 0,
       "okRate": 98.4,
@@ -15,8 +15,8 @@
         "none": 1,
         "unknown": 1
       },
-      "msP50": 12721,
-      "msP90": 32340
+      "msP50": 12834,
+      "msP90": 33183
     },
     "curator": {
       "present": true,
@@ -33,20 +33,20 @@
       "maxPerDay": 10
     },
     "exec": {
-      "window": 1,
-      "fails": 1,
+      "window": 3,
+      "fails": 3,
       "lastError": "missing required active authority:Missing Active Authority headcorner"
     },
     "watchdog": {
-      "checks": 2775,
+      "checks": 2795,
       "downs": 107,
       "heals": 41,
       "healVerified": 40,
       "healFailed": 0,
-      "lastCheckAt": "2026-10-07T02:44:41.293Z",
+      "lastCheckAt": "2026-10-07T03:04:41.298Z",
       "engineUp": true,
       "lastSpawnAt": "2026-10-07T02:39:46.331Z",
-      "lastUpAt": "2026-10-07T02:44:41.294Z",
+      "lastUpAt": "2026-10-07T03:04:41.300Z",
       "blips": 2
     }
   },
@@ -60,8 +60,8 @@
     },
     {
       "id": "broadcast-fails",
-      "severity": "medium",
-      "evidence": "1/1 broadcasts failed · last: missing required active authority:Missing Active Authority headcorner",
+      "severity": "high",
+      "evidence": "3/3 broadcasts failed · last: missing required active authority:Missing Active Authority headcorner",
       "lesson": "broadcast failures burn RC and delay rails",
       "action": "fail-closed stop already holds; vote-interval retry added T-14"
     }
@@ -70,9 +70,9 @@
   "tuningsApplied": [],
   "lessonsTotal": {
     "cycle-conn-fails": 132,
-    "unclassified-fail-legacy": 142,
+    "unclassified-fail-legacy": 144,
     "signing-cred-blocked": 205,
-    "broadcast-fails": 66
+    "broadcast-fails": 68
   },
   "honesty": "learning reads recorded history only · tunings hard-clamped (LEARN_CLAMP) · doctrine laws untouchable"
 }
