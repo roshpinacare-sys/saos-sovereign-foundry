@@ -49,7 +49,7 @@
       "cadence": "cycle",
       "truthContract": "edge in bps from measured market vs implied, HOLD verdict honest",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/convert-plan.json: CONVERT-HOLD (edge 6900bps)",
+      "evidence": "state/convert-plan.json: CONVERT-HOLD (edge 6956bps)",
       "priorStatus": "active"
     },
     {
@@ -85,7 +85,7 @@
       "cadence": "daily (T-22 standing)",
       "truthContract": "PASS required before any deploy; failures block",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/selftest-last-run.json: 376/376 PASS at 2026-10-07T03:40:17.901Z",
+      "evidence": "state/selftest-last-run.json: 376/376 PASS at 2026-10-07T09:25:46.765Z",
       "priorStatus": "active"
     },
     {
@@ -137,6 +137,6 @@
       "priorStatus": "active"
     }
   ],
-  "at": "2026-10-07T09:15:46.636Z",
+  "at": "2026-10-07T09:25:46.661Z",
   "pid": 5736
 }

@@ -1,6 +1,6 @@
 {
-  "at": "2026-10-07T09:15:46.636Z",
-  "lastFullScanAt": "2026-10-07T09:05:46.633Z",
+  "at": "2026-10-07T09:25:46.661Z",
+  "lastFullScanAt": "2026-10-07T09:25:46.661Z",
   "verdict": "OPTIONS-FOUND",
   "tagBoard": [
     {
@@ -9,15 +9,15 @@
     },
     {
       "tag": "kr",
-      "payoutsSbd": 2919.651
+      "payoutsSbd": 2917.192
     },
     {
       "tag": "hive-150122",
-      "payoutsSbd": 1986.783
+      "payoutsSbd": 1987.429
     },
     {
       "tag": "hive-196917",
-      "payoutsSbd": 1376.991
+      "payoutsSbd": 1377.066
     },
     {
       "tag": "steem",
@@ -25,7 +25,7 @@
     },
     {
       "tag": "hive-166405",
-      "payoutsSbd": 1276.838
+      "payoutsSbd": 1201.795
     },
     {
       "tag": "hive-180932",
@@ -37,7 +37,7 @@
     },
     {
       "tag": "life",
-      "payoutsSbd": 913.89
+      "payoutsSbd": 896.747
     },
     {
       "tag": "hive-183959",
@@ -45,7 +45,7 @@
     },
     {
       "tag": "atomy",
-      "payoutsSbd": 865.937
+      "payoutsSbd": 866.167
     },
     {
       "tag": "hive-183397",
@@ -53,9 +53,9 @@
     }
   ],
   "curationEst": {
-    "dailyPoolSteem": 934636.602,
-    "voteVestsShare": 0.000009517065124438918,
-    "estimatedSteemPerDay": 8.895,
+    "dailyPoolSteem": 934310.53,
+    "voteVestsShare": 0.000009513618474906145,
+    "estimatedSteemPerDay": 8.8887,
     "note": "linear approx over reward-fund window — ESTIMATED class, never claimed as measured"
   },
   "vpEff": 8.6,
@@ -82,8 +82,8 @@
       "id": "curation-share",
       "kind": "curation-yield",
       "potentialClass": "estimated",
-      "evidence": "reward-fund pool 934636.602 STEEM/window · our vests share 0.0010% → ~8.895 STEEM/day",
-      "potential": 8.895,
+      "evidence": "reward-fund pool 934310.53 STEEM/window · our vests share 0.0010% → ~8.8887 STEEM/day",
+      "potential": 8.8887,
       "gate": "measured truth only lands via curation_reward ops (measureAll) — estimator never claims payout",
       "effort": "rail live since T-13"
     },
@@ -98,6 +98,5 @@
     }
   ],
   "learningConsumer": [],
-  "honesty": "ranked options, zero execution · classes: measured>estimated>potential · gates own the decisions",
-  "freshCached": true
+  "honesty": "ranked options, zero execution · classes: measured>estimated>potential · gates own the decisions"
 }
