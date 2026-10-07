@@ -735,3 +735,5 @@
 {"at":"2026-10-07T10:20:54.947Z","kind":"custodian-down","confirmMs":4000}
 {"at":"2026-10-07T10:20:54.947Z","kind":"custodian-heal-attempt","reason":"watchdog"}
 {"at":"2026-10-07T10:20:54.993Z","kind":"custodian-spawn","reason":"watchdog","pid":27613}
+{"at":"2026-10-07T10:20:59.103Z","kind":"custodian-heal-verified","up":true}
+{"at":"2026-10-07T10:24:14.998Z","kind":"cycle-ok(auto)","ms":83509,"engineMeasured":true,"steps":24,"verdict":null,"blockedSteps":[],"error":null}

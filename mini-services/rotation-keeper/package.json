@@ -1,0 +1,9 @@
+{
+  "name": "rotation-keeper",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SAOS rotation-keeper (:3035) — Task ROT-1: מחזיק-הרוטציה הקבועה של ה-foundry. מפעיל את ה-beats הקבועים (health · selftest · drift-report · backup-freshness · git-hygiene), רושם כל ריצה בפנקס-רוטציה משורשר-האש (broadcasts/rotation/ledger.jsonl) וחושף /rotation/status. אפס-מפתחות: הכספת נשארת ב-signer :3033; השירות הזה רק מתזמן, בודק ורושם. kill-switch: SAOS_NO_ROTATION=1.",
+  "scripts": {
+    "dev": "bun --hot index.ts"
+  }
+}

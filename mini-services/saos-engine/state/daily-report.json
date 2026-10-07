@@ -1,11 +1,11 @@
 {
-  "startedAt": "2026-10-07T10:12:50.912Z",
+  "startedAt": "2026-10-07T10:22:50.911Z",
   "account": "headcorner",
   "steps": {
     "observe": {
       "name": "observe",
       "ok": true,
-      "ms": 3088,
+      "ms": 2158,
       "account": "headcorner",
       "parity": {
         "steemUsd": 0.05921,
@@ -25,8 +25,8 @@
       "inventory": {
         "steem": 0.471,
         "sbd": 0.024,
-        "spOwn": 974.771568086732,
-        "rcPct": 33.2
+        "spOwn": 974.7720279497227,
+        "rcPct": 33.4
       },
       "ordersOk": true,
       "orders": [
@@ -108,7 +108,7 @@
     "intel": {
       "name": "intel",
       "ok": true,
-      "ms": 1513,
+      "ms": 1658,
       "verdict": "DECISIONS:4",
       "decisions": [
         "book-depth:hold-shape",
@@ -127,7 +127,7 @@
       "name": "tick",
       "ok": true,
       "ms": 1,
-      "runCount": 376,
+      "runCount": 377,
       "simFills": 54,
       "simFeesMu": 27000,
       "events": 3
@@ -135,7 +135,7 @@
     "peg": {
       "name": "peg",
       "ok": true,
-      "ms": 1757,
+      "ms": 786,
       "verdict": "OFFER-EMPTY",
       "asks": 0,
       "bids": 0,
@@ -148,7 +148,7 @@
         "bestBid": 0.10120023478454471,
         "askDepthSteem": 1132.342,
         "bidDepthSbd": 2837.349,
-        "at": "2026-10-07T10:12:50.912Z"
+        "at": "2026-10-07T10:22:50.911Z"
       },
       "market": {
         "tradesPerDay": 178,
@@ -176,7 +176,7 @@
     "curate": {
       "name": "curate",
       "ok": true,
-      "ms": 740,
+      "ms": 767,
       "verdict": "VP-FLOOR",
       "votes": 0,
       "txid": null,
@@ -187,7 +187,7 @@
     "execute": {
       "name": "execute",
       "ok": true,
-      "ms": 1420,
+      "ms": 2043,
       "verdict": "NO-OPS",
       "ops": 0,
       "opsToday": 4,
@@ -202,13 +202,13 @@
     "learn": {
       "name": "learn",
       "ok": true,
-      "ms": 854,
+      "ms": 6,
       "verdict": "LEARNED",
       "lessons": [
         "unclassified-fail-legacy"
       ],
       "tunings": [],
-      "discoveryVerdict": "OPTIONS-FOUND",
+      "discoveryVerdict": "FRESH-CACHED",
       "topOpportunities": [
         "spread-wide(measured)",
         "tags-realloc(measured)",
@@ -218,11 +218,11 @@
     "webintel": {
       "name": "webintel",
       "ok": true,
-      "ms": 5448,
-      "verdict": "INTEL-OK",
-      "totalFindings": 20,
-      "failedScans": 0,
-      "lastAt": null
+      "ms": null,
+      "verdict": "CADENCE-GATED",
+      "totalFindings": null,
+      "failedScans": null,
+      "lastAt": "2026-10-07T10:12:50.912Z"
     },
     "content": {
       "name": "content",
@@ -236,7 +236,7 @@
     "rctank": {
       "name": "rctank",
       "ok": true,
-      "ms": 0,
+      "ms": 1,
       "verdict": "MEASURED",
       "maxRc": 1847155626959,
       "opsPerDayEquilibrium": 9654,
@@ -246,7 +246,7 @@
     "payouts": {
       "name": "payouts",
       "ok": true,
-      "ms": 1,
+      "ms": 0,
       "verdict": "MEASURED",
       "day": "2026-10-07",
       "pendingVests": 0,
@@ -275,7 +275,7 @@
     "coordination": {
       "name": "coordination",
       "ok": true,
-      "ms": 57438,
+      "ms": 36011,
       "verdict": "SCHEDULED:ok·POWER:ok·ENG:ok",
       "accounts": 14,
       "engagement": {
@@ -313,14 +313,19 @@
         "clusterViolations": 0,
         "verdict": "QUIET"
       },
-      "cadence": "MEASURED"
+      "cadence": "GATED-30MIN"
     },
     "windowExec": {
       "name": "window-exec",
       "ok": true,
-      "ms": 708,
-      "verdict": "WINDOWS-ASSESSED:1",
+      "ms": 735,
+      "verdict": "WINDOWS-ASSESSED:2",
       "verdicts": [
+        {
+          "kind": "post",
+          "verdict": "POST-DELEGATED-TO-CONTENT-RAIL",
+          "at": "2026-10-07T10:22:50.911Z"
+        },
         {
           "kind": "engage",
           "verdict": "ALREADY-DONE",
@@ -332,6 +337,10 @@
           "at": "2026-10-07T09:35:46.659Z",
           "verdict": "ENGAGED:3",
           "landed": 3
+        },
+        "post": {
+          "at": "2026-10-07T10:22:50.911Z",
+          "verdict": "POST-DELEGATED-TO-CONTENT-RAIL"
         }
       },
       "error": null
@@ -348,10 +357,10 @@
     "grind": {
       "name": "grind",
       "ok": true,
-      "ms": 2,
-      "verdict": "IDLE-GATES",
-      "votes": 0,
-      "replies": 0,
+      "ms": 40096,
+      "verdict": "GRIND:V4/R4",
+      "votes": 4,
+      "replies": 4,
       "skipped": 7,
       "fleet": 13,
       "error": null
@@ -361,9 +370,9 @@
       "ok": true,
       "ms": 0,
       "verdict": "CADENCE-GATED",
-      "pass": 384,
+      "pass": 386,
       "fail": 0,
-      "at": "2026-10-07T10:02:29.788Z"
+      "at": "2026-10-07T10:19:11.955Z"
     },
     "economics": {
       "name": "economics",
@@ -416,5 +425,5 @@
     "failedSteps": [],
     "blockedSteps": []
   },
-  "finishedAt": "2026-10-07T10:14:17.162Z"
+  "finishedAt": "2026-10-07T10:24:14.420Z"
 }

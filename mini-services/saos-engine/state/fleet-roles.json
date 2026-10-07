@@ -85,7 +85,7 @@
       "cadence": "daily (T-22 standing)",
       "truthContract": "PASS required before any deploy; failures block",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/selftest-last-run.json: 384/384 PASS at 2026-10-07T10:02:29.788Z",
+      "evidence": "state/selftest-last-run.json: 386/386 PASS at 2026-10-07T10:19:11.955Z",
       "priorStatus": "active"
     },
     {
@@ -137,6 +137,6 @@
       "priorStatus": "active"
     }
   ],
-  "at": "2026-10-07T10:12:50.912Z",
-  "pid": 22901
+  "at": "2026-10-07T10:22:50.911Z",
+  "pid": 26838
 }

@@ -5,6 +5,10 @@
       "at": "2026-10-07T09:35:46.659Z",
       "verdict": "ENGAGED:3",
       "landed": 3
+    },
+    "post": {
+      "at": "2026-10-07T10:22:50.911Z",
+      "verdict": "POST-DELEGATED-TO-CONTENT-RAIL"
     }
   },
   "actions": [
@@ -33,7 +37,7 @@
       "at": "2026-10-07T09:35:46.659Z"
     }
   ],
-  "at": "2026-10-07T10:12:50.912Z",
-  "minute": 612,
-  "rcPct": 33.2
+  "at": "2026-10-07T10:22:50.911Z",
+  "minute": 622,
+  "rcPct": 33.4
 }

@@ -2,34 +2,86 @@
   "day": "2026-10-07",
   "accounts": {
     "lsa": {
-      "vote": null,
-      "engage": null
+      "vote": {
+        "target": "amala/steem-analysis-2026-10-07",
+        "weightPct": 100,
+        "verdict": "VOTED",
+        "at": "2026-10-07T10:22:50.911Z",
+        "txid": "8fa363be8df7f30e272679ecd4def546624d3965",
+        "catchup": true
+      },
+      "engage": {
+        "target": "nodex/daily-sbd-steem-report-10-07-26-tglicher-sbd-steem-bericht-071026-en-de",
+        "verdict": "REPLIED",
+        "at": "2026-10-07T10:22:50.911Z",
+        "txid": "77e8e0f15152373ed3d7995cd6b4242257cabd44",
+        "catchup": true
+      }
     },
     "woq": {
-      "vote": null,
-      "engage": null
+      "vote": {
+        "target": "amala/steem-analysis-2026-10-07",
+        "weightPct": 100,
+        "verdict": "VOTED",
+        "at": "2026-10-07T10:22:50.911Z",
+        "txid": "69770f5e7d4c3ba268818a67dfbf89aaf3c30b09",
+        "catchup": true
+      },
+      "engage": {
+        "target": "nodex/daily-sbd-steem-report-10-07-26-tglicher-sbd-steem-bericht-071026-en-de",
+        "verdict": "REPLIED",
+        "at": "2026-10-07T10:22:50.911Z",
+        "txid": "a3e7a0155c96429e34b1dd8e60915f21f34b58f9",
+        "catchup": true
+      }
     },
     "israelnews": {
-      "vote": null,
-      "engage": null
+      "vote": {
+        "target": "amala/steem-analysis-2026-10-07",
+        "weightPct": 100,
+        "verdict": "VOTED",
+        "at": "2026-10-07T10:22:50.911Z",
+        "txid": "c163f6f56f8f2597307ba18eb4240833625b4c84",
+        "catchup": true
+      },
+      "engage": {
+        "target": "nodex/daily-sbd-steem-report-10-07-26-tglicher-sbd-steem-bericht-071026-en-de",
+        "verdict": "REPLIED",
+        "at": "2026-10-07T10:22:50.911Z",
+        "txid": "d3385689dc9f22190c72bbbbf2a2d9b667980891",
+        "catchup": true
+      }
     },
     "hcsoldier4": {
       "vote": null,
       "engage": null
     },
     "wic": {
-      "vote": null,
-      "engage": null
+      "vote": {
+        "target": "amala/steem-analysis-2026-10-07",
+        "weightPct": 100,
+        "verdict": "VOTED",
+        "at": "2026-10-07T10:22:50.911Z",
+        "txid": "f0f8d762c8cbc5d73c8775fd95db1b2b26991d25",
+        "catchup": true
+      },
+      "engage": {
+        "target": "nodex/daily-sbd-steem-report-10-07-26-tglicher-sbd-steem-bericht-071026-en-de",
+        "verdict": "REPLIED",
+        "at": "2026-10-07T10:22:50.911Z",
+        "txid": "031da73f29c69c736f0fbf51e465363bf7f51ba2",
+        "catchup": true
+      }
     },
     "hcsoldier5": {
       "vote": null,
       "engage": null
     }
   },
-  "at": "2026-10-07T10:12:50.912Z",
-  "verdict": "IDLE-GATES",
-  "votes": 0,
-  "replies": 0,
+  "at": "2026-10-07T10:22:50.911Z",
+  "verdict": "GRIND:V4/R4",
+  "votes": 4,
+  "replies": 4,
   "failed": 0,
   "skipped": 7
 }
