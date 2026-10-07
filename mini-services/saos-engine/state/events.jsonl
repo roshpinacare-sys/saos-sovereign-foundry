@@ -5924,3 +5924,11 @@
 {"type":"offer.published","at":"2026-10-07T08:35:46.631Z","verdict":"OFFER-EMPTY","asks":0,"bids":0,"flowAsks":0,"flowBids":0,"bestAsk":0.10363391655450875,"bestBid":0.10068901618033724}
 {"type":"convert.planned","at":"2026-10-07T08:35:46.631Z","verdict":"CONVERT-HOLD","edgeBps":6842,"amountSbd":0}
 {"type":"learn.done","at":"2026-10-07T08:35:46.631Z","verdict":"LEARNED","lessons":["unclassified-fail-legacy"],"tunings":[]}
+{"type":"observe.done","at":"2026-10-07T08:45:46.632Z","fills":12,"parity":0.10409594631036095}
+{"type":"grid.tick","at":"2026-10-07T08:45:46.632Z","runCount":367,"refPrice":0.10409594631036095,"internalFeed":0.10409594631036095,"dragK":1,"inv":{"steem":1.871,"sbd":0.024}}
+{"type":"sweep.scan","at":"2026-10-07T08:45:46.632Z","grid":"sweep","dustSteem":0.871}
+{"type":"anchor.quote","at":"2026-10-07T08:45:46.632Z","grid":"anchor-quote","bid":0.10388775441774023,"ask":0.10430413820298168}
+{"type":"offer.published","at":"2026-10-07T08:45:46.632Z","verdict":"OFFER-EMPTY","asks":0,"bids":0,"flowAsks":0,"flowBids":0,"bestAsk":0.1036376826614157,"bestBid":0.100227}
+{"type":"convert.planned","at":"2026-10-07T08:45:46.632Z","verdict":"CONVERT-HOLD","edgeBps":7566,"amountSbd":0}
+{"type":"learn.done","at":"2026-10-07T08:45:46.632Z","verdict":"LEARNED","lessons":["unclassified-fail-legacy"],"tunings":[]}
+{"type":"discover.done","at":"2026-10-07T08:45:46.632Z","verdict":"OPTIONS-FOUND","tags":12,"opportunities":["spread-wide","tags-realloc","curation-share","fleet-growth"]}

@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T08:35:46.631Z",
+  "at": "2026-10-07T08:45:46.632Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -124,7 +124,7 @@
         "name": "headcorner",
         "sp": 6.49,
         "vpEff": 28.4,
-        "rcPct": 32,
+        "rcPct": 32.5,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T08:35:53.064Z"
+    "at": "2026-10-07T08:45:57.069Z"
   },
   "engagement": {
     "ok": true,
@@ -352,7 +352,7 @@
         "author": "headcorner",
         "permlink": "the-weave-measured-market-brief-2026-10-07-muxj1ir6",
         "title": "THE WEAVE · תדריך-שוק מדוד — Measured Market Brief (2026-10-07)",
-        "ageH": 5,
+        "ageH": 6,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -406,7 +406,7 @@
         "author": "headcorner",
         "permlink": "saos-daily-20261007",
         "title": "SAOS Mission Daily — 2026-10-07",
-        "ageH": 7,
+        "ageH": 8,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -569,7 +569,7 @@
         "author": "siq",
         "permlink": "streamlining-your-steem-workflow-tools-for-efficiency-20261006-0",
         "title": "Streamlining Your Steem Workflow: Tools for Efficiency",
-        "ageH": 11,
+        "ageH": 12,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -596,7 +596,7 @@
         "author": "woq",
         "permlink": "how-do-you-evaluate-content-value-on-steem-20261006-0",
         "title": "How Do You Evaluate Content Value on Steem?",
-        "ageH": 12,
+        "ageH": 13,
         "fleetVotes": [
           "siq"
         ],
@@ -1018,7 +1018,7 @@
       "authorResponseRate": 0,
       "avgScore": 0
     },
-    "at": "2026-10-07T08:35:46.631Z"
+    "at": "2026-10-07T08:45:46.632Z"
   },
   "compliance": {
     "protocol": "saos.fleet.compliance.v1",
@@ -1296,73 +1296,73 @@
       "acc": "wic",
       "kind": "vote1",
       "at": "08:54",
-      "inMin": 18
+      "inMin": 8
     },
     {
       "acc": "tov",
       "kind": "vote2",
       "at": "09:17",
-      "inMin": 41
+      "inMin": 31
     },
     {
       "acc": "headcorner",
       "kind": "engage",
       "at": "09:59",
-      "inMin": 83
+      "inMin": 73
     },
     {
       "acc": "lsa",
       "kind": "vote2",
       "at": "10:28",
-      "inMin": 112
+      "inMin": 102
     },
     {
       "acc": "headcorner",
       "kind": "post",
       "at": "10:48",
-      "inMin": 132
+      "inMin": 122
     },
     {
       "acc": "headcorner",
       "kind": "vote1",
       "at": "11:26",
-      "inMin": 170
+      "inMin": 160
     },
     {
       "acc": "wic",
       "kind": "post",
       "at": "12:14",
-      "inMin": 218
+      "inMin": 208
     },
     {
       "acc": "wog",
       "kind": "vote1",
       "at": "12:34",
-      "inMin": 238
+      "inMin": 228
     },
     {
       "acc": "israelnews",
       "kind": "vote2",
       "at": "12:54",
-      "inMin": 258
+      "inMin": 248
     },
     {
       "acc": "israelnews",
       "kind": "engage",
       "at": "13:14",
-      "inMin": 278
+      "inMin": 268
     },
     {
       "acc": "hcsoldier1",
       "kind": "vote1",
       "at": "13:34",
-      "inMin": 298
+      "inMin": 288
     },
     {
       "acc": "haran",
       "kind": "engage",
       "at": "13:58",
-      "inMin": 322
+      "inMin": 312
     }
   ],
   "lastPublish": {
@@ -1380,5 +1380,5 @@
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)",
     "threads": "שיח מתפתח = תגובות-לתגובות + הגב-מחבר — R233 מודד את העומק, לא רק את הכיסוי"
   },
-  "ms": 30331
+  "ms": 32350
 }
