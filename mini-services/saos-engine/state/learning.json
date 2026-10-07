@@ -1,7 +1,7 @@
 {
-  "at": "2026-10-07T07:15:46.631Z",
+  "at": "2026-10-07T07:25:46.630Z",
   "enabled": true,
-  "runsTotal": 316,
+  "runsTotal": 317,
   "verdict": "LEARNED",
   "metrics": {
     "cycles": {
@@ -15,8 +15,8 @@
         "none": 1,
         "unknown": 1
       },
-      "msP50": 15796,
-      "msP90": 47530
+      "msP50": 17531,
+      "msP90": 47862
     },
     "curator": {
       "present": true,
@@ -38,15 +38,15 @@
       "lastError": null
     },
     "watchdog": {
-      "checks": 3047,
+      "checks": 3057,
       "downs": 111,
       "heals": 45,
       "healVerified": 44,
       "healFailed": 0,
-      "lastCheckAt": "2026-10-07T07:15:46.749Z",
+      "lastCheckAt": "2026-10-07T07:25:46.755Z",
       "engineUp": true,
       "lastSpawnAt": "2026-10-07T03:40:51.694Z",
-      "lastUpAt": "2026-10-07T07:15:46.753Z",
+      "lastUpAt": "2026-10-07T07:25:46.756Z",
       "blips": 2
     }
   },
@@ -57,20 +57,13 @@
       "evidence": "1 fails journaled without a reason class (pre-T-17 era — the sovereign recorded \"fail\" without engine-measured health)",
       "lesson": "unclassified fails poison the failure histogram — a lesson machine that cannot classify cannot fully learn",
       "action": "STRUCTURAL T-17: the marker flow journals engine-measured health+reason for every new fail; legacy history stays as evidence, never back-filled with invented causes"
-    },
-    {
-      "id": "cycle-latency-tail",
-      "severity": "medium",
-      "evidence": "p50 15796ms vs p90 47530ms",
-      "lesson": "cycle duration tail is fat — RPC latency inside steps",
-      "action": "watch: observe/node switch is already fail-isolated; no unsafe tuning"
     }
   ],
   "tunings": {},
   "tuningsApplied": [],
   "lessonsTotal": {
     "cycle-conn-fails": 132,
-    "unclassified-fail-legacy": 170,
+    "unclassified-fail-legacy": 171,
     "signing-cred-blocked": 205,
     "broadcast-fails": 80,
     "cycle-latency-tail": 8

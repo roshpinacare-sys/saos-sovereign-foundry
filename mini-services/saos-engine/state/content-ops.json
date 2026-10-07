@@ -1,9 +1,65 @@
 {
-  "draftedAt": "2026-10-06T19:16:02.717Z",
+  "draftedAt": "2026-10-07T07:25:46.630Z",
   "verdict": "DRAFTS-QUEUED",
   "draftsQueued": 3,
   "exposureBlocked": 0,
   "queue": [
+    {
+      "title": "Understanding Steem's Curation Rewards: How It Works",
+      "body": "Steem's unique curation reward system incentivizes quality content discovery by rewarding users who upvote valuable posts early. Unlike traditional social platforms, Steem's algorithm distributes rewards based on both the post's potential and the curator's voting power. When you upvote a post, your vote contributes to its total reward pool, which is later distributed to both the content creator and all curators who voted. The earlier you vote on quality content, the larger your potential curation rewards. This system creates a self-regulating ecosystem where users are motivated to find and promote high-quality content. Understanding how curation rewards work can help you maximize your impact on the platform and potentially earn more for your contributions. The daily curation rewards across the network demonstrate how this system operates at scale, with thousands of users participating in content evaluation daily.",
+      "tags": [
+        "steem-curation",
+        "blockchain-rewards",
+        "content-creation",
+        "social-media"
+      ],
+      "angle": "educational-explainer",
+      "seoNote": "First paragraph explains Steem's curation rewards independently, uses concrete keywords like 'curation rewards' and 'voting power', and avoids financial promises.",
+      "groundedOn": [
+        "curationEstUsdPerDay",
+        "venueFillsPerDay"
+      ],
+      "id": "d1791357946630-0",
+      "status": "drafted",
+      "draftedAt": "2026-10-07T07:25:46.630Z"
+    },
+    {
+      "title": "How Do You Discover Quality Content on Steem?",
+      "body": "With thousands of posts published daily on Steem, discovering high-quality content can be both rewarding and challenging. What methods do you use to find valuable posts? Some users rely on trending pages, while others follow specific tags or curators whose judgment they trust. The platform's structure allows for various discovery strategies, from browsing niche communities to using third-party analytics tools. What's your approach? Do you prefer manual exploration or utilize any specific tools to filter content? As the Steem ecosystem continues to evolve, effective content discovery remains crucial for both readers and creators. How can we improve the visibility of quality content while reducing noise? Share your thoughts and experiences in the comments below.",
+      "tags": [
+        "content-discovery",
+        "steem-community",
+        "social-media",
+        "blockchain"
+      ],
+      "angle": "open-question",
+      "seoNote": "Title asks a direct question, first paragraph stands alone by introducing the challenge of content discovery, and invites community participation without financial claims.",
+      "groundedOn": [
+        "venueFillsPerDay",
+        "hyperOpsPerDay"
+      ],
+      "id": "d1791357946630-1",
+      "status": "drafted",
+      "draftedAt": "2026-10-07T07:25:46.630Z"
+    },
+    {
+      "title": "Streamlining Your Steem Workflow: Tips for Active Users",
+      "body": "For active Steem users, managing daily interactions efficiently can significantly enhance your experience. Consider organizing your workflow by batching similar tasks—such as content creation, curation, and community engagement—to maintain consistency. Utilizing browser bookmarks for frequently visited tags or communities can save time. Additionally, many third-party tools offer interfaces that complement the native experience, potentially improving navigation and notification management. Setting a regular schedule for platform activities helps maintain visibility and engagement without feeling overwhelmed. Remember that consistent participation often yields better results than sporadic bursts of activity. What tools or strategies have you found helpful for managing your Steem activities? Sharing your workflow tips could benefit other community members looking to optimize their time on the platform.",
+      "tags": [
+        "steem-workflow",
+        "productivity",
+        "social-media",
+        "blockchain-tools"
+      ],
+      "angle": "tooling-or-workflow-tip",
+      "seoNote": "First paragraph introduces the concept of workflow optimization independently, uses concrete terms like 'batching tasks' and 'third-party tools', and focuses on efficiency without financial promises.",
+      "groundedOn": [
+        "hyperOpsPerDay"
+      ],
+      "id": "d1791357946630-2",
+      "status": "drafted",
+      "draftedAt": "2026-10-07T07:25:46.630Z"
+    },
     {
       "title": "Understanding Steem's Consensus: Beyond Proof of Work",
       "body": "Steem operates on a unique consensus mechanism that differs significantly from traditional Proof of Work or Proof of Stake systems. This delegated Proof of Stake (DPoS) model allows token holders to vote for witnesses who validate transactions and maintain the network. Unlike Bitcoin's energy-intensive mining, Steem's approach prioritizes efficiency and scalability. Witnesses are rewarded based on their performance, creating an incentive for reliable network operation. Understanding this consensus is crucial for grasping how Steem maintains security while keeping transaction costs low. The DPoS model also enables faster block times, which benefits content creators and consumers alike. This system has evolved since Steem's inception, with adjustments made to improve decentralization and resistance to censorship. As the blockchain space continues to explore various consensus mechanisms, Steem's DPoS remains an interesting case study in balancing efficiency with decentralization.",
@@ -235,5 +291,5 @@
   ],
   "law": "טיוטה נכתבת רק מקרקעין-מדודות + ממצאים-ממוקדים; חשיפה = נחסמת בטהרת-הנוסח; שידור רק אחרי אימות-חתימה (דוקטרינת-שער)",
   "bridgeError": null,
-  "ms": 8249
+  "ms": 12655
 }
