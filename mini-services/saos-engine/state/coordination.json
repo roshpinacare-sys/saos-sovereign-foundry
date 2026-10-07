@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T08:15:46.631Z",
+  "at": "2026-10-07T08:25:46.631Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T08:15:59.302Z"
+    "at": "2026-10-07T08:26:00.681Z"
   },
   "engagement": {
     "ok": true,
@@ -298,7 +298,7 @@
         "author": "headcorner",
         "permlink": "streamlining-your-steem-workflow-tools-for-efficiency-2026-10-07",
         "title": "Streamlining Your Steem Workflow: Tools for Efficiency",
-        "ageH": 4,
+        "ageH": 5,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -514,7 +514,7 @@
         "author": "israelnews",
         "permlink": "how-effective-is-steem-s-curation-reward-system-20261006-0",
         "title": "How Effective Is Steem's Curation Reward System?",
-        "ageH": 10,
+        "ageH": 11,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -541,7 +541,7 @@
         "author": "cashmachine",
         "permlink": "understanding-steem-s-dual-token-system-steem-vs-sbd-20261006-0",
         "title": "Understanding Steem's Dual-Token System: STEEM vs SBD",
-        "ageH": 10,
+        "ageH": 11,
         "fleetVotes": [
           "haran"
         ],
@@ -1018,7 +1018,7 @@
       "authorResponseRate": 0,
       "avgScore": 0
     },
-    "at": "2026-10-07T08:15:46.631Z"
+    "at": "2026-10-07T08:25:46.631Z"
   },
   "compliance": {
     "protocol": "saos.fleet.compliance.v1",
@@ -1296,73 +1296,73 @@
       "acc": "wic",
       "kind": "vote1",
       "at": "08:54",
-      "inMin": 38
+      "inMin": 28
     },
     {
       "acc": "tov",
       "kind": "vote2",
       "at": "09:17",
-      "inMin": 61
+      "inMin": 51
     },
     {
       "acc": "headcorner",
       "kind": "engage",
       "at": "09:59",
-      "inMin": 103
+      "inMin": 93
     },
     {
       "acc": "lsa",
       "kind": "vote2",
       "at": "10:28",
-      "inMin": 132
+      "inMin": 122
     },
     {
       "acc": "headcorner",
       "kind": "post",
       "at": "10:48",
-      "inMin": 152
+      "inMin": 142
     },
     {
       "acc": "headcorner",
       "kind": "vote1",
       "at": "11:26",
-      "inMin": 190
+      "inMin": 180
     },
     {
       "acc": "wic",
       "kind": "post",
       "at": "12:14",
-      "inMin": 238
+      "inMin": 228
     },
     {
       "acc": "wog",
       "kind": "vote1",
       "at": "12:34",
-      "inMin": 258
+      "inMin": 248
     },
     {
       "acc": "israelnews",
       "kind": "vote2",
       "at": "12:54",
-      "inMin": 278
+      "inMin": 268
     },
     {
       "acc": "israelnews",
       "kind": "engage",
       "at": "13:14",
-      "inMin": 298
+      "inMin": 288
     },
     {
       "acc": "hcsoldier1",
       "kind": "vote1",
       "at": "13:34",
-      "inMin": 318
+      "inMin": 308
     },
     {
       "acc": "haran",
       "kind": "engage",
       "at": "13:58",
-      "inMin": 342
+      "inMin": 332
     }
   ],
   "lastPublish": {
@@ -1380,5 +1380,5 @@
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)",
     "threads": "שיח מתפתח = תגובות-לתגובות + הגב-מחבר — R233 מודד את העומק, לא רק את הכיסוי"
   },
-  "ms": 43207
+  "ms": 32875
 }
