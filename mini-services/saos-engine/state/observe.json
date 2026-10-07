@@ -1,25 +1,24 @@
 {
   "account": "headcorner",
   "parity": {
-    "steemUsd": 0.06184,
-    "sbdUsd": 0.5940643711247828,
-    "parity": 0.10409646328884205,
-    "source": "internal-feed-fallback+derived-sbd",
-    "lowConfidence": true
+    "steemUsd": 0.06163,
+    "sbdUsd": 0.587907,
+    "parity": 0.10482950534693412,
+    "source": "coingecko"
   },
   "feed": 0.10409646328884205,
   "band": {
     "ok": true,
     "reason": "band-ok",
-    "bps": 0
+    "bps": 70
   },
-  "steemUsd": 0.06184,
-  "sbdUsd": 0.5940643711247828,
+  "steemUsd": 0.06163,
+  "sbdUsd": 0.587907,
   "inventory": {
-    "steem": 80.172,
+    "steem": 82.144,
     "sbd": 0.015,
-    "spOwn": 899.8805317511182,
-    "rcPct": 31.3
+    "spOwn": 899.8809200645126,
+    "rcPct": 31.1
   },
   "ordersOk": true,
   "orders": [
@@ -64,28 +63,12 @@
       "created": "2026-10-06T20:27:57"
     },
     {
-      "orderid": 2100002562,
+      "orderid": 2100002728,
       "side": "ask",
       "base": "0.986 STEEM",
       "quote": "0.103 SBD",
       "unit": 0.104462,
-      "created": "2026-10-06T23:57:03"
-    },
-    {
-      "orderid": 2100002720,
-      "side": "ask",
-      "base": "0.986 STEEM",
-      "quote": "0.104 SBD",
-      "unit": 0.105477,
-      "created": "2026-10-06T23:57:09"
-    },
-    {
-      "orderid": 2100002721,
-      "side": "ask",
-      "base": "0.986 STEEM",
-      "quote": "0.105 SBD",
-      "unit": 0.106491,
-      "created": "2026-10-06T23:57:09"
+      "created": "2026-10-07T00:06:03"
     }
   ],
   "fills": 0,
@@ -111,7 +94,7 @@
     "authorVestsPerDay": 0,
     "curationOps": 0,
     "authorOps": 0,
-    "windowSpanDays": 0.14,
+    "windowSpanDays": 0.15,
     "windowOps": 1001,
     "measured": true,
     "fuelUsdPerDay": 0,
@@ -120,5 +103,5 @@
     "node": "https://steemapi.boylikegirl.club",
     "windowNote": "no reward ops inside the measured window — rails dormant, not a parse failure (deep-scan documented separately)"
   },
-  "at": "2026-10-06T23:57:31.221Z"
+  "at": "2026-10-07T00:06:46.220Z"
 }

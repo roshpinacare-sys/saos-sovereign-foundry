@@ -1,119 +1,119 @@
 {
   "protocol": "saos.fleet.coordination.v1",
-  "day": "2026-10-06",
-  "at": "2026-10-06T23:52:03.197Z",
+  "day": "2026-10-07",
+  "at": "2026-10-07T00:06:46.220Z",
   "schedule": {
     "headcorner": {
-      "post": 647,
+      "post": 648,
       "votes": [
-        685,
-        1213
+        686,
+        1214
       ],
-      "engage": 598
+      "engage": 599
     },
     "cashmachine": {
-      "post": 1313,
+      "post": 1314,
       "votes": [
-        155,
-        1133
+        156,
+        1134
       ],
-      "engage": 376
+      "engage": 377
     },
     "haran": {
-      "post": 356,
+      "post": 357,
       "votes": [
-        412,
-        893
+        413,
+        894
       ],
-      "engage": 837
+      "engage": 838
     },
     "israelnews": {
-      "post": 471,
+      "post": 472,
       "votes": [
-        271,
-        773
+        272,
+        774
       ],
-      "engage": 793
+      "engage": 794
     },
     "lsa": {
-      "post": 95,
+      "post": 96,
       "votes": [
-        175,
-        627
+        176,
+        628
       ],
-      "engage": 993
+      "engage": 994
     },
     "macrame": {
-      "post": 432,
+      "post": 433,
       "votes": [
-        491,
-        1033
+        492,
+        1034
       ],
-      "engage": 933
+      "engage": 934
     },
     "siq": {
-      "post": 1153,
+      "post": 1154,
       "votes": [
-        1193,
-        1386
+        1194,
+        1387
       ],
-      "engage": 913
+      "engage": 914
     },
     "tov": {
-      "post": 291,
+      "post": 292,
       "votes": [
-        75,
-        556
+        76,
+        557
       ],
-      "engage": 1366
+      "engage": 1367
     },
     "wic": {
-      "post": 733,
+      "post": 734,
       "votes": [
-        533,
-        1093
+        534,
+        1094
       ],
-      "engage": 1013
+      "engage": 1014
     },
     "wog": {
-      "post": 973,
+      "post": 974,
       "votes": [
-        753,
-        1273
+        754,
+        1274
       ],
-      "engage": 115
+      "engage": 116
     },
     "woq": {
-      "post": 953,
+      "post": 954,
       "votes": [
-        1053,
-        1253
+        1054,
+        1254
       ],
-      "engage": 50
+      "engage": 51
     },
     "hcsoldier1": {
-      "post": 1073,
+      "post": 1074,
       "votes": [
-        813,
-        1293
+        814,
+        1294
       ],
-      "engage": 9
+      "engage": 10
     },
     "hcsoldier2": {
-      "post": 1113,
+      "post": 1114,
       "votes": [
-        865,
-        1346
+        866,
+        1347
       ],
-      "engage": 135
+      "engage": 136
     },
     "hcsoldier3": {
-      "post": 1173,
+      "post": 1174,
       "votes": [
-        1233,
-        1426
+        1234,
+        1427
       ],
-      "engage": 1406
+      "engage": 1407
     }
   },
   "scheduleNote": "UTC minutes-of-day · deterministic from hash(account|kind|i|day) · gap 20min — שני-הכותבים מחשבים את אותו הלו\"ז",
@@ -124,7 +124,7 @@
         "name": "headcorner",
         "sp": 6.37,
         "vpEff": 17.5,
-        "rcPct": 31.4,
+        "rcPct": 31.1,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-06T23:52:09.055Z"
+    "at": "2026-10-07T00:06:59.015Z"
   },
   "engagement": {
     "ok": true,
@@ -325,7 +325,7 @@
         "author": "lsa",
         "permlink": "understanding-blockchain-curation-rewards-20261006-0",
         "title": "Understanding Blockchain Curation Rewards",
-        "ageH": 1,
+        "ageH": 2,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -434,7 +434,7 @@
         "author": "headcorner",
         "permlink": "sbdsteem-spread-widens-to-2519-zero-external-votes-recorded-mux764vw",
         "title": "SBD:STEEM Spread Widens to 2.519%, Zero External Votes Recorded",
-        "ageH": 2,
+        "ageH": 3,
         "fleetVotes": [
           "haran"
         ],
@@ -1024,74 +1024,74 @@
     {
       "acc": "hcsoldier1",
       "kind": "engage",
-      "at": "00:09",
-      "inMin": 17
+      "at": "00:10",
+      "inMin": 3
     },
     {
       "acc": "woq",
       "kind": "engage",
-      "at": "00:50",
-      "inMin": 58
+      "at": "00:51",
+      "inMin": 44
     },
     {
       "acc": "tov",
       "kind": "vote1",
-      "at": "01:15",
-      "inMin": 83
+      "at": "01:16",
+      "inMin": 69
     },
     {
       "acc": "lsa",
       "kind": "post",
-      "at": "01:35",
-      "inMin": 103
+      "at": "01:36",
+      "inMin": 89
     },
     {
       "acc": "wog",
       "kind": "engage",
-      "at": "01:55",
-      "inMin": 123
+      "at": "01:56",
+      "inMin": 109
     },
     {
       "acc": "hcsoldier2",
       "kind": "engage",
-      "at": "02:15",
-      "inMin": 143
+      "at": "02:16",
+      "inMin": 129
     },
     {
       "acc": "cashmachine",
       "kind": "vote1",
-      "at": "02:35",
-      "inMin": 163
+      "at": "02:36",
+      "inMin": 149
     },
     {
       "acc": "lsa",
       "kind": "vote1",
-      "at": "02:55",
-      "inMin": 183
+      "at": "02:56",
+      "inMin": 169
     },
     {
       "acc": "israelnews",
       "kind": "vote1",
-      "at": "04:31",
-      "inMin": 279
+      "at": "04:32",
+      "inMin": 265
     },
     {
       "acc": "tov",
       "kind": "post",
-      "at": "04:51",
-      "inMin": 299
+      "at": "04:52",
+      "inMin": 285
     },
     {
       "acc": "haran",
       "kind": "post",
-      "at": "05:56",
-      "inMin": 364
+      "at": "05:57",
+      "inMin": 350
     },
     {
       "acc": "cashmachine",
       "kind": "engage",
-      "at": "06:16",
-      "inMin": 384
+      "at": "06:17",
+      "inMin": 370
     }
   ],
   "law": {
@@ -1099,13 +1099,13 @@
     "power": "הצבעות לפי מצב-הכוח: משקל מלא ב-VP≥80, הפחתה מתחת, מנוחה מ-30; רצפת RC 20%",
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)"
   },
-  "ms": 19215,
+  "ms": 18708,
   "lastPublish": {
-    "day": "2026-10-06",
-    "at": "2026-10-06T23:52:28.840Z",
+    "day": "2026-10-07",
+    "at": "2026-10-07T00:07:18.454Z",
     "ok": true,
     "verdict": "BROADCAST",
-    "txid": "740ac8ad5a03b57d0f829221cc758a4e6916667e",
+    "txid": "c89b68d3c5f71b78c2eb44134f4e0ac691431186",
     "error": null,
     "bytes": 2132
   }
