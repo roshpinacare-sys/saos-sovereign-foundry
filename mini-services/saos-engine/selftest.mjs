@@ -824,6 +824,21 @@ const r234ids = r234oi({ idBase: 2340000000, slot: 3, seq: 998, count: 5 });
 ok("r234 order-ids-namespace-wrap", r234ids[0] === 2340003998 && r234ids[4] === 2340003002 && new Set(r234ids).size === 5);
 ok("r234 defaults-army-only-10", r234def.accounts.length === 10 && r234def.accounts.every((n) => n.startsWith("hc") === false || n.includes("soldier") === false));
 
+/* ── R235 · gen-2 activation (operator approval "כן אני מאשר תפעיל") ──
+ * custody 3/3 from git vault (chain 4/4 + vault-file cross 4/4) AFTER the
+ * fleet-grid-first precondition was met. Gen-2 is allowlist-scoped like the
+ * army — the same pure helpers must treat it identically. */
+import { GEN2_ACCOUNTS as r235gen2, GEN2_ORDER_TRACE as r235trace, fleetFundPlan as r235fp } from "./fleet-grid.mjs";
+ok("r235 gen2-constants", r235gen2.join(",") === "hcsoldier4,hcsoldier5,hcsoldier6" && r235trace === "1a1141de0f148829");
+ok("r235 gen2-are-existing-accounts-not-new", r235gen2.every((n) => n.startsWith("hcsoldier")));
+const r235conf = { accounts: ["haran", "hcsoldier4", "hcsoldier5", "hcsoldier6"], fundEach: 1.0 };
+ok("r235 gen2-fund still operator-gated", r235fp({ conf: r235conf, allowFleetGridFund: false, allowlist: r235conf.accounts }).verdict === "FUND-OPERATOR-GATED");
+ok("r235 gen2-fund allowlist-scoped (gen-2 not in allowlist = not funded)", r235fp({ conf: r235conf, allowFleetGridFund: true, allowlist: ["haran"], balances: { haran: 0.01, hcsoldier4: 0, hcsoldier5: 0, hcsoldier6: 0 } }).transfers.map((t) => t.name).join(",") === "haran");
+const r235plan = r235fp({ conf: r235conf, allowFleetGridFund: true, allowlist: r235conf.accounts, balances: { haran: 0.01, hcsoldier4: 0, hcsoldier5: 0, hcsoldier6: 0 } });
+ok("r235 gen2-fund plans-all-when-armed", r235plan.transfers.map((t) => t.name).join(",") === "haran,hcsoldier4,hcsoldier5,hcsoldier6" && r235plan.transfers.every((t) => t.amount === 1));
+ok("r235 gen2-idempotent-after-funding", r235fp({ conf: r235conf, allowFleetGridFund: true, allowlist: r235conf.accounts, funded: { hcsoldier4: { txid: "tx" }, hcsoldier5: { txid: "tx" }, hcsoldier6: { txid: "tx" } }, balances: { haran: 0.01, hcsoldier4: 1, hcsoldier5: 1, hcsoldier6: 1 } }).transfers.map((t) => t.name).join(",") === "haran");
+ok("r235 gen2-no-double-fund-history-funded", r235fp({ conf: r235conf, allowFleetGridFund: true, allowlist: r235conf.accounts, balances: { haran: 0.01, hcsoldier4: 0.95, hcsoldier5: 1.0, hcsoldier6: 0 } }).transfers.map((t) => t.name).join(",") === "haran,hcsoldier6");
+
 console.log(`\nSELFTEST ${pass}/${pass + fail} ${fail === 0 ? "PASS" : "FAIL"}`);
 /* T-21 · last-run marker: the recruiter's evidence for the integrity-auditor
  * role — written ONLY on a full run, never by a partial import. */

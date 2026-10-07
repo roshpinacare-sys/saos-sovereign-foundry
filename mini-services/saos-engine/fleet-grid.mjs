@@ -39,6 +39,13 @@ const appendLine = (p, o) => { try { fs.appendFileSync(p, JSON.stringify(o) + "\
 const r6 = (v) => Math.round(v * 1e6) / 1e6;
 
 export const FLEET_GRID_ORDER_TRACE = "1a113f67a0ed4be9";
+/* R235 · gen-2 activation — operator approval (trace 1a1141de0f148829):
+ * "כן אני מאשר תפעיל" — custody re-proven 3/3 from the git vault (chain 4/4 +
+ * vault-file cross 4/4) AFTER the fleet-grid-first precondition was met (the
+ * army already grids, 50 live orders). NO new accounts — hcsoldier4/5/6 exist
+ * on-chain since 2026-10-04 with recovery anchor headcorner. */
+export const GEN2_ORDER_TRACE = "1a1141de0f148829";
+export const GEN2_ACCOUNTS = ["hcsoldier4", "hcsoldier5", "hcsoldier6"];
 
 /* ── conf ─────────────────────────────────────────────────────────────────── */
 export const FLEET_GRID_DEFAULTS = {
@@ -153,13 +160,19 @@ export async function runFleetGridOnce({ fund = true, grid = true, now = new Dat
     });
     st.fundingVerdict = plan.verdict;
     if (plan.ok && plan.transfers.length) {
-      const ops = plan.transfers.map((t) => ["transfer", { from: master, to: t.name, amount: `${t.amount.toFixed(3)} STEEM`, memo: `R234 fleet-grid funding · operator trace ${FLEET_GRID_ORDER_TRACE} (fleet-grid-first: existing accounts before any new ones)` }]);
+      const ops = plan.transfers.map((t) => {
+        const isGen2 = GEN2_ACCOUNTS.includes(t.name);
+        const memo = isGen2
+          ? `R235 gen-2 activation · operator approval trace ${GEN2_ORDER_TRACE} ("כן אני מאשר תפעיל") · custody git-vault 4/4+4/4 · fleet-grid-first precondition met (R234)`
+          : `R234 fleet-grid funding · operator trace ${FLEET_GRID_ORDER_TRACE} (fleet-grid-first: existing accounts before any new ones)`;
+        return ["transfer", { from: master, to: t.name, amount: `${t.amount.toFixed(3)} STEEM`, memo }];
+      });
       const res = await executeAs(master, ops, { tag: "fleet-grid-fund" });
       st.fundingVerdict = res.ok ? "BROADCAST" : `FAIL(${res.error ?? res.verdict})`;
       if (res.ok) {
         st.lastFundTxid = res.txid ?? null;
-        for (const t of plan.transfers) st.funded[t.name] = { txid: res.txid ?? null, amount: t.amount, at: now.toISOString() };
-        appendLine(EVENTS_FILE, { type: "fleet-grid.funded", at: now.toISOString(), txid: res.txid ?? null, accounts: plan.transfers.map((t) => t.name), each: conf.fundEach });
+        for (const t of plan.transfers) st.funded[t.name] = { txid: res.txid ?? null, amount: t.amount, at: now.toISOString(), gen2: GEN2_ACCOUNTS.includes(t.name) };
+        appendLine(EVENTS_FILE, { type: "fleet-grid.funded", at: now.toISOString(), txid: res.txid ?? null, accounts: plan.transfers.map((t) => t.name), each: conf.fundEach, gen2: plan.transfers.filter((t) => GEN2_ACCOUNTS.includes(t.name)).map((t) => t.name), gen2Trace: GEN2_ORDER_TRACE });
       }
       st.lastFundError = res.ok ? null : (res.error ?? res.verdict ?? null);
     }

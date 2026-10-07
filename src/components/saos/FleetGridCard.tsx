@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils'
  * או פסקי-דין מנוע — אפס ערכים מומצאים. Self-fetching, אפס-צימוד לדף.
  */
 
-type FundRec = { txid: string | null; amount: number; at: string }
+type FundRec = { txid: string | null; amount: number; at: string; gen2?: boolean }
 type AccRec = {
   slot?: number; runs?: number; lastVerdict?: string | null; decision?: string | null
   reason?: string | null; live?: number; steem?: number | null; sbd?: number | null
@@ -32,6 +32,7 @@ type FleetGridDoc = {
 }
 
 const ARMY = ['cashmachine', 'haran', 'israelnews', 'lsa', 'macrame', 'siq', 'tov', 'wic', 'wog', 'woq']
+const GEN2 = ['hcsoldier4', 'hcsoldier5', 'hcsoldier6']
 
 function verdictTone(v?: string | null): 'emerald' | 'amber' | 'slate' {
   if (!v) return 'slate'
@@ -58,6 +59,9 @@ export function FleetGridCard() {
   const funded = doc?.funding?.funded ?? {}
   const fundedCount = ARMY.filter((n) => funded[n]).length
   const liveOrders = ARMY.reduce((s, n) => s + (doc?.accounts?.[n]?.live ?? 0), 0)
+  const gen2Funded = GEN2.filter((n) => funded[n]).length
+  const gen2Live = GEN2.reduce((s, n) => s + (doc?.accounts?.[n]?.live ?? 0), 0)
+  const gen2Active = gen2Funded > 0
 
   return (
     <SectionCard
@@ -86,9 +90,13 @@ export function FleetGridCard() {
           <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-300"><Lock className="h-3 w-3 text-red-400" /> דור-1 · hcsoldier1-3</div>
           <p className="mt-1 text-[10px] leading-relaxed text-slate-500">אבודי-מפתח לצמיתות (T-78b) · <span className="text-amber-400">56.001 STEEM + 0.417 SBD תקועים</span> · לא יקבלו כלום</p>
         </div>
-        <div className="rounded-md border border-slate-800 bg-slate-900/40 p-2">
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-300"><Vault className="h-3 w-3 text-emerald-400" /> דור-2 · hcsoldier4-6</div>
-          <p className="mt-1 text-[10px] leading-relaxed text-slate-500">אפוטרופסות-מוכחת בכספת-גיט (12/12) · <span className="text-slate-400">מושהה</span> — יופעל רק אחרי שהצי-הקיים גורד</p>
+        <div className={cn('rounded-md border p-2', gen2Active ? 'border-emerald-500/25 bg-emerald-500/5' : 'border-slate-800 bg-slate-900/40')}>
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-300"><Vault className={cn('h-3 w-3', gen2Active ? 'text-emerald-400' : 'text-emerald-400/60')} /> דור-2 · hcsoldier4-6</div>
+          {gen2Active ? (
+            <p className="mt-1 text-[10px] leading-relaxed text-emerald-400/80">מופעל (R235 · אישור-מפעיל ״כן אני מאשר תפעיל״) · אפוטרופסות 3/3 מהכספת-בגיט (4/4+4/4) · ממומן {gen2Funded}/3 · <span dir="ltr">{gen2Live} הזמנות</span></p>
+          ) : (
+            <p className="mt-1 text-[10px] leading-relaxed text-slate-500">אפוטרופסות-מוכחת בכספת-גיט (12/12) · <span className="text-slate-400">מושהה</span> — יופעל רק אחרי שהצי-הקיים גורד</p>
+          )}
         </div>
         <div className="rounded-md border border-emerald-500/25 bg-emerald-500/5 p-2">
           <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-300"><Grid3X3 className="h-3 w-3" /> הצבא · 10 חשבונות-קיימים</div>
@@ -121,6 +129,27 @@ export function FleetGridCard() {
             </div>
           )
         })}
+        {gen2Active && (
+          <div className="mt-2 border-t border-slate-800 pt-2">
+            <p className="mb-1 text-[10px] font-bold text-emerald-400/90">דור-2 — מופעל (R235) · אימות-משולש: שרשרת 4/4 + קבצי-כספת 4/4 + עוגן-חילוף headcorner</p>
+            {GEN2.map((n) => {
+              const rec = doc?.accounts?.[n]
+              return (
+                <div key={n} className="flex items-center justify-between gap-2 text-xs">
+                  <span className="font-bold text-emerald-200">{n}</span>
+                  <span className="flex items-center gap-2 font-mono text-[10px] text-slate-500">
+                    <span dir="ltr">live {rec?.live ?? 0}</span>
+                    <span dir="ltr">{typeof rec?.steem === 'number' ? `${rec.steem.toFixed(2)} STEEM` : '—'}</span>
+                    <span dir="ltr">{typeof rec?.rcPct === 'number' ? `RC ${rec.rcPct}%` : ''}</span>
+                    <span className={cn(verdictTone(rec?.lastVerdict) === 'emerald' && 'text-emerald-400', verdictTone(rec?.lastVerdict) === 'amber' && 'text-amber-400', verdictTone(rec?.lastVerdict) === 'slate' && 'text-slate-500')}>
+                      {rec?.lastVerdict ?? 'ממתין-לטיק'}
+                    </span>
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       <p className="mt-2 text-[10px] leading-relaxed text-slate-500">

@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T02:14:41.239Z",
+  "at": "2026-10-07T02:24:41.241Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -124,12 +124,12 @@
         "name": "headcorner",
         "sp": 6.46,
         "vpEff": 25.4,
-        "rcPct": 31.8,
+        "rcPct": 31.5,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
         "rcGate": null,
-        "steem": 24.762,
+        "steem": 20.622,
         "lastVote": "2026-10-06T20:35:18"
       },
       {
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T02:14:49.881Z"
+    "at": "2026-10-07T02:24:49.444Z"
   },
   "engagement": {
     "ok": true,
@@ -352,7 +352,7 @@
         "author": "wog",
         "permlink": "what-makes-content-truly-valuable-on-blockchain-20261006-0",
         "title": "What Makes Content Truly Valuable on Blockchain?",
-        "ageH": 3,
+        "ageH": 4,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -1021,7 +1021,7 @@
       "authorResponseRate": 0,
       "avgScore": 0.3
     },
-    "at": "2026-10-07T02:14:41.239Z"
+    "at": "2026-10-07T02:24:41.241Z"
   },
   "compliance": {
     "protocol": "saos.fleet.compliance.v1",
@@ -1313,76 +1313,76 @@
   },
   "nextWindows": [
     {
-      "acc": "hcsoldier2",
-      "kind": "engage",
-      "at": "02:16",
-      "inMin": 1
-    },
-    {
       "acc": "cashmachine",
       "kind": "vote1",
       "at": "02:36",
-      "inMin": 21
+      "inMin": 11
     },
     {
       "acc": "lsa",
       "kind": "vote1",
       "at": "02:56",
-      "inMin": 41
+      "inMin": 31
     },
     {
       "acc": "israelnews",
       "kind": "vote1",
       "at": "04:32",
-      "inMin": 137
+      "inMin": 127
     },
     {
       "acc": "tov",
       "kind": "post",
       "at": "04:52",
-      "inMin": 157
+      "inMin": 147
     },
     {
       "acc": "haran",
       "kind": "post",
       "at": "05:57",
-      "inMin": 222
+      "inMin": 212
     },
     {
       "acc": "cashmachine",
       "kind": "engage",
       "at": "06:17",
-      "inMin": 242
+      "inMin": 232
     },
     {
       "acc": "haran",
       "kind": "vote1",
       "at": "06:53",
-      "inMin": 278
+      "inMin": 268
     },
     {
       "acc": "macrame",
       "kind": "post",
       "at": "07:13",
-      "inMin": 298
+      "inMin": 288
     },
     {
       "acc": "israelnews",
       "kind": "post",
       "at": "07:52",
-      "inMin": 337
+      "inMin": 327
     },
     {
       "acc": "macrame",
       "kind": "vote1",
       "at": "08:12",
-      "inMin": 357
+      "inMin": 347
     },
     {
       "acc": "wic",
       "kind": "vote1",
       "at": "08:54",
-      "inMin": 399
+      "inMin": 389
+    },
+    {
+      "acc": "tov",
+      "kind": "vote2",
+      "at": "09:17",
+      "inMin": 412
     }
   ],
   "lastPublish": {
@@ -1400,5 +1400,5 @@
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)",
     "threads": "שיח מתפתח = תגובות-לתגובות + הגב-מחבר — R233 מודד את העומק, לא רק את הכיסוי"
   },
-  "ms": 31598
+  "ms": 27014
 }
