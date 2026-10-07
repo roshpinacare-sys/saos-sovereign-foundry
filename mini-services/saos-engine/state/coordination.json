@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T00:16:46.241Z",
+  "at": "2026-10-07T00:26:46.238Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -122,14 +122,14 @@
     "accounts": [
       {
         "name": "headcorner",
-        "sp": 6.43,
-        "vpEff": 23.2,
-        "rcPct": 33.2,
+        "sp": 6.45,
+        "vpEff": 24.1,
+        "rcPct": 33.6,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
         "rcGate": null,
-        "steem": 43.186,
+        "steem": 29.749,
         "lastVote": "2026-10-06T20:35:18"
       },
       {
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T00:16:53.783Z"
+    "at": "2026-10-07T00:26:53.068Z"
   },
   "engagement": {
     "ok": true,
@@ -406,7 +406,7 @@
         "author": "israelnews",
         "permlink": "how-effective-is-steem-s-curation-reward-system-20261006-0",
         "title": "How Effective Is Steem's Curation Reward System?",
-        "ageH": 2,
+        "ageH": 3,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -433,7 +433,7 @@
         "author": "cashmachine",
         "permlink": "understanding-steem-s-dual-token-system-steem-vs-sbd-20261006-0",
         "title": "Understanding Steem's Dual-Token System: STEEM vs SBD",
-        "ageH": 2,
+        "ageH": 3,
         "fleetVotes": [
           "haran"
         ],
@@ -917,12 +917,27 @@
   },
   "compliance": {
     "protocol": "saos.fleet.compliance.v1",
-    "day": "2026-10-06",
-    "at": "2026-10-06T23:59:59Z",
+    "day": "2026-10-07",
+    "at": "2026-10-07T00:16:46.241Z",
     "scheduleHint": "14 accounts × (post+2vote+engage) · tol 30min",
     "rows": [
       {
         "acc": "headcorner",
+        "total": 1,
+        "inWindow": 0,
+        "compliancePct": 0,
+        "clusters": 0,
+        "misses": [
+          {
+            "kind": "post",
+            "at": "00:13",
+            "nearest": "10:48"
+          }
+        ],
+        "verdict": "OFF-SCHEDULE"
+      },
+      {
+        "acc": "cashmachine",
         "total": 0,
         "inWindow": 0,
         "compliancePct": null,
@@ -931,299 +946,85 @@
         "verdict": "NO-ACTIVITY"
       },
       {
-        "acc": "cashmachine",
-        "total": 4,
-        "inWindow": 1,
-        "compliancePct": 25,
-        "clusters": 1,
-        "misses": [
-          {
-            "kind": "vote",
-            "at": "20:09",
-            "nearest": "18:53"
-          },
-          {
-            "kind": "vote",
-            "at": "20:10",
-            "nearest": "18:53"
-          },
-          {
-            "kind": "comment",
-            "at": "20:52",
-            "nearest": "06:16"
-          }
-        ],
-        "verdict": "OFF-SCHEDULE"
-      },
-      {
         "acc": "haran",
-        "total": 5,
+        "total": 0,
         "inWindow": 0,
-        "compliancePct": 0,
-        "clusters": 1,
-        "misses": [
-          {
-            "kind": "comment",
-            "at": "20:52",
-            "nearest": "13:57"
-          },
-          {
-            "kind": "comment",
-            "at": "20:52",
-            "nearest": "13:57"
-          },
-          {
-            "kind": "post",
-            "at": "22:05",
-            "nearest": "05:56"
-          },
-          {
-            "kind": "vote",
-            "at": "22:35",
-            "nearest": "14:53"
-          }
-        ],
-        "verdict": "OFF-SCHEDULE"
+        "compliancePct": null,
+        "clusters": 0,
+        "misses": [],
+        "verdict": "NO-ACTIVITY"
       },
       {
         "acc": "israelnews",
-        "total": 6,
+        "total": 0,
         "inWindow": 0,
-        "compliancePct": 0,
-        "clusters": 2,
-        "misses": [
-          {
-            "kind": "vote",
-            "at": "20:10",
-            "nearest": "12:53"
-          },
-          {
-            "kind": "comment",
-            "at": "20:10",
-            "nearest": "13:13"
-          },
-          {
-            "kind": "vote",
-            "at": "20:15",
-            "nearest": "12:53"
-          },
-          {
-            "kind": "comment",
-            "at": "20:52",
-            "nearest": "13:13"
-          }
-        ],
-        "verdict": "OFF-SCHEDULE"
+        "compliancePct": null,
+        "clusters": 0,
+        "misses": [],
+        "verdict": "NO-ACTIVITY"
       },
       {
         "acc": "lsa",
-        "total": 5,
+        "total": 0,
         "inWindow": 0,
-        "compliancePct": 0,
-        "clusters": 2,
-        "misses": [
-          {
-            "kind": "vote",
-            "at": "20:10",
-            "nearest": "02:55"
-          },
-          {
-            "kind": "vote",
-            "at": "20:10",
-            "nearest": "02:55"
-          },
-          {
-            "kind": "comment",
-            "at": "20:53",
-            "nearest": "16:33"
-          },
-          {
-            "kind": "comment",
-            "at": "20:53",
-            "nearest": "16:33"
-          }
-        ],
-        "verdict": "OFF-SCHEDULE"
+        "compliancePct": null,
+        "clusters": 0,
+        "misses": [],
+        "verdict": "NO-ACTIVITY"
       },
       {
         "acc": "macrame",
-        "total": 6,
+        "total": 0,
         "inWindow": 0,
-        "compliancePct": 0,
-        "clusters": 4,
-        "misses": [
-          {
-            "kind": "post",
-            "at": "20:10",
-            "nearest": "07:12"
-          },
-          {
-            "kind": "vote",
-            "at": "20:11",
-            "nearest": "17:13"
-          },
-          {
-            "kind": "vote",
-            "at": "20:11",
-            "nearest": "17:13"
-          },
-          {
-            "kind": "comment",
-            "at": "20:53",
-            "nearest": "15:33"
-          }
-        ],
-        "verdict": "OFF-SCHEDULE"
+        "compliancePct": null,
+        "clusters": 0,
+        "misses": [],
+        "verdict": "NO-ACTIVITY"
       },
       {
         "acc": "siq",
-        "total": 5,
+        "total": 0,
         "inWindow": 0,
-        "compliancePct": 0,
-        "clusters": 2,
-        "misses": [
-          {
-            "kind": "vote",
-            "at": "20:45",
-            "nearest": "19:53"
-          },
-          {
-            "kind": "vote",
-            "at": "20:53",
-            "nearest": "19:53"
-          },
-          {
-            "kind": "comment",
-            "at": "20:53",
-            "nearest": "15:13"
-          },
-          {
-            "kind": "comment",
-            "at": "20:53",
-            "nearest": "15:13"
-          }
-        ],
-        "verdict": "OFF-SCHEDULE"
+        "compliancePct": null,
+        "clusters": 0,
+        "misses": [],
+        "verdict": "NO-ACTIVITY"
       },
       {
         "acc": "tov",
-        "total": 4,
+        "total": 0,
         "inWindow": 0,
-        "compliancePct": 0,
-        "clusters": 2,
-        "misses": [
-          {
-            "kind": "post",
-            "at": "20:11",
-            "nearest": "04:51"
-          },
-          {
-            "kind": "vote",
-            "at": "20:11",
-            "nearest": "01:15"
-          },
-          {
-            "kind": "vote",
-            "at": "20:11",
-            "nearest": "01:15"
-          },
-          {
-            "kind": "comment",
-            "at": "20:53",
-            "nearest": "22:46"
-          }
-        ],
-        "verdict": "OFF-SCHEDULE"
+        "compliancePct": null,
+        "clusters": 0,
+        "misses": [],
+        "verdict": "NO-ACTIVITY"
       },
       {
         "acc": "wic",
-        "total": 6,
+        "total": 0,
         "inWindow": 0,
-        "compliancePct": 0,
-        "clusters": 4,
-        "misses": [
-          {
-            "kind": "post",
-            "at": "20:11",
-            "nearest": "12:13"
-          },
-          {
-            "kind": "vote",
-            "at": "20:11",
-            "nearest": "18:13"
-          },
-          {
-            "kind": "vote",
-            "at": "20:12",
-            "nearest": "18:13"
-          },
-          {
-            "kind": "comment",
-            "at": "20:54",
-            "nearest": "16:53"
-          }
-        ],
-        "verdict": "OFF-SCHEDULE"
+        "compliancePct": null,
+        "clusters": 0,
+        "misses": [],
+        "verdict": "NO-ACTIVITY"
       },
       {
         "acc": "wog",
-        "total": 6,
+        "total": 0,
         "inWindow": 0,
-        "compliancePct": 0,
-        "clusters": 3,
-        "misses": [
-          {
-            "kind": "vote",
-            "at": "20:12",
-            "nearest": "21:13"
-          },
-          {
-            "kind": "comment",
-            "at": "20:12",
-            "nearest": "01:55"
-          },
-          {
-            "kind": "vote",
-            "at": "20:16",
-            "nearest": "21:13"
-          },
-          {
-            "kind": "comment",
-            "at": "20:54",
-            "nearest": "01:55"
-          }
-        ],
-        "verdict": "OFF-SCHEDULE"
+        "compliancePct": null,
+        "clusters": 0,
+        "misses": [],
+        "verdict": "NO-ACTIVITY"
       },
       {
         "acc": "woq",
-        "total": 6,
+        "total": 0,
         "inWindow": 0,
-        "compliancePct": 0,
-        "clusters": 4,
-        "misses": [
-          {
-            "kind": "post",
-            "at": "20:12",
-            "nearest": "15:53"
-          },
-          {
-            "kind": "vote",
-            "at": "20:12",
-            "nearest": "20:53"
-          },
-          {
-            "kind": "vote",
-            "at": "20:12",
-            "nearest": "20:53"
-          },
-          {
-            "kind": "comment",
-            "at": "20:54",
-            "nearest": "00:50"
-          }
-        ],
-        "verdict": "OFF-SCHEDULE"
+        "compliancePct": null,
+        "clusters": 0,
+        "misses": [],
+        "verdict": "NO-ACTIVITY"
       },
       {
         "acc": "hcsoldier1",
@@ -1255,17 +1056,17 @@
     ],
     "summary": {
       "accounts": 14,
-      "accountsActive": 10,
-      "totalActions": 53,
-      "avgCompliancePct": 2.5,
-      "densestBurst": 24,
-      "burstAt": "20:45",
-      "clusterViolations": 25,
+      "accountsActive": 1,
+      "totalActions": 1,
+      "avgCompliancePct": 0,
+      "densestBurst": 1,
+      "burstAt": "00:13",
+      "clusterViolations": 0,
       "verdict": "NOT-ADOPTED"
     },
     "readFails": [],
     "note": "ציות = הפעולה בפועל נחתה בתוך חלון-הלו\"ז הדטרמיניסטי (אותו יום, אותו חוק). QUIET = עדיין אין פעילות-היום — לא-ציות ולא-הפרה.",
-    "ms": 14680
+    "ms": 14886
   },
   "trends": {
     "fetchedAt": "2026-10-06T21:16:09.311Z",
@@ -1376,73 +1177,73 @@
       "acc": "woq",
       "kind": "engage",
       "at": "00:51",
-      "inMin": 34
+      "inMin": 24
     },
     {
       "acc": "tov",
       "kind": "vote1",
       "at": "01:16",
-      "inMin": 59
+      "inMin": 49
     },
     {
       "acc": "lsa",
       "kind": "post",
       "at": "01:36",
-      "inMin": 79
+      "inMin": 69
     },
     {
       "acc": "wog",
       "kind": "engage",
       "at": "01:56",
-      "inMin": 99
+      "inMin": 89
     },
     {
       "acc": "hcsoldier2",
       "kind": "engage",
       "at": "02:16",
-      "inMin": 119
+      "inMin": 109
     },
     {
       "acc": "cashmachine",
       "kind": "vote1",
       "at": "02:36",
-      "inMin": 139
+      "inMin": 129
     },
     {
       "acc": "lsa",
       "kind": "vote1",
       "at": "02:56",
-      "inMin": 159
+      "inMin": 149
     },
     {
       "acc": "israelnews",
       "kind": "vote1",
       "at": "04:32",
-      "inMin": 255
+      "inMin": 245
     },
     {
       "acc": "tov",
       "kind": "post",
       "at": "04:52",
-      "inMin": 275
+      "inMin": 265
     },
     {
       "acc": "haran",
       "kind": "post",
       "at": "05:57",
-      "inMin": 340
+      "inMin": 330
     },
     {
       "acc": "cashmachine",
       "kind": "engage",
       "at": "06:17",
-      "inMin": 360
+      "inMin": 350
     },
     {
       "acc": "haran",
       "kind": "vote1",
       "at": "06:53",
-      "inMin": 396
+      "inMin": 386
     }
   ],
   "lastPublish": {
@@ -1459,5 +1260,5 @@
     "power": "הצבעות לפי מצב-הכוח: משקל מלא ב-VP≥80, הפחתה מתחת, מנוחה מ-30; רצפת RC 20%",
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)"
   },
-  "ms": 19847
+  "ms": 18324
 }
