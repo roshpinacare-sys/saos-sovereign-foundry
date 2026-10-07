@@ -1,6 +1,6 @@
 {
-  "at": "2026-10-07T08:55:46.633Z",
-  "lastFullScanAt": "2026-10-07T08:45:46.632Z",
+  "at": "2026-10-07T09:05:46.633Z",
+  "lastFullScanAt": "2026-10-07T09:05:46.633Z",
   "verdict": "OPTIONS-FOUND",
   "tagBoard": [
     {
@@ -9,11 +9,11 @@
     },
     {
       "tag": "kr",
-      "payoutsSbd": 2919.181
+      "payoutsSbd": 2919.651
     },
     {
       "tag": "hive-150122",
-      "payoutsSbd": 1986.721
+      "payoutsSbd": 1986.783
     },
     {
       "tag": "hive-196917",
@@ -21,7 +21,7 @@
     },
     {
       "tag": "steem",
-      "payoutsSbd": 1349.733
+      "payoutsSbd": 1350.754
     },
     {
       "tag": "hive-166405",
@@ -29,11 +29,11 @@
     },
     {
       "tag": "hive-180932",
-      "payoutsSbd": 991.231
+      "payoutsSbd": 995.641
     },
     {
       "tag": "hive-144064",
-      "payoutsSbd": 983.351
+      "payoutsSbd": 983.542
     },
     {
       "tag": "life",
@@ -41,7 +41,7 @@
     },
     {
       "tag": "hive-183959",
-      "payoutsSbd": 884.994
+      "payoutsSbd": 885.211
     },
     {
       "tag": "atomy",
@@ -53,9 +53,9 @@
     }
   ],
   "curationEst": {
-    "dailyPoolSteem": 934194.926,
-    "voteVestsShare": 0.000009512270239299286,
-    "estimatedSteemPerDay": 8.8863,
+    "dailyPoolSteem": 934636.602,
+    "voteVestsShare": 0.000009517065124438918,
+    "estimatedSteemPerDay": 8.895,
     "note": "linear approx over reward-fund window — ESTIMATED class, never claimed as measured"
   },
   "vpEff": 8.6,
@@ -64,7 +64,7 @@
       "id": "spread-wide",
       "kind": "book-spread",
       "potentialClass": "measured",
-      "evidence": "spread 335bps (bestAsk 0.1036376826614157 / bestBid 0.100227)",
+      "evidence": "spread 357bps (bestAsk 0.1036376826614157 / bestBid 0.100002)",
       "potential": "wide spread = richer maker margins for the ladder",
       "gate": "VF1 floor law: never sell below external value",
       "effort": "dragK already intel-fed"
@@ -82,8 +82,8 @@
       "id": "curation-share",
       "kind": "curation-yield",
       "potentialClass": "estimated",
-      "evidence": "reward-fund pool 934194.926 STEEM/window · our vests share 0.0010% → ~8.8863 STEEM/day",
-      "potential": 8.8863,
+      "evidence": "reward-fund pool 934636.602 STEEM/window · our vests share 0.0010% → ~8.895 STEEM/day",
+      "potential": 8.895,
       "gate": "measured truth only lands via curation_reward ops (measureAll) — estimator never claims payout",
       "effort": "rail live since T-13"
     },
@@ -98,6 +98,5 @@
     }
   ],
   "learningConsumer": [],
-  "honesty": "ranked options, zero execution · classes: measured>estimated>potential · gates own the decisions",
-  "freshCached": true
+  "honesty": "ranked options, zero execution · classes: measured>estimated>potential · gates own the decisions"
 }
