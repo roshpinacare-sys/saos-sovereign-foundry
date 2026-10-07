@@ -1,92 +1,109 @@
 {
   "account": "headcorner",
   "parity": {
-    "steemUsd": 0.05921,
-    "sbdUsd": 0.591354,
-    "parity": 0.10012615117171778,
-    "source": "coingecko"
+    "steemUsd": 0.05923,
+    "sbdUsd": 0.5689915930085747,
+    "parity": 0.1040964413671177,
+    "source": "internal-feed-fallback+derived-sbd",
+    "lowConfidence": true
   },
   "feed": 0.1040964413671177,
   "band": {
     "ok": true,
     "reason": "band-ok",
-    "bps": -381
+    "bps": 0
   },
-  "steemUsd": 0.05921,
-  "sbdUsd": 0.591354,
+  "steemUsd": 0.05923,
+  "sbdUsd": 0.5689915930085747,
   "inventory": {
-    "steem": 391.041,
-    "sbd": 0.605,
-    "spOwn": 974.7546902951685,
-    "rcPct": 29.5
+    "steem": 18.013,
+    "sbd": 0.27,
+    "spOwn": 974.7551478217804,
+    "rcPct": 29.2
   },
   "ordersOk": true,
   "orders": [
     {
       "orderid": 2026100701,
       "side": "ask",
-      "base": "179.238 STEEM",
-      "quote": "18.707 SBD",
-      "unit": 0.10437,
-      "created": "2026-10-07T04:00:24"
+      "base": "185.683 STEEM",
+      "quote": "19.292 SBD",
+      "unit": 0.103898,
+      "created": "2026-10-07T04:10:24"
     },
     {
       "orderid": 2026100702,
       "side": "ask",
-      "base": "179.238 STEEM",
-      "quote": "18.893 SBD",
-      "unit": 0.105407,
-      "created": "2026-10-07T04:00:27"
+      "base": "185.683 STEEM",
+      "quote": "19.484 SBD",
+      "unit": 0.104932,
+      "created": "2026-10-07T04:10:27"
     },
     {
       "orderid": 2026100703,
       "side": "ask",
-      "base": "179.238 STEEM",
-      "quote": "19.079 SBD",
-      "unit": 0.106445,
-      "created": "2026-10-07T04:00:30"
+      "base": "185.683 STEEM",
+      "quote": "19.676 SBD",
+      "unit": 0.105966,
+      "created": "2026-10-07T04:10:30"
+    },
+    {
+      "orderid": 2026100704,
+      "side": "ask",
+      "base": "185.683 STEEM",
+      "quote": "19.867 SBD",
+      "unit": 0.106994,
+      "created": "2026-10-07T04:10:33"
+    },
+    {
+      "orderid": 2026100705,
+      "side": "ask",
+      "base": "185.683 STEEM",
+      "quote": "20.059 SBD",
+      "unit": 0.108028,
+      "created": "2026-10-07T04:10:36"
     },
     {
       "orderid": 2026100795,
       "side": "bid",
-      "base": "1.080 SBD",
-      "quote": "10.743 STEEM",
-      "unit": 9.947222,
-      "created": "2026-10-07T04:01:12"
+      "base": "0.483 SBD",
+      "quote": "4.826 STEEM",
+      "unit": 9.991718,
+      "created": "2026-10-07T04:10:54"
     },
     {
-      "orderid": 2100002890,
+      "orderid": 2100002896,
       "side": "ask",
-      "base": "4.808 STEEM",
-      "quote": "0.501 SBD",
-      "unit": 0.104201,
-      "created": "2026-10-07T04:04:45"
+      "base": "0.500 STEEM",
+      "quote": "0.053 SBD",
+      "unit": 0.106,
+      "created": "2026-10-07T04:15:09"
     },
     {
-      "orderid": 2100002891,
+      "orderid": 2100002897,
       "side": "ask",
-      "base": "4.808 STEEM",
-      "quote": "0.502 SBD",
-      "unit": 0.104409,
-      "created": "2026-10-07T04:04:45"
+      "base": "0.500 STEEM",
+      "quote": "0.054 SBD",
+      "unit": 0.108,
+      "created": "2026-10-07T04:15:09"
     }
   ],
-  "fills": 9,
-  "lastFillAt": "2026-10-07T03:53:15.000Z",
+  "fills": 14,
+  "lastFillAt": "2026-10-07T04:05:54.000Z",
   "pnl": {
-    "fills": 9,
+    "fills": 14,
     "buys": 9,
-    "sells": 0,
-    "boughtSteem": 62.161,
-    "spentSbd": 6.309,
-    "soldSteem": 0,
-    "proceedsSbd": 0,
-    "realizedSbd": 0,
-    "unbasedSteem": 0,
-    "unbasedSbd": 0,
-    "positionSteem": 62.161,
-    "positionCostSbd": 6.309,
-    "positionAvgCost": 0.101495
+    "sells": 5,
+    "boughtSteem": 54.708,
+    "spentSbd": 5.607,
+    "soldSteem": 64.474,
+    "proceedsSbd": 6.558,
+    "realizedSbd": -0.032698,
+    "unbasedSteem": 39.792,
+    "unbasedSbd": 4.05898,
+    "positionSteem": 30.026,
+    "positionCostSbd": 3.075282,
+    "positionAvgCost": 0.102421
   },
   "fuel": {
     "curationVestsPerDay": 0,
@@ -103,5 +120,5 @@
     "node": "https://api.justyy.com",
     "windowNote": "no reward ops inside the measured window — rails dormant, not a parse failure (deep-scan documented separately)"
   },
-  "at": "2026-10-07T04:05:46.618Z"
+  "at": "2026-10-07T04:15:46.618Z"
 }
