@@ -5707,3 +5707,17 @@
 {"type":"offer.published","at":"2026-10-07T05:15:46.623Z","verdict":"OFFER-EMPTY","asks":0,"bids":0,"flowAsks":0,"flowBids":0,"bestAsk":0.10082761404925313,"bestBid":0.1002381467850184}
 {"type":"convert.planned","at":"2026-10-07T05:15:46.623Z","verdict":"CONVERT-HOLD","edgeBps":6996,"amountSbd":0}
 {"type":"learn.done","at":"2026-10-07T05:15:46.623Z","verdict":"LEARNED","lessons":["unclassified-fail-legacy"],"tunings":[]}
+{"type":"fleet-grid.ladder","at":"2026-10-07T05:22:51.779Z","account":"hcsoldier4","ops":4,"txid":"abb3b82bab576620a78e0de4a871c7e067876074","decision":"deploy"}
+{"type":"fleet-grid.ladder","at":"2026-10-07T05:22:51.779Z","account":"hcsoldier5","ops":4,"txid":"02b8cf07514cc69d3405532ecf8fc1449f820418","decision":"deploy"}
+{"type":"fleet-grid.ladder","at":"2026-10-07T05:22:51.779Z","account":"hcsoldier6","ops":4,"txid":"30492a3f8aea212cc30e7f21986a6ccd756f1975","decision":"deploy"}
+{"type":"observe.done","at":"2026-10-07T05:25:46.624Z","fills":12,"parity":0.1011316709089388}
+{"type":"grid.tick","at":"2026-10-07T05:25:46.624Z","runCount":347,"refPrice":0.1011316709089388,"internalFeed":0.10409644015066687,"dragK":1.1424049293826437,"inv":{"steem":1.871,"sbd":0.024}}
+{"type":"grid.fill","at":"2026-10-07T05:25:46.624Z","grid":"mm-grid","side":"ask","unit":0.10124720422830188,"real":false}
+{"type":"arb.signal","at":"2026-10-07T05:25:46.624Z","grid":"micro-arb","gapBps":285,"dir":"buy-external"}
+{"type":"sweep.scan","at":"2026-10-07T05:25:46.624Z","grid":"sweep","dustSteem":0.871}
+{"type":"anchor.quote","at":"2026-10-07T05:25:46.624Z","grid":"anchor-quote","bid":0.10090060427021265,"ask":0.10136273754766496}
+{"type":"fee.spawn","at":"2026-10-07T05:25:46.624Z","mu":500,"to":"R-FEE-SPAWN"}
+{"type":"offer.published","at":"2026-10-07T05:25:46.624Z","verdict":"OFFER-EMPTY","asks":0,"bids":0,"flowAsks":0,"flowBids":0,"bestAsk":0.10354477611940298,"bestBid":0.10133457637080348}
+{"type":"convert.planned","at":"2026-10-07T05:25:46.624Z","verdict":"CONVERT-HOLD","edgeBps":7072,"amountSbd":0}
+{"type":"learn.done","at":"2026-10-07T05:25:46.624Z","verdict":"LEARNED","lessons":["unclassified-fail-legacy"],"tunings":[]}
+{"type":"discover.done","at":"2026-10-07T05:25:46.624Z","verdict":"OPTIONS-FOUND","tags":12,"opportunities":["spread-wide","tags-realloc","curation-share","fleet-growth"]}

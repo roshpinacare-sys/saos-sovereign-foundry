@@ -1,6 +1,6 @@
 {
   "verdict": "OFFER-EMPTY",
-  "parityBps": -328,
+  "parityBps": -285,
   "blocker": null,
   "plan": {
     "asks": [],
@@ -9,8 +9,8 @@
     "flowBids": []
   },
   "flow": {
-    "bestAsk": 0.100828,
-    "bestBid": 0.100238,
+    "bestAsk": 0.103545,
+    "bestBid": 0.101335,
     "spacingBps": 15,
     "levels": 4,
     "askBudgetSteem": 0.22452,
@@ -20,11 +20,11 @@
     "flowBids": 0
   },
   "book": {
-    "bestAsk": 0.10082761404925313,
-    "bestBid": 0.1002381467850184,
-    "askDepthSteem": 540.011,
-    "bidDepthSbd": 2835.357,
-    "at": "2026-10-07T05:15:46.623Z"
+    "bestAsk": 0.10354477611940298,
+    "bestBid": 0.10133457637080348,
+    "askDepthSteem": 532.09,
+    "bidDepthSbd": 2844.308,
+    "at": "2026-10-07T05:25:46.624Z"
   },
   "market": {
     "at": "2026-10-07T05:05:51.310Z",
@@ -47,19 +47,19 @@
     }
   },
   "marks": {
-    "paritySbdPerSteem": 0.100684,
+    "paritySbdPerSteem": 0.101132,
     "source": "coingecko",
     "lowConfidence": false,
     "internalFeed": 0.104096,
-    "dragK": 1.0295,
-    "floor": 0.100886,
-    "ceiling": 0.100482,
-    "spreadBpsFed": 59
+    "dragK": 1.108,
+    "floor": 0.101334,
+    "ceiling": 0.100929,
+    "spreadBpsFed": 216
   },
   "skew": {
-    "skew": 0.232197,
-    "askMult": 1.232197,
-    "bidMult": 0.767803,
+    "skew": 0.232463,
+    "askMult": 1.232463,
+    "bidMult": 0.767537,
     "reason": "hummingbot-inventory-skew"
   },
   "stale": {
@@ -73,5 +73,5 @@
     "bidBudget": 0,
     "deployCap": 0.6
   },
-  "publishedAt": "2026-10-07T05:15:46.623Z"
+  "publishedAt": "2026-10-07T05:25:46.624Z"
 }

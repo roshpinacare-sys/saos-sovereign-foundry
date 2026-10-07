@@ -1,30 +1,30 @@
 {
-  "startedAt": "2026-10-07T05:15:46.623Z",
+  "startedAt": "2026-10-07T05:25:46.624Z",
   "account": "headcorner",
   "steps": {
     "observe": {
       "name": "observe",
       "ok": true,
-      "ms": 2570,
+      "ms": 2729,
       "account": "headcorner",
       "parity": {
         "steemUsd": 0.05924,
-        "sbdUsd": 0.588375,
-        "parity": 0.10068408752921182,
+        "sbdUsd": 0.585771,
+        "parity": 0.1011316709089388,
         "source": "coingecko"
       },
       "feed": 0.10409644015066687,
       "band": {
         "ok": true,
         "reason": "band-ok",
-        "bps": -328
+        "bps": -285
       },
       "steemUsd": 0.05924,
-      "sbdUsd": 0.588375,
+      "sbdUsd": 0.585771,
       "inventory": {
         "steem": 1.871,
         "sbd": 0.024,
-        "spOwn": 974.7579083891898,
+        "spOwn": 974.7583708800305,
         "rcPct": 29.2
       },
       "ordersOk": true,
@@ -102,12 +102,12 @@
         "node": "https://api.justyy.com",
         "windowNote": "no reward ops inside the measured window — rails dormant, not a parse failure (deep-scan documented separately)"
       },
-      "summary": "parity 0.10068408752921182 (coingecko) · fills 12 · fuel 0$"
+      "summary": "parity 0.1011316709089388 (coingecko) · fills 12 · fuel 0$"
     },
     "intel": {
       "name": "intel",
       "ok": true,
-      "ms": 1327,
+      "ms": 1630,
       "verdict": "DECISIONS:5",
       "decisions": [
         "book-depth:hold-shape",
@@ -116,39 +116,39 @@
         "rc-health:healthy",
         "curation:curator-armed"
       ],
-      "spreadBpsRec": 59,
+      "spreadBpsRec": 216,
       "book": {
-        "bestAsk": 0.10082761404925313,
-        "bestBid": 0.1002381467850184,
-        "spreadBps": 59
+        "bestAsk": 0.10354477611940298,
+        "bestBid": 0.10133457637080348,
+        "spreadBps": 216
       }
     },
     "tick": {
       "name": "tick",
       "ok": true,
-      "ms": 0,
-      "runCount": 347,
-      "simFills": 36,
-      "simFeesMu": 18000,
+      "ms": 1,
+      "runCount": 348,
+      "simFills": 37,
+      "simFeesMu": 18500,
       "events": 6
     },
     "peg": {
       "name": "peg",
       "ok": true,
-      "ms": 976,
+      "ms": 769,
       "verdict": "OFFER-EMPTY",
       "asks": 0,
       "bids": 0,
       "flowAsks": 0,
       "flowBids": 0,
       "staleCount": 0,
-      "skew": 0.232197,
+      "skew": 0.232463,
       "book": {
-        "bestAsk": 0.10082761404925313,
-        "bestBid": 0.1002381467850184,
-        "askDepthSteem": 540.011,
-        "bidDepthSbd": 2835.357,
-        "at": "2026-10-07T05:15:46.623Z"
+        "bestAsk": 0.10354477611940298,
+        "bestBid": 0.10133457637080348,
+        "askDepthSteem": 532.09,
+        "bidDepthSbd": 2844.308,
+        "at": "2026-10-07T05:25:46.624Z"
       },
       "market": {
         "tradesPerDay": 618,
@@ -168,15 +168,15 @@
       "ms": 0,
       "verdict": "CONVERT-HOLD",
       "amountSbd": 0,
-      "edgeBps": 6996,
-      "marketSbdUsd": 0.588375,
+      "edgeBps": 7072,
+      "marketSbdUsd": 0.585771,
       "impliedSbdUsd": 0.569088,
       "marketSourceNote": "external-measured"
     },
     "curate": {
       "name": "curate",
       "ok": true,
-      "ms": 1260,
+      "ms": 707,
       "verdict": "VP-FLOOR",
       "votes": 0,
       "txid": null,
@@ -187,7 +187,7 @@
     "execute": {
       "name": "execute",
       "ok": true,
-      "ms": 709,
+      "ms": 748,
       "verdict": "NO-OPS",
       "ops": 0,
       "opsToday": 4,
@@ -202,15 +202,15 @@
     "learn": {
       "name": "learn",
       "ok": true,
-      "ms": 6,
+      "ms": 824,
       "verdict": "LEARNED",
       "lessons": [
         "unclassified-fail-legacy"
       ],
       "tunings": [],
-      "discoveryVerdict": "FRESH-CACHED",
+      "discoveryVerdict": "OPTIONS-FOUND",
       "topOpportunities": [
-        "spread-normal(measured)",
+        "spread-wide(measured)",
         "tags-realloc(measured)",
         "curation-share(estimated)"
       ]
@@ -246,7 +246,7 @@
     "payouts": {
       "name": "payouts",
       "ok": true,
-      "ms": 1,
+      "ms": 0,
       "verdict": "MEASURED",
       "day": "2026-10-07",
       "pendingVests": 0,
@@ -275,7 +275,7 @@
     "coordination": {
       "name": "coordination",
       "ok": true,
-      "ms": 30056,
+      "ms": 32384,
       "verdict": "SCHEDULED:ok·POWER:ok·ENG:ok",
       "accounts": 14,
       "engagement": {
@@ -301,7 +301,7 @@
     "compliance": {
       "name": "compliance",
       "ok": true,
-      "ms": 19462,
+      "ms": 13847,
       "verdict": "QUIET",
       "summary": {
         "accounts": 14,
@@ -313,12 +313,12 @@
         "clusterViolations": 0,
         "verdict": "QUIET"
       },
-      "cadence": "GATED-30MIN"
+      "cadence": "MEASURED"
     },
     "windowExec": {
       "name": "window-exec",
       "ok": true,
-      "ms": 674,
+      "ms": 1722,
       "verdict": "WINDOWS-ASSESSED:0",
       "verdicts": [],
       "windows": {},
@@ -327,7 +327,7 @@
     "publish": {
       "name": "publish",
       "ok": true,
-      "ms": 0,
+      "ms": 1,
       "verdict": "ALL-DONE-TODAY",
       "posted": 0,
       "txids": null,
@@ -336,7 +336,7 @@
     "grind": {
       "name": "grind",
       "ok": true,
-      "ms": 1,
+      "ms": 0,
       "verdict": "WINDOWS-LATER",
       "votes": 0,
       "replies": 0,
@@ -358,7 +358,7 @@
       "ok": true,
       "ms": 1,
       "totalMeasuredUsdPerDay": 0,
-      "totalEstUsdPerDay": 0.522734,
+      "totalEstUsdPerDay": 0.523462,
       "rails": 6,
       "measuredCount": 1,
       "estimatedCount": 2,
@@ -404,5 +404,5 @@
     "failedSteps": [],
     "blockedSteps": []
   },
-  "finishedAt": "2026-10-07T05:16:22.948Z"
+  "finishedAt": "2026-10-07T05:26:41.284Z"
 }
