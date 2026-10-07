@@ -1,6 +1,6 @@
 {
   "verdict": "OFFER-EMPTY",
-  "parityBps": -252,
+  "parityBps": 0,
   "blocker": null,
   "plan": {
     "asks": [],
@@ -23,48 +23,50 @@
     "bestAsk": 0.10353948860057942,
     "bestBid": 0.10116542570411137,
     "askDepthSteem": 530.381,
-    "bidDepthSbd": 2841.649,
-    "at": "2026-10-07T06:35:46.628Z"
+    "bidDepthSbd": 2847.582,
+    "at": "2026-10-07T06:45:46.630Z"
   },
   "market": {
-    "at": "2026-10-07T06:05:53.363Z",
+    "at": "2026-10-07T06:45:53.468Z",
     "windowHours": 24,
     "class": "measured",
-    "trades": 635,
-    "tradesPerDay": 635,
-    "volSteem": 1892.778,
+    "trades": 643,
+    "tradesPerDay": 643,
+    "volSteem": 2001.26,
     "priceMin": 0.076923,
     "priceMax": 0.10302,
     "rangeBps": 3393,
     "sizeP50": 1,
-    "sizeP90": 1.328,
+    "sizeP90": 1.85,
     "book": {
-      "bestAsk": 0.10072,
-      "bestBid": 0.10023053021950486,
-      "spreadBps": 48.83,
-      "askDepthSteem": 607.04,
-      "bidDepthSbd": 2833.845
+      "bestAsk": 0.10353948860057942,
+      "bestBid": 0.10116542570411137,
+      "spreadBps": 234.67,
+      "askDepthSteem": 530.381,
+      "bidDepthSbd": 2847.582
     }
   },
   "marks": {
-    "paritySbdPerSteem": 0.101477,
-    "source": "coingecko",
-    "lowConfidence": false,
+    "paritySbdPerSteem": 0.104096,
+    "source": "internal-feed-fallback+derived-sbd",
+    "lowConfidence": true,
     "internalFeed": 0.104096,
     "dragK": 1.116,
-    "floor": 0.10168,
-    "ceiling": 0.101273,
+    "floor": 0.104305,
+    "ceiling": 0.103888,
     "spreadBpsFed": 232
   },
   "skew": {
-    "skew": 0.232667,
-    "askMult": 1.232667,
-    "bidMult": 0.767333,
+    "skew": 0.234176,
+    "askMult": 1.234176,
+    "bidMult": 0.765824,
     "reason": "hummingbot-inventory-skew"
   },
   "stale": {
-    "count": 0,
-    "orderids": []
+    "count": 1,
+    "orderids": [
+      2026100701
+    ]
   },
   "liquidity": {
     "deployedAsks": 952.74,
@@ -73,5 +75,5 @@
     "bidBudget": 0,
     "deployCap": 0.6
   },
-  "publishedAt": "2026-10-07T06:35:46.628Z"
+  "publishedAt": "2026-10-07T06:45:46.630Z"
 }

@@ -8,12 +8,16 @@
     "woq": {
       "vote": null,
       "engage": null
+    },
+    "israelnews": {
+      "vote": null,
+      "engage": null
     }
   },
-  "at": "2026-10-07T06:35:46.628Z",
+  "at": "2026-10-07T06:45:46.630Z",
   "verdict": "IDLE-GATES",
   "votes": 0,
   "replies": 0,
   "failed": 0,
-  "skipped": 11
+  "skipped": 10
 }
