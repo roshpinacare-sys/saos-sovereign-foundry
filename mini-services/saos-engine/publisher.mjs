@@ -101,6 +101,10 @@ export async function runPublisher({ now = new Date().toISOString() } = {}) {
 
   const posted = [];
   for (const d of picks) {
+    /* chain law (R236 live-measured): one root post per block — ≥5s between
+     * two root posts of the same account, else the second dies on
+     * auth.last_root_post assert. */
+    if (posted.length > 0) await new Promise((r) => setTimeout(r, 5500));
     const permlink = titleToPermlink(d.title, day);
     /* root posts need a non-empty parent_permlink (the category) — first tag,
      * "steem" fallback. Empty parent_permlink = chain permlink-size assert
