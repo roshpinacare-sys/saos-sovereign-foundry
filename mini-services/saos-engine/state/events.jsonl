@@ -5649,3 +5649,12 @@
 {"type":"learn.done","at":"2026-10-07T04:25:46.619Z","verdict":"LEARNED","lessons":["unclassified-fail-legacy","broadcast-fails"],"tunings":[]}
 {"type":"discover.done","at":"2026-10-07T04:25:46.619Z","verdict":"OPTIONS-FOUND","tags":12,"opportunities":["spread-normal","tags-realloc","curation-share","fleet-growth"]}
 {"type":"hyper.requote","at":"2026-10-07T04:27:03.896Z","label":"requote-front","ops":2,"cancels":1,"creates":1,"txid":"2e1ac445871c3a999558fb1b3866adbf52e83c1c","rcPct":29.1,"opsToday":364,"equilibriumOpsPerDay":10284,"bestAsk":0.101,"bestBid":0.10055003909169499}
+{"type":"hyper.requote","at":"2026-10-07T04:28:45.903Z","label":"requote-front","ops":2,"cancels":1,"creates":1,"txid":"c7a7df0222c448af82e4f16358c8b3e60a2c36a5","rcPct":29.1,"opsToday":366,"equilibriumOpsPerDay":10284,"bestAsk":0.101,"bestBid":0.10055003909169499}
+{"type":"hyper.requote","at":"2026-10-07T04:30:30.907Z","label":"requote-front","ops":2,"cancels":1,"creates":1,"txid":"9f0144cbeb8ec08e7df6922734f477f22dac4ab4","rcPct":29.1,"opsToday":368,"equilibriumOpsPerDay":10284,"bestAsk":0.101,"bestBid":0.10055003909169499}
+{"type":"observe.done","at":"2026-10-07T04:35:46.618Z","fills":14,"parity":0.10409644015066687}
+{"type":"grid.tick","at":"2026-10-07T04:35:46.618Z","runCount":342,"refPrice":0.10409644015066687,"internalFeed":0.10409644015066687,"dragK":1,"inv":{"steem":1.871,"sbd":0.024}}
+{"type":"sweep.scan","at":"2026-10-07T04:35:46.618Z","grid":"sweep","dustSteem":0.871}
+{"type":"anchor.quote","at":"2026-10-07T04:35:46.618Z","grid":"anchor-quote","bid":0.10388824727036554,"ask":0.1043046330309682}
+{"type":"offer.published","at":"2026-10-07T04:35:46.618Z","verdict":"OFFER-EMPTY","asks":0,"bids":0,"flowAsks":0,"flowBids":0,"bestAsk":0.101,"bestBid":0.10055003909169499}
+{"type":"convert.planned","at":"2026-10-07T04:35:46.618Z","verdict":"CONVERT-HOLD","edgeBps":7670,"amountSbd":0}
+{"type":"learn.done","at":"2026-10-07T04:35:46.618Z","verdict":"LEARNED","lessons":["unclassified-fail-legacy","broadcast-fails"],"tunings":[]}

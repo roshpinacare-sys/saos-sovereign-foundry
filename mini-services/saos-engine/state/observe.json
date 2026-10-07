@@ -1,100 +1,85 @@
 {
   "account": "headcorner",
   "parity": {
-    "steemUsd": 0.05905,
-    "sbdUsd": 0.587162,
-    "parity": 0.10056849728013734,
-    "source": "coingecko"
+    "steemUsd": 0.05891,
+    "sbdUsd": 0.5659175271962709,
+    "parity": 0.10409644015066687,
+    "source": "internal-feed-fallback+derived-sbd",
+    "lowConfidence": true
   },
-  "feed": 0.1040964413671177,
+  "feed": 0.10409644015066687,
   "band": {
     "ok": true,
     "reason": "band-ok",
-    "bps": -339
+    "bps": 0
   },
-  "steemUsd": 0.05905,
-  "sbdUsd": 0.587162,
+  "steemUsd": 0.05891,
+  "sbdUsd": 0.5659175271962709,
   "inventory": {
-    "steem": 4.817,
-    "sbd": 0.078,
-    "spOwn": 974.7556102840614,
-    "rcPct": 29.1
+    "steem": 1.871,
+    "sbd": 0.024,
+    "spOwn": 974.756070279242,
+    "rcPct": 29
   },
   "ordersOk": true,
   "orders": [
     {
       "orderid": 2026100701,
       "side": "ask",
-      "base": "189.485 STEEM",
-      "quote": "19.643 SBD",
-      "unit": 0.103665,
-      "created": "2026-10-07T04:20:24"
+      "base": "190.548 STEEM",
+      "quote": "19.750 SBD",
+      "unit": 0.103648,
+      "created": "2026-10-07T04:31:24"
     },
     {
       "orderid": 2026100702,
       "side": "ask",
-      "base": "189.485 STEEM",
-      "quote": "19.839 SBD",
-      "unit": 0.1047,
-      "created": "2026-10-07T04:20:27"
+      "base": "190.548 STEEM",
+      "quote": "19.947 SBD",
+      "unit": 0.104682,
+      "created": "2026-10-07T04:31:27"
     },
     {
       "orderid": 2026100703,
       "side": "ask",
-      "base": "189.485 STEEM",
-      "quote": "20.034 SBD",
-      "unit": 0.105729,
-      "created": "2026-10-07T04:20:30"
+      "base": "190.548 STEEM",
+      "quote": "20.143 SBD",
+      "unit": 0.105711,
+      "created": "2026-10-07T04:31:30"
     },
     {
       "orderid": 2026100704,
       "side": "ask",
-      "base": "189.485 STEEM",
-      "quote": "20.230 SBD",
-      "unit": 0.106763,
-      "created": "2026-10-07T04:20:33"
+      "base": "190.548 STEEM",
+      "quote": "20.340 SBD",
+      "unit": 0.106745,
+      "created": "2026-10-07T04:31:33"
     },
     {
       "orderid": 2026100705,
       "side": "ask",
-      "base": "189.485 STEEM",
-      "quote": "20.425 SBD",
-      "unit": 0.107792,
-      "created": "2026-10-07T04:20:36"
-    },
-    {
-      "orderid": 2026100795,
-      "side": "bid",
-      "base": "0.135 SBD",
-      "quote": "1.352 STEEM",
-      "unit": 10.014815,
-      "created": "2026-10-07T04:20:54"
-    },
-    {
-      "orderid": 2100002901,
-      "side": "ask",
-      "base": "0.500 STEEM",
-      "quote": "0.053 SBD",
-      "unit": 0.106,
-      "created": "2026-10-07T04:24:30"
+      "base": "190.548 STEEM",
+      "quote": "20.536 SBD",
+      "unit": 0.107773,
+      "created": "2026-10-07T04:31:36"
     }
   ],
-  "fills": 16,
-  "lastFillAt": "2026-10-07T04:10:51.000Z",
+  "fills": 14,
+  "lastFillAt": "2026-10-07T04:21:36.000Z",
   "pnl": {
-    "fills": 16,
-    "buys": 11,
-    "sells": 5,
-    "boughtSteem": 61.188,
-    "spentSbd": 6.252,
-    "soldSteem": 64.474,
-    "proceedsSbd": 6.558,
-    "realizedSbd": -0.023718,
-    "unbasedSteem": 52.321,
-    "unbasedSbd": 5.337,
-    "positionSteem": 49.035,
-    "positionCostSbd": 5.007282,
-    "positionAvgCost": 0.102116
+    "fills": 14,
+    "buys": 10,
+    "sells": 4,
+    "boughtSteem": 34.891,
+    "spentSbd": 3.552,
+    "soldSteem": 12.153,
+    "proceedsSbd": 1.221,
+    "realizedSbd": -0.018148,
+    "unbasedSteem": 1.585,
+    "unbasedSbd": 0.159148,
+    "positionSteem": 24.323,
+    "positionCostSbd": 2.472,
+    "positionAvgCost": 0.101632
   },
   "fuel": {
     "curationVestsPerDay": 0,
@@ -102,7 +87,7 @@
     "authorVestsPerDay": 0,
     "curationOps": 0,
     "authorOps": 0,
-    "windowSpanDays": 0.01,
+    "windowSpanDays": 0.02,
     "windowOps": 101,
     "measured": true,
     "fuelUsdPerDay": 0,
@@ -111,5 +96,5 @@
     "node": "https://api.justyy.com",
     "windowNote": "no reward ops inside the measured window — rails dormant, not a parse failure (deep-scan documented separately)"
   },
-  "at": "2026-10-07T04:25:46.619Z"
+  "at": "2026-10-07T04:35:46.618Z"
 }

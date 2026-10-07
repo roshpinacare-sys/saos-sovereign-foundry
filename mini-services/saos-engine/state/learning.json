@@ -1,7 +1,7 @@
 {
-  "at": "2026-10-07T04:25:46.619Z",
+  "at": "2026-10-07T04:35:46.618Z",
   "enabled": true,
-  "runsTotal": 299,
+  "runsTotal": 300,
   "verdict": "LEARNED",
   "metrics": {
     "cycles": {
@@ -15,8 +15,8 @@
         "none": 1,
         "unknown": 1
       },
-      "msP50": 13777,
-      "msP90": 38676
+      "msP50": 13910,
+      "msP90": 38703
     },
     "curator": {
       "present": true,
@@ -38,15 +38,15 @@
       "lastError": "missing required active authority:Missing Active Authority headcorner"
     },
     "watchdog": {
-      "checks": 2877,
+      "checks": 2887,
       "downs": 111,
       "heals": 45,
       "healVerified": 44,
       "healFailed": 0,
-      "lastCheckAt": "2026-10-07T04:25:46.654Z",
+      "lastCheckAt": "2026-10-07T04:35:46.659Z",
       "engineUp": true,
       "lastSpawnAt": "2026-10-07T03:40:51.694Z",
-      "lastUpAt": "2026-10-07T04:25:46.656Z",
+      "lastUpAt": "2026-10-07T04:35:46.660Z",
       "blips": 2
     }
   },
@@ -62,7 +62,7 @@
       "id": "broadcast-fails",
       "severity": "low",
       "resolved": true,
-      "evidence": "2/3 broadcasts failed in the window (last: missing required active authority:Missing Active Authority h) · last fail 2026-10-07T03:36:24.518Z < last OK broadcast 2026-10-07T04:24:30.204Z (live posting-role ops succeed)",
+      "evidence": "2/3 broadcasts failed in the window (last: missing required active authority:Missing Active Authority h) · last fail 2026-10-07T03:36:24.518Z < last OK broadcast 2026-10-07T04:30:34.282Z (live posting-role ops succeed)",
       "lesson": "historical: the missing-posting-authority failure class was fixed by ADAPT-claim-role-posting-R209 (claim executor switched to posting role) — live broadcasts now succeed",
       "action": "none — resolved by R209; watch for any NEW failure class in the live window"
     }
@@ -71,9 +71,9 @@
   "tuningsApplied": [],
   "lessonsTotal": {
     "cycle-conn-fails": 132,
-    "unclassified-fail-legacy": 153,
+    "unclassified-fail-legacy": 154,
     "signing-cred-blocked": 205,
-    "broadcast-fails": 77
+    "broadcast-fails": 78
   },
   "honesty": "learning reads recorded history only · tunings hard-clamped (LEARN_CLAMP) · doctrine laws untouchable"
 }

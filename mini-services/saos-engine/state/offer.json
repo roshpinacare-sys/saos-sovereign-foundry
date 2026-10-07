@@ -1,20 +1,11 @@
 {
-  "verdict": "OFFER-READY",
-  "parityBps": -339,
+  "verdict": "OFFER-EMPTY",
+  "parityBps": 0,
   "blocker": null,
   "plan": {
     "asks": [],
     "bids": [],
-    "flowAsks": [
-      {
-        "side": "ask",
-        "amountSteem": 0.5,
-        "unit": 0.106,
-        "sbdOut3": 0.053,
-        "at": "2026-10-07T04:25:46.619Z",
-        "tranche": "flow"
-      }
-    ],
+    "flowAsks": [],
     "flowBids": []
   },
   "flow": {
@@ -22,18 +13,18 @@
     "bestBid": 0.10055,
     "spacingBps": 15,
     "levels": 4,
-    "askBudgetSteem": 0.57804,
+    "askBudgetSteem": 0.22452,
     "bidBudgetSbd": 0,
     "feedAnchor": 0.104096,
-    "flowAsks": 1,
+    "flowAsks": 0,
     "flowBids": 0
   },
   "book": {
     "bestAsk": 0.101,
     "bestBid": 0.10055003909169499,
-    "askDepthSteem": 655.697,
-    "bidDepthSbd": 2866.619,
-    "at": "2026-10-07T04:25:46.619Z"
+    "askDepthSteem": 655.954,
+    "bidDepthSbd": 2844.683,
+    "at": "2026-10-07T04:35:46.618Z"
   },
   "market": {
     "at": "2026-10-07T04:25:51.542Z",
@@ -56,33 +47,33 @@
     }
   },
   "marks": {
-    "paritySbdPerSteem": 0.100568,
-    "source": "coingecko",
-    "lowConfidence": false,
+    "paritySbdPerSteem": 0.104096,
+    "source": "internal-feed-fallback+derived-sbd",
+    "lowConfidence": true,
     "internalFeed": 0.104096,
     "dragK": 1.0225,
-    "floor": 0.10077,
-    "ceiling": 0.100367,
+    "floor": 0.104305,
+    "ceiling": 0.103888,
     "spreadBpsFed": 45
   },
   "skew": {
-    "skew": 0.216791,
-    "askMult": 1.216791,
-    "bidMult": 0.783209,
+    "skew": 0.234176,
+    "askMult": 1.234176,
+    "bidMult": 0.765824,
     "reason": "hummingbot-inventory-skew"
   },
   "stale": {
     "count": 1,
     "orderids": [
-      2026100795
+      2026100701
     ]
   },
   "liquidity": {
-    "deployedAsks": 947.925,
-    "deployedBids": 0.135,
+    "deployedAsks": 952.74,
+    "deployedBids": 0,
     "askBudget": 0,
     "bidBudget": 0,
     "deployCap": 0.6
   },
-  "publishedAt": "2026-10-07T04:25:46.619Z"
+  "publishedAt": "2026-10-07T04:35:46.618Z"
 }
