@@ -1,13 +1,13 @@
 [
   {
     "day": "2026-10-07",
-    "avgCompliancePct": 0,
-    "verdict": "NOT-ADOPTED",
-    "densestBurst": 1,
-    "burstAt": "00:13",
+    "avgCompliancePct": null,
+    "verdict": "QUIET",
+    "densestBurst": 0,
+    "burstAt": null,
     "clusterViolations": 0,
-    "accountsActive": 1,
-    "totalActions": 2,
-    "at": "2026-10-07T01:20:06.150Z"
+    "accountsActive": 0,
+    "totalActions": 0,
+    "at": "2026-10-07T01:50:06.151Z"
   }
 ]

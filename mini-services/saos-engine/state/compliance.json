@@ -1,28 +1,17 @@
 {
   "protocol": "saos.fleet.compliance.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T01:20:06.150Z",
+  "at": "2026-10-07T01:50:06.151Z",
   "scheduleHint": "14 accounts × (post+2vote+engage) · tol 30min",
   "rows": [
     {
       "acc": "headcorner",
-      "total": 2,
+      "total": 0,
       "inWindow": 0,
-      "compliancePct": 0,
+      "compliancePct": null,
       "clusters": 0,
-      "misses": [
-        {
-          "kind": "post",
-          "at": "00:13",
-          "nearest": "10:48"
-        },
-        {
-          "kind": "post",
-          "at": "01:14",
-          "nearest": "10:48"
-        }
-      ],
-      "verdict": "OFF-SCHEDULE"
+      "misses": [],
+      "verdict": "NO-ACTIVITY"
     },
     {
       "acc": "cashmachine",
@@ -144,37 +133,52 @@
   ],
   "summary": {
     "accounts": 14,
-    "accountsActive": 1,
-    "totalActions": 2,
-    "avgCompliancePct": 0,
-    "densestBurst": 1,
-    "burstAt": "00:13",
+    "accountsActive": 0,
+    "totalActions": 0,
+    "avgCompliancePct": null,
+    "densestBurst": 0,
+    "burstAt": null,
     "clusterViolations": 0,
-    "verdict": "NOT-ADOPTED"
+    "verdict": "QUIET"
   },
-  "readFails": [],
+  "readFails": [
+    "headcorner",
+    "cashmachine",
+    "haran",
+    "israelnews",
+    "lsa",
+    "macrame",
+    "siq",
+    "tov",
+    "wic",
+    "wog",
+    "woq",
+    "hcsoldier1",
+    "hcsoldier2",
+    "hcsoldier3"
+  ],
   "history": [
     {
       "day": "2026-10-07",
-      "avgCompliancePct": 0,
-      "verdict": "NOT-ADOPTED",
-      "densestBurst": 1,
-      "burstAt": "00:13",
+      "avgCompliancePct": null,
+      "verdict": "QUIET",
+      "densestBurst": 0,
+      "burstAt": null,
       "clusterViolations": 0,
-      "accountsActive": 1,
-      "totalActions": 2,
-      "at": "2026-10-07T01:20:06.150Z"
+      "accountsActive": 0,
+      "totalActions": 0,
+      "at": "2026-10-07T01:50:06.151Z"
     }
   ],
   "trend": {
     "day": "2026-10-07",
-    "cur": 0,
+    "cur": null,
     "prev": null,
     "delta": null,
-    "curVerdict": "NOT-ADOPTED",
+    "curVerdict": "QUIET",
     "prevVerdict": null,
     "prevDay": null
   },
   "note": "ציות = הפעולה בפועל נחתה בתוך חלון-הלו\"ז הדטרמיניסטי (אותו יום, אותו חוק). QUIET = עדיין אין פעילות-היום — לא-ציות ולא-הפרה. R233: history = קו-המגמה יום-מול-יום.",
-  "ms": 16149
+  "ms": 14036
 }

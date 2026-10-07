@@ -1,0 +1,203 @@
+{
+  "startedAt": "2026-10-07T01:52:05.866Z",
+  "runs": 3,
+  "parity": 0.10289649653451245,
+  "funded": {
+    "cashmachine": {
+      "txid": "456f76cea9736ae90451f19aa9af1fe1a5a8eb3f",
+      "amount": 1,
+      "at": "2026-10-07T01:52:05.866Z"
+    },
+    "haran": {
+      "txid": "456f76cea9736ae90451f19aa9af1fe1a5a8eb3f",
+      "amount": 1,
+      "at": "2026-10-07T01:52:05.866Z"
+    },
+    "israelnews": {
+      "txid": "456f76cea9736ae90451f19aa9af1fe1a5a8eb3f",
+      "amount": 1,
+      "at": "2026-10-07T01:52:05.866Z"
+    },
+    "lsa": {
+      "txid": "456f76cea9736ae90451f19aa9af1fe1a5a8eb3f",
+      "amount": 1,
+      "at": "2026-10-07T01:52:05.866Z"
+    },
+    "macrame": {
+      "txid": "456f76cea9736ae90451f19aa9af1fe1a5a8eb3f",
+      "amount": 1,
+      "at": "2026-10-07T01:52:05.866Z"
+    },
+    "siq": {
+      "txid": "456f76cea9736ae90451f19aa9af1fe1a5a8eb3f",
+      "amount": 1,
+      "at": "2026-10-07T01:52:05.866Z"
+    },
+    "tov": {
+      "txid": "456f76cea9736ae90451f19aa9af1fe1a5a8eb3f",
+      "amount": 1,
+      "at": "2026-10-07T01:52:05.866Z"
+    },
+    "wic": {
+      "txid": "456f76cea9736ae90451f19aa9af1fe1a5a8eb3f",
+      "amount": 1,
+      "at": "2026-10-07T01:52:05.866Z"
+    },
+    "wog": {
+      "txid": "456f76cea9736ae90451f19aa9af1fe1a5a8eb3f",
+      "amount": 1,
+      "at": "2026-10-07T01:52:05.866Z"
+    },
+    "woq": {
+      "txid": "456f76cea9736ae90451f19aa9af1fe1a5a8eb3f",
+      "amount": 1,
+      "at": "2026-10-07T01:52:05.866Z"
+    }
+  },
+  "accounts": {
+    "cashmachine": {
+      "slot": 1,
+      "seq": 5,
+      "runs": 3,
+      "lastVerdict": "BROADCAST(5ops)",
+      "lastAt": "2026-10-07T01:56:03.539Z",
+      "live": 0,
+      "txid": "617450522320e982a55e7ca02a53885efee0abfb",
+      "rcPct": 98.4,
+      "steem": 1.01,
+      "sbd": 0.005,
+      "decision": "deploy",
+      "reason": "no-live-orders"
+    },
+    "haran": {
+      "slot": 2,
+      "seq": 5,
+      "runs": 3,
+      "lastVerdict": "NO-INVENTORY",
+      "lastAt": "2026-10-07T01:56:03.539Z",
+      "live": 5,
+      "txid": "794120e03d2ac3877c65f4ded4681f332625f29b",
+      "rcPct": 99.2,
+      "steem": 0.01,
+      "sbd": 0,
+      "decision": "deploy",
+      "reason": "no-live-orders"
+    },
+    "israelnews": {
+      "slot": 3,
+      "seq": 5,
+      "runs": 3,
+      "lastVerdict": "NO-INVENTORY",
+      "lastAt": "2026-10-07T01:56:03.539Z",
+      "live": 5,
+      "txid": "00ef470dcb60ea77f334b41190c1244a2d32ee44",
+      "rcPct": 99.3,
+      "steem": 0.012,
+      "sbd": 0,
+      "decision": "deploy",
+      "reason": "no-live-orders"
+    },
+    "lsa": {
+      "slot": 4,
+      "seq": 5,
+      "runs": 3,
+      "lastVerdict": "NO-INVENTORY",
+      "lastAt": "2026-10-07T01:56:03.539Z",
+      "live": 5,
+      "txid": "f534424ae1ff9d016611be2752138d1c5160b46b",
+      "rcPct": 99.2,
+      "steem": 0.01,
+      "sbd": 0,
+      "decision": "deploy",
+      "reason": "no-live-orders"
+    },
+    "macrame": {
+      "slot": 5,
+      "seq": 5,
+      "runs": 3,
+      "lastVerdict": "NO-INVENTORY",
+      "lastAt": "2026-10-07T01:56:03.539Z",
+      "live": 5,
+      "txid": "76d611431230c87c393414e9ff78652177f3c19e",
+      "rcPct": 98.9,
+      "steem": 0.01,
+      "sbd": 0,
+      "decision": "deploy",
+      "reason": "no-live-orders"
+    },
+    "siq": {
+      "slot": 6,
+      "seq": 5,
+      "runs": 3,
+      "lastVerdict": "NO-INVENTORY",
+      "lastAt": "2026-10-07T01:56:03.539Z",
+      "live": 5,
+      "txid": "cd4ba1c0e4735e82cc9ab1e0492c1318e0dda64c",
+      "rcPct": 94.1,
+      "steem": 0.01,
+      "sbd": 0,
+      "decision": "deploy",
+      "reason": "no-live-orders"
+    },
+    "tov": {
+      "slot": 7,
+      "seq": 5,
+      "runs": 3,
+      "lastVerdict": "NO-INVENTORY",
+      "lastAt": "2026-10-07T01:56:03.539Z",
+      "live": 5,
+      "txid": "a39c1cb888ec3e06d9289254b370a8447d34dfda",
+      "rcPct": 97.7,
+      "steem": 0.009,
+      "sbd": 0,
+      "decision": "deploy",
+      "reason": "no-live-orders"
+    },
+    "wic": {
+      "slot": 8,
+      "seq": 5,
+      "runs": 3,
+      "lastVerdict": "NO-INVENTORY",
+      "lastAt": "2026-10-07T01:56:03.539Z",
+      "live": 5,
+      "txid": "6d07cfe63d29e7eba0527f33f6f42ff78988cc88",
+      "rcPct": 92.1,
+      "steem": 0.01,
+      "sbd": 0,
+      "decision": "deploy",
+      "reason": "no-live-orders"
+    },
+    "wog": {
+      "slot": 9,
+      "seq": 5,
+      "runs": 3,
+      "lastVerdict": "NO-INVENTORY",
+      "lastAt": "2026-10-07T01:56:03.539Z",
+      "live": 5,
+      "txid": "e6f55e43fefc0d20c06dbb6f3b27a5cddda6afc1",
+      "rcPct": 92,
+      "steem": 0.01,
+      "sbd": 0,
+      "decision": "deploy",
+      "reason": "no-live-orders"
+    },
+    "woq": {
+      "slot": 10,
+      "seq": 5,
+      "runs": 3,
+      "lastVerdict": "NO-INVENTORY",
+      "lastAt": "2026-10-07T01:56:03.539Z",
+      "live": 5,
+      "txid": "1a85d27724da66ba62c9b0f52e712b810f6ec686",
+      "rcPct": 91.2,
+      "steem": 0.01,
+      "sbd": 0,
+      "decision": "deploy",
+      "reason": "no-live-orders"
+    }
+  },
+  "lastTickAt": "2026-10-07T01:56:03.539Z",
+  "lastFundTxid": "456f76cea9736ae90451f19aa9af1fe1a5a8eb3f",
+  "fundingVerdict": "ALL-FUNDED-OR-NONE-NEEDED",
+  "lastFundError": null
+}

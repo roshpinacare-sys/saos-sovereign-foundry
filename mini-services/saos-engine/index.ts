@@ -22,6 +22,7 @@ import { rcTankState } from "./rctank.mjs";
 import { payoutsState } from "./payouts.mjs";
 import { weaveState } from "./weave.mjs";
 import { coordinationState, runCoordination, publishManifest } from "./coordination.mjs";
+import { fleetGridState, startFleetGrid } from "./fleet-grid.mjs";
 import { trendsState, runTrends } from "./trends.mjs";
 import { complianceState, runCompliance, complianceHistory } from "./compliance.mjs";
 import { executionState, runWindowExecution } from "./execute.mjs";
@@ -136,6 +137,10 @@ async function handle(req) {
   if (p === "/coordination") {
     return json({ ok: true, at: new Date().toISOString(), account: ACCOUNT, coordination: coordinationState(), trends: trendsState(), compliance: complianceState(), execution: executionState() });
   }
+  /* R234 · fleet-grid-first: the EXISTING army's micro-grids (operator order trace 1a113f67a0ed4be9) */
+  if (p === "/fleet-grid") {
+    return json(fleetGridState());
+  }
   /* R232 · compliance telemetry (chain-truth activity vs the windows) */
   if (p === "/compliance") {
     if (req.method === "POST") {
@@ -234,7 +239,7 @@ async function handle(req) {
                      : "credential secured but not matching this account's authorities — install the proposedPubkeys on steemit.com, or paste the CURRENT password instead",
     });
   }
-  return json({ ok: false, error: "not-found", routes: ["/health", "/status", "/hyper", "/payouts", "/weave", "/coordination", "/coordination/refresh", "/coordination/publish", "/compliance", "/execute", "/trends", "/cycle", "/cycle-status", "/live", "/fills", "/exec-status", "/fleet", "/adopt-credential"] }, 404);
+  return json({ ok: false, error: "not-found", routes: ["/health", "/status", "/hyper", "/fleet-grid", "/payouts", "/weave", "/coordination", "/coordination/refresh", "/coordination/publish", "/compliance", "/execute", "/trends", "/cycle", "/cycle-status", "/live", "/fills", "/exec-status", "/fleet", "/adopt-credential"] }, 404);
 }
 
 // T-15 SINGLE-INSTANCE LAW (measured live: 3 duplicate engine processes were
@@ -311,4 +316,10 @@ console.log(`saos-engine listening on :${PORT} (capped-autonomy, account=${ACCOU
 // the same watchdog (process-lifetime = engine lifetime).
 try { startHyperGrid(); } catch (e) {
   console.error(`hypergrid boot failed: ${String(e?.message ?? e)}`);
+}
+
+// R234 FLEET-GRID: the existing army's micro-grids — booted with the engine,
+// same signing rail, same doctrine guards, per-account fail-isolation.
+try { startFleetGrid(); } catch (e) {
+  console.error(`fleet-grid boot failed: ${String(e?.message ?? e)}`);
 }
