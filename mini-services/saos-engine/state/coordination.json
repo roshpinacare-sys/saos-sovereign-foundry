@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T06:45:46.630Z",
+  "at": "2026-10-07T06:55:46.630Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -124,7 +124,7 @@
         "name": "headcorner",
         "sp": 6.49,
         "vpEff": 28.4,
-        "rcPct": 30,
+        "rcPct": 30.9,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
@@ -165,7 +165,7 @@
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
-        "steem": 0.012,
+        "steem": 1.012,
         "lastVote": "2026-10-06T20:15:39"
       },
       {
@@ -177,7 +177,7 @@
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
-        "steem": 0.01,
+        "steem": 1.01,
         "lastVote": "2026-10-06T20:10:45"
       },
       {
@@ -189,7 +189,7 @@
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
-        "steem": 0.01,
+        "steem": 1.01,
         "lastVote": "2026-10-06T20:11:06"
       },
       {
@@ -201,7 +201,7 @@
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
-        "steem": 0.01,
+        "steem": 1.01,
         "lastVote": "2026-10-06T20:53:30"
       },
       {
@@ -213,7 +213,7 @@
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
-        "steem": 0.009,
+        "steem": 1.449,
         "lastVote": "2026-10-06T20:11:39"
       },
       {
@@ -225,7 +225,7 @@
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
-        "steem": 0.01,
+        "steem": 1.01,
         "lastVote": "2026-10-06T20:12:00"
       },
       {
@@ -237,7 +237,7 @@
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
-        "steem": 0.01,
+        "steem": 1.01,
         "lastVote": "2026-10-06T20:16:12"
       },
       {
@@ -249,7 +249,7 @@
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
-        "steem": 0.01,
+        "steem": 1.01,
         "lastVote": "2026-10-06T20:12:42"
       },
       {
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T06:45:58.203Z"
+    "at": "2026-10-07T06:55:58.419Z"
   },
   "engagement": {
     "ok": true,
@@ -1018,7 +1018,7 @@
       "authorResponseRate": 0,
       "avgScore": 0
     },
-    "at": "2026-10-07T06:45:46.630Z"
+    "at": "2026-10-07T06:55:46.630Z"
   },
   "compliance": {
     "protocol": "saos.fleet.compliance.v1",
@@ -1293,76 +1293,76 @@
   },
   "nextWindows": [
     {
-      "acc": "haran",
-      "kind": "vote1",
-      "at": "06:53",
-      "inMin": 7
-    },
-    {
       "acc": "macrame",
       "kind": "post",
       "at": "07:13",
-      "inMin": 27
+      "inMin": 17
     },
     {
       "acc": "israelnews",
       "kind": "post",
       "at": "07:52",
-      "inMin": 66
+      "inMin": 56
     },
     {
       "acc": "macrame",
       "kind": "vote1",
       "at": "08:12",
-      "inMin": 86
+      "inMin": 76
     },
     {
       "acc": "wic",
       "kind": "vote1",
       "at": "08:54",
-      "inMin": 128
+      "inMin": 118
     },
     {
       "acc": "tov",
       "kind": "vote2",
       "at": "09:17",
-      "inMin": 151
+      "inMin": 141
     },
     {
       "acc": "headcorner",
       "kind": "engage",
       "at": "09:59",
-      "inMin": 193
+      "inMin": 183
     },
     {
       "acc": "lsa",
       "kind": "vote2",
       "at": "10:28",
-      "inMin": 222
+      "inMin": 212
     },
     {
       "acc": "headcorner",
       "kind": "post",
       "at": "10:48",
-      "inMin": 242
+      "inMin": 232
     },
     {
       "acc": "headcorner",
       "kind": "vote1",
       "at": "11:26",
-      "inMin": 280
+      "inMin": 270
     },
     {
       "acc": "wic",
       "kind": "post",
       "at": "12:14",
-      "inMin": 328
+      "inMin": 318
     },
     {
       "acc": "wog",
       "kind": "vote1",
       "at": "12:34",
-      "inMin": 348
+      "inMin": 338
+    },
+    {
+      "acc": "israelnews",
+      "kind": "vote2",
+      "at": "12:54",
+      "inMin": 358
     }
   ],
   "lastPublish": {
@@ -1380,5 +1380,5 @@
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)",
     "threads": "שיח מתפתח = תגובות-לתגובות + הגב-מחבר — R233 מודד את העומק, לא רק את הכיסוי"
   },
-  "ms": 33076
+  "ms": 32121
 }
