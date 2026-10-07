@@ -5,3 +5,4 @@
 {"at":"2026-10-07T10:11:34.745Z","kind":"anchor-skip","detail":"rate-limited durably (last 2026-10-07T09:17:39.802Z)"}
 {"at":"2026-10-07T10:11:59.372Z","kind":"anchor-skip","detail":"rate-limited durably (last 2026-10-07T09:17:39.802Z)"}
 {"at":"2026-10-07T10:21:03.138Z","kind":"anchor-ok","detail":"{\"txid\":\"e6c4e3c3337fd2758a0d027bbd2ec74ce514e607\",\"tip\":\"a8eb52e5505b8fe0b06c80a3da34197b3e2f468a\"}"}
+{"at":"2026-10-07T10:31:04.415Z","kind":"anchor-skip","detail":"rate-limited durably (last 2026-10-07T10:21:03.138Z)"}

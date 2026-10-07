@@ -49,7 +49,7 @@
       "cadence": "cycle",
       "truthContract": "edge in bps from measured market vs implied, HOLD verdict honest",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/convert-plan.json: CONVERT-HOLD (edge 7581bps)",
+      "evidence": "state/convert-plan.json: CONVERT-HOLD (edge 6868bps)",
       "priorStatus": "active"
     },
     {
@@ -137,6 +137,6 @@
       "priorStatus": "active"
     }
   ],
-  "at": "2026-10-07T10:22:50.911Z",
+  "at": "2026-10-07T10:32:50.912Z",
   "pid": 26838
 }

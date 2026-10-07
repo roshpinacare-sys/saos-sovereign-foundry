@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T10:22:50.911Z",
+  "at": "2026-10-07T10:32:50.912Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -159,26 +159,26 @@
       {
         "name": "israelnews",
         "sp": 0,
-        "vpEff": 99.1,
-        "rcPct": 99.2,
+        "vpEff": 98,
+        "rcPct": 98.3,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
         "steem": 0.012,
-        "lastVote": "2026-10-06T20:15:39"
+        "lastVote": "2026-10-07T10:23:45"
       },
       {
         "name": "lsa",
         "sp": 0.01,
-        "vpEff": 99,
-        "rcPct": 99.1,
+        "vpEff": 98,
+        "rcPct": 98,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
         "steem": 0.01,
-        "lastVote": "2026-10-06T20:10:45"
+        "lastVote": "2026-10-07T10:23:51"
       },
       {
         "name": "macrame",
@@ -219,14 +219,14 @@
       {
         "name": "wic",
         "sp": 0,
-        "vpEff": 99,
-        "rcPct": 84.2,
+        "vpEff": 98,
+        "rcPct": 81.2,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
         "steem": 0.01,
-        "lastVote": "2026-10-06T20:12:00"
+        "lastVote": "2026-10-07T10:23:57"
       },
       {
         "name": "wog",
@@ -243,14 +243,14 @@
       {
         "name": "woq",
         "sp": 0,
-        "vpEff": 99,
-        "rcPct": 83.7,
+        "vpEff": 98,
+        "rcPct": 80.9,
         "verdict": "READY-FULL",
         "weightPct": 100,
         "lowRc": false,
         "rcGate": null,
         "steem": 0.01,
-        "lastVote": "2026-10-06T20:12:42"
+        "lastVote": "2026-10-07T10:24:06"
       },
       {
         "name": "hcsoldier1",
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T10:22:59.334Z"
+    "at": "2026-10-07T10:32:58.608Z"
   },
   "engagement": {
     "ok": true,
@@ -382,7 +382,7 @@
         "author": "headcorner",
         "permlink": "the-measured-ledger-october-7-2026-market-signals-and-networ-muxiuzet",
         "title": "The Measured Ledger: October 7, 2026 - Market Signals and Network Pulse",
-        "ageH": 7,
+        "ageH": 8,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -517,7 +517,7 @@
         "author": "israelnews",
         "permlink": "how-effective-is-steem-s-curation-reward-system-20261006-0",
         "title": "How Effective Is Steem's Curation Reward System?",
-        "ageH": 12,
+        "ageH": 13,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -544,7 +544,7 @@
         "author": "cashmachine",
         "permlink": "understanding-steem-s-dual-token-system-steem-vs-sbd-20261006-0",
         "title": "Understanding Steem's Dual-Token System: STEEM vs SBD",
-        "ageH": 12,
+        "ageH": 13,
         "fleetVotes": [
           "haran"
         ],
@@ -1021,7 +1021,7 @@
       "authorResponseRate": 38,
       "avgScore": 1.2
     },
-    "at": "2026-10-07T10:22:50.911Z"
+    "at": "2026-10-07T10:32:50.912Z"
   },
   "compliance": {
     "protocol": "saos.fleet.compliance.v1",
@@ -1306,76 +1306,76 @@
   },
   "nextWindows": [
     {
-      "acc": "lsa",
-      "kind": "vote2",
-      "at": "10:28",
-      "inMin": 5
-    },
-    {
       "acc": "headcorner",
       "kind": "post",
       "at": "10:48",
-      "inMin": 25
+      "inMin": 15
     },
     {
       "acc": "headcorner",
       "kind": "vote1",
       "at": "11:26",
-      "inMin": 63
+      "inMin": 53
     },
     {
       "acc": "wic",
       "kind": "post",
       "at": "12:14",
-      "inMin": 111
+      "inMin": 101
     },
     {
       "acc": "wog",
       "kind": "vote1",
       "at": "12:34",
-      "inMin": 131
+      "inMin": 121
     },
     {
       "acc": "israelnews",
       "kind": "vote2",
       "at": "12:54",
-      "inMin": 151
+      "inMin": 141
     },
     {
       "acc": "israelnews",
       "kind": "engage",
       "at": "13:14",
-      "inMin": 171
+      "inMin": 161
     },
     {
       "acc": "hcsoldier1",
       "kind": "vote1",
       "at": "13:34",
-      "inMin": 191
+      "inMin": 181
     },
     {
       "acc": "haran",
       "kind": "engage",
       "at": "13:58",
-      "inMin": 215
+      "inMin": 205
     },
     {
       "acc": "hcsoldier2",
       "kind": "vote1",
       "at": "14:26",
-      "inMin": 243
+      "inMin": 233
     },
     {
       "acc": "haran",
       "kind": "vote2",
       "at": "14:54",
-      "inMin": 271
+      "inMin": 261
     },
     {
       "acc": "siq",
       "kind": "engage",
       "at": "15:14",
-      "inMin": 291
+      "inMin": 281
+    },
+    {
+      "acc": "macrame",
+      "kind": "engage",
+      "at": "15:34",
+      "inMin": 301
     }
   ],
   "lastPublish": {
@@ -1393,5 +1393,5 @@
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)",
     "threads": "שיח מתפתח = תגובות-לתגובות + הגב-מחבר — R233 מודד את העומק, לא רק את הכיסוי"
   },
-  "ms": 36011
+  "ms": 32631
 }
