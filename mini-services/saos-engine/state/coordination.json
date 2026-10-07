@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T01:20:06.150Z",
+  "at": "2026-10-07T01:30:06.147Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -122,14 +122,14 @@
     "accounts": [
       {
         "name": "headcorner",
-        "sp": 6.45,
-        "vpEff": 24.1,
-        "rcPct": 32.8,
+        "sp": 6.46,
+        "vpEff": 25.4,
+        "rcPct": 33,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
         "rcGate": null,
-        "steem": 30.749,
+        "steem": 24.025,
         "lastVote": "2026-10-06T20:35:18"
       },
       {
@@ -256,7 +256,7 @@
         "name": "hcsoldier1",
         "sp": 0,
         "vpEff": null,
-        "rcPct": null,
+        "rcPct": 100,
         "verdict": "VP-UNKNOWN",
         "weightPct": 0,
         "lowRc": false,
@@ -268,7 +268,7 @@
         "name": "hcsoldier2",
         "sp": 0,
         "vpEff": null,
-        "rcPct": null,
+        "rcPct": 100,
         "verdict": "VP-UNKNOWN",
         "weightPct": 0,
         "lowRc": false,
@@ -280,7 +280,7 @@
         "name": "hcsoldier3",
         "sp": 0,
         "vpEff": null,
-        "rcPct": null,
+        "rcPct": 100,
         "verdict": "VP-UNKNOWN",
         "weightPct": 0,
         "lowRc": false,
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T01:20:13.369Z"
+    "at": "2026-10-07T01:30:13.986Z"
   },
   "engagement": {
     "ok": true,
@@ -433,7 +433,7 @@
         "author": "israelnews",
         "permlink": "how-effective-is-steem-s-curation-reward-system-20261006-0",
         "title": "How Effective Is Steem's Curation Reward System?",
-        "ageH": 3,
+        "ageH": 4,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -460,7 +460,7 @@
         "author": "cashmachine",
         "permlink": "understanding-steem-s-dual-token-system-steem-vs-sbd-20261006-0",
         "title": "Understanding Steem's Dual-Token System: STEEM vs SBD",
-        "ageH": 3,
+        "ageH": 4,
         "fleetVotes": [
           "haran"
         ],
@@ -1021,17 +1021,17 @@
       "authorResponseRate": 0,
       "avgScore": 0.3
     },
-    "at": "2026-10-07T01:20:06.150Z"
+    "at": "2026-10-07T01:30:06.147Z"
   },
   "compliance": {
     "protocol": "saos.fleet.compliance.v1",
     "day": "2026-10-07",
-    "at": "2026-10-07T00:46:47.874Z",
+    "at": "2026-10-07T01:20:06.150Z",
     "scheduleHint": "14 accounts × (post+2vote+engage) · tol 30min",
     "rows": [
       {
         "acc": "headcorner",
-        "total": 1,
+        "total": 2,
         "inWindow": 0,
         "compliancePct": 0,
         "clusters": 0,
@@ -1039,6 +1039,11 @@
           {
             "kind": "post",
             "at": "00:13",
+            "nearest": "10:48"
+          },
+          {
+            "kind": "post",
+            "at": "01:14",
             "nearest": "10:48"
           }
         ],
@@ -1165,7 +1170,7 @@
     "summary": {
       "accounts": 14,
       "accountsActive": 1,
-      "totalActions": 1,
+      "totalActions": 2,
       "avgCompliancePct": 0,
       "densestBurst": 1,
       "burstAt": "00:13",
@@ -1182,8 +1187,8 @@
         "burstAt": "00:13",
         "clusterViolations": 0,
         "accountsActive": 1,
-        "totalActions": 1,
-        "at": "2026-10-07T00:46:47.874Z"
+        "totalActions": 2,
+        "at": "2026-10-07T01:20:06.150Z"
       }
     ],
     "trend": {
@@ -1196,7 +1201,7 @@
       "prevDay": null
     },
     "note": "ציות = הפעולה בפועל נחתה בתוך חלון-הלו\"ז הדטרמיניסטי (אותו יום, אותו חוק). QUIET = עדיין אין פעילות-היום — לא-ציות ולא-הפרה. R233: history = קו-המגמה יום-מול-יום.",
-    "ms": 14792
+    "ms": 16149
   },
   "trends": {
     "fetchedAt": "2026-10-06T21:16:09.311Z",
@@ -1307,73 +1312,73 @@
       "acc": "lsa",
       "kind": "post",
       "at": "01:36",
-      "inMin": 16
+      "inMin": 6
     },
     {
       "acc": "wog",
       "kind": "engage",
       "at": "01:56",
-      "inMin": 36
+      "inMin": 26
     },
     {
       "acc": "hcsoldier2",
       "kind": "engage",
       "at": "02:16",
-      "inMin": 56
+      "inMin": 46
     },
     {
       "acc": "cashmachine",
       "kind": "vote1",
       "at": "02:36",
-      "inMin": 76
+      "inMin": 66
     },
     {
       "acc": "lsa",
       "kind": "vote1",
       "at": "02:56",
-      "inMin": 96
+      "inMin": 86
     },
     {
       "acc": "israelnews",
       "kind": "vote1",
       "at": "04:32",
-      "inMin": 192
+      "inMin": 182
     },
     {
       "acc": "tov",
       "kind": "post",
       "at": "04:52",
-      "inMin": 212
+      "inMin": 202
     },
     {
       "acc": "haran",
       "kind": "post",
       "at": "05:57",
-      "inMin": 277
+      "inMin": 267
     },
     {
       "acc": "cashmachine",
       "kind": "engage",
       "at": "06:17",
-      "inMin": 297
+      "inMin": 287
     },
     {
       "acc": "haran",
       "kind": "vote1",
       "at": "06:53",
-      "inMin": 333
+      "inMin": 323
     },
     {
       "acc": "macrame",
       "kind": "post",
       "at": "07:13",
-      "inMin": 353
+      "inMin": 343
     },
     {
       "acc": "israelnews",
       "kind": "post",
       "at": "07:52",
-      "inMin": 392
+      "inMin": 382
     }
   ],
   "lastPublish": {
@@ -1391,5 +1396,5 @@
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)",
     "threads": "שיח מתפתח = תגובות-לתגובות + הגב-מחבר — R233 מודד את העומק, לא רק את הכיסוי"
   },
-  "ms": 24913
+  "ms": 26614
 }
