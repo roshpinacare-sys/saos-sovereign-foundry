@@ -4,27 +4,27 @@
   "armed": true,
   "paused": false,
   "watchdog": {
-    "checks": 2767,
-    "downs": 106,
-    "heals": 40,
-    "healVerified": 39,
+    "checks": 2777,
+    "downs": 107,
+    "heals": 41,
+    "healVerified": 40,
     "healFailed": 0,
-    "lastCheckAt": "2026-10-07T02:36:41.289Z",
+    "lastCheckAt": "2026-10-07T02:46:41.292Z",
     "engineUp": true,
-    "lastSpawnAt": "2026-10-07T02:34:41.286Z",
-    "lastUpAt": "2026-10-07T02:36:41.293Z",
+    "lastSpawnAt": "2026-10-07T02:39:46.331Z",
+    "lastUpAt": "2026-10-07T02:46:41.295Z",
     "blips": 2
   },
   "cycles": {
-    "autoRuns": 273,
-    "ok": 213,
+    "autoRuns": 274,
+    "ok": 214,
     "fail": 22,
     "blocked": 38,
-    "lastAt": "2026-10-07T02:35:21.347Z",
+    "lastAt": "2026-10-07T02:45:21.282Z",
     "lastOk": true,
     "lastHealth": "ok",
-    "lastMs": 35160,
-    "nextAt": "2026-10-07T02:45:21.347Z"
+    "lastMs": 38703,
+    "nextAt": "2026-10-07T02:55:21.282Z"
   },
   "selftest": {
     "runs": 1,
@@ -41,13 +41,13 @@
     "lastAlertAt": "2026-10-05T20:18:33.747Z"
   },
   "custodian": {
-    "checks": 1209,
+    "checks": 1219,
     "downs": 4,
     "heals": 4,
     "healFailed": 0,
-    "lastCheckAt": "2026-10-07T02:36:41.293Z",
+    "lastCheckAt": "2026-10-07T02:46:41.295Z",
     "up": true,
-    "lastUpAt": "2026-10-07T02:36:41.297Z",
+    "lastUpAt": "2026-10-07T02:46:41.297Z",
     "lastSpawnAt": null
   },
   "control": [

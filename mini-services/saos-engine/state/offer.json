@@ -1,30 +1,76 @@
 {
-  "verdict": "OFFER-EMPTY",
-  "parityBps": 0,
+  "verdict": "OFFER-READY",
+  "parityBps": -12,
   "blocker": null,
   "plan": {
     "asks": [],
-    "bids": [],
+    "bids": [
+      {
+        "side": "bid",
+        "amountSbd": 1.368107,
+        "unit": 0.103766,
+        "at": "2026-10-07T02:44:41.243Z",
+        "tranche": "value"
+      },
+      {
+        "side": "bid",
+        "amountSbd": 1.368107,
+        "unit": 0.103659,
+        "at": "2026-10-07T02:44:41.243Z",
+        "tranche": "value"
+      },
+      {
+        "side": "bid",
+        "amountSbd": 1.368107,
+        "unit": 0.103553,
+        "at": "2026-10-07T02:44:41.243Z",
+        "tranche": "value"
+      },
+      {
+        "side": "bid",
+        "amountSbd": 1.157679,
+        "unit": 0.103447,
+        "at": "2026-10-07T02:44:41.243Z",
+        "tranche": "value"
+      }
+    ],
     "flowAsks": [],
-    "flowBids": []
+    "flowBids": [
+      {
+        "side": "bid",
+        "amountSbd": 0.5,
+        "unit": 0.100583,
+        "steemOut3": 4.971,
+        "at": "2026-10-07T02:44:41.243Z",
+        "tranche": "flow"
+      },
+      {
+        "side": "bid",
+        "amountSbd": 0.5,
+        "unit": 0.100441,
+        "steemOut3": 4.978,
+        "at": "2026-10-07T02:44:41.243Z",
+        "tranche": "flow"
+      }
+    ]
   },
   "flow": {
     "bestAsk": 0.101102,
-    "bestBid": 0.100543,
+    "bestBid": 0.100574,
     "spacingBps": 15,
     "levels": 4,
     "askBudgetSteem": 0.00024,
-    "bidBudgetSbd": 0,
+    "bidBudgetSbd": 1.20504,
     "feedAnchor": 0.104096,
     "flowAsks": 0,
-    "flowBids": 0
+    "flowBids": 2
   },
   "book": {
     "bestAsk": 0.10110201193003741,
-    "bestBid": 0.10054347826086957,
-    "askDepthSteem": 958.45,
-    "bidDepthSbd": 2867.684,
-    "at": "2026-10-07T02:34:45.293Z"
+    "bestBid": 0.10057384475989127,
+    "askDepthSteem": 861.341,
+    "bidDepthSbd": 2873.936,
+    "at": "2026-10-07T02:44:41.243Z"
   },
   "market": {
     "at": "2026-10-07T02:14:46.466Z",
@@ -47,37 +93,39 @@
     }
   },
   "marks": {
-    "paritySbdPerSteem": 0.104096,
-    "source": "internal-feed-fallback+derived-sbd",
-    "lowConfidence": true,
+    "paritySbdPerSteem": 0.103975,
+    "source": "coingecko",
+    "lowConfidence": false,
     "internalFeed": 0.104096,
-    "dragK": 1.0275,
-    "floor": 0.104305,
-    "ceiling": 0.103888,
-    "spreadBpsFed": 55
+    "dragK": 1.026,
+    "floor": 0.104183,
+    "ceiling": 0.103766,
+    "spreadBpsFed": 52
   },
   "skew": {
-    "skew": -0.29314,
-    "askMult": 0.70686,
-    "bidMult": 1.29314,
+    "skew": -0.299988,
+    "askMult": 0.700012,
+    "bidMult": 1.299988,
     "reason": "hummingbot-inventory-skew"
   },
   "stale": {
-    "count": 5,
+    "count": 7,
     "orderids": [
       2026100701,
       2026100702,
       2026100703,
       2026100791,
-      2026100792
+      2026100792,
+      2100002699,
+      2100002700
     ]
   },
   "liquidity": {
     "deployedAsks": 1009.395,
-    "deployedBids": 0.148,
+    "deployedBids": 2.658,
     "askBudget": 0,
-    "bidBudget": 0,
+    "bidBudget": 5.262,
     "deployCap": 0.6
   },
-  "publishedAt": "2026-10-07T02:34:45.293Z"
+  "publishedAt": "2026-10-07T02:44:41.243Z"
 }

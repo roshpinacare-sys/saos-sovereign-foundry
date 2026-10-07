@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-10-07T02:32:40.725Z",
+ "updatedAt": "2026-10-07T02:42:40.733Z",
  "pendingWeave": false,
  "purpose": "Task 26-c fleet RC cure — RC windows measured live per fleet account (chain-side, keyless); execution = external-signer :3033 authority gate, which only ever signs with keys sealed in the envelope and verified live (see vault summary below). pendingWeave decides whether anything is scheduled at all (roast-62: readiness ≠ schedule).",
  "opCostRc": 230000000,
@@ -13,64 +13,64 @@
  "accounts": [
   {
    "account": "cashmachine",
-   "mana": 1162660101,
-   "manaPct": 55.2,
+   "mana": 1165583276,
+   "manaPct": 55.4,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "haran",
-   "mana": 1394748250,
-   "manaPct": 61.6,
+   "mana": 1397894481,
+   "manaPct": 61.7,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "israelnews",
-   "mana": 1355370882,
-   "manaPct": 60.9,
+   "mana": 1358463863,
+   "manaPct": 61,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "lsa",
-   "mana": 2455022654,
-   "manaPct": 63.1,
+   "mana": 2460426665,
+   "manaPct": 63.2,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "macrame",
-   "mana": 2566966549,
-   "manaPct": 61.4,
+   "mana": 2572768922,
+   "manaPct": 61.6,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "siq",
-   "mana": 1477517346,
-   "manaPct": 64.5,
+   "mana": 1480697267,
+   "manaPct": 64.7,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "wic",
-   "mana": 2068444849,
-   "manaPct": 67,
+   "mana": 2072730627,
+   "manaPct": 67.2,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "wog",
-   "mana": 2115784948,
-   "manaPct": 64.6,
+   "mana": 2120331286,
+   "manaPct": 64.8,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "woq",
-   "mana": 1493986664,
-   "manaPct": 65.7,
+   "mana": 1497143892,
+   "manaPct": 65.9,
    "etaToWindowMin": 0,
    "state": "ready"
   }

@@ -643,3 +643,8 @@
 {"at":"2026-10-07T02:34:45.290Z","kind":"heal-verified","up":true}
 {"at":"2026-10-07T02:34:46.292Z","kind":"watchdog-blip","downForMs":65039,"note":"transient — second pulse proved alive"}
 {"at":"2026-10-07T02:35:21.347Z","kind":"cycle-ok(auto)","ms":35160,"engineMeasured":true,"steps":22,"verdict":null,"blockedSteps":[],"error":null}
+{"at":"2026-10-07T02:39:46.297Z","kind":"watchdog-down","downForMs":65004,"confirmMs":5000}
+{"at":"2026-10-07T02:39:46.297Z","kind":"heal-attempt","reason":"watchdog"}
+{"at":"2026-10-07T02:39:46.331Z","kind":"heal-spawn","reason":"watchdog","pid":25163}
+{"at":"2026-10-07T02:39:50.334Z","kind":"heal-verified","up":true}
+{"at":"2026-10-07T02:45:21.282Z","kind":"cycle-ok(auto)","ms":38703,"engineMeasured":true,"steps":22,"verdict":null,"blockedSteps":[],"error":null}
