@@ -16,7 +16,7 @@
       "id": "curation",
       "label": "קיורציה · מסילת-דלק",
       "measuredUsdPerDay": null,
-      "estUsdPerDay": 0.512173,
+      "estUsdPerDay": 0.518649,
       "confidence": "estimated",
       "note": "~8.75 STEEM/יום — ESTIMATED (payout clock ~7d, first verification T-18c)"
     },
@@ -57,16 +57,16 @@
     }
   ],
   "totalMeasuredUsdPerDay": 0,
-  "totalEstUsdPerDay": 0.512173,
+  "totalEstUsdPerDay": 0.518649,
   "measuredCount": 1,
   "estimatedCount": 2,
   "blockedCount": 3,
   "law": "סכום-מדוד וסכום-מוערך לעולם לא מתמזגים — שתי שורות-אמת נפרדות",
-  "parity": 0.09915904589071156,
-  "asof": "2026-10-07T02:05:26.242Z",
+  "parity": 0.10041310690962821,
+  "asof": "2026-10-07T02:14:41.239Z",
   "context": {
-    "venueFillsPerDay": 558,
-    "venueVolSteem24h": 701.923,
+    "venueFillsPerDay": 562,
+    "venueVolSteem24h": 853.29,
     "ourFillsObservable": 0,
     "scalingLaw": "ops/day ∝ RC ∝ SP — ההון-החכם מכפיל את התקרה, לא את הקוד"
   },
@@ -85,39 +85,39 @@
     "any": false
   },
   "x2": {
-    "currentUsdPerDay": 0.5122,
+    "currentUsdPerDay": 0.5186,
     "targetUsdPerDay": 1000,
     "currentSp": 958,
-    "factor": 1952.5,
+    "factor": 1928.1,
     "rows": [
       {
         "mult": 1,
         "sp": 958,
-        "usdPerDay": 0.51,
+        "usdPerDay": 0.52,
         "reachesTarget": false
       },
       {
         "mult": 10,
         "sp": 9585,
-        "usdPerDay": 5.12,
+        "usdPerDay": 5.19,
         "reachesTarget": false
       },
       {
         "mult": 40,
         "sp": 38340,
-        "usdPerDay": 20.49,
+        "usdPerDay": 20.75,
         "reachesTarget": false
       },
       {
         "mult": 100,
         "sp": 95849,
-        "usdPerDay": 51.22,
+        "usdPerDay": 51.86,
         "reachesTarget": false
       },
       {
-        "mult": 1953,
-        "sp": 1871933,
-        "usdPerDay": 1000.27,
+        "mult": 1929,
+        "sp": 1848930,
+        "usdPerDay": 1000.47,
         "reachesTarget": true
       }
     ],

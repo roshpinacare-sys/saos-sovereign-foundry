@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T02:05:26.242Z",
+  "at": "2026-10-07T02:14:41.239Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -124,12 +124,12 @@
         "name": "headcorner",
         "sp": 6.46,
         "vpEff": 25.4,
-        "rcPct": 32,
+        "rcPct": 31.8,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
         "rcGate": null,
-        "steem": 26.129,
+        "steem": 24.762,
         "lastVote": "2026-10-06T20:35:18"
       },
       {
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T02:05:32.614Z"
+    "at": "2026-10-07T02:14:49.881Z"
   },
   "engagement": {
     "ok": true,
@@ -379,7 +379,7 @@
         "author": "lsa",
         "permlink": "understanding-blockchain-curation-rewards-20261006-0",
         "title": "Understanding Blockchain Curation Rewards",
-        "ageH": 3,
+        "ageH": 4,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -1021,7 +1021,7 @@
       "authorResponseRate": 0,
       "avgScore": 0.3
     },
-    "at": "2026-10-07T02:05:26.242Z"
+    "at": "2026-10-07T02:14:41.239Z"
   },
   "compliance": {
     "protocol": "saos.fleet.compliance.v1",
@@ -1316,73 +1316,73 @@
       "acc": "hcsoldier2",
       "kind": "engage",
       "at": "02:16",
-      "inMin": 11
+      "inMin": 1
     },
     {
       "acc": "cashmachine",
       "kind": "vote1",
       "at": "02:36",
-      "inMin": 31
+      "inMin": 21
     },
     {
       "acc": "lsa",
       "kind": "vote1",
       "at": "02:56",
-      "inMin": 51
+      "inMin": 41
     },
     {
       "acc": "israelnews",
       "kind": "vote1",
       "at": "04:32",
-      "inMin": 147
+      "inMin": 137
     },
     {
       "acc": "tov",
       "kind": "post",
       "at": "04:52",
-      "inMin": 167
+      "inMin": 157
     },
     {
       "acc": "haran",
       "kind": "post",
       "at": "05:57",
-      "inMin": 232
+      "inMin": 222
     },
     {
       "acc": "cashmachine",
       "kind": "engage",
       "at": "06:17",
-      "inMin": 252
+      "inMin": 242
     },
     {
       "acc": "haran",
       "kind": "vote1",
       "at": "06:53",
-      "inMin": 288
+      "inMin": 278
     },
     {
       "acc": "macrame",
       "kind": "post",
       "at": "07:13",
-      "inMin": 308
+      "inMin": 298
     },
     {
       "acc": "israelnews",
       "kind": "post",
       "at": "07:52",
-      "inMin": 347
+      "inMin": 337
     },
     {
       "acc": "macrame",
       "kind": "vote1",
       "at": "08:12",
-      "inMin": 367
+      "inMin": 357
     },
     {
       "acc": "wic",
       "kind": "vote1",
       "at": "08:54",
-      "inMin": 409
+      "inMin": 399
     }
   ],
   "lastPublish": {
@@ -1400,5 +1400,5 @@
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)",
     "threads": "שיח מתפתח = תגובות-לתגובות + הגב-מחבר — R233 מודד את העומק, לא רק את הכיסוי"
   },
-  "ms": 27624
+  "ms": 31598
 }
