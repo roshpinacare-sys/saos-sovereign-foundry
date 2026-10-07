@@ -1,22 +1,22 @@
 {
-  "at": "2026-10-07T03:14:41.248Z",
+  "at": "2026-10-07T03:26:31.618Z",
   "enabled": true,
-  "runsTotal": 291,
+  "runsTotal": 293,
   "verdict": "LEARNED",
   "metrics": {
     "cycles": {
-      "window": 130,
-      "oks": 128,
+      "window": 127,
+      "oks": 125,
       "fails": 2,
       "blocked": 0,
-      "okRate": 98.5,
+      "okRate": 98.4,
       "blockedRate": 0,
       "failReasons": {
         "none": 1,
         "unknown": 1
       },
-      "msP50": 12939,
-      "msP90": 33404
+      "msP50": 13053,
+      "msP90": 35160
     },
     "curator": {
       "present": true,
@@ -33,20 +33,20 @@
       "maxPerDay": 10
     },
     "exec": {
-      "window": 4,
-      "fails": 4,
+      "window": 6,
+      "fails": 6,
       "lastError": "missing required active authority:Missing Active Authority headcorner"
     },
     "watchdog": {
-      "checks": 2805,
-      "downs": 107,
-      "heals": 41,
-      "healVerified": 40,
+      "checks": 2817,
+      "downs": 109,
+      "heals": 43,
+      "healVerified": 42,
       "healFailed": 0,
-      "lastCheckAt": "2026-10-07T03:14:41.300Z",
+      "lastCheckAt": "2026-10-07T03:25:46.607Z",
       "engineUp": true,
-      "lastSpawnAt": "2026-10-07T02:39:46.331Z",
-      "lastUpAt": "2026-10-07T03:14:41.302Z",
+      "lastSpawnAt": null,
+      "lastUpAt": "2026-10-07T03:25:46.625Z",
       "blips": 2
     }
   },
@@ -61,7 +61,7 @@
     {
       "id": "broadcast-fails",
       "severity": "high",
-      "evidence": "4/4 broadcasts failed · last: missing required active authority:Missing Active Authority headcorner",
+      "evidence": "6/6 broadcasts failed · last: missing required active authority:Missing Active Authority headcorner",
       "lesson": "broadcast failures burn RC and delay rails",
       "action": "fail-closed stop already holds; vote-interval retry added T-14"
     }
@@ -70,9 +70,9 @@
   "tuningsApplied": [],
   "lessonsTotal": {
     "cycle-conn-fails": 132,
-    "unclassified-fail-legacy": 145,
+    "unclassified-fail-legacy": 147,
     "signing-cred-blocked": 205,
-    "broadcast-fails": 69
+    "broadcast-fails": 71
   },
   "honesty": "learning reads recorded history only · tunings hard-clamped (LEARN_CLAMP) · doctrine laws untouchable"
 }

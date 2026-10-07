@@ -5510,3 +5510,33 @@
 {"type":"learn.done","at":"2026-10-07T03:14:41.248Z","verdict":"LEARNED","lessons":["unclassified-fail-legacy","broadcast-fails"],"tunings":[]}
 {"type":"hyper.requote","at":"2026-10-07T03:15:49.498Z","label":"front-create","ops":2,"cancels":0,"creates":2,"txid":"caaf016bc007a706b57277afb32c3b5dcbca5aff","rcPct":30.2,"opsToday":294,"equilibriumOpsPerDay":10148,"bestAsk":0.10385294423096895,"bestBid":0.10023076151299287}
 {"type":"hyper.requote","at":"2026-10-07T03:17:13.504Z","label":"front-create","ops":2,"cancels":0,"creates":2,"txid":"04f4afa487c1ffcbc8fbe20c637a5011a83ed131","rcPct":30.2,"opsToday":296,"equilibriumOpsPerDay":10148,"bestAsk":0.10385294423096895,"bestBid":0.10023076151299287}
+{"type":"hyper.boot","at":"2026-10-07T03:18:46.413Z","pid":1174,"conf":{"enabled":true,"tickMs":3000,"levels":10,"spacingBps":15,"ttlSec":60,"orderTtlSec":3600,"askBudgetPct":0.12,"minRcPct":25,"setpointPct":50,"burst":3,"maxOpsPerTick":24,"opsDayCap":32000,"chainTailSec":60,"maxOpsPerTx":24}}
+{"type":"fleet-grid.boot","at":"2026-10-07T03:18:46.417Z","tickMs":180000,"accounts":13,"orderTrace":"1a113f67a0ed4be9"}
+{"type":"hyper.requote","at":"2026-10-07T03:18:49.414Z","label":"front-create","ops":2,"cancels":0,"creates":2,"txid":"a1d10a9039860a38c7e75f3ead81319e98b6ea23","rcPct":30.2,"opsToday":298,"equilibriumOpsPerDay":10148,"bestAsk":0.10385294423096895,"bestBid":0.10023076151299287}
+{"type":"hyper.requote","at":"2026-10-07T03:20:13.417Z","label":"front-create","ops":2,"cancels":0,"creates":2,"txid":"623dabaa617782f1d034e4cf9f83252a21a21940","rcPct":30.2,"opsToday":300,"equilibriumOpsPerDay":10148,"bestAsk":0.10385294423096895,"bestBid":0.10023076151299287}
+{"type":"hyper.boot","at":"2026-10-07T03:21:46.393Z","pid":1904,"conf":{"enabled":true,"tickMs":3000,"levels":10,"spacingBps":15,"ttlSec":60,"orderTtlSec":3600,"askBudgetPct":0.12,"minRcPct":25,"setpointPct":50,"burst":3,"maxOpsPerTick":24,"opsDayCap":32000,"chainTailSec":60,"maxOpsPerTx":24}}
+{"type":"fleet-grid.boot","at":"2026-10-07T03:21:46.397Z","tickMs":180000,"accounts":13,"orderTrace":"1a113f67a0ed4be9"}
+{"type":"hyper.requote","at":"2026-10-07T03:22:49.395Z","label":"requote-front","ops":2,"cancels":2,"creates":0,"txid":"dfc253ad08325e55bf6baf431e5b6452797f71d3","rcPct":30.1,"opsToday":302,"equilibriumOpsPerDay":10148,"bestAsk":0.10385294423096895,"bestBid":0.10024081878386513}
+{"type":"fleet-grid.ladder","at":"2026-10-07T03:22:31.397Z","account":"hcsoldier4","ops":4,"txid":"e7abaca78b68cbf1426c2676f147dc553608dd4d","decision":"deploy"}
+{"type":"fleet-grid.ladder","at":"2026-10-07T03:22:31.397Z","account":"hcsoldier5","ops":4,"txid":"6d8f8ca7fa27b591db31dee6b58b17ea5f750db0","decision":"deploy"}
+{"type":"fleet-grid.ladder","at":"2026-10-07T03:22:31.397Z","account":"hcsoldier6","ops":4,"txid":"b08b42451e103f0c521c3ced44dfdccc9f1746d1","decision":"deploy"}
+{"type":"hyper.requote","at":"2026-10-07T03:24:16.400Z","label":"requote-front","ops":2,"cancels":2,"creates":0,"txid":"015a9d09ad51b992335197d6b6075136510ecb10","rcPct":30.1,"opsToday":304,"equilibriumOpsPerDay":10148,"bestAsk":0.10385294423096895,"bestBid":0.10024803637866887}
+{"type":"observe.done","at":"2026-10-07T03:24:59.567Z","fills":0,"parity":0.10409644260822257}
+{"type":"grid.tick","at":"2026-10-07T03:24:59.567Z","runCount":334,"refPrice":0.10409644260822257,"internalFeed":0.10409644260822257,"dragK":1,"inv":{"steem":0.004,"sbd":10.2}}
+{"type":"sweep.scan","at":"2026-10-07T03:24:59.567Z","grid":"sweep","dustSteem":0.004}
+{"type":"anchor.quote","at":"2026-10-07T03:24:59.567Z","grid":"anchor-quote","bid":0.10388824972300612,"ask":0.10430463549343902}
+{"type":"offer.published","at":"2026-10-07T03:24:59.567Z","verdict":"OFFER-READY","asks":0,"bids":4,"flowAsks":0,"flowBids":2,"bestAsk":0.10300575279980938,"bestBid":0.10120750398988226}
+{"type":"convert.planned","at":"2026-10-07T03:24:59.567Z","verdict":"CONVERT-PLAN","edgeBps":7572,"amountSbd":9.7}
+{"type":"learn.done","at":"2026-10-07T03:24:59.567Z","verdict":"LEARNED","lessons":["unclassified-fail-legacy","broadcast-fails"],"tunings":[]}
+{"type":"discover.done","at":"2026-10-07T03:24:59.567Z","verdict":"OPTIONS-FOUND","tags":12,"opportunities":["spread-wide","tags-realloc","curation-share","fleet-growth"]}
+{"type":"publish.post","at":"2026-10-07T03:24:59.567Z","id":"d1790893224431-2","title":"Streamlining Your Blockchain Content Workflow","permlink":"streamlining-your-blockchain-content-workflow-2026-10-07","verdict":"POST-FAIL:Assert Exception:permlink.size() > STEEM","txid":"91c25b0731edec6f2069d9dc4b75ff895ad5436c"}
+{"type":"publish.post","at":"2026-10-07T03:24:59.567Z","id":"d1790893224431-1","title":"What Makes Content Truly Valuable on Blockchain?","permlink":"what-makes-content-truly-valuable-on-blockchain-2026-10-07","verdict":"POST-FAIL:Assert Exception:permlink.size() > STEEM","txid":"e4ad03c840054537e65ed708dc159e063929e343"}
+{"type":"observe.done","at":"2026-10-07T03:26:31.618Z","fills":0,"parity":0.10409644260822257}
+{"type":"grid.tick","at":"2026-10-07T03:26:31.618Z","runCount":335,"refPrice":0.10409644260822257,"internalFeed":0.10409644260822257,"dragK":1,"inv":{"steem":0.004,"sbd":8.26}}
+{"type":"sweep.scan","at":"2026-10-07T03:26:31.618Z","grid":"sweep","dustSteem":0.004}
+{"type":"anchor.quote","at":"2026-10-07T03:26:31.618Z","grid":"anchor-quote","bid":0.10388824972300612,"ask":0.10430463549343902}
+{"type":"offer.published","at":"2026-10-07T03:26:31.618Z","verdict":"OFFER-READY","asks":0,"bids":4,"flowAsks":0,"flowBids":1,"bestAsk":0.10290482076637825,"bestBid":0.10121035058430718}
+{"type":"convert.planned","at":"2026-10-07T03:26:31.618Z","verdict":"CONVERT-PLAN","edgeBps":7572,"amountSbd":7.76}
+{"type":"learn.done","at":"2026-10-07T03:26:31.618Z","verdict":"LEARNED","lessons":["unclassified-fail-legacy","broadcast-fails"],"tunings":[]}
+{"type":"publish.post","at":"2026-10-07T03:26:31.618Z","id":"d1790893224431-0","title":"Understanding Blockchain Curation Rewards","permlink":"understanding-blockchain-curation-rewards-2026-10-07","verdict":"POST-FAIL:Assert Exception:permlink.size() > STEEM","txid":"2447db8c048ee66ab9ee97a4dfe7066feca74cf6"}
+{"type":"publish.post","at":"2026-10-07T03:26:31.618Z","id":"d1791226956831-2","title":"Optimizing Your Steem Workflow: Tools for Content Creators","permlink":"optimizing-your-steem-workflow-tools-for-content-creators-2026-10-07","verdict":"POST-FAIL:Assert Exception:permlink.size() > STEEM","txid":"a7d306a3e049a2fcf9f3c34b8db501b6b2924b3c"}

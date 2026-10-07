@@ -84,11 +84,11 @@ export function grindCarried(prev, day) {
 /* ── state ─────────────────────────────────────────────────────────────── */
 export function fleetGrindState() {
   const st = readJson(FILE, null);
-  const conf = readJson(path.join(DIR, "state", "exec-armed.json"), null);
-  const accounts = Array.isArray(conf?.fleetGrid?.accounts) ? conf.fleetGrid.accounts : [];
+  let accounts = [];
+  try { accounts = (armedConf()?.fleetGrid?.accounts ?? []).filter(Boolean); } catch { /* no conf → empty schedule */ }
   const schedule = accounts.map((name) => {
     const m = grindMinute(name);
-    return { name, windowStart: `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`, windowEnd: `${String(Math.floor((m + GRIND_WINDOW_MIN) / 60) % 24).padStart(2, "0")}:${String((m + GRIND_WINDOW_MIN) % 60).padStart(2, "0")}` };
+    return { name, windowStart: `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`, windowEnd: `${String(Math.floor((m + GRIND_WINDOW_MIN) / 60) % 24).padStart(2, "0")}:${String((m + GRIND_WINDOW_MIN) % 60).padStart(2, "0")}` };
   });
   return { ...st, law: "fleet-grind: חשבונות-מפתח עושים גרינד יומי (1 הצבעה + 1 תגובה, חלונות מפוזרים, חוק-חשיפה: אף-צולב-פנימי), RC רצפה 12%, VP powerVerdict", schedule };
 }

@@ -38,7 +38,7 @@
       "truthContract": "countDayFillsFromHistory / countDayOrderOpsFromHistory on real rows",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
       "evidence": null,
-      "priorStatus": "active"
+      "priorStatus": "planned"
     },
     {
       "id": "treasury-sentinel",
@@ -49,7 +49,7 @@
       "cadence": "cycle",
       "truthContract": "edge in bps from measured market vs implied, HOLD verdict honest",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/convert-plan.json: CONVERT-PLAN (edge 6951bps)",
+      "evidence": "state/convert-plan.json: CONVERT-PLAN (edge 7572bps)",
       "priorStatus": "active"
     },
     {
@@ -137,6 +137,6 @@
       "priorStatus": "active"
     }
   ],
-  "at": "2026-10-07T03:14:41.248Z",
-  "pid": 25163
+  "at": "2026-10-07T03:26:31.618Z",
+  "pid": 1904
 }

@@ -1,8 +1,8 @@
 {
   "running": false,
-  "startedAt": "2026-10-07T03:14:41.248Z",
-  "finishedAt": "2026-10-07T03:15:25.835Z",
-  "ms": 44587,
+  "startedAt": "2026-10-07T03:26:31.618Z",
+  "finishedAt": "2026-10-07T03:27:16.357Z",
+  "ms": 44739,
   "health": "ok",
   "ok": true,
   "steps": {
@@ -24,6 +24,8 @@
     "coordination": true,
     "compliance": true,
     "windowExec": true,
+    "publish": true,
+    "grind": true,
     "selftest": true,
     "economics": true,
     "recruit": true,

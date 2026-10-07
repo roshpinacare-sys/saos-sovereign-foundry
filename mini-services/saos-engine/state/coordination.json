@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T03:14:41.248Z",
+  "at": "2026-10-07T03:26:31.618Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -124,7 +124,7 @@
         "name": "headcorner",
         "sp": 6.46,
         "vpEff": 25.4,
-        "rcPct": 30.2,
+        "rcPct": 30.1,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T03:14:52.257Z"
+    "at": "2026-10-07T03:26:42.620Z"
   },
   "engagement": {
     "ok": true,
@@ -406,7 +406,7 @@
         "author": "wog",
         "permlink": "what-makes-content-truly-valuable-on-blockchain-20261006-0",
         "title": "What Makes Content Truly Valuable on Blockchain?",
-        "ageH": 4,
+        "ageH": 5,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -487,7 +487,7 @@
         "author": "israelnews",
         "permlink": "how-effective-is-steem-s-curation-reward-system-20261006-0",
         "title": "How Effective Is Steem's Curation Reward System?",
-        "ageH": 5,
+        "ageH": 6,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -514,7 +514,7 @@
         "author": "cashmachine",
         "permlink": "understanding-steem-s-dual-token-system-steem-vs-sbd-20261006-0",
         "title": "Understanding Steem's Dual-Token System: STEEM vs SBD",
-        "ageH": 5,
+        "ageH": 6,
         "fleetVotes": [
           "haran"
         ],
@@ -1019,12 +1019,12 @@
       "authorResponseRate": 0,
       "avgScore": 0
     },
-    "at": "2026-10-07T03:14:41.248Z"
+    "at": "2026-10-07T03:26:31.618Z"
   },
   "compliance": {
     "protocol": "saos.fleet.compliance.v1",
     "day": "2026-10-07",
-    "at": "2026-10-07T02:54:41.243Z",
+    "at": "2026-10-07T03:24:59.567Z",
     "scheduleHint": "14 accounts × (post+2vote+engage) · tol 30min",
     "rows": [
       {
@@ -1190,7 +1190,7 @@
         "clusterViolations": 0,
         "accountsActive": 0,
         "totalActions": 0,
-        "at": "2026-10-07T02:54:41.243Z"
+        "at": "2026-10-07T03:24:59.567Z"
       }
     ],
     "trend": {
@@ -1203,108 +1203,91 @@
       "prevDay": null
     },
     "note": "ציות = הפעולה בפועל נחתה בתוך חלון-הלו\"ז הדטרמיניסטי (אותו יום, אותו חוק). QUIET = עדיין אין פעילות-היום — לא-ציות ולא-הפרה. R233: history = קו-המגמה יום-מול-יום.",
-    "ms": 14342
+    "ms": 17527
   },
   "trends": {
-    "fetchedAt": "2026-10-06T21:16:09.311Z",
+    "fetchedAt": "2026-10-07T03:24:59.567Z",
     "verdict": "TRENDS-OK",
     "topics": [
       {
-        "id": "tr1791321369311-0",
-        "topic": "STEEM Price Breaking 365-day SMA: What Does It Mean for the Network?",
-        "angle": "Educational explainer about technical indicators and their significance for blockchain networks",
-        "talkTrack": "What does it technically mean when STEEM breaks its 365-day SMA? How might this affect investor confidence and network development? What historical precedents can we learn from?",
-        "tags": [
-          "steem",
-          "crypto",
-          "blockchain",
-          "technical-analysis"
-        ],
-        "score": 8.5,
-        "basedOn": [
-          "I didn't know that STEEM price broke the 365d SMA line since 26th Sep 🤯"
-        ]
-      },
-      {
-        "id": "tr1791321369311-1",
-        "topic": "The Steem-to-Hive Transition: Community Perspectives on Network Forks",
-        "angle": "Open question about community experiences with blockchain network splits",
-        "talkTrack": "For those who experienced the Steem-to-Hive transition, what were the most significant challenges and opportunities? How did it affect your participation in the ecosystem? What lessons can other DPoS networks learn from this?",
+        "id": "tr1791343499567-0",
+        "topic": "Steem Price Breaking Technical Barriers",
+        "angle": "Educational Explainer: What does breaking the 365-day SMA mean for blockchain health?",
+        "talkTrack": "What does the 365-day SMA crossing indicate about long-term Steem network stability?,How might technical analysis of price movements influence development priorities?,Beyond price, what fundamental metrics should we watch for network health?",
         "tags": [
           "steem",
           "blockchain",
-          "dpos",
-          "web3"
+          "crypto"
         ],
         "score": 8.2,
         "basedOn": [
-          "Steem Community Relaunches Platform as Hive to Make It"
+          "I didn't know that STEEM price broke the 365d SMA line since 26th Sep 🤯",
+          "Daily Steem Price Update 5/10/2026"
         ]
       },
       {
-        "id": "tr1791321369311-2",
-        "topic": "Building AI Agents on DPoS: Enhancing Community Engagement",
-        "angle": "Tooling/workflow for combining AI with blockchain governance",
-        "talkTrack": "How could AI agents be designed to enhance DPoS governance while maintaining decentralization? What specific tasks could they handle to reduce friction for community members? What ethical considerations should we prioritize?",
+        "id": "tr1791343499567-1",
+        "topic": "Control vs Freedom in Decentralized Networks",
+        "angle": "Open Question: Where should we draw the line between governance and freedom?",
+        "talkTrack": "As blockchains become more mainstream, how much control should users surrender?,What examples from other networks show successful balance between governance and freedom?,How can we design DPoS systems that prevent centralization while maintaining efficiency?",
         "tags": [
-          "ai",
+          "crypto",
           "dpos",
-          "blockchain",
           "web3"
         ],
         "score": 7.8,
         "basedOn": [
-          "Butterflies can retain memories from when they were caterpilleras/Las mariposas pueden conservar recuerdos",
+          "Internet libera: quanto controllo siamo disposti ad accettare? / Free Internet: how much control are"
+        ]
+      },
+      {
+        "id": "tr1791343499567-2",
+        "topic": "AI Integration in Content Platforms",
+        "angle": "Tooling/Workflow: How can AI enhance content creation and curation on Steem?",
+        "talkTrack": "What AI tools are currently being used effectively by Steem content creators?,How might AI agents help with content moderation and community governance?,What ethical guidelines should we establish for AI-generated content on the platform?",
+        "tags": [
+          "ai",
+          "technology",
+          "steem"
+        ],
+        "score": 7.5,
+        "basedOn": [
+          "Butterflies can retain memories from when they were caterpillars/Las mariposas pueden conservar recu",
+          "The Convergence of AI and Data in Personal Finance Platforms by 2026",
           "Share your thoughts about Technology"
         ]
       },
       {
-        "id": "tr1791321369311-3",
-        "topic": "Energy Storage Innovation: Blockchain's Role in Sustainable Tech",
-        "angle": "Network-development/possibilities piece connecting blockchain to real-world applications",
-        "talkTrack": "How might blockchain networks like Steem facilitate the adoption of new energy storage technologies? What tokenization models could make building-integrated batteries more accessible? Could this create new economic models for sustainable development?",
+        "id": "tr1791343499567-3",
+        "topic": "The Evolution of Smart Media Tokens",
+        "angle": "Network Development/Possibilities: What's next for Steem's core technology?",
+        "talkTrack": "What improvements to the Steem blockchain protocol would have the biggest impact?,How can Steem better integrate with DeFi while maintaining its unique value proposition?,What potential use cases for Smart Media Tokens haven't been explored yet?",
         "tags": [
+          "steem",
           "blockchain",
-          "technology",
           "web3",
-          "sustainability"
-        ],
-        "score": 7.5,
-        "basedOn": [
-          "New device could turn buildings into batteries/Nuevo dispositivo podría convertir a los edificios en"
-        ]
-      },
-      {
-        "id": "tr1791321369311-4",
-        "topic": "Cross-Chain Communication: Enhancing DPoS Interoperability",
-        "angle": "Technical discussion about improving blockchain connectivity",
-        "talkTrack": "What technical approaches could make DPoS chains like Steem more interoperable with other blockchain ecosystems? How might this benefit content creators and users across platforms? What are the security implications of increased cross-chain communication?",
-        "tags": [
-          "blockchain",
-          "dpos",
-          "crypto",
-          "web3"
+          "dpos"
         ],
         "score": 7.3,
         "basedOn": [
-          "#2560 Die deutschsprachigen Steem- & Finanzartikel (Dienstag, 06.10.2026) - Mit Gewinnspiel-Sektion"
+          "steemit/steem: The blockchain for Smart Media Tokens",
+          "도용된 전지 전능"
         ]
       },
       {
-        "id": "tr1791321369311-5",
-        "topic": "Decentralized Identity for Content Creators: Web3 Possibilities",
-        "angle": "Exploring new models for creator economy in Web3",
-        "talkTrack": "How could decentralized identity transform how content creators on platforms like Steem verify ownership and control their work? What new economic models might emerge from this shift? How would this affect platform governance and revenue distribution?",
+        "id": "tr1791343499567-4",
+        "topic": "Cross-Chain Compatibility and Future",
+        "angle": "Network Development/Possibilities: How can Steem connect with broader Web3 ecosystem?",
+        "talkTrack": "What technical barriers prevent Steem from easily interoperating with other blockchains?,How might cross-chain technology change the value proposition of DPoS networks?,What would a fully connected Web3 ecosystem look like from a creator's perspective?",
         "tags": [
           "web3",
           "blockchain",
           "dpos",
-          "identity"
+          "steem"
         ],
-        "score": 7,
+        "score": 6.9,
         "basedOn": [
-          "박사 지원",
-          "도용된 전지 전능"
+          "박사 지원"
         ]
       }
     ]
@@ -1314,73 +1297,73 @@
       "acc": "israelnews",
       "kind": "vote1",
       "at": "04:32",
-      "inMin": 77
+      "inMin": 65
     },
     {
       "acc": "tov",
       "kind": "post",
       "at": "04:52",
-      "inMin": 97
+      "inMin": 85
     },
     {
       "acc": "haran",
       "kind": "post",
       "at": "05:57",
-      "inMin": 162
+      "inMin": 150
     },
     {
       "acc": "cashmachine",
       "kind": "engage",
       "at": "06:17",
-      "inMin": 182
+      "inMin": 170
     },
     {
       "acc": "haran",
       "kind": "vote1",
       "at": "06:53",
-      "inMin": 218
+      "inMin": 206
     },
     {
       "acc": "macrame",
       "kind": "post",
       "at": "07:13",
-      "inMin": 238
+      "inMin": 226
     },
     {
       "acc": "israelnews",
       "kind": "post",
       "at": "07:52",
-      "inMin": 277
+      "inMin": 265
     },
     {
       "acc": "macrame",
       "kind": "vote1",
       "at": "08:12",
-      "inMin": 297
+      "inMin": 285
     },
     {
       "acc": "wic",
       "kind": "vote1",
       "at": "08:54",
-      "inMin": 339
+      "inMin": 327
     },
     {
       "acc": "tov",
       "kind": "vote2",
       "at": "09:17",
-      "inMin": 362
+      "inMin": 350
     },
     {
       "acc": "headcorner",
       "kind": "engage",
       "at": "09:59",
-      "inMin": 404
+      "inMin": 392
     },
     {
       "acc": "lsa",
       "kind": "vote2",
       "at": "10:28",
-      "inMin": 433
+      "inMin": 421
     }
   ],
   "lastPublish": {
@@ -1398,5 +1381,5 @@
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)",
     "threads": "שיח מתפתח = תגובות-לתגובות + הגב-מחבר — R233 מודד את העומק, לא רק את הכיסוי"
   },
-  "ms": 34387
+  "ms": 26972
 }

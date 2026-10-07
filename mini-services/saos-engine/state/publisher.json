@@ -1,0 +1,40 @@
+{
+  "day": "2026-10-07",
+  "posted": [
+    {
+      "id": "d1790893224431-2",
+      "title": "Streamlining Your Blockchain Content Workflow",
+      "permlink": "streamlining-your-blockchain-content-workflow-2026-10-07",
+      "verdict": "POST-FAIL:Assert Exception:permlink.size() > STEEM",
+      "at": "2026-10-07T03:24:59.567Z",
+      "txid": "91c25b0731edec6f2069d9dc4b75ff895ad5436c"
+    },
+    {
+      "id": "d1790893224431-1",
+      "title": "What Makes Content Truly Valuable on Blockchain?",
+      "permlink": "what-makes-content-truly-valuable-on-blockchain-2026-10-07",
+      "verdict": "POST-FAIL:Assert Exception:permlink.size() > STEEM",
+      "at": "2026-10-07T03:24:59.567Z",
+      "txid": "e4ad03c840054537e65ed708dc159e063929e343"
+    },
+    {
+      "id": "d1790893224431-0",
+      "title": "Understanding Blockchain Curation Rewards",
+      "permlink": "understanding-blockchain-curation-rewards-2026-10-07",
+      "verdict": "POST-FAIL:Assert Exception:permlink.size() > STEEM",
+      "at": "2026-10-07T03:26:31.618Z",
+      "txid": "2447db8c048ee66ab9ee97a4dfe7066feca74cf6"
+    },
+    {
+      "id": "d1791226956831-2",
+      "title": "Optimizing Your Steem Workflow: Tools for Content Creators",
+      "permlink": "optimizing-your-steem-workflow-tools-for-content-creators-2026-10-07",
+      "verdict": "POST-FAIL:Assert Exception:permlink.size() > STEEM",
+      "at": "2026-10-07T03:26:31.618Z",
+      "txid": "a7d306a3e049a2fcf9f3c34b8db501b6b2924b3c"
+    }
+  ],
+  "verdict": "NO-LAND",
+  "rcPct": 30.1,
+  "at": "2026-10-07T03:26:31.618Z"
+}
