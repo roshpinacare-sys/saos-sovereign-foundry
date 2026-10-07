@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-07T01:00:06.149Z",
+  "at": "2026-10-07T01:10:06.148Z",
   "lastFullScanAt": "2026-10-07T01:00:06.149Z",
   "verdict": "OPTIONS-FOUND",
   "tagBoard": [
@@ -98,5 +98,6 @@
     }
   ],
   "learningConsumer": [],
-  "honesty": "ranked options, zero execution · classes: measured>estimated>potential · gates own the decisions"
+  "honesty": "ranked options, zero execution · classes: measured>estimated>potential · gates own the decisions",
+  "freshCached": true
 }
