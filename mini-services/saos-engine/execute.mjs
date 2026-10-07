@@ -79,7 +79,9 @@ export function replyPermlink(parentAuthor, parentPermlink, iso) {
 }
 
 /* ── reply composer: AI bridge with honest fallback ──────────────────── */
-async function composeReply({ title, excerpt, talkTrack, msBudget = 20000 }) {
+/* R236: exported — the fleet-grind rail reuses the SAME reply engine
+ * (one exposure posture, one fallback law) instead of reinventing it. */
+export async function composeReply({ title, excerpt, talkTrack, msBudget = 20000 }) {
   try {
     const r = await fetch(`${BRIDGE}/api/saos/ai/reply`, {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -101,7 +103,8 @@ async function composeReply({ title, excerpt, talkTrack, msBudget = 20000 }) {
 /* ── state ───────────────────────────────────────────────────────────── */
 export function executionState() { return readJson(FILE, null); }
 
-async function rcPctOf(acc) {
+/* R236: exported — fleet-grind reuses the identical RC read (same chain shape). */
+export async function rcPctOf(acc) {
   try {
     const r = await rpcCall("rc_api.find_rc_accounts", { accounts: [acc] });
     const a = r.ok ? r.result?.rc_accounts?.[0] : null;
@@ -111,7 +114,8 @@ async function rcPctOf(acc) {
   } catch { return null; }
 }
 
-async function vpEffOf(acc) {
+/* R236: exported — fleet-grind reuses the identical VP read. */
+export async function vpEffOf(acc) {
   const r = await rpcCall("condenser_api.get_accounts", [[acc]]);
   const a = r.ok ? r.result?.[0] : null;
   if (!a) return { vpEff: null, raw: null };

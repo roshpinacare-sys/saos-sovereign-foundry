@@ -1,22 +1,22 @@
 {
-  "at": "2026-10-07T03:04:41.246Z",
+  "at": "2026-10-07T03:14:41.248Z",
   "enabled": true,
-  "runsTotal": 290,
+  "runsTotal": 291,
   "verdict": "LEARNED",
   "metrics": {
     "cycles": {
-      "window": 129,
-      "oks": 127,
+      "window": 130,
+      "oks": 128,
       "fails": 2,
       "blocked": 0,
-      "okRate": 98.4,
+      "okRate": 98.5,
       "blockedRate": 0,
       "failReasons": {
         "none": 1,
         "unknown": 1
       },
-      "msP50": 12834,
-      "msP90": 33183
+      "msP50": 12939,
+      "msP90": 33404
     },
     "curator": {
       "present": true,
@@ -33,20 +33,20 @@
       "maxPerDay": 10
     },
     "exec": {
-      "window": 3,
-      "fails": 3,
+      "window": 4,
+      "fails": 4,
       "lastError": "missing required active authority:Missing Active Authority headcorner"
     },
     "watchdog": {
-      "checks": 2795,
+      "checks": 2805,
       "downs": 107,
       "heals": 41,
       "healVerified": 40,
       "healFailed": 0,
-      "lastCheckAt": "2026-10-07T03:04:41.298Z",
+      "lastCheckAt": "2026-10-07T03:14:41.300Z",
       "engineUp": true,
       "lastSpawnAt": "2026-10-07T02:39:46.331Z",
-      "lastUpAt": "2026-10-07T03:04:41.300Z",
+      "lastUpAt": "2026-10-07T03:14:41.302Z",
       "blips": 2
     }
   },
@@ -61,7 +61,7 @@
     {
       "id": "broadcast-fails",
       "severity": "high",
-      "evidence": "3/3 broadcasts failed · last: missing required active authority:Missing Active Authority headcorner",
+      "evidence": "4/4 broadcasts failed · last: missing required active authority:Missing Active Authority headcorner",
       "lesson": "broadcast failures burn RC and delay rails",
       "action": "fail-closed stop already holds; vote-interval retry added T-14"
     }
@@ -70,9 +70,9 @@
   "tuningsApplied": [],
   "lessonsTotal": {
     "cycle-conn-fails": 132,
-    "unclassified-fail-legacy": 144,
+    "unclassified-fail-legacy": 145,
     "signing-cred-blocked": 205,
-    "broadcast-fails": 68
+    "broadcast-fails": 69
   },
   "honesty": "learning reads recorded history only · tunings hard-clamped (LEARN_CLAMP) · doctrine laws untouchable"
 }

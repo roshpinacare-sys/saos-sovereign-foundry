@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T03:04:41.246Z",
+  "at": "2026-10-07T03:14:41.248Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -124,7 +124,7 @@
         "name": "headcorner",
         "sp": 6.46,
         "vpEff": 25.4,
-        "rcPct": 30.5,
+        "rcPct": 30.2,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
@@ -289,11 +289,38 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T03:04:53.188Z"
+    "at": "2026-10-07T03:14:52.257Z"
   },
   "engagement": {
     "ok": true,
     "posts": [
+      {
+        "author": "headcorner",
+        "permlink": "the-weave-measured-market-brief-2026-10-07-muxj1ir6",
+        "title": "THE WEAVE · תדריך-שוק מדוד — Measured Market Brief (2026-10-07)",
+        "ageH": 0,
+        "fleetVotes": [],
+        "fleetRepliers": [],
+        "threads": 0,
+        "coveragePct": 0,
+        "missing": [
+          "headcorner",
+          "cashmachine",
+          "haran",
+          "israelnews",
+          "lsa",
+          "macrame",
+          "siq",
+          "tov",
+          "wic",
+          "wog",
+          "woq",
+          "hcsoldier1",
+          "hcsoldier2",
+          "hcsoldier3"
+        ],
+        "covered": false
+      },
       {
         "author": "headcorner",
         "permlink": "the-measured-ledger-october-7-2026-market-signals-and-networ-muxiuzet",
@@ -406,7 +433,7 @@
         "author": "lsa",
         "permlink": "understanding-blockchain-curation-rewards-20261006-0",
         "title": "Understanding Blockchain Curation Rewards",
-        "ageH": 4,
+        "ageH": 5,
         "fleetVotes": [],
         "fleetRepliers": [],
         "threads": 0,
@@ -515,7 +542,7 @@
         "author": "headcorner",
         "permlink": "sbdsteem-spread-widens-to-2519-zero-external-votes-recorded-mux764vw",
         "title": "SBD:STEEM Spread Widens to 2.519%, Zero External Votes Recorded",
-        "ageH": 5,
+        "ageH": 6,
         "fleetVotes": [
           "haran"
         ],
@@ -593,33 +620,6 @@
           "hcsoldier3"
         ],
         "covered": false
-      },
-      {
-        "author": "wic",
-        "permlink": "understanding-steem-s-dual-token-economy-20261006-0",
-        "title": "Understanding Steem's Dual-Token Economy",
-        "ageH": 7,
-        "fleetVotes": [],
-        "fleetRepliers": [],
-        "threads": 0,
-        "coveragePct": 0,
-        "missing": [
-          "headcorner",
-          "cashmachine",
-          "haran",
-          "israelnews",
-          "lsa",
-          "macrame",
-          "siq",
-          "tov",
-          "wic",
-          "wog",
-          "woq",
-          "hcsoldier1",
-          "hcsoldier2",
-          "hcsoldier3"
-        ],
-        "covered": false
       }
     ],
     "summary": {
@@ -633,6 +633,12 @@
     "headcorner": [
       {
         "author": "headcorner",
+        "permlink": "the-weave-measured-market-brief-2026-10-07-muxj1ir6",
+        "title": "THE WEAVE · תדריך-שוק מדוד — Measured Market Brief (2026-10-07)",
+        "kind": "cover-gap"
+      },
+      {
+        "author": "headcorner",
         "permlink": "the-measured-ledger-october-7-2026-market-signals-and-networ-muxiuzet",
         "title": "The Measured Ledger: October 7, 2026 - Market Signals and Network Pulse",
         "kind": "cover-gap"
@@ -642,15 +648,15 @@
         "permlink": "saos-daily-20261007",
         "title": "SAOS Mission Daily — 2026-10-07",
         "kind": "cover-gap"
-      },
+      }
+    ],
+    "cashmachine": [
       {
         "author": "headcorner",
         "permlink": "saos-transparency-20261007",
         "title": "SAOS daily transparency report — real numbers, no promises",
         "kind": "cover-gap"
-      }
-    ],
-    "cashmachine": [
+      },
       {
         "author": "wog",
         "permlink": "what-makes-content-truly-valuable-on-blockchain-20261006-0",
@@ -662,15 +668,15 @@
         "permlink": "understanding-blockchain-curation-rewards-20261006-0",
         "title": "Understanding Blockchain Curation Rewards",
         "kind": "cover-gap"
-      },
+      }
+    ],
+    "haran": [
       {
         "author": "haran",
         "permlink": "optimizing-your-steem-workflow-tools-for-content-creators-20261006-0",
         "title": "Optimizing Your Steem Workflow: Tools for Content Creators",
         "kind": "cover-gap"
-      }
-    ],
-    "haran": [
+      },
       {
         "author": "israelnews",
         "permlink": "how-effective-is-steem-s-curation-reward-system-20261006-0",
@@ -682,103 +688,31 @@
         "permlink": "streamlining-your-steem-workflow-tools-for-efficiency-20261006-0",
         "title": "Streamlining Your Steem Workflow: Tools for Efficiency",
         "kind": "cover-gap"
-      },
+      }
+    ],
+    "israelnews": [
       {
         "author": "woq",
         "permlink": "how-do-you-evaluate-content-value-on-steem-20261006-0",
         "title": "How Do You Evaluate Content Value on Steem?",
         "kind": "cover-gap"
-      }
-    ],
-    "israelnews": [
+      },
       {
-        "author": "wic",
-        "permlink": "understanding-steem-s-dual-token-economy-20261006-0",
-        "title": "Understanding Steem's Dual-Token Economy",
+        "author": "headcorner",
+        "permlink": "the-weave-measured-market-brief-2026-10-07-muxj1ir6",
+        "title": "THE WEAVE · תדריך-שוק מדוד — Measured Market Brief (2026-10-07)",
         "kind": "cover-gap"
       },
       {
         "author": "headcorner",
         "permlink": "the-measured-ledger-october-7-2026-market-signals-and-networ-muxiuzet",
         "title": "The Measured Ledger: October 7, 2026 - Market Signals and Network Pulse",
-        "kind": "cover-gap"
-      },
-      {
-        "author": "headcorner",
-        "permlink": "saos-daily-20261007",
-        "title": "SAOS Mission Daily — 2026-10-07",
         "kind": "cover-gap"
       }
     ],
     "lsa": [
       {
         "author": "headcorner",
-        "permlink": "saos-transparency-20261007",
-        "title": "SAOS daily transparency report — real numbers, no promises",
-        "kind": "cover-gap"
-      },
-      {
-        "author": "wog",
-        "permlink": "what-makes-content-truly-valuable-on-blockchain-20261006-0",
-        "title": "What Makes Content Truly Valuable on Blockchain?",
-        "kind": "cover-gap"
-      },
-      {
-        "author": "lsa",
-        "permlink": "understanding-blockchain-curation-rewards-20261006-0",
-        "title": "Understanding Blockchain Curation Rewards",
-        "kind": "cover-gap"
-      }
-    ],
-    "macrame": [
-      {
-        "author": "haran",
-        "permlink": "optimizing-your-steem-workflow-tools-for-content-creators-20261006-0",
-        "title": "Optimizing Your Steem Workflow: Tools for Content Creators",
-        "kind": "cover-gap"
-      },
-      {
-        "author": "israelnews",
-        "permlink": "how-effective-is-steem-s-curation-reward-system-20261006-0",
-        "title": "How Effective Is Steem's Curation Reward System?",
-        "kind": "cover-gap"
-      },
-      {
-        "author": "cashmachine",
-        "permlink": "understanding-steem-s-dual-token-system-steem-vs-sbd-20261006-0",
-        "title": "Understanding Steem's Dual-Token System: STEEM vs SBD",
-        "kind": "cover-gap"
-      }
-    ],
-    "siq": [
-      {
-        "author": "headcorner",
-        "permlink": "sbdsteem-spread-widens-to-2519-zero-external-votes-recorded-mux764vw",
-        "title": "SBD:STEEM Spread Widens to 2.519%, Zero External Votes Recorded",
-        "kind": "cover-gap"
-      },
-      {
-        "author": "siq",
-        "permlink": "streamlining-your-steem-workflow-tools-for-efficiency-20261006-0",
-        "title": "Streamlining Your Steem Workflow: Tools for Efficiency",
-        "kind": "cover-gap"
-      },
-      {
-        "author": "wic",
-        "permlink": "understanding-steem-s-dual-token-economy-20261006-0",
-        "title": "Understanding Steem's Dual-Token Economy",
-        "kind": "cover-gap"
-      }
-    ],
-    "tov": [
-      {
-        "author": "headcorner",
-        "permlink": "the-measured-ledger-october-7-2026-market-signals-and-networ-muxiuzet",
-        "title": "The Measured Ledger: October 7, 2026 - Market Signals and Network Pulse",
-        "kind": "cover-gap"
-      },
-      {
-        "author": "headcorner",
         "permlink": "saos-daily-20261007",
         "title": "SAOS Mission Daily — 2026-10-07",
         "kind": "cover-gap"
@@ -788,15 +722,15 @@
         "permlink": "saos-transparency-20261007",
         "title": "SAOS daily transparency report — real numbers, no promises",
         "kind": "cover-gap"
-      }
-    ],
-    "wic": [
+      },
       {
         "author": "wog",
         "permlink": "what-makes-content-truly-valuable-on-blockchain-20261006-0",
         "title": "What Makes Content Truly Valuable on Blockchain?",
         "kind": "cover-gap"
-      },
+      }
+    ],
+    "macrame": [
       {
         "author": "lsa",
         "permlink": "understanding-blockchain-curation-rewards-20261006-0",
@@ -808,15 +742,15 @@
         "permlink": "optimizing-your-steem-workflow-tools-for-content-creators-20261006-0",
         "title": "Optimizing Your Steem Workflow: Tools for Content Creators",
         "kind": "cover-gap"
-      }
-    ],
-    "wog": [
+      },
       {
         "author": "israelnews",
         "permlink": "how-effective-is-steem-s-curation-reward-system-20261006-0",
         "title": "How Effective Is Steem's Curation Reward System?",
         "kind": "cover-gap"
-      },
+      }
+    ],
+    "siq": [
       {
         "author": "cashmachine",
         "permlink": "understanding-steem-s-dual-token-system-steem-vs-sbd-20261006-0",
@@ -828,15 +762,15 @@
         "permlink": "sbdsteem-spread-widens-to-2519-zero-external-votes-recorded-mux764vw",
         "title": "SBD:STEEM Spread Widens to 2.519%, Zero External Votes Recorded",
         "kind": "cover-gap"
-      }
-    ],
-    "woq": [
+      },
       {
         "author": "siq",
         "permlink": "streamlining-your-steem-workflow-tools-for-efficiency-20261006-0",
         "title": "Streamlining Your Steem Workflow: Tools for Efficiency",
         "kind": "cover-gap"
-      },
+      }
+    ],
+    "tov": [
       {
         "author": "woq",
         "permlink": "how-do-you-evaluate-content-value-on-steem-20261006-0",
@@ -844,19 +778,19 @@
         "kind": "cover-gap"
       },
       {
-        "author": "wic",
-        "permlink": "understanding-steem-s-dual-token-economy-20261006-0",
-        "title": "Understanding Steem's Dual-Token Economy",
+        "author": "headcorner",
+        "permlink": "the-weave-measured-market-brief-2026-10-07-muxj1ir6",
+        "title": "THE WEAVE · תדריך-שוק מדוד — Measured Market Brief (2026-10-07)",
         "kind": "cover-gap"
-      }
-    ],
-    "hcsoldier1": [
+      },
       {
         "author": "headcorner",
         "permlink": "the-measured-ledger-october-7-2026-market-signals-and-networ-muxiuzet",
         "title": "The Measured Ledger: October 7, 2026 - Market Signals and Network Pulse",
         "kind": "cover-gap"
-      },
+      }
+    ],
+    "wic": [
       {
         "author": "headcorner",
         "permlink": "saos-daily-20261007",
@@ -868,15 +802,15 @@
         "permlink": "saos-transparency-20261007",
         "title": "SAOS daily transparency report — real numbers, no promises",
         "kind": "cover-gap"
-      }
-    ],
-    "hcsoldier2": [
+      },
       {
         "author": "wog",
         "permlink": "what-makes-content-truly-valuable-on-blockchain-20261006-0",
         "title": "What Makes Content Truly Valuable on Blockchain?",
         "kind": "cover-gap"
-      },
+      }
+    ],
+    "wog": [
       {
         "author": "lsa",
         "permlink": "understanding-blockchain-curation-rewards-20261006-0",
@@ -888,15 +822,15 @@
         "permlink": "optimizing-your-steem-workflow-tools-for-content-creators-20261006-0",
         "title": "Optimizing Your Steem Workflow: Tools for Content Creators",
         "kind": "cover-gap"
-      }
-    ],
-    "hcsoldier3": [
+      },
       {
         "author": "israelnews",
         "permlink": "how-effective-is-steem-s-curation-reward-system-20261006-0",
         "title": "How Effective Is Steem's Curation Reward System?",
         "kind": "cover-gap"
-      },
+      }
+    ],
+    "woq": [
       {
         "author": "cashmachine",
         "permlink": "understanding-steem-s-dual-token-system-steem-vs-sbd-20261006-0",
@@ -907,6 +841,72 @@
         "author": "headcorner",
         "permlink": "sbdsteem-spread-widens-to-2519-zero-external-votes-recorded-mux764vw",
         "title": "SBD:STEEM Spread Widens to 2.519%, Zero External Votes Recorded",
+        "kind": "cover-gap"
+      },
+      {
+        "author": "siq",
+        "permlink": "streamlining-your-steem-workflow-tools-for-efficiency-20261006-0",
+        "title": "Streamlining Your Steem Workflow: Tools for Efficiency",
+        "kind": "cover-gap"
+      }
+    ],
+    "hcsoldier1": [
+      {
+        "author": "woq",
+        "permlink": "how-do-you-evaluate-content-value-on-steem-20261006-0",
+        "title": "How Do You Evaluate Content Value on Steem?",
+        "kind": "cover-gap"
+      },
+      {
+        "author": "headcorner",
+        "permlink": "the-weave-measured-market-brief-2026-10-07-muxj1ir6",
+        "title": "THE WEAVE · תדריך-שוק מדוד — Measured Market Brief (2026-10-07)",
+        "kind": "cover-gap"
+      },
+      {
+        "author": "headcorner",
+        "permlink": "the-measured-ledger-october-7-2026-market-signals-and-networ-muxiuzet",
+        "title": "The Measured Ledger: October 7, 2026 - Market Signals and Network Pulse",
+        "kind": "cover-gap"
+      }
+    ],
+    "hcsoldier2": [
+      {
+        "author": "headcorner",
+        "permlink": "saos-daily-20261007",
+        "title": "SAOS Mission Daily — 2026-10-07",
+        "kind": "cover-gap"
+      },
+      {
+        "author": "headcorner",
+        "permlink": "saos-transparency-20261007",
+        "title": "SAOS daily transparency report — real numbers, no promises",
+        "kind": "cover-gap"
+      },
+      {
+        "author": "wog",
+        "permlink": "what-makes-content-truly-valuable-on-blockchain-20261006-0",
+        "title": "What Makes Content Truly Valuable on Blockchain?",
+        "kind": "cover-gap"
+      }
+    ],
+    "hcsoldier3": [
+      {
+        "author": "lsa",
+        "permlink": "understanding-blockchain-curation-rewards-20261006-0",
+        "title": "Understanding Blockchain Curation Rewards",
+        "kind": "cover-gap"
+      },
+      {
+        "author": "haran",
+        "permlink": "optimizing-your-steem-workflow-tools-for-content-creators-20261006-0",
+        "title": "Optimizing Your Steem Workflow: Tools for Content Creators",
+        "kind": "cover-gap"
+      },
+      {
+        "author": "israelnews",
+        "permlink": "how-effective-is-steem-s-curation-reward-system-20261006-0",
+        "title": "How Effective Is Steem's Curation Reward System?",
         "kind": "cover-gap"
       }
     ]
@@ -916,6 +916,18 @@
     "metrics": [
       {
         "author": "headcorner",
+        "permlink": "the-weave-measured-market-brief-2026-10-07-muxj1ir6",
+        "layer1Count": 0,
+        "layer2Count": 0,
+        "fleetRepliers": 0,
+        "authorResponded": false,
+        "firstFleetReplyH": null,
+        "depth": 1,
+        "developed": false,
+        "score": 0
+      },
+      {
+        "author": "headcorner",
         "permlink": "the-measured-ledger-october-7-2026-market-signals-and-networ-muxiuzet",
         "layer1Count": 0,
         "layer2Count": 0,
@@ -997,18 +1009,6 @@
         "depth": 1,
         "developed": false,
         "score": 0
-      },
-      {
-        "author": "cashmachine",
-        "permlink": "understanding-steem-s-dual-token-system-steem-vs-sbd-20261006-0",
-        "layer1Count": 0,
-        "layer2Count": 0,
-        "fleetRepliers": 0,
-        "authorResponded": false,
-        "firstFleetReplyH": null,
-        "depth": 1,
-        "developed": false,
-        "score": 1.1
       }
     ],
     "summary": {
@@ -1017,9 +1017,9 @@
       "avgDepth": 1,
       "avgLayer2": 0,
       "authorResponseRate": 0,
-      "avgScore": 0.1
+      "avgScore": 0
     },
-    "at": "2026-10-07T03:04:41.246Z"
+    "at": "2026-10-07T03:14:41.248Z"
   },
   "compliance": {
     "protocol": "saos.fleet.compliance.v1",
@@ -1314,73 +1314,73 @@
       "acc": "israelnews",
       "kind": "vote1",
       "at": "04:32",
-      "inMin": 87
+      "inMin": 77
     },
     {
       "acc": "tov",
       "kind": "post",
       "at": "04:52",
-      "inMin": 107
+      "inMin": 97
     },
     {
       "acc": "haran",
       "kind": "post",
       "at": "05:57",
-      "inMin": 172
+      "inMin": 162
     },
     {
       "acc": "cashmachine",
       "kind": "engage",
       "at": "06:17",
-      "inMin": 192
+      "inMin": 182
     },
     {
       "acc": "haran",
       "kind": "vote1",
       "at": "06:53",
-      "inMin": 228
+      "inMin": 218
     },
     {
       "acc": "macrame",
       "kind": "post",
       "at": "07:13",
-      "inMin": 248
+      "inMin": 238
     },
     {
       "acc": "israelnews",
       "kind": "post",
       "at": "07:52",
-      "inMin": 287
+      "inMin": 277
     },
     {
       "acc": "macrame",
       "kind": "vote1",
       "at": "08:12",
-      "inMin": 307
+      "inMin": 297
     },
     {
       "acc": "wic",
       "kind": "vote1",
       "at": "08:54",
-      "inMin": 349
+      "inMin": 339
     },
     {
       "acc": "tov",
       "kind": "vote2",
       "at": "09:17",
-      "inMin": 372
+      "inMin": 362
     },
     {
       "acc": "headcorner",
       "kind": "engage",
       "at": "09:59",
-      "inMin": 414
+      "inMin": 404
     },
     {
       "acc": "lsa",
       "kind": "vote2",
       "at": "10:28",
-      "inMin": 443
+      "inMin": 433
     }
   ],
   "lastPublish": {
@@ -1398,5 +1398,5 @@
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)",
     "threads": "שיח מתפתח = תגובות-לתגובות + הגב-מחבר — R233 מודד את העומק, לא רק את הכיסוי"
   },
-  "ms": 26836
+  "ms": 34387
 }

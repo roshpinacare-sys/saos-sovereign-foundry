@@ -33,6 +33,7 @@ import { PayoutsCard } from '@/components/saos/PayoutsCard'
 import { WeaveCard } from '@/components/saos/WeaveCard'
 import { CoordinationCard } from '@/components/saos/CoordinationCard'
 import { FleetGridCard } from '@/components/saos/FleetGridCard'
+import { ProfitPipelineCard } from '@/components/saos/ProfitPipelineCard'
 import SealCard from '@/components/saos/SealCard'
 import { X2Card } from '@/components/saos/X2Card'
 import type { Status, Sovereign } from '@/components/saos/types'
@@ -607,6 +608,9 @@ export default function Home() {
 
                 {/* R234 · גריד-הצבא — הצי-הקיים גורד קודם (הוראת-מפעיל) */}
                 <FleetGridCard />
+
+                {/* R236 · צינור-הרווחים — מו"ל טיוטות + גרינד-הצי + מטריצת-הזדמנויות */}
+                <ProfitPipelineCard />
 
                 {/* חיילים · צי-גרידים (T-12) · T-80 הקפאת-אפוטרופסות */}
                 <SectionCard

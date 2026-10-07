@@ -26,6 +26,8 @@ import { fleetGridState, startFleetGrid } from "./fleet-grid.mjs";
 import { trendsState, runTrends } from "./trends.mjs";
 import { complianceState, runCompliance, complianceHistory } from "./compliance.mjs";
 import { executionState, runWindowExecution } from "./execute.mjs";
+import { fleetGrindState } from "./fleetgrind.mjs";
+import { publisherState } from "./publisher.mjs";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -141,6 +143,11 @@ async function handle(req) {
   if (p === "/fleet-grid") {
     return json(fleetGridState());
   }
+  /* R236 · profit pipeline: the fleet grind (1 vote + 1 engage per keyed account,
+   * staggered windows) + the publisher rail (queued drafts → on-chain posts) */
+  if (p === "/fleet-grind") {
+    return json({ ok: true, grind: fleetGrindState(), publisher: publisherState() });
+  }
   /* R232 · compliance telemetry (chain-truth activity vs the windows) */
   if (p === "/compliance") {
     if (req.method === "POST") {
@@ -239,7 +246,7 @@ async function handle(req) {
                      : "credential secured but not matching this account's authorities — install the proposedPubkeys on steemit.com, or paste the CURRENT password instead",
     });
   }
-  return json({ ok: false, error: "not-found", routes: ["/health", "/status", "/hyper", "/fleet-grid", "/payouts", "/weave", "/coordination", "/coordination/refresh", "/coordination/publish", "/compliance", "/execute", "/trends", "/cycle", "/cycle-status", "/live", "/fills", "/exec-status", "/fleet", "/adopt-credential"] }, 404);
+  return json({ ok: false, error: "not-found", routes: ["/health", "/status", "/hyper", "/fleet-grid", "/fleet-grind", "/payouts", "/weave", "/coordination", "/coordination/refresh", "/coordination/publish", "/compliance", "/execute", "/trends", "/cycle", "/cycle-status", "/live", "/fills", "/exec-status", "/fleet", "/adopt-credential"] }, 404);
 }
 
 // T-15 SINGLE-INSTANCE LAW (measured live: 3 duplicate engine processes were

@@ -41,6 +41,8 @@ import { runCoordination, coordinationState } from "./coordination.mjs";
 import { runTrends } from "./trends.mjs";
 import { runCompliance } from "./compliance.mjs";
 import { runWindowExecution } from "./execute.mjs";
+import { runPublisher } from "./publisher.mjs";
+import { runFleetGrind } from "./fleetgrind.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const STATE = path.join(DIR, "state");
@@ -621,6 +623,24 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
     const out = await runWindowExecution({ now });
     return { verdict: out.ok ? `WINDOWS-ASSESSED:${(out.verdicts ?? []).length}` : out.verdict, verdicts: out.verdicts ?? null, windows: out.windows ?? null, error: out.error ?? null };
   });
+
+  /* R236 · המסילה-החסרה: queued drafts → on-chain posts (max 2/day, txid law).
+   * Closes the gap where content-ops drafts sat un-published (authorOps 0). */
+  report.steps.publish = await stepWrap("publish", async () => {
+    const out = await runPublisher({ now });
+    return { verdict: out.ok ? out.verdict : out.verdict, posted: out.posted ?? 0, txids: out.txids ?? null, error: out.ok ? null : out.verdict };
+  });
+
+  /* R236 · גרינד-הצי: the operator's standing order — the EXISTING keyed
+   * accounts (army + gen-2) do their OWN daily grind (1 vote + 1 engage,
+   * staggered deterministic windows, exposure law: no cross-fleet targets).
+   * Compliance was measured for everyone but executed for master only —
+   * this step closes that structural gap. */
+  report.steps.grind = await stepWrap("grind", async () => {
+    const out = await runFleetGrind({ now });
+    return { verdict: out.verdict ?? null, votes: out.votes ?? 0, replies: out.replies ?? 0, skipped: out.skipped ?? 0, fleet: out.fleet ?? null, error: out.ok ? null : out.verdict };
+  });
+
 
   /* T-22 · STANDING SELFTEST: the machine audits its own laws daily —
    * the deterministic vectors run in a clean child process (offline, no

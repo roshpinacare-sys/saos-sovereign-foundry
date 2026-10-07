@@ -839,6 +839,39 @@ ok("r235 gen2-fund plans-all-when-armed", r235plan.transfers.map((t) => t.name).
 ok("r235 gen2-idempotent-after-funding", r235fp({ conf: r235conf, allowFleetGridFund: true, allowlist: r235conf.accounts, funded: { hcsoldier4: { txid: "tx" }, hcsoldier5: { txid: "tx" }, hcsoldier6: { txid: "tx" } }, balances: { haran: 0.01, hcsoldier4: 1, hcsoldier5: 1, hcsoldier6: 1 } }).transfers.map((t) => t.name).join(",") === "haran");
 ok("r235 gen2-no-double-fund-history-funded", r235fp({ conf: r235conf, allowFleetGridFund: true, allowlist: r235conf.accounts, balances: { haran: 0.01, hcsoldier4: 0.95, hcsoldier5: 1.0, hcsoldier6: 0 } }).transfers.map((t) => t.name).join(",") === "haran,hcsoldier6");
 
+/* ── R236 · profit pipeline: the missing links become rails ──
+ * (a) publisher: 12 drafts sat un-published (authorOps 0) — capped day-idempotent publishing;
+ * (b) fleet grind: compliance was measured for 14 accounts but executed for master only. */
+import { titleToPermlink as r236pl, pickDraftsForPublishing as r236pick, PUBLISHER_MAX_PER_DAY as r236max } from "./publisher.mjs";
+import { grindMinute as r236min, grindWindowActive as r236win, pickGrindTargets as r236tg, grindCarried as r236carry, GRIND_DAY_START_MIN as r236start } from "./fleetgrind.mjs";
+
+ok("r236 permlink-slug-deterministic", r236pl("Understanding Steem's Consensus: Beyond Proof of Work", "2026-10-07") === r236pl("Understanding Steem's Consensus: Beyond Proof of Work", "2026-10-07"));
+ok("r236 permlink-slug-shape", /^understanding-steem-s-consensus-beyond-proof-of-work-2026-10-07$/.test(r236pl("Understanding Steem's Consensus: Beyond Proof of Work", "2026-10-07")) && r236pl("עברית בלבד", "2026-10-07").startsWith("post-"));
+ok("r236 permlink-day-differs", r236pl("Same Title", "2026-10-07") !== r236pl("Same Title", "2026-10-08"));
+const r236q = [
+  { id: "d3", status: "drafted", title: "Newest Draft Title", body: "x".repeat(130) },
+  { id: "d2", status: "posted", title: "Already Posted Title", body: "x".repeat(130) },
+  { id: "d1", status: "drafted", title: "Oldest Draft Title", body: "x".repeat(130) },
+];
+ok("r236 publisher-picks-drafted-oldest-first", r236pick(r236q, "2026-10-07", new Set()).map((d) => d.id).join(",") === "d1,d3");
+ok("r236 publisher-cap-two-per-day", r236max === 2 && r236pick([{ id: "a", status: "drafted", title: "T1", body: "b" }, { id: "c", status: "drafted", title: "T2", body: "b" }, { id: "e", status: "drafted", title: "T3", body: "b" }], "2026-10-07", new Set()).length === 2);
+ok("r236 publisher-day-idempotent", r236pick([{ id: "a", status: "drafted", title: "T1", body: "b" }], "2026-10-07", new Set(["a"])).length === 0);
+ok("r236 grind-minute-deterministic-bounded", r236min("hcsoldier4") === r236min("hcsoldier4") && r236min("tov") >= r236start && r236min("tov") < r236start + 720);
+ok("r236 grind-window-boundaries", r236win(r236start + 0, r236start + 0) === true && r236win(r236start + 45, r236start + 0) === true && r236win(r236start - 1, r236start + 0) === false && r236win(r236start + 46, r236start + 0) === false);
+const r236posts = [
+  { author: "community-a", permlink: "p1", title: "One" },
+  { author: "community-b", permlink: "p2", title: "Two" },
+  { author: "tov", permlink: "p3", title: "Own-fleet post" },
+  { author: "community-c", permlink: "p4", title: "Three" },
+];
+const r236t1 = r236tg(r236posts, "haran", new Set(["tov", "headcorner"]), new Set());
+ok("r236 grind-excludes-fleet-authors", r236t1.vote.author === "community-a" && r236t1.engage.author === "community-b");
+const r236t2 = r236tg(r236posts, "haran", new Set(["tov", "headcorner"]), new Set(["vote:community-a/p1", "engage:community-b/p2"]));
+ok("r236 grind-excludes-done-keys", r236t2.vote.author === "community-c" && r236t2.engage === null);
+ok("r236 grind-excludes-own-author", r236tg(r236posts, "community-a", new Set(["tov"]), new Set()).vote.author === "community-b");
+ok("r236 grind-day-rollover-resets", r236carry({ day: "2026-10-06", accounts: { haran: { vote: { verdict: "VOTED" } } } }, "2026-10-07").accounts && Object.keys(r236carry({ day: "2026-10-06", accounts: { haran: { vote: { verdict: "VOTED" } } } }, "2026-10-07").accounts).length === 0);
+ok("r236 grind-carries-same-day", r236carry({ day: "2026-10-07", accounts: { haran: { vote: { verdict: "VOTED" } } } }, "2026-10-07").accounts.haran.vote.verdict === "VOTED");
+
 console.log(`\nSELFTEST ${pass}/${pass + fail} ${fail === 0 ? "PASS" : "FAIL"}`);
 /* T-21 · last-run marker: the recruiter's evidence for the integrity-auditor
  * role — written ONLY on a full run, never by a partial import. */
