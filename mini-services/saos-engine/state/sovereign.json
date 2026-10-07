@@ -4,15 +4,15 @@
   "armed": true,
   "paused": false,
   "watchdog": {
-    "checks": 3217,
+    "checks": 3218,
     "downs": 112,
     "heals": 46,
     "healVerified": 45,
     "healFailed": 0,
-    "lastCheckAt": "2026-10-07T10:10:50.923Z",
+    "lastCheckAt": "2026-10-07T10:11:50.924Z",
     "engineUp": true,
     "lastSpawnAt": "2026-10-07T10:03:55.964Z",
-    "lastUpAt": "2026-10-07T10:10:50.926Z",
+    "lastUpAt": "2026-10-07T10:11:50.927Z",
     "blips": 2
   },
   "cycles": {
@@ -41,14 +41,14 @@
     "lastAlertAt": "2026-10-05T20:18:33.747Z"
   },
   "custodian": {
-    "checks": 1659,
-    "downs": 4,
-    "heals": 4,
+    "checks": 1660,
+    "downs": 5,
+    "heals": 5,
     "healFailed": 0,
-    "lastCheckAt": "2026-10-07T10:10:50.927Z",
-    "up": true,
+    "lastCheckAt": "2026-10-07T10:11:50.927Z",
+    "up": false,
     "lastUpAt": "2026-10-07T10:10:50.929Z",
-    "lastSpawnAt": null
+    "lastSpawnAt": "2026-10-07T10:11:54.976Z"
   },
   "control": [
     {
