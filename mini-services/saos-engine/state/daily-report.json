@@ -1,31 +1,31 @@
 {
-  "startedAt": "2026-10-07T01:30:06.147Z",
+  "startedAt": "2026-10-07T01:40:06.148Z",
   "account": "headcorner",
   "steps": {
     "observe": {
       "name": "observe",
       "ok": true,
-      "ms": 3032,
+      "ms": 3002,
       "account": "headcorner",
       "parity": {
-        "steemUsd": 0.06111,
-        "sbdUsd": 0.589946,
-        "parity": 0.10358575191627709,
+        "steemUsd": 0.06091,
+        "sbdUsd": 0.58994,
+        "parity": 0.10324778791063498,
         "source": "coingecko"
       },
       "feed": 0.1040964601152634,
       "band": {
         "ok": true,
         "reason": "band-ok",
-        "bps": -49
+        "bps": -82
       },
-      "steemUsd": 0.06111,
-      "sbdUsd": 0.589946,
+      "steemUsd": 0.06091,
+      "sbdUsd": 0.58994,
       "inventory": {
-        "steem": 24.025,
+        "steem": 35.129,
         "sbd": 0.015,
-        "spOwn": 958.4896376816886,
-        "rcPct": 33
+        "spOwn": 958.4900877742068,
+        "rcPct": 32.8
       },
       "ordersOk": true,
       "orders": [
@@ -70,12 +70,28 @@
           "created": "2026-10-06T20:27:57"
         },
         {
-          "orderid": 2100002787,
+          "orderid": 2100002654,
+          "side": "ask",
+          "base": "0.500 STEEM",
+          "quote": "0.054 SBD",
+          "unit": 0.108,
+          "created": "2026-10-07T01:39:03"
+        },
+        {
+          "orderid": 2100002655,
+          "side": "ask",
+          "base": "0.500 STEEM",
+          "quote": "0.055 SBD",
+          "unit": 0.11,
+          "created": "2026-10-07T01:39:03"
+        },
+        {
+          "orderid": 2100002795,
           "side": "ask",
           "base": "0.500 STEEM",
           "quote": "0.053 SBD",
           "unit": 0.106,
-          "created": "2026-10-07T01:29:39"
+          "created": "2026-10-07T01:39:15"
         }
       ],
       "fills": 0,
@@ -110,12 +126,12 @@
         "node": "https://api.justyy.com",
         "windowNote": "no reward ops inside the measured window — rails dormant, not a parse failure (deep-scan documented separately)"
       },
-      "summary": "parity 0.10358575191627709 (coingecko) · fills 0 · fuel 0$"
+      "summary": "parity 0.10324778791063498 (coingecko) · fills 0 · fuel 0$"
     },
     "intel": {
       "name": "intel",
       "ok": true,
-      "ms": 1396,
+      "ms": 1398,
       "verdict": "DECISIONS:4",
       "decisions": [
         "book-depth:hold-shape",
@@ -134,35 +150,35 @@
       "name": "tick",
       "ok": true,
       "ms": 1,
-      "runCount": 323,
-      "simFills": 25,
-      "simFeesMu": 12500,
+      "runCount": 324,
+      "simFills": 26,
+      "simFeesMu": 13000,
       "events": 5
     },
     "peg": {
       "name": "peg",
       "ok": true,
-      "ms": 676,
+      "ms": 1850,
       "verdict": "OFFER-READY",
       "asks": 0,
       "bids": 0,
-      "flowAsks": 2,
+      "flowAsks": 3,
       "flowBids": 0,
       "staleCount": 0,
-      "skew": 0.296405,
+      "skew": 0.297529,
       "book": {
         "bestAsk": 0.10383137784238397,
         "bestBid": 0.100227,
-        "askDepthSteem": 1166.63,
-        "bidDepthSbd": 2880.649,
-        "at": "2026-10-07T01:30:06.147Z"
+        "askDepthSteem": 1167.542,
+        "bidDepthSbd": 2882.694,
+        "at": "2026-10-07T01:40:06.148Z"
       },
       "market": {
         "tradesPerDay": 558,
         "spreadBps": 359.62
       },
       "liquidity": {
-        "deployedAsks": 987.775,
+        "deployedAsks": 988.775,
         "deployedBids": 0,
         "askBudget": 0,
         "bidBudget": 0,
@@ -176,14 +192,14 @@
       "verdict": "CONVERT-HOLD",
       "amountSbd": 0,
       "edgeBps": 6951,
-      "marketSbdUsd": 0.589946,
-      "impliedSbdUsd": 0.587052,
+      "marketSbdUsd": 0.58994,
+      "impliedSbdUsd": 0.58513,
       "marketSourceNote": "external-measured"
     },
     "curate": {
       "name": "curate",
       "ok": true,
-      "ms": 875,
+      "ms": 1217,
       "verdict": "VP-FLOOR",
       "votes": 0,
       "txid": null,
@@ -194,7 +210,7 @@
     "execute": {
       "name": "execute",
       "ok": true,
-      "ms": 1005,
+      "ms": 671,
       "verdict": "NO-OPS",
       "ops": 0,
       "opsToday": 0,
@@ -209,14 +225,14 @@
     "learn": {
       "name": "learn",
       "ok": true,
-      "ms": 5,
+      "ms": 845,
       "verdict": "LEARNED",
       "lessons": [
         "signing-cred-blocked",
         "unclassified-fail-legacy"
       ],
       "tunings": [],
-      "discoveryVerdict": "FRESH-CACHED",
+      "discoveryVerdict": "OPTIONS-FOUND",
       "topOpportunities": [
         "spread-wide(measured)",
         "tags-realloc(measured)",
@@ -244,7 +260,7 @@
     "rctank": {
       "name": "rctank",
       "ok": true,
-      "ms": 0,
+      "ms": 1,
       "verdict": "MEASURED",
       "maxRc": 1847155626959,
       "opsPerDayEquilibrium": 9654,
@@ -283,7 +299,7 @@
     "coordination": {
       "name": "coordination",
       "ok": true,
-      "ms": 26614,
+      "ms": 28705,
       "verdict": "SCHEDULED:ok·POWER:ok·ENG:ok",
       "accounts": 14,
       "engagement": {
@@ -326,7 +342,7 @@
     "windowExec": {
       "name": "window-exec",
       "ok": true,
-      "ms": 667,
+      "ms": 632,
       "verdict": "WINDOWS-ASSESSED:0",
       "verdicts": [],
       "windows": {},
@@ -346,7 +362,7 @@
       "ok": true,
       "ms": 1,
       "totalMeasuredUsdPerDay": 0,
-      "totalEstUsdPerDay": 0.532482,
+      "totalEstUsdPerDay": 0.532518,
       "rails": 6,
       "measuredCount": 1,
       "estimatedCount": 2,
@@ -368,7 +384,7 @@
       "positionSteem": 0,
       "positionAvgCost": null,
       "unbasedSteem": 0,
-      "deployedSteem": 987.775,
+      "deployedSteem": 988.775,
       "fuelUsdPerDay": 0,
       "authorUsdPerDay": 0,
       "measuredTotalUsdPerDay": 0,
@@ -380,7 +396,7 @@
     "positionSteem": 0,
     "positionAvgCost": null,
     "unbasedSteem": 0,
-    "deployedSteem": 987.775,
+    "deployedSteem": 988.775,
     "fuelUsdPerDay": 0,
     "authorUsdPerDay": 0,
     "measuredTotalUsdPerDay": 0,
@@ -392,5 +408,5 @@
     "failedSteps": [],
     "blockedSteps": []
   },
-  "finishedAt": "2026-10-07T01:30:39.551Z"
+  "finishedAt": "2026-10-07T01:40:43.258Z"
 }

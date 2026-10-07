@@ -3,8 +3,8 @@
   "reason": "dust-or-capped",
   "edgeBps": 6951,
   "amountSbd": 0,
-  "marketSbdUsd": 0.589946,
-  "impliedSbdUsd": 0.587052,
+  "marketSbdUsd": 0.58994,
+  "impliedSbdUsd": 0.58513,
   "marketSourceNote": "external-measured",
-  "at": "2026-10-07T01:30:06.147Z"
+  "at": "2026-10-07T01:40:06.148Z"
 }
