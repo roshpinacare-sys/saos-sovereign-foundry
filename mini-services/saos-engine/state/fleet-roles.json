@@ -13,7 +13,7 @@
       "cadence": "cycle",
       "truthContract": "numbers only from market_history_api reads, labeled measured",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/market.json: 566 trades/24h measured (vol 992.091 STEEM)",
+      "evidence": "state/market.json: 581 trades/24h measured (vol 1114.652 STEEM)",
       "priorStatus": "active"
     },
     {
@@ -37,8 +37,8 @@
       "cadence": "cycle+tail",
       "truthContract": "countDayFillsFromHistory / countDayOrderOpsFromHistory on real rows",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/observe.json: 2 chain-truth fills counted (last 2026-10-07T03:33:00.000Z)",
-      "priorStatus": "planned"
+      "evidence": "state/observe.json: 8 chain-truth fills counted (last 2026-10-07T03:41:12.000Z)",
+      "priorStatus": "active"
     },
     {
       "id": "treasury-sentinel",
@@ -49,7 +49,7 @@
       "cadence": "cycle",
       "truthContract": "edge in bps from measured market vs implied, HOLD verdict honest",
       "recruitedAt": "2026-10-01T21:39:37.902Z",
-      "evidence": "state/convert-plan.json: CONVERT-HOLD (edge 7542bps)",
+      "evidence": "state/convert-plan.json: CONVERT-HOLD (edge 7489bps)",
       "priorStatus": "active"
     },
     {
@@ -137,6 +137,6 @@
       "priorStatus": "active"
     }
   ],
-  "at": "2026-10-07T03:45:46.619Z",
+  "at": "2026-10-07T03:55:46.618Z",
   "pid": 5736
 }

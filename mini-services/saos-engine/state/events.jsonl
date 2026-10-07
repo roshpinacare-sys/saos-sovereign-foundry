@@ -5578,3 +5578,25 @@
 {"type":"discover.done","at":"2026-10-07T03:45:46.619Z","verdict":"OPTIONS-FOUND","tags":12,"opportunities":["spread-normal","tags-realloc","curation-share","fleet-growth"]}
 {"type":"publish.post","at":"2026-10-07T03:45:46.619Z","id":"d1791270545915-2","title":"Streamlining Your Steem Workflow: Tools for Efficiency","permlink":"streamlining-your-steem-workflow-tools-for-efficiency-2026-10-07","verdict":"POSTED","txid":"53dbc96e145a49c8a350acba67a70055cd376e49"}
 {"type":"hyper.requote","at":"2026-10-07T03:47:30.789Z","label":"front-create","ops":1,"cancels":0,"creates":1,"txid":"3f7968173603786ce823ac3976117cc7ec73f7e4","rcPct":30.2,"opsToday":321,"equilibriumOpsPerDay":10284,"bestAsk":0.10128899682421072,"bestBid":0.1003814495081309}
+{"type":"hyper.requote","at":"2026-10-07T03:48:54.791Z","label":"requote-front","ops":2,"cancels":1,"creates":1,"txid":"a692ede124014d67d695e4f69664fa487504f82e","rcPct":30.2,"opsToday":323,"equilibriumOpsPerDay":10284,"bestAsk":0.10128899682421072,"bestBid":0.1003814495081309}
+{"type":"hyper.requote","at":"2026-10-07T03:50:18.792Z","label":"requote-front","ops":2,"cancels":1,"creates":1,"txid":"6f0d30ac87aa86337e7d1c13fdca62c999967d2c","rcPct":30.2,"opsToday":325,"equilibriumOpsPerDay":10284,"bestAsk":0.10128899682421072,"bestBid":0.1003814495081309}
+{"type":"hyper.requote","at":"2026-10-07T03:51:42.794Z","label":"requote-front","ops":2,"cancels":1,"creates":1,"txid":"1735a88b5347fd47d71fca87f2f31962144ace4a","rcPct":30,"opsToday":327,"equilibriumOpsPerDay":10284,"bestAsk":0.10291242152927858,"bestBid":0.10231337944192702}
+{"type":"hyper.requote","at":"2026-10-07T03:53:09.797Z","label":"front-create","ops":2,"cancels":0,"creates":2,"txid":"29697cadef6f3c41fa2f0e67e038c5bbcf8b47a7","rcPct":29.9,"opsToday":329,"equilibriumOpsPerDay":10284,"bestAsk":0.10291242152927858,"bestBid":0.10231337944192702}
+{"type":"hyper.requote","at":"2026-10-07T03:54:36.799Z","label":"requote-front","ops":2,"cancels":1,"creates":1,"txid":"94846aab817ecf9a35e046ca4a19a59f0cc8cc2a","rcPct":29.9,"opsToday":331,"equilibriumOpsPerDay":10284,"bestAsk":0.1018,"bestBid":0.1006569685593618}
+{"type":"observe.done","at":"2026-10-07T03:55:46.618Z","fills":8,"parity":0.1040964413671177}
+{"type":"grid.tick","at":"2026-10-07T03:55:46.618Z","runCount":338,"refPrice":0.1040964413671177,"internalFeed":0.1040964413671177,"dragK":1,"inv":{"steem":200.697,"sbd":0.239}}
+{"type":"sweep.scan","at":"2026-10-07T03:55:46.618Z","grid":"sweep","dustSteem":0.6970000000000027}
+{"type":"anchor.quote","at":"2026-10-07T03:55:46.618Z","grid":"anchor-quote","bid":0.10388824848438347,"ask":0.10430463424985192}
+{"type":"offer.published","at":"2026-10-07T03:55:46.618Z","verdict":"OFFER-READY","asks":0,"bids":0,"flowAsks":4,"flowBids":0,"bestAsk":0.1018,"bestBid":0.1006569685593618}
+{"type":"convert.planned","at":"2026-10-07T03:55:46.618Z","verdict":"CONVERT-HOLD","edgeBps":7489,"amountSbd":0}
+{"type":"learn.done","at":"2026-10-07T03:55:46.618Z","verdict":"LEARNED","lessons":["unclassified-fail-legacy","broadcast-fails"],"tunings":[]}
+{"type":"fleet-grid.ladder","at":"2026-10-07T03:55:51.779Z","account":"haran","ops":5,"txid":"e962457de311994938435431591c83952c55196c","decision":"deploy"}
+{"type":"fleet-grid.ladder","at":"2026-10-07T03:55:51.779Z","account":"israelnews","ops":5,"txid":"9a3f5b47f7543fcb896d51f226c2bfe0b4a8cfa3","decision":"deploy"}
+{"type":"fleet-grid.ladder","at":"2026-10-07T03:55:51.779Z","account":"lsa","ops":5,"txid":"d539a78e7d5a843841156a6d5fddc430a3e0c7c3","decision":"deploy"}
+{"type":"fleet-grid.ladder","at":"2026-10-07T03:55:51.779Z","account":"macrame","ops":5,"txid":"89f6b575fd27391d00948cba9e862f7ab107a8ab","decision":"deploy"}
+{"type":"fleet-grid.ladder","at":"2026-10-07T03:55:51.779Z","account":"siq","ops":5,"txid":"880bccc32645f9eb5fb81f37b9a4a870e282ceed","decision":"deploy"}
+{"type":"fleet-grid.ladder","at":"2026-10-07T03:55:51.779Z","account":"tov","ops":5,"txid":"b6029f3251c92148b40c48720cfc177fc62e69d5","decision":"deploy"}
+{"type":"fleet-grid.ladder","at":"2026-10-07T03:55:51.779Z","account":"wic","ops":5,"txid":"95f6fbf020d55fe5e094c85968a03677698e3e5b","decision":"deploy"}
+{"type":"fleet-grid.ladder","at":"2026-10-07T03:55:51.779Z","account":"wog","ops":5,"txid":"580c038047d926b4a8898334ecc0450ed3353589","decision":"deploy"}
+{"type":"fleet-grid.ladder","at":"2026-10-07T03:55:51.779Z","account":"woq","ops":5,"txid":"7ab9da2cbb0a664dad7198ea53ad2ca31dae644a","decision":"deploy"}
+{"type":"hyper.requote","at":"2026-10-07T03:56:57.801Z","label":"requote-front","ops":2,"cancels":1,"creates":1,"txid":"6583f4233271b6f815532c1fbbc06085e4c41e76","rcPct":29.9,"opsToday":333,"equilibriumOpsPerDay":10284,"bestAsk":0.1018,"bestBid":0.1006569685593618}
