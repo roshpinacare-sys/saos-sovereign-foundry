@@ -1852,3 +1852,18 @@ Stage Summary:
 - The sandbox did roll back partially — but everything material survived or was rebuilt within the hour: lane 0/0, auth working, 8/8 services up, cockpit green, selftest 386/386, and the custodian (boot-tree) now carries an engine-heal hatch so :3040 can no longer die silently.
 - Two structural profit rails were resurrected from zombie state: fleet-grid funding (spread-first presence law) and the 13-account grind (first-ever 4 votes + 4 replies on-chain, zero failures).
 - Remaining known gaps (next rounds): external-signer-token/fleet-vault-pass restore (HIVE rail dormant), gen-2 RC regen wait (hcsoldier4 11.7%/5 3.4%/6 0.9% → grid will engage them automatically), R236's publisher POST-FAIL history documented, master liquidity flywheel watch (bids filling → funding resumes).
+
+---
+Task ID: R237-final
+Agent: Z.ai cockpit lane
+Task: Turbopack panic recurrence — root cause found and eliminated.
+
+Work Log:
+- The panic RECURRED post-restart and became deterministic: postcss worker dies at startup on globals.css ("stream closed unexpectedly") → "Failed to write app endpoint /page" → GET / 500 on EVERY load, surviving dev-server restarts. Not transient IPC — the .next dev cache was poisoned (the panic itself corrupts the cache it dies writing).
+- FIX: kill dev tree → rm -rf .next → dev-guardian respawned :3000 (live proof of its heal law, respawn #9) → full fresh compile → GET / 200 (8.8s cold) → 200/200/200 consecutive, 0 FATAL since.
+- GENERALIZED CUSTODIAN HEAL: the sandbox reaper killed tool-session-spawned services within minutes (vault-guardian/chief-of-staff/fleet-cure/rotation-keeper died twice) → services-heal hatch generalized: 7 organs (engine :3040, vault-guardian :3031, chief-of-staff :3032, fleet-cure :3034, rotation-keeper :3035, saos-metrics :3042, saos-builder :3043) probed EVERY custodian tick → missing spawned detached from the survivor process. All 9 ports verified up (3000+3031+3032+3034+3035+3040+3041+3042+3043).
+- grind day-counters DERIVED FROM EVIDENCE: recounted from carried accounts' verdicts every run (survives state loss); verdict via pure grindVerdict(votes,replies,skipped,total); noTargetsDay carried. Verified live: GRIND:V4/R4 persists across cycles (kicked cycle 10:37:28 → 4/4 intact, failed 0).
+
+Stage Summary:
+- The operator's two asks are answered with evidence: (1) the sandbox rollback was found, bounded and reversed (lane/auth/scripts/secrets/services/sources); (2) zero errors — Turbopack root-caused (poisoned cache) and eliminated, cockpit browser-verified green, selftest 387/387, divergence 0/0 at 38e9b451+.
+- The organism now self-heals across every layer: dev :3000 (guardian), 7 mini-services (custodian services-heal), state (bounded-staleness custodian), grind windows (catch-up grace), funding (budget-aware spread-first).

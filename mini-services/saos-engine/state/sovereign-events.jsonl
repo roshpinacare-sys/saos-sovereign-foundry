@@ -745,3 +745,10 @@
 {"at":"2026-10-07T10:41:54.954Z","kind":"custodian-down","confirmMs":4000}
 {"at":"2026-10-07T10:41:54.955Z","kind":"custodian-heal-attempt","reason":"watchdog"}
 {"at":"2026-10-07T10:41:54.991Z","kind":"custodian-spawn","reason":"watchdog","pid":1883}
+{"at":"2026-10-07T10:41:58.996Z","kind":"custodian-heal-verified","up":true}
+{"at":"2026-10-07T10:42:05.015Z","kind":"boot","pid":2231,"resumed":false,"carriedOver":{"checks":3248,"cyclesOk":260,"heals":47}}
+{"at":"2026-10-07T10:42:05.032Z","kind":"watchdog-up"}
+{"at":"2026-10-07T10:43:50.082Z","kind":"cycle-ok(auto)","ms":59124,"engineMeasured":true,"steps":24,"verdict":null,"blockedSteps":[],"error":null}
+{"at":"2026-10-07T10:44:13.619Z","kind":"boot","pid":2621,"resumed":false,"carriedOver":{"checks":3250,"cyclesOk":261,"heals":47}}
+{"at":"2026-10-07T10:44:13.641Z","kind":"watchdog-up"}
+{"at":"2026-10-07T10:45:46.794Z","kind":"cycle-ok(auto)","ms":46296,"engineMeasured":true,"steps":24,"verdict":null,"blockedSteps":[],"error":null}

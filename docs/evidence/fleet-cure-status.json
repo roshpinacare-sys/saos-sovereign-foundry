@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-10-07T10:40:43.472Z",
+ "updatedAt": "2026-10-07T10:45:43.389Z",
  "pendingWeave": false,
  "purpose": "Task 26-c fleet RC cure — RC windows measured live per fleet account (chain-side, keyless); execution = external-signer :3033 authority gate, which only ever signs with keys sealed in the envelope and verified live (see vault summary below). pendingWeave decides whether anything is scheduled at all (roast-62: readiness ≠ schedule).",
  "opCostRc": 230000000,
@@ -13,64 +13,64 @@
  "accounts": [
   {
    "account": "cashmachine",
-   "mana": 1305325625,
-   "manaPct": 62,
+   "mana": 1306787212,
+   "manaPct": 62.1,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "haran",
-   "mana": 1548300073,
-   "manaPct": 68.3,
+   "mana": 1549873189,
+   "manaPct": 68.4,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "israelnews",
-   "mana": 1506323827,
-   "manaPct": 67.6,
+   "mana": 1507870318,
+   "manaPct": 67.7,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "lsa",
-   "mana": 2718765424,
+   "mana": 2721467430,
    "manaPct": 69.9,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "macrame",
-   "mana": 2850151350,
-   "manaPct": 68.2,
+   "mana": 2853052536,
+   "manaPct": 68.3,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "siq",
-   "mana": 1632713418,
-   "manaPct": 71.3,
-   "etaToWindowMin": 0,
-   "state": "ready"
-  },
-  {
-   "account": "wic",
-   "mana": 2277612245,
-   "manaPct": 73.8,
-   "etaToWindowMin": 0,
-   "state": "ready"
-  },
-  {
-   "account": "wog",
-   "mana": 2337668969,
+   "mana": 1634303379,
    "manaPct": 71.4,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
+   "account": "wic",
+   "mana": 2279755134,
+   "manaPct": 73.9,
+   "etaToWindowMin": 0,
+   "state": "ready"
+  },
+  {
+   "account": "wog",
+   "mana": 2339942137,
+   "manaPct": 71.5,
+   "etaToWindowMin": 0,
+   "state": "ready"
+  },
+  {
    "account": "woq",
-   "mana": 1648075151,
-   "manaPct": 72.5,
+   "mana": 1649653765,
+   "manaPct": 72.6,
    "etaToWindowMin": 0,
    "state": "ready"
   }
