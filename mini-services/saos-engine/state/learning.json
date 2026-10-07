@@ -1,7 +1,7 @@
 {
-  "at": "2026-10-07T09:43:35.908Z",
+  "at": "2026-10-07T09:52:50.909Z",
   "enabled": true,
-  "runsTotal": 331,
+  "runsTotal": 332,
   "verdict": "LEARNED",
   "metrics": {
     "cycles": {
@@ -15,7 +15,7 @@
         "none": 1,
         "unknown": 1
       },
-      "msP50": 26915,
+      "msP50": 27013,
       "msP90": 50520
     },
     "curator": {
@@ -38,15 +38,15 @@
       "lastError": null
     },
     "watchdog": {
-      "checks": 3189,
+      "checks": 3199,
       "downs": 111,
       "heals": 45,
       "healVerified": 44,
       "healFailed": 0,
-      "lastCheckAt": "2026-10-07T09:42:50.898Z",
+      "lastCheckAt": "2026-10-07T09:52:50.910Z",
       "engineUp": true,
       "lastSpawnAt": null,
-      "lastUpAt": "2026-10-07T09:42:50.922Z",
+      "lastUpAt": "2026-10-07T09:52:50.912Z",
       "blips": 2
     }
   },
@@ -63,7 +63,7 @@
   "tuningsApplied": [],
   "lessonsTotal": {
     "cycle-conn-fails": 132,
-    "unclassified-fail-legacy": 185,
+    "unclassified-fail-legacy": 186,
     "signing-cred-blocked": 205,
     "broadcast-fails": 80,
     "cycle-latency-tail": 8
