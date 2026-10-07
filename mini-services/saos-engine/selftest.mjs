@@ -877,7 +877,7 @@ ok("r236 grind-carries-same-day", r236carry({ day: "2026-10-07", accounts: { har
  * tick (funded={}, 0 ladders); (b) frozen 06:12/06:42 windows → the daily
  * grind was lost forever with a dishonest WINDOWS-LATER verdict. */
 import { fleetFundPlan as r237fp } from "./fleet-grid.mjs";
-import { grindShouldRun as r237run, eligibleCommunity as r237elig, GRIND_CATCHUP_GRACE_MIN as r237grace, GRIND_WINDOW_MIN as r237wmin } from "./fleetgrind.mjs";
+import { grindShouldRun as r237run, eligibleCommunity as r237elig, grindVerdict as r237vd, GRIND_CATCHUP_GRACE_MIN as r237grace, GRIND_WINDOW_MIN as r237wmin } from "./fleetgrind.mjs";
 
 const r237conf = { accounts: ["a1", "a2", "a3"], fundEach: 1.0, minLevel: 0.2 };
 ok("r237 fund-budget-spreads-partial", (() => {
@@ -918,6 +918,7 @@ const r237raw = [
 ];
 ok("r237 community-eligibility-laws", (() => { const e = r237elig(r237raw, r237fleet, r237now); return e.length === 2 && e[0].author === "community-x" && e[1].author === "community-y"; })());
 ok("r237 community-empty-garbage-safe", r237elig(null, r237fleet, r237now).length === 0 && r237elig([{}], new Set(), r237now).length === 0);
+ok("r237 verdict-cumulative-law", r237vd(4, 4, 7, 13) === "GRIND:V4/R4" && r237vd(0, 0, 13, 13) === "WINDOWS-LATER" && r237vd(0, 0, 7, 13) === "IDLE-GATES");
 
 console.log(`\nSELFTEST ${pass}/${pass + fail} ${fail === 0 ? "PASS" : "FAIL"}`);
 /* T-21 · last-run marker: the recruiter's evidence for the integrity-auditor

@@ -140,6 +140,13 @@ export async function scanCommunityPosts({ tags = ["life", "steem", "writing"], 
   return eligibleCommunity(raw, fleetSet, nowMs);
 }
 
+/** pure: R237 — day verdict from CUMULATIVE counters (the old code wrote each
+ *  run's counters over the day's evidence — a fresh cycle erased GRIND:V4/R4
+ *  from the state top-level; honesty requires the day's totals to stick). */
+export function grindVerdict(votes, replies, skipped, total) {
+  return votes || replies ? `GRIND:V${votes}/R${replies}` : skipped === total ? "WINDOWS-LATER" : "IDLE-GATES";
+}
+
 /* ── state ─────────────────────────────────────────────────────────────── */
 export function fleetGrindState() {
   const st = readJson(FILE, null);
@@ -184,7 +191,16 @@ export async function runFleetGrind({ now = new Date().toISOString(), force = fa
   const d = new Date(now);
   const minute = d.getUTCHours() * 60 + d.getUTCMinutes();
 
+  /* R237: counters are DAY-CUMULATIVE and DERIVED FROM EVIDENCE — recounted
+   * from the carried accounts' own verdicts every run (survives state loss,
+   * never trusts a stored counter); the loop adds only this run's delta. */
   let votes = 0, replies = 0, skipped = 0, failed = 0;
+  for (const a of Object.values(carried.accounts ?? {})) {
+    if (a?.vote?.verdict === "VOTED") votes++;
+    if (a?.engage?.verdict === "REPLIED") replies++;
+    if (String(a?.vote?.verdict ?? "").startsWith("VOTE-")) failed++;
+    if (String(a?.engage?.verdict ?? "").startsWith("REPLY-")) failed++;
+  }
 
   for (const account of accounts) {
     const rec = carried.accounts[account] ?? { vote: null, engage: null };
@@ -268,13 +284,11 @@ export async function runFleetGrind({ now = new Date().toISOString(), force = fa
       }
     }
 
-    carried.accounts[account] = { vote: rec.vote ?? null, engage: rec.engage ?? null };
+    carried.accounts[account] = { vote: rec.vote ?? null, engage: rec.engage ?? null, noTargetsDay: rec.noTargetsDay };
   }
 
   carried.at = now;
-  const verdict = votes || replies
-    ? `GRIND:V${votes}/R${replies}`
-    : skipped === accounts.length ? "WINDOWS-LATER" : "IDLE-GATES";
+  const verdict = grindVerdict(votes, replies, skipped, accounts.length);
   writeJson(FILE, { day, accounts: carried.accounts, at: now, verdict, votes, replies, failed, skipped });
   return { ok: true, verdict, votes, replies, failed, skipped, fleet: accounts.length };
 }
