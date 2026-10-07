@@ -1,7 +1,7 @@
 {
   "protocol": "saos.fleet.coordination.v1",
   "day": "2026-10-07",
-  "at": "2026-10-07T02:00:06.150Z",
+  "at": "2026-10-07T02:05:26.242Z",
   "schedule": {
     "headcorner": {
       "post": 648,
@@ -124,7 +124,7 @@
         "name": "headcorner",
         "sp": 6.46,
         "vpEff": 25.4,
-        "rcPct": 32.2,
+        "rcPct": 32,
         "verdict": "VP-REST",
         "weightPct": 0,
         "lowRc": false,
@@ -289,7 +289,7 @@
         "lastVote": "1970-01-01T00:00:00"
       }
     ],
-    "at": "2026-10-07T02:00:15.041Z"
+    "at": "2026-10-07T02:05:32.614Z"
   },
   "engagement": {
     "ok": true,
@@ -488,7 +488,7 @@
         "author": "headcorner",
         "permlink": "sbdsteem-spread-widens-to-2519-zero-external-votes-recorded-mux764vw",
         "title": "SBD:STEEM Spread Widens to 2.519%, Zero External Votes Recorded",
-        "ageH": 4,
+        "ageH": 5,
         "fleetVotes": [
           "haran"
         ],
@@ -1021,7 +1021,7 @@
       "authorResponseRate": 0,
       "avgScore": 0.3
     },
-    "at": "2026-10-07T02:00:06.150Z"
+    "at": "2026-10-07T02:05:26.242Z"
   },
   "compliance": {
     "protocol": "saos.fleet.compliance.v1",
@@ -1316,73 +1316,73 @@
       "acc": "hcsoldier2",
       "kind": "engage",
       "at": "02:16",
-      "inMin": 16
+      "inMin": 11
     },
     {
       "acc": "cashmachine",
       "kind": "vote1",
       "at": "02:36",
-      "inMin": 36
+      "inMin": 31
     },
     {
       "acc": "lsa",
       "kind": "vote1",
       "at": "02:56",
-      "inMin": 56
+      "inMin": 51
     },
     {
       "acc": "israelnews",
       "kind": "vote1",
       "at": "04:32",
-      "inMin": 152
+      "inMin": 147
     },
     {
       "acc": "tov",
       "kind": "post",
       "at": "04:52",
-      "inMin": 172
+      "inMin": 167
     },
     {
       "acc": "haran",
       "kind": "post",
       "at": "05:57",
-      "inMin": 237
+      "inMin": 232
     },
     {
       "acc": "cashmachine",
       "kind": "engage",
       "at": "06:17",
-      "inMin": 257
+      "inMin": 252
     },
     {
       "acc": "haran",
       "kind": "vote1",
       "at": "06:53",
-      "inMin": 293
+      "inMin": 288
     },
     {
       "acc": "macrame",
       "kind": "post",
       "at": "07:13",
-      "inMin": 313
+      "inMin": 308
     },
     {
       "acc": "israelnews",
       "kind": "post",
       "at": "07:52",
-      "inMin": 352
+      "inMin": 347
     },
     {
       "acc": "macrame",
       "kind": "vote1",
       "at": "08:12",
-      "inMin": 372
+      "inMin": 367
     },
     {
       "acc": "wic",
       "kind": "vote1",
       "at": "08:54",
-      "inMin": 414
+      "inMin": 409
     }
   ],
   "lastPublish": {
@@ -1400,5 +1400,5 @@
     "engage": "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)",
     "threads": "שיח מתפתח = תגובות-לתגובות + הגב-מחבר — R233 מודד את העומק, לא רק את הכיסוי"
   },
-  "ms": 29379
+  "ms": 27624
 }

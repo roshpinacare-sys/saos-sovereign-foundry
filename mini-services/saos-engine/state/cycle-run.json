@@ -1,5 +1,35 @@
 {
-  "running": true,
+  "running": false,
   "startedAt": "2026-10-07T02:05:26.242Z",
-  "pid": 9187
+  "finishedAt": "2026-10-07T02:05:59.371Z",
+  "ms": 33129,
+  "health": "ok",
+  "ok": true,
+  "steps": {
+    "observe": true,
+    "intel": true,
+    "tick": true,
+    "peg": true,
+    "convert": true,
+    "curate": true,
+    "execute": true,
+    "soldiers": true,
+    "learn": true,
+    "webintel": true,
+    "content": true,
+    "rctank": true,
+    "payouts": true,
+    "weave": true,
+    "trends": true,
+    "coordination": true,
+    "compliance": true,
+    "windowExec": true,
+    "selftest": true,
+    "economics": true,
+    "recruit": true,
+    "report": true
+  },
+  "blockedSteps": [],
+  "failedSteps": [],
+  "error": null
 }

@@ -5378,3 +5378,5 @@
 {"type":"offer.published","at":"2026-10-07T02:05:26.242Z","verdict":"OFFER-READY","asks":0,"bids":0,"flowAsks":2,"flowBids":0,"bestAsk":0.10383137784238397,"bestBid":0.100227}
 {"type":"convert.planned","at":"2026-10-07T02:05:26.242Z","verdict":"CONVERT-HOLD","edgeBps":6944,"amountSbd":0}
 {"type":"learn.done","at":"2026-10-07T02:05:26.242Z","verdict":"LEARNED","lessons":["signing-cred-blocked","unclassified-fail-legacy"],"tunings":[]}
+{"type":"hyper.requote","at":"2026-10-07T02:06:21.557Z","label":"requote-front","ops":2,"cancels":1,"creates":1,"txid":"9e5257aad2fd0ec2afebf9c900e6cdbc5e5ca3a0","rcPct":32,"opsToday":204,"equilibriumOpsPerDay":10148,"bestAsk":0.10383137784238397,"bestBid":0.100227}
+{"type":"hyper.requote","at":"2026-10-07T02:07:21.560Z","label":"requote-front","ops":2,"cancels":2,"creates":0,"txid":"4aff3ee1da974dc41ff75f6afc67cea68a401b8e","rcPct":32,"opsToday":206,"equilibriumOpsPerDay":10148,"bestAsk":0.10383137784238397,"bestBid":0.100227}
