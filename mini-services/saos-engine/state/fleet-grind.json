@@ -20,12 +20,16 @@
     "wic": {
       "vote": null,
       "engage": null
+    },
+    "hcsoldier5": {
+      "vote": null,
+      "engage": null
     }
   },
-  "at": "2026-10-07T09:52:50.909Z",
-  "verdict": "WINDOWS-LATER",
+  "at": "2026-10-07T10:12:50.912Z",
+  "verdict": "IDLE-GATES",
   "votes": 0,
   "replies": 0,
   "failed": 0,
-  "skipped": 13
+  "skipped": 7
 }

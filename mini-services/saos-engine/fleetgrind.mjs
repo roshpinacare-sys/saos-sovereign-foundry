@@ -100,6 +100,46 @@ export function grindCarried(prev, day) {
   return prev?.day === day ? prev : { day, accounts: {}, at: null };
 }
 
+/** pure: R237 — eligible community targets from a raw scan. The engagement
+ *  matrix is INTERNAL by design (fleet blogs → cross-fleet coverage) but the
+ *  grind's exposure law FORBIDS cross-fleet targets — R236 fed the grind from
+ *  the internal matrix → eligible = 0 forever → the rail never fired a single
+ *  vote (measured: 0 grind events since birth). Community content is the
+ *  grind's real feed. Laws here: non-fleet authors only, deduped, fresh ≤72h. */
+export function eligibleCommunity(rows, fleetSet, nowMs, maxAgeMs = 72 * 3600_000) {
+  const seen = new Set();
+  const out = [];
+  for (const p of Array.isArray(rows) ? rows : []) {
+    if (!p?.author || !p?.permlink) continue;
+    if (fleetSet instanceof Set ? fleetSet.has(p.author) : (fleetSet ?? []).includes(p.author)) continue;
+    const k = `${p.author}/${p.permlink}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    const ms = Number(p.createdMs ?? 0);
+    if (!(ms > 0) || nowMs - ms > maxAgeMs) continue;
+    out.push(p);
+  }
+  return out;
+}
+
+/** R237: bounded community scan — public discussions by tag (trend tags first,
+ *  fallback niche tags), 3 tags × 8 posts, per-tag fail-isolated. */
+export async function scanCommunityPosts({ tags = ["life", "steem", "writing"], fleetSet = new Set(), nowMs = Date.now(), perTag = 8 } = {}) {
+  const raw = [];
+  const clean = (Array.isArray(tags) ? tags : []).filter((t) => typeof t === "string" && t.length > 1).slice(0, 3);
+  for (const tag of (clean.length ? clean : ["life", "steem", "writing"])) {
+    try {
+      const r = await rpcCall("condenser_api.get_discussions_by_created", [{ tag, limit: perTag }]);
+      if (!r?.ok) continue;
+      for (const p of (r.result ?? [])) {
+        const createdMs = p?.created ? Date.parse(String(p.created).endsWith("Z") ? p.created : p.created + "Z") : 0;
+        raw.push({ author: p?.author, permlink: p?.permlink, title: String(p?.title ?? "").slice(0, 90), createdMs });
+      }
+    } catch { /* per-tag fail-isolated */ }
+  }
+  return eligibleCommunity(raw, fleetSet, nowMs);
+}
+
 /* ── state ─────────────────────────────────────────────────────────────── */
 export function fleetGrindState() {
   const st = readJson(FILE, null);
@@ -129,7 +169,17 @@ export async function runFleetGrind({ now = new Date().toISOString(), force = fa
   carried.accounts = carried.accounts ?? {};
 
   const coord = coordinationState();
-  const posts = coord?.engagement?.posts ?? [];
+  /* R237: the grind feeds on COMMUNITY content (exposure law), never on the
+   * internal engagement matrix (fleet blogs). Trend tags steer the scan; a
+   * failed scan falls back to the internal list (old behavior) honestly. */
+  const trendTags = (coord?.trends?.topics ?? []).flatMap((t) => Array.isArray(t?.tags) ? t.tags : []).slice(0, 3);
+  let communityCount = 0;
+  let posts = [];
+  try {
+    posts = await scanCommunityPosts({ tags: trendTags, fleetSet, nowMs: Date.parse(now) });
+    communityCount = posts.length;
+  } catch { posts = []; }
+  if (!posts.length) posts = coord?.engagement?.posts ?? [];
 
   const d = new Date(now);
   const minute = d.getUTCHours() * 60 + d.getUTCMinutes();
@@ -152,6 +202,14 @@ export async function runFleetGrind({ now = new Date().toISOString(), force = fa
     if (rec.vote?.target) doneKeys.add(`vote:${rec.vote.target}`);
     if (rec.engage?.target) doneKeys.add(`engage:${rec.engage.target}`);
     const targets = pickGrindTargets(posts, account, fleetSet, doneKeys);
+    if (!targets.vote && !targets.engage) {
+      /* honest visibility (day-guarded): the window/catch-up was open but the
+       * target pool is dry — never again a silent IDLE-GATES with no clue */
+      if (rec.noTargetsDay !== day) {
+        rec.noTargetsDay = day;
+        appendLine(EVENTS, { type: "grind.no-targets", at: now, account, community: communityCount, catchup: late });
+      }
+    }
 
     /* ── vote ── */
     if (!rec.vote && targets.vote) {

@@ -6033,3 +6033,15 @@
 {"type":"fleet-grid.ladder","at":"2026-10-07T10:04:41.023Z","account":"lsa","ops":1,"txid":"0599d94706165c17942a6ab4b8aa6df621b1d17a","decision":"deploy"}
 {"type":"fleet-grid.ladder","at":"2026-10-07T10:04:41.023Z","account":"macrame","ops":1,"txid":"96911a43374d6325e849e72385c4b69a8d9c8a33","decision":"deploy"}
 {"type":"fleet-grid.ladder","at":"2026-10-07T10:04:41.023Z","account":"siq","ops":1,"txid":"00402e84514446ab02a5f931ff9d53783e12aaa0","decision":"deploy"}
+{"type":"observe.done","at":"2026-10-07T10:12:50.912Z","fills":12,"parity":0.10409594672255837}
+{"type":"grid.tick","at":"2026-10-07T10:12:50.912Z","runCount":375,"refPrice":0.10409594672255837,"internalFeed":0.10409594672255837,"dragK":1,"inv":{"steem":0.471,"sbd":0.024}}
+{"type":"sweep.scan","at":"2026-10-07T10:12:50.912Z","grid":"sweep","dustSteem":0.471}
+{"type":"anchor.quote","at":"2026-10-07T10:12:50.912Z","grid":"anchor-quote","bid":0.10388775482911325,"ask":0.10430413861600349}
+{"type":"offer.published","at":"2026-10-07T10:12:50.912Z","verdict":"OFFER-EMPTY","asks":0,"bids":0,"flowAsks":0,"flowBids":0,"bestAsk":0.10361620557455185,"bestBid":0.10120023478454471}
+{"type":"convert.planned","at":"2026-10-07T10:12:50.912Z","verdict":"CONVERT-HOLD","edgeBps":7581,"amountSbd":0}
+{"type":"learn.done","at":"2026-10-07T10:12:50.912Z","verdict":"LEARNED","lessons":["unclassified-fail-legacy"],"tunings":[]}
+{"type":"discover.done","at":"2026-10-07T10:12:50.912Z","verdict":"OPTIONS-FOUND","tags":12,"opportunities":["spread-wide","tags-realloc","curation-share","fleet-growth"]}
+{"type":"hyper.boot","at":"2026-10-07T10:19:26.748Z","pid":26825,"conf":{"enabled":true,"tickMs":3000,"levels":10,"spacingBps":15,"ttlSec":60,"orderTtlSec":3600,"askBudgetPct":0.12,"minRcPct":25,"setpointPct":50,"burst":3,"maxOpsPerTick":24,"opsDayCap":32000,"chainTailSec":60,"maxOpsPerTx":24}}
+{"type":"fleet-grid.boot","at":"2026-10-07T10:19:26.751Z","tickMs":180000,"accounts":13,"orderTrace":"1a113f67a0ed4be9"}
+{"type":"hyper.boot","at":"2026-10-07T10:19:56.031Z","pid":26838,"conf":{"enabled":true,"tickMs":3000,"levels":10,"spacingBps":15,"ttlSec":60,"orderTtlSec":3600,"askBudgetPct":0.12,"minRcPct":25,"setpointPct":50,"burst":3,"maxOpsPerTick":24,"opsDayCap":32000,"chainTailSec":60,"maxOpsPerTx":24}}
+{"type":"fleet-grid.boot","at":"2026-10-07T10:19:56.034Z","tickMs":180000,"accounts":13,"orderTrace":"1a113f67a0ed4be9"}

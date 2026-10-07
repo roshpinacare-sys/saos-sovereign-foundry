@@ -726,3 +726,8 @@
 {"at":"2026-10-07T10:11:54.932Z","kind":"custodian-down","confirmMs":4000}
 {"at":"2026-10-07T10:11:54.932Z","kind":"custodian-heal-attempt","reason":"watchdog"}
 {"at":"2026-10-07T10:11:54.976Z","kind":"custodian-spawn","reason":"watchdog","pid":25099}
+{"at":"2026-10-07T10:11:59.382Z","kind":"custodian-heal-verified","up":true}
+{"at":"2026-10-07T10:14:18.973Z","kind":"cycle-ok(auto)","ms":86250,"engineMeasured":true,"steps":24,"verdict":null,"blockedSteps":[],"error":null}
+{"at":"2026-10-07T10:19:55.940Z","kind":"watchdog-down","downForMs":65000,"confirmMs":5000}
+{"at":"2026-10-07T10:19:55.941Z","kind":"heal-attempt","reason":"watchdog"}
+{"at":"2026-10-07T10:19:55.977Z","kind":"heal-spawn","reason":"watchdog","pid":26838}
