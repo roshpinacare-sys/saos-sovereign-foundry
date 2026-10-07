@@ -615,3 +615,4 @@
 {"at":"2026-10-07T00:17:30.299Z","kind":"cycle-ok(auto)","ms":40858,"engineMeasured":true,"steps":22,"verdict":null,"blockedSteps":[],"error":null}
 {"at":"2026-10-07T00:27:14.260Z","kind":"cycle-ok(auto)","ms":24461,"engineMeasured":true,"steps":22,"verdict":null,"blockedSteps":[],"error":null}
 {"at":"2026-10-07T00:37:14.265Z","kind":"cycle-ok(auto)","ms":26353,"engineMeasured":true,"steps":22,"verdict":null,"blockedSteps":[],"error":null}
+{"at":"2026-10-07T00:47:10.265Z","kind":"cycle-fail(auto)","ms":24031,"engineMeasured":true,"steps":0,"verdict":null,"blockedSteps":null,"error":"engine-restarted-mid-cycle"}

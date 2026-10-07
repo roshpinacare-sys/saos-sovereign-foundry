@@ -759,6 +759,51 @@ const r232t = r232target([
 ok("r232 vote-target-skips-voted", r232t?.permlink === "p2");
 ok("r232 reply-permlink-safe", /^re-x-abc-\d{14}z$/.test(r232pl("x", "abc!!", "2026-10-07T00:00:00.000Z")));
 
+/* ── R233 · compliance trend line + thread depth + dry preflight ───────── */
+import { upsertHistory as r233hist, trendDelta as r233delta, HISTORY_CAP_DAYS as r233cap } from "./compliance.mjs";
+import { threadMetrics as r233tm, threadSummary as r233ts } from "./threads.mjs";
+import { dryVerdictFor as r233dry } from "./execute.mjs";
+
+const h0 = [
+  { day: "2026-10-05", avgCompliancePct: 2.5, verdict: "NOT-ADOPTED" },
+  { day: "2026-10-06", avgCompliancePct: 30, verdict: "PARTIAL" },
+];
+const h1 = r233hist(h0, { day: "2026-10-07", avgCompliancePct: 55, verdict: "PARTIAL" });
+ok("r233 history-append-sorted", h1.length === 3 && h1[2].day === "2026-10-07");
+const h2 = r233hist(h1, { day: "2026-10-07", avgCompliancePct: 60, verdict: "ADOPTED" });
+ok("r233 history-upsert-same-day", h2.length === 3 && h2[2].avgCompliancePct === 60);
+const h3 = r233hist(Array.from({ length: 40 }, (_, i) => ({ day: `2026-09-${String(i + 1).padStart(2, "0")}`, avgCompliancePct: i })), { day: "2026-10-07", avgCompliancePct: 1 });
+ok("r233 history-capped", h3.length === r233cap && h3[h3.length - 1].day === "2026-10-07");
+ok("r233 history-garbage-in-tolerated", r233hist(null, { day: "d", avgCompliancePct: 0 }).length === 1);
+const td = r233delta(h2, "2026-10-07");
+ok("r233 trend-delta-vs-yesterday", td.cur === 60 && td.prev === 30 && td.delta === 30 && td.prevDay === "2026-10-06");
+ok("r233 trend-delta-first-day-null", r233delta([{ day: "2026-10-07", avgCompliancePct: 5, verdict: "NOT-ADOPTED" }], "2026-10-07").delta === null);
+
+const nowT = Date.parse("2026-10-07T12:00:00Z");
+const base = { author: "headcorner", permlink: "p1", coveragePct: 50, createdMs: Date.parse("2026-10-07T06:00:00Z") };
+const th1 = r233tm(base, [{ author: "tov", permlink: "r1", createdIso: "2026-10-07T07:00:00Z" }], [{ author: "macrame", parentAuthor: "tov" }], { nowMs: nowT });
+ok("r233 thread-layer2-developed", th1.developed === true && th1.layer2Count === 1 && th1.depth === 2);
+ok("r233 thread-latency-1h", th1.firstFleetReplyH === 1);
+const th2 = r233tm(base, [{ author: "tov", permlink: "r1", createdIso: "2026-10-07T07:00:00Z" }], [{ author: "headcorner", parentAuthor: "tov" }], { nowMs: nowT });
+ok("r233 thread-author-responded-depth3", th2.authorResponded === true && th2.depth === 3 && th2.score > th1.score);
+const th3 = r233tm(base, [], [], { nowMs: nowT });
+ok("r233 thread-empty-depth1", th3.depth === 1 && th3.developed === false && th3.authorResponded === false);
+const th4 = r233tm({ ...base, coveragePct: 200 }, Array.from({ length: 9 }, (_, i) => ({ author: "tov", permlink: `r${i}`, createdIso: "2026-10-07T07:00:00Z" })), Array.from({ length: 9 }, (_, i) => ({ author: i === 0 ? "headcorner" : "x", parentAuthor: "tov" })), { nowMs: nowT });
+ok("r233 thread-score-capped-at-10", th4.score === 10);
+const ts1 = r233ts([th1, th2, th3]);
+ok("r233 thread-summary-mixed", ts1.postsMeasured === 3 && ts1.developed === 2 && ts1.authorResponseRate === 33 && ts1.avgDepth === 2);
+ok("r233 thread-summary-empty-nulls", r233ts([]).avgDepth === null);
+
+const dryBase = { rcHold: false, vpEff: 95, tasksCount: 4, target: { author: "tov", permlink: "p9" }, weightPct: 100 };
+ok("r233 dry-post-delegated", r233dry("post", dryBase).verdict === "DRY-POST-DELEGATED-TO-CONTENT-RAIL");
+ok("r233 dry-rc-hold-first", r233dry("vote1", { ...dryBase, rcHold: true }).verdict === "DRY-HOLD-LOW-RC");
+ok("r233 dry-engage-budget-capped", r233dry("engage", dryBase).verdict === "DRY-ENGAGE:3");
+ok("r233 dry-engage-no-tasks", r233dry("engage", { ...dryBase, tasksCount: 0 }).verdict === "DRY-NO-TASKS");
+ok("r233 dry-vote-full-weight", r233dry("vote1", dryBase).verdict === "DRY-VOTE:100%" && r233dry("vote1", dryBase).target === "tov/p9");
+ok("r233 dry-vote-rest", r233dry("vote1", { ...dryBase, weightPct: 0, vpEff: 20 }).verdict === "DRY-VP-REST");
+ok("r233 dry-vote-no-target", r233dry("vote1", { ...dryBase, target: null }).verdict === "DRY-NO-TARGET");
+ok("r233 dry-vp-unknown", r233dry("vote1", { ...dryBase, vpEff: null, weightPct: 0 }).verdict === "DRY-VP-UNKNOWN");
+
 console.log(`\nSELFTEST ${pass}/${pass + fail} ${fail === 0 ? "PASS" : "FAIL"}`);
 /* T-21 · last-run marker: the recruiter's evidence for the integrity-auditor
  * role — written ONLY on a full run, never by a partial import. */

@@ -598,6 +598,7 @@ export async function runCycle({ now = new Date().toISOString(), persist = true 
       verdict: `SCHEDULED:${(c?.schedule ?? null) ? "ok" : "none"}·POWER:${c?.power?.ok ? "ok" : "fail"}·ENG:${c?.engagement?.ok ? "ok" : "fail"}`,
       accounts: c?.power?.accounts?.length ?? null,
       engagement: c?.engagement?.summary ?? null,
+      threads: c?.threads?.summary ?? null,
       publish: out.publish ?? null,
       ms: out.ms ?? null,
     };

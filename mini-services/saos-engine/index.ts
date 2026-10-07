@@ -23,7 +23,7 @@ import { payoutsState } from "./payouts.mjs";
 import { weaveState } from "./weave.mjs";
 import { coordinationState, runCoordination, publishManifest } from "./coordination.mjs";
 import { trendsState, runTrends } from "./trends.mjs";
-import { complianceState, runCompliance } from "./compliance.mjs";
+import { complianceState, runCompliance, complianceHistory } from "./compliance.mjs";
 import { executionState, runWindowExecution } from "./execute.mjs";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -142,12 +142,15 @@ async function handle(req) {
       const out = await runCompliance({ now: new Date().toISOString(), force: true }).catch((e) => ({ error: String(e?.message ?? e).slice(0, 160) }));
       return json({ at: new Date().toISOString(), summary: out.summary ?? null, rows: out.rows ?? null, error: out.error ?? null });
     }
-    return json({ ok: true, at: new Date().toISOString(), account: ACCOUNT, compliance: complianceState() });
+    return json({ ok: true, at: new Date().toISOString(), account: ACCOUNT, compliance: complianceState(), history: complianceHistory() });
   }
-  /* R232 · our-lane window executor (engage + power-law votes, day-capped) */
+  /* R232+R233 · our-lane window executor (engage + power-law votes, day-capped).
+   * POST body {dry:true} = preflight plan — proves gates/laws/targets
+   * resolve, zero signing, zero state writes. */
   if (p === "/execute") {
     if (req.method === "POST") {
-      const out = await runWindowExecution({ now: new Date().toISOString() }).catch((e) => ({ ok: false, verdict: "ERR", error: String(e?.message ?? e).slice(0, 160) }));
+      const body = await req.json().catch(() => ({})) as { dry?: boolean };
+      const out = await runWindowExecution({ now: new Date().toISOString(), dry: body?.dry === true }).catch((e) => ({ ok: false, verdict: "ERR", error: String(e?.message ?? e).slice(0, 160) }));
       return json({ at: new Date().toISOString(), ...out });
     }
     return json({ ok: true, at: new Date().toISOString(), account: ACCOUNT, execution: executionState() });

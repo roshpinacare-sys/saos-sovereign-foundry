@@ -15,7 +15,7 @@
  * ≤40 קריאות פומביות; כל-כשל מבודד — המדידה כנה גם בחלקה.
  */
 import { rpcCall } from "./measure.mjs";
-import { FLEET_ROSTER } from "./coordination.mjs";
+import { FLEET_ROSTER } from "./roster.mjs";
 
 const FLEET_SET = new Set(FLEET_ROSTER.map((a) => a.name));
 

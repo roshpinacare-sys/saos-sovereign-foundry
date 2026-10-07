@@ -123,8 +123,25 @@ async function vpEffOf(acc) {
   return { vpEff: eff > 0 ? Math.min(100, Math.round((mana / (eff * 1e6)) * 1000) / 10) : null, raw: a };
 }
 
+/* ── R233 · dry preflight: pure plan verdicts (selftestable, zero signing) ── */
+/** pure: what the executor WOULD do for one window kind right now */
+export function dryVerdictFor(kind, { rcHold = false, vpEff = null, tasksCount = 0, target = null, weightPct = 0 } = {}) {
+  if (kind === "post") return { kind, verdict: "DRY-POST-DELEGATED-TO-CONTENT-RAIL" };
+  if (rcHold) return { kind, verdict: "DRY-HOLD-LOW-RC" };
+  if (kind === "engage") {
+    return tasksCount > 0
+      ? { kind, verdict: `DRY-ENGAGE:${Math.min(tasksCount, ENGAGE_BUDGET)}`, tasksCount: Math.min(tasksCount, ENGAGE_BUDGET) }
+      : { kind, verdict: "DRY-NO-TASKS" };
+  }
+  // vote kinds
+  if (vpEff == null) return { kind, verdict: "DRY-VP-UNKNOWN" };
+  if (weightPct === 0) return { kind, verdict: "DRY-VP-REST", vpEff };
+  if (!target) return { kind, verdict: "DRY-NO-TARGET", vpEff };
+  return { kind, verdict: `DRY-VOTE:${weightPct}%`, vpEff, target: `${target.author}/${target.permlink}` };
+}
+
 /* ── THE EXECUTOR ────────────────────────────────────────────────────── */
-export async function runWindowExecution({ now = new Date().toISOString(), force = false } = {}) {
+export async function runWindowExecution({ now = new Date().toISOString(), force = false, dry = false } = {}) {
   const conf = armedConf();
   if (conf.coordination?.execute === false) return { ok: false, verdict: "DISABLED-CONF" };
   if (execPaused()) return { ok: false, verdict: "OPERATOR-PAUSED" };
@@ -145,6 +162,17 @@ export async function runWindowExecution({ now = new Date().toISOString(), force
 
   const rcNow = await rcPctOf(me);
   const rcHold = rcNow != null && rcNow < RC_FLOOR_PCT;
+
+  /* R233 · dry preflight — proves the gates/laws/targets resolve BEFORE the
+   * windows open; zero signing, zero state writes, zero journaling. */
+  if (dry) {
+    const { vpEff } = await vpEffOf(me);
+    const law = powerVerdict(vpEff);
+    const tasksCount = (coord?.assignments?.[me] ?? []).length;
+    const target = pickVoteTarget(coord?.engagement?.posts ?? [], me);
+    const plan = active.map((kind) => ({ ...dryVerdictFor(kind, { rcHold, vpEff, tasksCount, target, weightPct: law.weightPct }), window: kind === "post" ? sched.post : kind === "engage" ? sched.engage : sched.votes?.[Number(kind.slice(4)) - 1] ?? null, at: now }));
+    return { ok: true, dry: true, day, minute, active, rcPct: rcNow, vpEff, plan };
+  }
 
   for (const kind of active) {
     const doneEntry = carried.windows[kind];

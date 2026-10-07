@@ -31,7 +31,6 @@ import { executeAs, masterAccount, armedConf, execPaused, loadCredential } from 
 import { trendsState } from "./trends.mjs";
 import { complianceState } from "./compliance.mjs";
 import { enrichThreads } from "./threads.mjs";
-import { enrichThreads } from "./threads.mjs";
 
 const DIR = path.dirname(new URL(import.meta.url).pathname);
 const STATE = path.join(DIR, "state");
@@ -47,13 +46,8 @@ const writeJson = (p, v) => {
 };
 
 /* ── the fleet roster (the ONE body, all 14) ─────────────────────────── */
-export const FLEET_ROSTER = [
-  { name: "headcorner", kind: "master", lane: "zai" },
-  ...["cashmachine", "haran", "israelnews", "lsa", "macrame", "siq", "tov", "wic", "wog", "woq"]
-    .map((name) => ({ name, kind: "army", lane: "second-signer" })),
-  ...["hcsoldier1", "hcsoldier2", "hcsoldier3"].map((name) => ({ name, kind: "soldier", lane: "zai" })),
-];
-const FLEET_NAMES = FLEET_ROSTER.map((a) => a.name);
+import { FLEET_ROSTER, FLEET_NAMES } from "./roster.mjs";
+export { FLEET_ROSTER }; // re-export — compliance.mjs + selftest import from here (compat)
 
 /* ── pure schedule law (deterministic, selftestable, zero network) ────── */
 export function hashSeed(s) {
@@ -279,7 +273,7 @@ export async function publishManifest({ now = new Date().toISOString(), force = 
   if (force && Number.isFinite(lastAt) && Date.now() - lastAt < 30 * 60_000) return { ok: false, verdict: "RATE-GATED-30MIN", lastAt: prev.lastPublish.at };
   loadCredential(); // typed fail before any network signing
   const st = prev?.schedule && prev?.day === day ? prev : await runCoordination({ now, publish: false });
-  const manifest = buildManifest({ day, schedule: st.schedule, power: st.power, engagement: st.engagement, trends: st.trends ?? trendsState() ?? {}, compliance: st.compliance ?? complianceState() });
+  const manifest = buildManifest({ day, schedule: st.schedule, power: st.power, engagement: st.engagement, threads: st.threads ?? null, trends: st.trends ?? trendsState() ?? {}, compliance: st.compliance ?? complianceState() });
   const json = JSON.stringify(manifest);
   const res = await executeAs(masterAccount(), [[
     "custom_json",
@@ -299,6 +293,10 @@ export async function runCoordination({ now = new Date().toISOString(), publish 
   const schedule = buildSchedule(day);
   const power = await powerBoard();
   const engagement = await engagementMatrix({ nowMs: Date.parse(now) });
+  /* R233 · מדד-עומק-שיח: האם התגובות מפתחות שיחות אמיתיות (שכבה-2 + הגב-מחבר).
+   * fail-isolated — מדידה חלקית כנה יותר מאפס. */
+  let threads = null;
+  try { threads = await enrichThreads(engagement.ok ? engagement.posts ?? [] : [], { nowMs: Date.parse(now) }); } catch { threads = null; }
   const trends = trendsState() ?? { topics: [], fetchedAt: null, verdict: "NOT-RUN-YET" };
   const assignments = engagement.ok ? assignEngagement(engagement.posts, schedule) : {};
   const nowMin = (Date.parse(now) / 60000) % 1440;
@@ -315,7 +313,7 @@ export async function runCoordination({ now = new Date().toISOString(), publish 
   const doc = {
     protocol: PROTOCOL, day, at: now,
     schedule, scheduleNote: "UTC minutes-of-day · deterministic from hash(account|kind|i|day) · gap 20min — שני-הכותבים מחשבים את אותו הלו\"ז",
-    power, engagement, assignments,
+    power, engagement, assignments, threads,
     compliance: complianceState(),
     trends: { fetchedAt: trends.fetchedAt, verdict: trends.verdict, topics: (trends.topics ?? []).slice(0, 6) },
     nextWindows: nextWindows.slice(0, 12),
@@ -324,6 +322,7 @@ export async function runCoordination({ now = new Date().toISOString(), publish 
       stagger: "שכל-אחד יכנס בזמן אחר — מרווח 20 דק בין כל-שני חלונות-צי",
       power: "הצבעות לפי מצב-הכוח: משקל מלא ב-VP≥80, הפחתה מתחת, מנוחה מ-30; רצפת RC 20%",
       engage: "יעבור על הפוסטים שלנו ויגיב לכולם — פערים קודם, פיתוח-שיחות אחר; 3 פוסטים לחלון (תקציב-RC)",
+      threads: "שיח מתפתח = תגובות-לתגובות + הגב-מחבר — R233 מודד את העומק, לא רק את הכיסוי",
     },
     ms: Date.now() - t0,
   };
