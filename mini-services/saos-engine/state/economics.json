@@ -16,7 +16,7 @@
       "id": "curation",
       "label": "קיורציה · מסילת-דלק",
       "measuredUsdPerDay": null,
-      "estUsdPerDay": 0.523904,
+      "estUsdPerDay": 0.524277,
       "confidence": "estimated",
       "note": "~8.84 STEEM/יום — ESTIMATED (payout clock ~7d, first verification T-18c)"
     },
@@ -34,7 +34,7 @@
       "measuredUsdPerDay": null,
       "estUsdPerDay": 0,
       "confidence": "blocked",
-      "note": "HOLD honest (7123bps edge, dust-or-capped) — the rail is armed-in-doctrine, not burning"
+      "note": "HOLD honest (6964bps edge, dust-or-capped) — the rail is armed-in-doctrine, not burning"
     },
     {
       "id": "promo",
@@ -57,13 +57,13 @@
     }
   ],
   "totalMeasuredUsdPerDay": 0,
-  "totalEstUsdPerDay": 0.523904,
+  "totalEstUsdPerDay": 0.524277,
   "measuredCount": 1,
   "estimatedCount": 2,
   "blockedCount": 3,
   "law": "סכום-מדוד וסכום-מוערך לעולם לא מתמזגים — שתי שורות-אמת נפרדות",
-  "parity": 0.10152501566796919,
-  "asof": "2026-10-07T05:35:46.625Z",
+  "parity": 0.10059816039384263,
+  "asof": "2026-10-07T05:45:46.625Z",
   "context": {
     "venueFillsPerDay": 620,
     "venueVolSteem24h": 1675.919,
@@ -85,10 +85,10 @@
     "any": false
   },
   "x2": {
-    "currentUsdPerDay": 0.5239,
+    "currentUsdPerDay": 0.5243,
     "targetUsdPerDay": 1000,
     "currentSp": 975,
-    "factor": 1908.8,
+    "factor": 1907.4,
     "rows": [
       {
         "mult": 1,
@@ -105,19 +105,19 @@
       {
         "mult": 40,
         "sp": 38990,
-        "usdPerDay": 20.96,
+        "usdPerDay": 20.97,
         "reachesTarget": false
       },
       {
         "mult": 100,
         "sp": 97476,
-        "usdPerDay": 52.39,
+        "usdPerDay": 52.43,
         "reachesTarget": false
       },
       {
-        "mult": 1909,
-        "sp": 1860815,
-        "usdPerDay": 1000.13,
+        "mult": 1908,
+        "sp": 1859841,
+        "usdPerDay": 1000.32,
         "reachesTarget": true
       }
     ],
