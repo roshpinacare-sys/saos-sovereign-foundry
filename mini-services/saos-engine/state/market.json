@@ -1,20 +1,20 @@
 {
-  "at": "2026-10-07T03:55:50.458Z",
+  "at": "2026-10-07T04:25:51.542Z",
   "windowHours": 24,
   "class": "measured",
-  "trades": 581,
-  "tradesPerDay": 581,
-  "volSteem": 1114.652,
+  "trades": 603,
+  "tradesPerDay": 603,
+  "volSteem": 1341.435,
   "priceMin": 0.076923,
-  "priceMax": 0.102941,
-  "rangeBps": 3382,
+  "priceMax": 0.10302,
+  "rangeBps": 3393,
   "sizeP50": 1,
   "sizeP90": 1,
   "book": {
-    "bestAsk": 0.1018,
-    "bestBid": 0.1006569685593618,
-    "spreadBps": 113.56,
-    "askDepthSteem": 680.228,
-    "bidDepthSbd": 2878.541
+    "bestAsk": 0.101,
+    "bestBid": 0.10055003909169499,
+    "spreadBps": 44.75,
+    "askDepthSteem": 655.697,
+    "bidDepthSbd": 2866.619
   }
 }
