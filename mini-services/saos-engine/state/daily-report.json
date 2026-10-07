@@ -1,31 +1,31 @@
 {
-  "startedAt": "2026-10-07T11:04:13.639Z",
+  "startedAt": "2026-10-07T11:14:13.640Z",
   "account": "headcorner",
   "steps": {
     "observe": {
       "name": "observe",
       "ok": true,
-      "ms": 2037,
+      "ms": 2146,
       "account": "headcorner",
       "parity": {
-        "steemUsd": 0.05893,
-        "sbdUsd": 0.591448,
-        "parity": 0.09963682352463785,
+        "steemUsd": 0.05895,
+        "sbdUsd": 0.589651,
+        "parity": 0.09997439163166008,
         "source": "coingecko"
       },
       "feed": 0.10409594609434014,
       "band": {
         "ok": true,
         "reason": "band-ok",
-        "bps": -428
+        "bps": -396
       },
-      "steemUsd": 0.05893,
-      "sbdUsd": 0.591448,
+      "steemUsd": 0.05895,
+      "sbdUsd": 0.589651,
       "inventory": {
         "steem": 0.471,
         "sbd": 0.024,
-        "spOwn": 974.7739254682789,
-        "rcPct": 33.7
+        "spOwn": 974.7743878819626,
+        "rcPct": 33.8
       },
       "ordersOk": true,
       "orders": [
@@ -93,7 +93,7 @@
         "authorVestsPerDay": 0,
         "curationOps": 0,
         "authorOps": 0,
-        "windowSpanDays": 0.28,
+        "windowSpanDays": 0.29,
         "windowOps": 101,
         "measured": true,
         "fuelUsdPerDay": 0,
@@ -102,12 +102,12 @@
         "node": "https://api.justyy.com",
         "windowNote": "no reward ops inside the measured window — rails dormant, not a parse failure (deep-scan documented separately)"
       },
-      "summary": "parity 0.09963682352463785 (coingecko) · fills 7 · fuel 0$"
+      "summary": "parity 0.09997439163166008 (coingecko) · fills 7 · fuel 0$"
     },
     "intel": {
       "name": "intel",
       "ok": true,
-      "ms": 1365,
+      "ms": 1466,
       "verdict": "DECISIONS:5",
       "decisions": [
         "book-depth:hold-shape",
@@ -116,18 +116,18 @@
         "rc-health:healthy",
         "curation:curator-armed"
       ],
-      "spreadBpsRec": 236,
+      "spreadBpsRec": 355,
       "book": {
         "bestAsk": 0.10361620557455185,
-        "bestBid": 0.10120023478454471,
-        "spreadBps": 236
+        "bestBid": 0.100002,
+        "spreadBps": 355
       }
     },
     "tick": {
       "name": "tick",
       "ok": true,
-      "ms": 0,
-      "runCount": 383,
+      "ms": 1,
+      "runCount": 384,
       "simFills": 54,
       "simFeesMu": 27000,
       "events": 4
@@ -135,20 +135,20 @@
     "peg": {
       "name": "peg",
       "ok": true,
-      "ms": 699,
+      "ms": 1030,
       "verdict": "OFFER-EMPTY",
       "asks": 0,
       "bids": 0,
       "flowAsks": 0,
       "flowBids": 0,
       "staleCount": 0,
-      "skew": 0.09698,
+      "skew": 0.097434,
       "book": {
         "bestAsk": 0.10361620557455185,
-        "bestBid": 0.10120023478454471,
-        "askDepthSteem": 1132.342,
-        "bidDepthSbd": 2838.957,
-        "at": "2026-10-07T11:04:13.639Z"
+        "bestBid": 0.100002,
+        "askDepthSteem": 1131.406,
+        "bidDepthSbd": 2830.785,
+        "at": "2026-10-07T11:14:13.640Z"
       },
       "market": {
         "tradesPerDay": 179,
@@ -165,29 +165,29 @@
     "convert": {
       "name": "convert",
       "ok": true,
-      "ms": 1,
+      "ms": 0,
       "verdict": "CONVERT-HOLD",
       "amountSbd": 0,
-      "edgeBps": 6908,
-      "marketSbdUsd": 0.591448,
-      "impliedSbdUsd": 0.566112,
+      "edgeBps": 6959,
+      "marketSbdUsd": 0.589651,
+      "impliedSbdUsd": 0.566304,
       "marketSourceNote": "external-measured"
     },
     "curate": {
       "name": "curate",
       "ok": true,
-      "ms": 754,
+      "ms": 685,
       "verdict": "VP-FLOOR",
       "votes": 0,
       "txid": null,
-      "vpEff": 10.3,
+      "vpEff": 10.2,
       "votesToday": 0,
       "error": null
     },
     "execute": {
       "name": "execute",
       "ok": true,
-      "ms": 752,
+      "ms": 731,
       "verdict": "NO-OPS",
       "ops": 0,
       "opsToday": 4,
@@ -202,13 +202,13 @@
     "learn": {
       "name": "learn",
       "ok": true,
-      "ms": 7,
+      "ms": 1717,
       "verdict": "LEARNED",
       "lessons": [
         "unclassified-fail-legacy"
       ],
       "tunings": [],
-      "discoveryVerdict": "FRESH-CACHED",
+      "discoveryVerdict": "OPTIONS-FOUND",
       "topOpportunities": [
         "spread-wide(measured)",
         "tags-realloc(measured)",
@@ -236,7 +236,7 @@
     "rctank": {
       "name": "rctank",
       "ok": true,
-      "ms": 1,
+      "ms": 0,
       "verdict": "MEASURED",
       "maxRc": 1847155626959,
       "opsPerDayEquilibrium": 9654,
@@ -275,12 +275,12 @@
     "coordination": {
       "name": "coordination",
       "ok": true,
-      "ms": 38382,
+      "ms": 32292,
       "verdict": "SCHEDULED:ok·POWER:ok·ENG:ok",
       "accounts": 14,
       "engagement": {
         "posts": 12,
-        "avgCoveragePct": 10.5,
+        "avgCoveragePct": 11.1,
         "fullyCovered": 0,
         "openThreads": 5
       },
@@ -290,7 +290,7 @@
         "avgDepth": 1.6,
         "avgLayer2": 0.3,
         "authorResponseRate": 38,
-        "avgScore": 2.4
+        "avgScore": 2.5
       },
       "publish": {
         "ok": false,
@@ -301,7 +301,7 @@
     "compliance": {
       "name": "compliance",
       "ok": true,
-      "ms": 14209,
+      "ms": 19307,
       "verdict": "QUIET",
       "summary": {
         "accounts": 14,
@@ -313,12 +313,12 @@
         "clusterViolations": 0,
         "verdict": "QUIET"
       },
-      "cadence": "GATED-30MIN"
+      "cadence": "MEASURED"
     },
     "windowExec": {
       "name": "window-exec",
       "ok": true,
-      "ms": 5684,
+      "ms": 1276,
       "verdict": "WINDOWS-ASSESSED:2",
       "verdicts": [
         {
@@ -328,10 +328,7 @@
         },
         {
           "kind": "vote1",
-          "verdict": "VOTED:50%",
-          "vpEff": 33.9,
-          "target": "wog/myth-vs-fact-steem-dollars-are-stable-20261007-0",
-          "txid": "098da590b443836ee8b6f3b2f4b7fb777e4e8961",
+          "verdict": "ALREADY-DONE",
           "at": "2026-10-07T11:04:13.639Z"
         }
       ],
@@ -365,7 +362,7 @@
     "grind": {
       "name": "grind",
       "ok": true,
-      "ms": 12755,
+      "ms": 6480,
       "verdict": "GRIND:V4/R4",
       "votes": 4,
       "replies": 4,
@@ -387,7 +384,7 @@
       "ok": true,
       "ms": 1,
       "totalMeasuredUsdPerDay": 0,
-      "totalEstUsdPerDay": 0.525308,
+      "totalEstUsdPerDay": 0.525781,
       "rails": 6,
       "measuredCount": 1,
       "estimatedCount": 2,
@@ -433,5 +430,5 @@
     "failedSteps": [],
     "blockedSteps": []
   },
-  "finishedAt": "2026-10-07T11:05:15.327Z"
+  "finishedAt": "2026-10-07T11:15:20.092Z"
 }

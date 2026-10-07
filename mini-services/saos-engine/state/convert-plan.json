@@ -1,10 +1,10 @@
 {
   "verdict": "CONVERT-HOLD",
   "reason": "dust-or-capped",
-  "edgeBps": 6908,
+  "edgeBps": 6959,
   "amountSbd": 0,
-  "marketSbdUsd": 0.591448,
-  "impliedSbdUsd": 0.566112,
+  "marketSbdUsd": 0.589651,
+  "impliedSbdUsd": 0.566304,
   "marketSourceNote": "external-measured",
-  "at": "2026-10-07T11:04:13.639Z"
+  "at": "2026-10-07T11:14:13.640Z"
 }
