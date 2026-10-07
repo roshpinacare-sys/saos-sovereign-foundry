@@ -32,9 +32,25 @@
       "verdict": "POST-FAIL:Assert Exception:permlink.size() > STEEM",
       "at": "2026-10-07T03:26:31.618Z",
       "txid": "a7d306a3e049a2fcf9f3c34b8db501b6b2924b3c"
+    },
+    {
+      "id": "d1791226956831-1",
+      "title": "How Effective Is Steem's Curation Reward System?",
+      "permlink": "how-effective-is-steem-s-curation-reward-system-2026-10-07",
+      "verdict": "POSTED",
+      "at": "2026-10-07T03:35:46.619Z",
+      "txid": "7e5ebc9c84d945bd710c027b94b2654f6e7a335a"
+    },
+    {
+      "id": "d1791226956831-0",
+      "title": "Understanding Steem's Dual-Token System: STEEM vs SBD",
+      "permlink": "understanding-steem-s-dual-token-system-steem-vs-sbd-2026-10-07",
+      "verdict": "POST-FAIL:Assert Exception:( now - auth.last_root_",
+      "at": "2026-10-07T03:35:46.619Z",
+      "txid": "791e3c50898f38ffb83a16ef7c904022e59192d1"
     }
   ],
-  "verdict": "NO-LAND",
-  "rcPct": 30.1,
-  "at": "2026-10-07T03:26:31.618Z"
+  "verdict": "PUBLISHED",
+  "rcPct": 29.9,
+  "at": "2026-10-07T03:35:46.619Z"
 }

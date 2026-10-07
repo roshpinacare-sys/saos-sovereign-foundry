@@ -148,8 +148,11 @@
         "curationEstUsdPerDay"
       ],
       "id": "d1791226956831-1",
-      "status": "drafted",
-      "draftedAt": "2026-10-05T19:02:36.831Z"
+      "status": "posted",
+      "draftedAt": "2026-10-05T19:02:36.831Z",
+      "postedAt": "2026-10-07T03:35:46.619Z",
+      "txid": "7e5ebc9c84d945bd710c027b94b2654f6e7a335a",
+      "permlink": "how-effective-is-steem-s-curation-reward-system-2026-10-07"
     },
     {
       "title": "Optimizing Your Steem Workflow: Tools for Content Creators",

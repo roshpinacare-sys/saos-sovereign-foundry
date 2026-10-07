@@ -77,7 +77,10 @@ export async function runPublisher({ now = new Date().toISOString() } = {}) {
 
   const queueDoc = readJson(QUEUE_FILE, null);
   const queue = Array.isArray(queueDoc?.queue) ? queueDoc.queue : [];
-  const picks = pickDraftsForPublishing(queue, day, already, PUBLISHER_MAX_PER_DAY);
+  /* the 2/day law counts POSTED only — failed attempts retry (honest), posted never repeat */
+  const postedToday = (carried.posted ?? []).filter((p) => p.verdict === "POSTED").length;
+  const budget = Math.max(0, PUBLISHER_MAX_PER_DAY - postedToday);
+  const picks = budget > 0 ? pickDraftsForPublishing(queue, day, already, budget) : [];
 
   if (!picks.length) {
     carried.verdict = queue.some((d) => d && d.status === "drafted")
@@ -99,8 +102,12 @@ export async function runPublisher({ now = new Date().toISOString() } = {}) {
   const posted = [];
   for (const d of picks) {
     const permlink = titleToPermlink(d.title, day);
+    /* root posts need a non-empty parent_permlink (the category) — first tag,
+     * "steem" fallback. Empty parent_permlink = chain permlink-size assert
+     * (R236 live-measured: 4 attempts died on it before this fix). */
+    const category = (Array.isArray(d.tags) && d.tags[0] && String(d.tags[0]).length >= 3) ? String(d.tags[0]).slice(0, 24) : "steem";
     const op = [["comment", {
-      parent_author: "", parent_permlink: "",
+      parent_author: "", parent_permlink: category,
       author: master, permlink,
       title: String(d.title).slice(0, 160),
       body: String(d.body).slice(0, 8000),

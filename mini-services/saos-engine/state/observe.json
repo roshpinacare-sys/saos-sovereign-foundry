@@ -1,25 +1,24 @@
 {
   "account": "headcorner",
   "parity": {
-    "steemUsd": 0.05924,
-    "sbdUsd": 0.5690876509868421,
-    "parity": 0.10409644260822257,
-    "source": "internal-feed-fallback+derived-sbd",
-    "lowConfidence": true
+    "steemUsd": 0.05937,
+    "sbdUsd": 0.591564,
+    "parity": 0.10036107673894963,
+    "source": "coingecko"
   },
-  "feed": 0.10409644260822257,
+  "feed": 0.1040964413671177,
   "band": {
     "ok": true,
     "reason": "band-ok",
-    "bps": 0
+    "bps": -359
   },
-  "steemUsd": 0.05924,
-  "sbdUsd": 0.5690876509868421,
+  "steemUsd": 0.05937,
+  "sbdUsd": 0.591564,
   "inventory": {
-    "steem": 0.004,
-    "sbd": 8.26,
-    "spOwn": 958.4948994452193,
-    "rcPct": 30.1
+    "steem": 16.295,
+    "sbd": 0.853,
+    "spOwn": 958.4953197105262,
+    "rcPct": 29.9
   },
   "ordersOk": true,
   "orders": [
@@ -64,20 +63,52 @@
       "created": "2026-10-07T03:01:18"
     },
     {
-      "orderid": 2100002721,
+      "orderid": 2026100791,
       "side": "bid",
-      "base": "0.970 SBD",
-      "quote": "9.584 STEEM",
-      "unit": 9.880412,
-      "created": "2026-10-07T03:25:06"
+      "base": "1.531 SBD",
+      "quote": "15.295 STEEM",
+      "unit": 9.990202,
+      "created": "2026-10-07T03:34:48"
     },
     {
-      "orderid": 2100002722,
+      "orderid": 2026100792,
       "side": "bid",
-      "base": "0.970 SBD",
-      "quote": "9.598 STEEM",
-      "unit": 9.894845,
-      "created": "2026-10-07T03:25:06"
+      "base": "1.531 SBD",
+      "quote": "15.326 STEEM",
+      "unit": 10.010451,
+      "created": "2026-10-07T03:34:51"
+    },
+    {
+      "orderid": 2026100793,
+      "side": "bid",
+      "base": "1.531 SBD",
+      "quote": "15.388 STEEM",
+      "unit": 10.050947,
+      "created": "2026-10-07T03:34:54"
+    },
+    {
+      "orderid": 2026100794,
+      "side": "bid",
+      "base": "1.531 SBD",
+      "quote": "15.513 STEEM",
+      "unit": 10.132593,
+      "created": "2026-10-07T03:34:57"
+    },
+    {
+      "orderid": 2026100795,
+      "side": "bid",
+      "base": "1.531 SBD",
+      "quote": "15.769 STEEM",
+      "unit": 10.299804,
+      "created": "2026-10-07T03:35:00"
+    },
+    {
+      "orderid": 2100002726,
+      "side": "ask",
+      "base": "0.500 STEEM",
+      "quote": "0.053 SBD",
+      "unit": 0.106,
+      "created": "2026-10-07T03:35:30"
     }
   ],
   "fills": 0,
@@ -103,7 +134,7 @@
     "authorVestsPerDay": 0,
     "curationOps": 0,
     "authorOps": 0,
-    "windowSpanDays": 0.01,
+    "windowSpanDays": 0.02,
     "windowOps": 101,
     "measured": true,
     "fuelUsdPerDay": 0,
@@ -112,5 +143,5 @@
     "node": "https://api.justyy.com",
     "windowNote": "no reward ops inside the measured window — rails dormant, not a parse failure (deep-scan documented separately)"
   },
-  "at": "2026-10-07T03:26:31.618Z"
+  "at": "2026-10-07T03:35:46.619Z"
 }

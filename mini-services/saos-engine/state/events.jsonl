@@ -5540,3 +5540,22 @@
 {"type":"learn.done","at":"2026-10-07T03:26:31.618Z","verdict":"LEARNED","lessons":["unclassified-fail-legacy","broadcast-fails"],"tunings":[]}
 {"type":"publish.post","at":"2026-10-07T03:26:31.618Z","id":"d1790893224431-0","title":"Understanding Blockchain Curation Rewards","permlink":"understanding-blockchain-curation-rewards-2026-10-07","verdict":"POST-FAIL:Assert Exception:permlink.size() > STEEM","txid":"2447db8c048ee66ab9ee97a4dfe7066feca74cf6"}
 {"type":"publish.post","at":"2026-10-07T03:26:31.618Z","id":"d1791226956831-2","title":"Optimizing Your Steem Workflow: Tools for Content Creators","permlink":"optimizing-your-steem-workflow-tools-for-content-creators-2026-10-07","verdict":"POST-FAIL:Assert Exception:permlink.size() > STEEM","txid":"a7d306a3e049a2fcf9f3c34b8db501b6b2924b3c"}
+{"type":"hyper.requote","at":"2026-10-07T03:27:49.413Z","label":"front-create","ops":2,"cancels":0,"creates":2,"txid":"5e9ea0caf0ecb41fe0a4dc572e1149e6855606e3","rcPct":30.1,"opsToday":306,"equilibriumOpsPerDay":10148,"bestAsk":0.10290482076637825,"bestBid":0.10120750398988226}
+{"type":"hyper.requote","at":"2026-10-07T03:29:13.438Z","label":"front-create","ops":2,"cancels":0,"creates":2,"txid":"3d8c54e00467e691712f4ad72f0bb67880e3c654","rcPct":30,"opsToday":308,"equilibriumOpsPerDay":10148,"bestAsk":0.10290482076637825,"bestBid":0.10120750398988226}
+{"type":"hyper.boot","at":"2026-10-07T03:29:45.004Z","pid":4509,"conf":{"enabled":true,"tickMs":3000,"levels":10,"spacingBps":15,"ttlSec":60,"orderTtlSec":3600,"askBudgetPct":0.12,"minRcPct":25,"setpointPct":50,"burst":3,"maxOpsPerTick":24,"opsDayCap":32000,"chainTailSec":60,"maxOpsPerTx":24}}
+{"type":"fleet-grid.boot","at":"2026-10-07T03:29:45.008Z","tickMs":180000,"accounts":13,"orderTrace":"1a113f67a0ed4be9"}
+{"type":"hyper.boot","at":"2026-10-07T03:30:51.760Z","pid":4605,"conf":{"enabled":true,"tickMs":3000,"levels":10,"spacingBps":15,"ttlSec":60,"orderTtlSec":3600,"askBudgetPct":0.12,"minRcPct":25,"setpointPct":50,"burst":3,"maxOpsPerTick":24,"opsDayCap":32000,"chainTailSec":60,"maxOpsPerTx":24}}
+{"type":"fleet-grid.boot","at":"2026-10-07T03:30:51.764Z","tickMs":180000,"accounts":13,"orderTrace":"1a113f67a0ed4be9"}
+{"type":"observe.done","at":"2026-10-07T03:35:46.619Z","fills":0,"parity":0.10036107673894963}
+{"type":"grid.tick","at":"2026-10-07T03:35:46.619Z","runCount":336,"refPrice":0.10036107673894963,"internalFeed":0.1040964413671177,"dragK":1.1794184594166157,"inv":{"steem":16.295,"sbd":0.853}}
+{"type":"grid.fill","at":"2026-10-07T03:35:46.619Z","grid":"mm-grid","side":"ask","unit":0.10047944444546249,"real":false}
+{"type":"arb.signal","at":"2026-10-07T03:35:46.619Z","grid":"micro-arb","gapBps":359,"dir":"buy-external"}
+{"type":"sweep.scan","at":"2026-10-07T03:35:46.619Z","grid":"sweep","dustSteem":0.2950000000000017}
+{"type":"anchor.quote","at":"2026-10-07T03:35:46.619Z","grid":"anchor-quote","bid":0.10012434132592395,"ask":0.10059781215197532}
+{"type":"fee.spawn","at":"2026-10-07T03:35:46.619Z","mu":500,"to":"R-FEE-SPAWN"}
+{"type":"offer.published","at":"2026-10-07T03:35:46.619Z","verdict":"OFFER-READY","asks":0,"bids":0,"flowAsks":1,"flowBids":0,"bestAsk":0.10032,"bestBid":0.10031041230852285}
+{"type":"convert.planned","at":"2026-10-07T03:35:46.619Z","verdict":"CONVERT-HOLD","edgeBps":6904,"amountSbd":0}
+{"type":"learn.done","at":"2026-10-07T03:35:46.619Z","verdict":"LEARNED","lessons":["unclassified-fail-legacy","broadcast-fails"],"tunings":[]}
+{"type":"publish.post","at":"2026-10-07T03:35:46.619Z","id":"d1791226956831-1","title":"How Effective Is Steem's Curation Reward System?","permlink":"how-effective-is-steem-s-curation-reward-system-2026-10-07","verdict":"POSTED","txid":"7e5ebc9c84d945bd710c027b94b2654f6e7a335a"}
+{"type":"publish.post","at":"2026-10-07T03:35:46.619Z","id":"d1791226956831-0","title":"Understanding Steem's Dual-Token System: STEEM vs SBD","permlink":"understanding-steem-s-dual-token-system-steem-vs-sbd-2026-10-07","verdict":"POST-FAIL:Assert Exception:( now - auth.last_root_","txid":"791e3c50898f38ffb83a16ef7c904022e59192d1"}
+{"type":"hyper.requote","at":"2026-10-07T03:37:09.766Z","label":"front-create","ops":2,"cancels":0,"creates":2,"txid":"6e7d9560a4ec548b6fd8d7b2c6919441ab187c8d","rcPct":29.8,"opsToday":310,"equilibriumOpsPerDay":10148,"bestAsk":0.10032,"bestBid":0.10031041230852285}
