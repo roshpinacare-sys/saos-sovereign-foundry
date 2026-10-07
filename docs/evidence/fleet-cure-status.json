@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-10-07T10:36:38.937Z",
+ "updatedAt": "2026-10-07T10:40:43.472Z",
  "pendingWeave": false,
  "purpose": "Task 26-c fleet RC cure — RC windows measured live per fleet account (chain-side, keyless); execution = external-signer :3033 authority gate, which only ever signs with keys sealed in the envelope and verified live (see vault summary below). pendingWeave decides whether anything is scheduled at all (roast-62: readiness ≠ schedule).",
  "opCostRc": 230000000,
@@ -13,64 +13,64 @@
  "accounts": [
   {
    "account": "cashmachine",
-   "mana": 1304131995,
+   "mana": 1305325625,
    "manaPct": 62,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "haran",
-   "mana": 1547015362,
+   "mana": 1548300073,
    "manaPct": 68.3,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "israelnews",
-   "mana": 1505060860,
+   "mana": 1506323827,
    "manaPct": 67.6,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "lsa",
-   "mana": 2716558786,
-   "manaPct": 69.8,
+   "mana": 2718765424,
+   "manaPct": 69.9,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "macrame",
-   "mana": 2847782047,
+   "mana": 2850151350,
    "manaPct": 68.2,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "siq",
-   "mana": 1631414950,
+   "mana": 1632713418,
    "manaPct": 71.3,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "wic",
-   "mana": 2275862219,
+   "mana": 2277612245,
    "manaPct": 73.8,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "wog",
-   "mana": 2335812547,
+   "mana": 2337668969,
    "manaPct": 71.4,
    "etaToWindowMin": 0,
    "state": "ready"
   },
   {
    "account": "woq",
-   "mana": 1646785950,
-   "manaPct": 72.4,
+   "mana": 1648075151,
+   "manaPct": 72.5,
    "etaToWindowMin": 0,
    "state": "ready"
   }

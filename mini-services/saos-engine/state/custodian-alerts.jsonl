@@ -9,3 +9,7 @@
 {"at":"2026-10-07T10:36:39.306Z","kind":"engine-heal","detail":"spawned detached engine at 2026-10-07T10:36:39.298Z (was down)"}
 {"at":"2026-10-07T10:36:45.909Z","kind":"anchor-skip","detail":"rate-limited durably (last 2026-10-07T10:21:03.138Z)"}
 {"at":"2026-10-07T10:36:59.673Z","kind":"anchor-skip","detail":"rate-limited durably (last 2026-10-07T10:21:03.138Z)"}
+{"at":"2026-10-07T10:40:42.389Z","kind":"service-heal","detail":"vault-guardian :3031 spawned at 2026-10-07T10:40:42.389Z (was down)"}
+{"at":"2026-10-07T10:40:42.483Z","kind":"service-heal","detail":"chief-of-staff :3032 spawned at 2026-10-07T10:40:42.483Z (was down)"}
+{"at":"2026-10-07T10:40:42.573Z","kind":"service-heal","detail":"fleet-cure :3034 spawned at 2026-10-07T10:40:42.573Z (was down)"}
+{"at":"2026-10-07T10:40:42.650Z","kind":"service-heal","detail":"rotation-keeper :3035 spawned at 2026-10-07T10:40:42.650Z (was down)"}
