@@ -24,10 +24,10 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { exec as execCb } from "child_process";
+import { execFile as execFileCb } from "child_process";
 import { promisify } from "util";
 
-const execP = promisify(execCb);
+const execFileP = promisify(execFileCb);
 
 const PORT = 3031;
 /** Task 19: קצב-נפרד לכל ריפו — steem (הריפו-שדלף) נסרק כל 90 שניות,
@@ -132,14 +132,84 @@ async function api(url, opts = {}) {
 
 // אסינכרוני: לא חוסם את ה-event loop — /status ופעימות-הלב ממשיכות לנשום גם
 // בזמן clone ארוך (שורש-תיקון לסערת-ה-spawn של המפקח: execSync היה חוסם הכל)
-async function sh(cmd, cwd) {
+//
+// [P0 7-b fix, audit 3-b 2026-10-11] shell-RCE removal: the old sh()/exec() helper
+// ran every command through a shell (sh -c), and neutralize() interpolated
+// remote-tree paths into it — `git rm --cached -q "${p}"` with p = an
+// attacker-crafted filename in a watched repo executed $( )/backticks inside the
+// double quotes = RCE holding the GitHub token in env. Everything below is now
+// argv-array exec (execFile, no shell) + strict validation before any variable
+// reaches an argv element. There is intentionally NO shell-exec path left in
+// this file.
+const EXEC_OPTS = { encoding: "utf8" as const, maxBuffer: 64 * 1024 * 1024, env: { ...process.env, GIT_TERMINAL_PROMPT: "0" } };
+
+async function run(file: string, args: string[], cwd?: string) {
   try {
-    const r = await execP(cmd, { cwd, encoding: "utf8", maxBuffer: 64 * 1024 * 1024, env: { ...process.env, GIT_TERMINAL_PROMPT: "0" } });
+    const r = await execFileP(file, args, cwd ? { ...EXEC_OPTS, cwd } : { ...EXEC_OPTS });
     return String(r.stdout).trim();
   } catch (e) {
     const err = e as Error & { cmd?: string };
-    throw new Error(`git op failed: ${String(err.message || e).slice(0, 160)}`);
+    throw new Error(`${file} op failed: ${String(err.message || e).slice(0, 160)}`);
   }
+}
+
+/** [7-b] the ONLY way this service touches git: fixed binary + argv array, never a shell. */
+async function git(args: string[], cwd?: string) {
+  return run("git", args, cwd);
+}
+
+/** [7-b] strict allow-list for repo/branch names (WATCH config) before they may be
+ * placed into any argv element (clone/push URL, refs/heads/<branch>). */
+const SAFE_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+function assertSafeName(kind: string, v: unknown) {
+  if (typeof v !== "string" || !SAFE_NAME_RE.test(v)) throw new Error(`unsafe ${kind} name rejected (7-b): ${String(v).slice(0, 60)}`);
+  return v;
+}
+
+const HEX40_RE = /^[0-9a-f]{40}$/;
+function assertSha(kind: string, v: unknown) {
+  if (typeof v !== "string" || !HEX40_RE.test(v)) throw new Error(`unsafe ${kind} rejected (7-b, not 40-hex): ${String(v).slice(0, 60)}`);
+  return v;
+}
+
+/** [7-b] Validate a repo-relative path that came from REMOTE data (GitHub tree
+ * listing) before it is handed to git as an argv element. Rules (audit 3-b):
+ *  - reject empty / NUL / control chars / backslash
+ *  - reject leading "-" (git option injection)
+ *  - reject any ".." path segment after normalization + absolute paths
+ *  - containment: resolved path must stay inside the real repo working tree
+ *    (realpath); when the file exists on disk its realpath must stay inside too
+ *  - conservative charset allow-list (no shell metachars, no globs): a hit that
+ *    fails here is logged as ERROR by cycle() — fail-safe, manual purge — never
+ *    executed.
+ * Returns the normalized safe path. */
+function validateRepoPath(p: string, work: string) {
+  if (typeof p !== "string" || p.length === 0) throw new Error("unsafe path rejected (7-b): empty");
+  if (p.includes("\0") || /[\u0001-\u001f\u007f]/.test(p)) throw new Error("unsafe path rejected (7-b): NUL/control char");
+  if (p.startsWith("-")) throw new Error(`unsafe path rejected (7-b): leading dash (option injection)`);
+  if (p.includes("\\")) throw new Error("unsafe path rejected (7-b): backslash");
+  const norm = path.posix.normalize(p);
+  if (norm.startsWith("/") || norm === ".." || norm.startsWith("../") || norm.split("/").includes("..")) {
+    throw new Error("unsafe path rejected (7-b): traversal ('..') after normalization");
+  }
+  if (norm === "." || norm === "") throw new Error("unsafe path rejected (7-b): not a file path");
+  const root = fs.realpathSync(work);
+  const abs = path.resolve(root, norm);
+  if (abs !== root && !abs.startsWith(root + path.sep)) {
+    throw new Error("unsafe path rejected (7-b): resolves outside repo working tree");
+  }
+  try {
+    const real = fs.realpathSync(abs);
+    if (real !== root && !real.startsWith(root + path.sep)) {
+      throw new Error("unsafe path rejected (7-b): realpath outside repo working tree (symlink escape)");
+    }
+  } catch (e) {
+    if ((e as any)?.code !== "ENOENT") throw e; // absent from worktree is fine for `git rm --cached`
+  }
+  if (!/^[A-Za-z0-9._/][A-Za-z0-9 ._/@+_-]*$/.test(norm)) {
+    throw new Error("unsafe path rejected (7-b): charset outside conservative allow-list");
+  }
+  return norm;
 }
 
 function headOf(repo, branch) {
@@ -179,37 +249,50 @@ async function backupBlobs(repo, treeSha, hits, stamp) {
 }
 
 async function neutralize(w, hits, stamp) {
-  const work = `/tmp/guardian-${w.repo}`;
+  // [7-b] repo/branch reach argv elements and URLs — validate against WATCH config first
+  const repo = assertSafeName("repo", w.repo);
+  const branch = assertSafeName("branch", w.branch);
+  const work = `/tmp/guardian-${repo}`;
   const header = `Authorization: Basic ${Buffer.from(`x-access-token:${token()}`).toString("base64")}`;
-  const url = `https://github.com/roshpinacare-sys/${w.repo}.git`;
-  await sh(`rm -rf ${work}`);
-  await sh(`git -c "http.extraHeader=${header}" clone -q --depth 10 --filter=blob:none ${url} ${work}`);
+  const url = `https://github.com/roshpinacare-sys/${repo}.git`;
+  // [7-b] was: sh(`rm -rf ${work}`) — plain fs API instead of a shell
+  fs.rmSync(work, { recursive: true, force: true });
+  await git(["-c", `http.extraHeader=${header}`, "clone", "-q", "--depth", "10", "--filter=blob:none", "--", url, work]);
   // ההורים חייבים להיות נקיים — אחרת זה תיקון-ידני, לא אוטומטי
-  const parents = (await sh(`git rev-list --parents -n 1 HEAD`, work)).split(" ").slice(1);
+  const parents = (await git(["rev-list", "--parents", "-n", "1", "HEAD"], work)).split(" ").slice(1);
   for (const par of parents) {
-    const listing = await sh(`git ls-tree -r --name-only ${par}`, work);
+    assertSha("parent sha", par);
+    const listing = await git(["ls-tree", "-r", "--name-only", "--", par], work);
     const parentHits = listing.split("\n").filter((p) => hits.includes(p));
     if (parentHits.length) {
-      log("CRITICAL", `${w.repo}: leak exists in parent history (${parentHits.length} paths) — manual purge needed, NOT auto-fixed`);
+      log("CRITICAL", `${repo}: leak exists in parent history (${parentHits.length} paths) — manual purge needed, NOT auto-fixed`);
       return { done: false, reason: "deep-history" };
     }
   }
-  const cloneHead = await sh(`git rev-parse HEAD`, work);
-  const { json: headJson } = await headOf(w.repo, w.branch);
+  const cloneHead = await git(["rev-parse", "HEAD"], work);
+  const { json: headJson } = await headOf(repo, branch);
   const remoteHead = headJson.sha;
   if (cloneHead !== remoteHead) {
-    log("WARN", `${w.repo}: head moved during rewrite (${cloneHead.slice(0, 8)} → ${remoteHead.slice(0, 8)}), retry next cycle`);
+    log("WARN", `${repo}: head moved during rewrite (${cloneHead.slice(0, 8)} → ${remoteHead.slice(0, 8)}), retry next cycle`);
     return { done: false, reason: "race" };
   }
-  for (const p of hits) await sh(`git rm --cached -q "${p}"`, work);
-  const tree = await sh(`git write-tree`, work);
+  // [7-b] THE verified RCE line (audit 3-b) was: sh(`git rm --cached -q "${p}"`) —
+  // p comes from the remote tree listing; inside sh -c double quotes a crafted
+  // filename with $( )/backticks executed arbitrary commands. Now: strict path
+  // validation + argv array + "--" separator (no shell, no option injection).
+  for (const p of hits) {
+    const safeP = validateRepoPath(p, work);
+    await git(["rm", "--cached", "-q", "--", safeP], work);
+  }
+  const tree = assertSha("tree sha", await git(["write-tree"], work));
   const msg = `guardian: auto-neutralize ${hits.length} forbidden path(s) re-introduced by automation (backup: ~/.secrets/vault-recovery/guardian-${stamp}) — vault-guardian, no secrets logged`;
-  const commit = await sh(
-    `git -c user.name="vault-guardian" -c user.email="guardian@saos.local" commit-tree ${tree} -p HEAD -m "${msg}"`,
+  // [7-b] commit message is now a single argv element — no quote-escaping issues
+  const commit = assertSha("commit sha", await git(
+    ["-c", "user.name=vault-guardian", "-c", "user.email=guardian@saos.local", "commit-tree", tree, "-p", "HEAD", "-m", msg],
     work
-  );
-  await sh(`git update-ref refs/heads/${w.branch} ${commit}`, work);
-  await sh(`git -c "http.extraHeader=${header}" push --force ${url} refs/heads/${w.branch}:refs/heads/${w.branch}`, work);
+  ));
+  await git(["update-ref", `refs/heads/${branch}`, commit], work);
+  await git(["-c", `http.extraHeader=${header}`, "push", "--force", "--", url, `refs/heads/${branch}:refs/heads/${branch}`], work);
   // אימות מרחוק
   const { json: after } = await headOf(w.repo, w.branch);
   const paths = (await treeOf(w.repo, after.sha)).map((t) => t.path);
