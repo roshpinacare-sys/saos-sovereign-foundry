@@ -374,6 +374,8 @@ async function cycle(force = false): Promise<{ skipped?: boolean; file?: string;
 }
 
 Bun.serve({
+  // P0 7-a (audit 2026-10-11): localhost-only — was 0.0.0.0 default (R123 pattern).
+  hostname: "127.0.0.1",
   port: PORT,
   async fetch(req: Request) {
     const u = new URL(req.url);

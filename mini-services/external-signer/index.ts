@@ -53,7 +53,7 @@
  */
 
 import Bun from "bun";
-import { createCipheriv, createDecipheriv, randomBytes, scryptSync, timingSafeEqual, createHash } from "crypto";
+import { createDecipheriv, randomBytes, scryptSync, timingSafeEqual, createHash } from "crypto";
 import { existsSync, readFileSync, readdirSync, appendFileSync, writeFileSync, mkdirSync, chmodSync } from "fs";
 import path from "path";
 
@@ -166,17 +166,21 @@ function openSeal(dir) {
   const raw = readFileSync(path.join(dir, enc), "utf8");
   if (!raw.startsWith(MAGIC)) throw new Error("unknown seal format");
   // P0 (2026-09-29, audit מ-2): the pass must not live beside the ciphertext.
-  // Precedence — ~/.secrets/fleet-vault-pass (external) → legacy meta.pass.
-  // Matches the platform vault-seal.ts change; after scripts/reseal-no-meta.ts
-  // runs on the platform home, legacy metas hold {externalPass:true} only.
+  // P0 7-a (audit 2026-10-11): fallback meta.pass הוסר לגמרי — תבנית-R11
+  // (סיסמה פליינטקסט לצד המעטפה). הנתיב הלגיטימי היחיד: ~/.secrets/fleet-vault-pass
+  // (סוד חיצוני, מחוץ לעץ; מטא חוקי מחזיק {externalPass:true} בלבד).
+  // מטא שעדיין מכיל `pass` בטקסט-חי נדחה קשיח — המעטפת לא נפתחת ממנו גם
+  // אם הסיסמה "נכונה"; מחייב חתימה-מחדש עם הסוד החיצוני.
   let pass = null;
   try {
     const ext = readFileSync(path.join(process.env.HOME ?? "/home/z", ".secrets", "fleet-vault-pass"), "utf8").trim();
     if (ext) pass = ext;
   } catch {}
   const metaJson = JSON.parse(readFileSync(path.join(dir, meta), "utf8"));
-  if (!pass && metaJson.pass) pass = metaJson.pass;
-  if (!pass) throw new Error("no vault pass: neither external secret nor seal meta");
+  if (typeof metaJson?.pass === "string" && metaJson.pass) {
+    throw new Error("insecure seal meta: plaintext pass beside ciphertext (R11) — move the pass to ~/.secrets/fleet-vault-pass and reseal without meta.pass");
+  }
+  if (!pass) throw new Error("no vault pass: external secret ~/.secrets/fleet-vault-pass missing (plaintext meta.pass fallback removed — R11)");
   const payload = Buffer.from(raw.slice(MAGIC.length).replace(/\s+/g, ""), "hex");
   const salt = payload.subarray(0, 16), iv = payload.subarray(16, 28), tag = payload.subarray(28, 44), ct = payload.subarray(44);
   const key = scryptSync(pass, salt, 32);
@@ -1189,6 +1193,9 @@ async function steemPlaneProbe() {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- server handle kept for supervision
 const server = Bun.serve({
+  // P0 7-a (audit 2026-10-11): localhost-only service — was bound 0.0.0.0 by
+  // default; loopback-only per the R123 pattern (rotation-keeper).
+  hostname: "127.0.0.1",
   port: PORT,
   async fetch(req) {
     const url = new URL(req.url);
@@ -1383,34 +1390,47 @@ const server = Bun.serve({
     }
 
     if (url.pathname === "/keys/backup" && req.method === "POST") {
-      // Task 30: encrypted owner backup — AES-256-GCM under a passphrase the OWNER
-      // chooses; the blob is safe to keep anywhere (repo included). The passphrase
-      // and the payload are never logged. Fail-closed on missing STATE.
-      let body;
-      try { body = await req.json(); } catch { return Response.json({ ok: false, error: "bad-json" }, { status: 400 }); }
-      const passphrase = typeof body?.passphrase === "string" ? body.passphrase : "";
-      if (passphrase.length < 10 || passphrase.length > 200) {
-        return Response.json({ ok: false, error: "passphrase must be 10-200 chars" }, { status: 400 });
+      // ── P0 7-a (audit 2026-10-11): ה-endpoint עבר לובוטומיה מכוונת ──────────
+      // R11-class: הנתיב היה מחזיר בתשובה את כל חומר-המפתחות של הצי
+      // (main+fleet, STEEM/HIVE/BLURT) מוצפן תחת passphrase שהקורא בוחר —
+      // bearer אחד = העתקת-כל-המפתחות (סתירה ל"keys never served by any endpoint").
+      // מעתה: 410 Gone כברירת-מחדל. גם כשמאופשר (SOVEREIGN_ALLOW_KEY_EXPORT=1)
+      // התשובה לעולם אינה מכילה חומר-מפתח (אפילו מוצפן) — רק ספירות/נתיבים
+      // של מה-שהיה מיוצא + מזהה-קבלה. קוד-ההצפנה וההחזרה הוצאו מכאן לגמרי;
+      // סיבוב-מפתחות נעשה owner-side בלבד.
+      if (process.env.SOVEREIGN_ALLOW_KEY_EXPORT !== "1") {
+        log("REFUSED", "POST /keys/backup: key-export disabled (410)");
+        return Response.json(
+          { error: "key-export-disabled", hint: "SOVEREIGN_ALLOW_KEY_EXPORT=1 + operator auth required" },
+          { status: 410 }
+        );
       }
-      try {
-        // roast 63: the payload used to export net STEEM+HIVE only while STATE
-        // fully carries BLURT — the backup lied about what it holds, and exactly
-        // the BLURT plane (the live-anchored chain, HEADCORNER master-key roles)
-        // would have been missing from a wipe-recovery. All three planes now.
-        const payload = { exportedAt: new Date().toISOString(), version: SIGNER_VERSION, main: { account: STATE.main.account, keys: { generic: { posting: STATE.main.postingWif ?? null, active: STATE.main.activeWif ?? null, memo: STATE.main.memoWif ?? null, owner: STATE.main.ownerWif ?? null }, net: { STEEM: STATE.main.net?.STEEM ?? null, HIVE: STATE.main.net?.HIVE ?? null, BLURT: STATE.main.net?.BLURT ?? null } } }, fleet: STATE.fleet.map((f) => ({ username: f.username, generic: { posting: f.postingWif ?? null, active: f.activeWif ?? null, owner: f.ownerWif ?? null }, net: { STEEM: f.net?.STEEM ?? null, HIVE: f.net?.HIVE ?? null, BLURT: f.net?.BLURT ?? null } })) };
-        const salt = randomBytes(16), iv = randomBytes(12);
-        const key = scryptSync(passphrase, salt, 32);
-        const cipher = createCipheriv("aes-256-gcm", key, iv);
-        const data = Buffer.concat([cipher.update(JSON.stringify(payload), "utf8"), cipher.final()]);
-        const tag = cipher.getAuthTag();
-        const file = JSON.stringify({ v: 1, cipher: "aes-256-gcm", kdf: "scrypt", salt: salt.toString("base64"), iv: iv.toString("base64"), tag: tag.toString("base64"), data: data.toString("base64") });
-        const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-        const filename = `key-backup-${STATE.main.account}-${stamp}.enc`;
-        log("INFO", `backup created: ${filename} (aes-256-gcm/scrypt; passphrase never logged)`);
-        return Response.json({ ok: true, filename, file, format: "SAOS-KEY-BACKUP-1 (scrypt+AES-256-GCM; decrypt: scripts/decrypt-key-backup.mjs)" });
-      } catch (e) {
-        return Response.json({ ok: false, error: String(e?.message ?? e).slice(0, 160) }, { status: 500 });
+      // גם-כשמאופשר: אותו bearer-אופרטור שמגן על שאר הנתיבים הרגישים בשירות
+      // (tokenOk — timing-safe; הנתיב כבר מאחוריו, ונאכף כאן שוב במפורש).
+      if (!tokenOk(req)) {
+        log("REFUSED", "POST /keys/backup: operator bearer rejected (401)");
+        return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
       }
+      // תיאור בלבד — אפס חומר-מפתח בתשובה (הספירות מחושבות בזיכרון בלבד).
+      const receipt = createHash("sha256").update(randomBytes(32)).digest("hex").slice(0, 16);
+      const mainSlots = [STATE.main.postingWif, STATE.main.activeWif, STATE.main.memoWif, STATE.main.ownerWif].filter(Boolean).length;
+      const fleetSlots = STATE.fleet.reduce((n, f) => n + [f.postingWif, f.activeWif, f.ownerWif].filter(Boolean).length, 0);
+      log("INFO", `backup receipt ${receipt}: would-export main=${STATE.main.account} slots=${mainSlots}, fleet=${STATE.fleet.length} accounts slots=${fleetSlots} (nothing exported)`);
+      return Response.json({
+        ok: true,
+        disabled: true,
+        receipt,
+        wouldExport: {
+          envelopeDir: resolveEnvelopeDir(),
+          sealedAt: STATE.sealedAt,
+          networks: ["STEEM", "HIVE", "BLURT"],
+          mainAccount: STATE.main.account,
+          mainKeySlots: mainSlots,
+          fleetAccounts: STATE.fleet.length,
+          fleetKeySlots: fleetSlots
+        },
+        note: "no key material is exported by any endpoint (invariant restored, 7-a); rotation is owner-side only"
+      });
     }
 
     // ── Task 38: owner-key operator login (owner directive: "אני עדיין לא מצליח להתחבר") ──

@@ -367,6 +367,8 @@ async function loop() {
 }
 
 Bun.serve({
+  // P0 7-a (audit 2026-10-11): localhost-only — was 0.0.0.0 default (R123 pattern).
+  hostname: "127.0.0.1",
   port: PORT,
   async fetch(req) {
     const url = new URL(req.url);
