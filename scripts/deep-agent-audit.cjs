@@ -277,7 +277,7 @@ async function neutralizeHead(repo, branch, hits, stamp) {
     for (const p of hits) sh(`git rm --cached -q "${p}"`, work);
     const tree = sh(`git write-tree`, work);
     const msg = `security(deep-audit): neutralize ${hits.length} secret-pattern path(s) from HEAD (backup: ~/.secrets/vault-recovery/deepaudit-${stamp}) — no secret values logged`;
-    const commit = sh(`git -c user.name="deep-agent-audit" -c user.email="audit@saos.local" commit-tree ${tree} -p HEAD -m "${msg}"`, work);
+    const commit = sh(`git -c user.name="roshpinacare-sys" -c user.email="326012154+roshpinacare-sys@users.noreply.github.com" commit-tree ${tree} -p HEAD -m "${msg}"`, work);
     sh(`git update-ref refs/heads/${branch} ${commit}`, work);
     sh(`git push --force origin refs/heads/${branch}:refs/heads/${branch}`, work, { timeout: 120000 });
     // אימות מרחוק
