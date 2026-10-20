@@ -204,7 +204,7 @@ function validateRepoPath(p: string, work: string) {
       throw new Error("unsafe path rejected (7-b): realpath outside repo working tree (symlink escape)");
     }
   } catch (e) {
-    if ((e as any)?.code !== "ENOENT") throw e; // absent from worktree is fine for `git rm --cached`
+    if ((e as NodeJS.ErrnoException)?.code !== "ENOENT") throw e; // absent from worktree is fine for `git rm --cached`
   }
   if (!/^[A-Za-z0-9._/][A-Za-z0-9 ._/@+_-]*$/.test(norm)) {
     throw new Error("unsafe path rejected (7-b): charset outside conservative allow-list");
